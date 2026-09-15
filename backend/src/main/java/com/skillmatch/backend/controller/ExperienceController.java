@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExperienceController {
 
-    private final ExperienceService experienceService;
+    private final ExperienceService experienceService = null;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
