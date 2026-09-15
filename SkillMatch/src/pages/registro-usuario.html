@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuario - SkillMatch Cartagena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html">
+                        <img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100">
+                    </a>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="index.html#innovacion">Innovación</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html#usuarios-empresas">Usuarios</a></li>
+                <li><a href="index.html#usuarios-empresas">Empresas</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="registro-section">
+        <div class="container">
+            <h2>Registro de Usuarios</h2>
+            <form id="form-registro-usuario" class="registro-form" novalidate>
+                <div class="stepper" aria-label="Progreso de registro" role="tablist">
+                    <div class="step active" role="tab" data-step="1"><span class="step-index">1</span><span class="step-label">Cuenta</span></div>
+                    <div class="step" role="tab" data-step="2"><span class="step-index">2</span><span class="step-label">Perfil</span></div>
+                    <div class="step" role="tab" data-step="3"><span class="step-index">3</span><span class="step-label">Preferencias</span></div>
+                </div>
+
+                <div class="form-step active" data-step="1">
+                  <div class="form-section">
+                    <h3 class="section-title">Datos básicos</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="usuario-nombre">Nombre</label>
+                            <input type="text" id="usuario-nombre" name="nombre" autocomplete="given-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="usuario-apellidos">Apellidos</label>
+                            <input type="text" id="usuario-apellidos" name="apellidos" autocomplete="family-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="usuario-email">Correo electrónico</label>
+                            <input type="email" id="usuario-email" name="email" autocomplete="email" required>
+                            <small class="input-help">Usa tu correo principal para la verificación.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="usuario-telefono">Teléfono</label>
+                            <input type="tel" id="usuario-telefono" name="telefono" autocomplete="tel" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="usuario-pass">Contraseña</label>
+                            <input type="password" id="usuario-pass" name="pass" minlength="8" required>
+                            <small class="input-help">Mínimo 8 caracteres.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="usuario-pass2">Confirmar contraseña</label>
+                            <input type="password" id="usuario-pass2" name="pass2" minlength="8" required>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="step-actions">
+                      <button type="button" class="btn btn-primary" id="next-step-1">Siguiente</button>
+                  </div>
+                </div>
+
+                <div class="form-step" data-step="2">
+                    <div class="form-section">
+                        <h3 class="section-title">Perfil profesional</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="usuario-profesion">Profesión / Título principal</label>
+                                <input type="text" id="usuario-profesion" name="profesion" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="usuario-area-laboral">Área laboral</label>
+                                <select id="usuario-area-laboral" name="area_laboral" required>
+                                    <option value="">Selecciona un área</option>
+                                    <option value="tecnologia">Tecnología</option>
+                                    <option value="administracion">Administración</option>
+                                    <option value="ventas">Ventas / Comercial</option>
+                                    <option value="marketing">Marketing</option>
+                                    <option value="finanzas">Finanzas / Contabilidad</option>
+                                    <option value="rrhh">Recursos Humanos</option>
+                                    <option value="logistica">Logística / Operaciones</option>
+                                    <option value="servicio">Servicio al Cliente</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="usuario-experiencia">Años de experiencia</label>
+                                <select id="usuario-experiencia" name="experiencia" required>
+                                    <option value="">Selecciona…</option>
+                                    <option value="0-1">0-1 años</option>
+                                    <option value="2-3">2-3 años</option>
+                                    <option value="4-5">4-5 años</option>
+                                    <option value="6+">6+ años</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="usuario-nivel-estudios">Nivel de estudios</label>
+                                <select id="usuario-nivel-estudios" name="nivel_estudios" required>
+                                    <option value="">Selecciona…</option>
+                                    <option value="tecnico">Técnico</option>
+                                    <option value="tecnologo">Tecnólogo</option>
+                                    <option value="profesional">Profesional</option>
+                                    <option value="especializacion">Especialización</option>
+                                    <option value="maestria">Maestría</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="usuario-departamento">Departamento</label>
+                                <select id="usuario-departamento" name="departamento" required>
+                                    <option value="">Selecciona un departamento</option>
+                                    <option value="Amazonas">Amazonas</option>
+                                    <option value="Antioquia">Antioquia</option>
+                                    <option value="Arauca">Arauca</option>
+                                    <option value="Atlántico">Atlántico</option>
+                                    <option value="Bolívar">Bolívar</option>
+                                    <option value="Boyacá">Boyacá</option>
+                                    <option value="Caldas">Caldas</option>
+                                    <option value="Caquetá">Caquetá</option>
+                                    <option value="Casanare">Casanare</option>
+                                    <option value="Cauca">Cauca</option>
+                                    <option value="Cesar">Cesar</option>
+                                    <option value="Chocó">Chocó</option>
+                                    <option value="Córdoba">Córdoba</option>
+                                    <option value="Cundinamarca">Cundinamarca</option>
+                                    <option value="Guainía">Guainía</option>
+                                    <option value="Guaviare">Guaviare</option>
+                                    <option value="Huila">Huila</option>
+                                    <option value="La Guajira">La Guajira</option>
+                                    <option value="Magdalena">Magdalena</option>
+                                    <option value="Meta">Meta</option>
+                                    <option value="Nariño">Nariño</option>
+                                    <option value="Norte de Santander">Norte de Santander</option>
+                                    <option value="Putumayo">Putumayo</option>
+                                    <option value="Quindío">Quindío</option>
+                                    <option value="Risaralda">Risaralda</option>
+                                    <option value="San Andrés y Providencia">San Andrés y Providencia</option>
+                                    <option value="Santander">Santander</option>
+                                    <option value="Sucre">Sucre</option>
+                                    <option value="Tolima">Tolima</option>
+                                    <option value="Valle del Cauca">Valle del Cauca</option>
+                                    <option value="Vaupés">Vaupés</option>
+                                    <option value="Vichada">Vichada</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="usuario-ciudad">Ciudad</label>
+                                <input type="text" id="usuario-ciudad" name="ciudad" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-actions">
+                        <button type="button" class="btn btn-return" id="prev-step-2">Volver</button>
+                        <button type="button" class="btn btn-primary" id="next-step-2">Siguiente</button>
+                    </div>
+                </div>
+
+                <div class="form-step" data-step="3">
+                    <div class="form-section">
+                        <h3 class="section-title">Preferencias laborales</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="usuario-modalidad">Modalidad deseada</label>
+                                <select id="usuario-modalidad" name="modalidad" required>
+                                    <option value="">Selecciona modalidad</option>
+                                    <option value="remoto">Remoto</option>
+                                    <option value="hibrido">Híbrido</option>
+                                    <option value="presencial">Presencial</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="usuario-contrato">Tipo de contrato deseado</label>
+                                <select id="usuario-contrato" name="contrato" required>
+                                    <option value="">Selecciona contrato</option>
+                                    <option value="tiempo-completo">Tiempo completo</option>
+                                    <option value="medio-tiempo">Medio tiempo</option>
+                                    <option value="freelance">Freelance / Servicios</option>
+                                    <option value="practicas">Prácticas / Pasantía</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="usuario-aspiracion">Aspiración salarial (COP)</label>
+                                <input type="number" id="usuario-aspiracion" name="aspiracion" min="0" step="50000" placeholder="$" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="usuario-cv">Subir hoja de vida (PDF)</label>
+                                <input type="file" id="usuario-cv" name="cv" accept="application/pdf" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="checkbox">
+                            <input type="checkbox" id="usuario-terminos" required>
+                            <span>Acepto los <a href="#">Términos y condiciones</a> y el <a href="#">tratamiento de datos</a>.</span>
+                        </label>
+                    </div>
+
+                    <div class="step-actions">
+                        <button type="button" class="btn btn-return" id="prev-step-3">Volver</button>
+                        <button type="submit" class="btn btn-primary">Crear cuenta</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
+            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/registro-usuario.js"></script>
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>

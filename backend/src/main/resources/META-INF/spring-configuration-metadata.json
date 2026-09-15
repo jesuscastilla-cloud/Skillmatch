@@ -1,0 +1,76 @@
+{
+  "properties": [
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "Clave para firmar los tokens JWT. Mínimo 32 caracteres. Variable: JWT_SECRET.",
+      "defaultValue": null
+    },
+    {
+      "name": "jwt.expiration",
+      "type": "java.lang.Long",
+      "description": "Tiempo de expiración del token JWT en milisegundos. Por defecto 24 horas (86400000).",
+      "defaultValue": 86400000
+    },
+    {
+      "name": "app.cors.allowed-origins",
+      "type": "java.lang.String",
+      "description": "Orígenes permitidos para CORS, separados por comas. Admite comodines. Variable: ALLOWED_ORIGINS.",
+      "defaultValue": "http://localhost:*"
+    },
+    {
+      "name": "app.cookie.secure",
+      "type": "java.lang.Boolean",
+      "description": "Marca la cookie de sesión como Secure. Debe ser true en HTTPS. Variable: COOKIE_SECURE.",
+      "defaultValue": false
+    },
+    {
+      "name": "app.cookie.same-site",
+      "type": "java.lang.String",
+      "description": "Política SameSite de la cookie de sesión: Lax, Strict o None. Variable: COOKIE_SAME_SITE.",
+      "defaultValue": "Lax"
+    },
+    {
+      "name": "app.rate-limit.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Activa el límite de intentos en login y registro. Variable: RATE_LIMIT_ENABLED.",
+      "defaultValue": true
+    },
+    {
+      "name": "app.rate-limit.max-requests",
+      "type": "java.lang.Integer",
+      "description": "Intentos de login o registro permitidos por IP y por minuto. Variable: RATE_LIMIT_MAX.",
+      "defaultValue": 20
+    },
+    {
+      "name": "skillmatch.seed.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Si es true, puebla la base de datos con datos de prueba cuando está vacía. Variable: SEED_ENABLED.",
+      "defaultValue": false
+    },
+    {
+      "name": "skillmatch.seed.users",
+      "type": "java.lang.Integer",
+      "description": "Cantidad de usuarios de prueba a crear. Variable: SEED_USERS.",
+      "defaultValue": 150
+    },
+    {
+      "name": "skillmatch.seed.companies",
+      "type": "java.lang.Integer",
+      "description": "Cantidad de empresas de prueba a crear. Variable: SEED_COMPANIES.",
+      "defaultValue": 40
+    },
+    {
+      "name": "skillmatch.seed.jobs",
+      "type": "java.lang.Integer",
+      "description": "Cantidad de ofertas de prueba a crear. Variable: SEED_JOBS.",
+      "defaultValue": 120
+    },
+    {
+      "name": "skillmatch.seed.applications",
+      "type": "java.lang.Integer",
+      "description": "Cantidad de postulaciones de prueba a crear. Variable: SEED_APPLICATIONS.",
+      "defaultValue": 300
+    }
+  ]
+}

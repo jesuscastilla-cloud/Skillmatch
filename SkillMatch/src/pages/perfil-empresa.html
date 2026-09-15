@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Empresa - SkillMatch Cartagena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100"></a>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="perfil-empresa.html" class="active-nav">Mi Empresa</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#candidatos">Candidatos</a></li>
+                <li><a href="#ofertas">Mis Ofertas</a></li>
+                <li><a href="login.html" class="btn-login" id="btnCerrarSesion">Cerrar Sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Company Hero Section -->
+    <section class="company-hero-new">
+        <div class="company-cover-container">
+            <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=300&fit=crop" alt="Company Cover" id="companyCover" class="company-cover-img">
+            <button class="btn-edit-cover-new" id="btnEditCover">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                    <path d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z"/>
+                </svg>
+                Cambiar Portada
+            </button>
+        </div>
+        
+        <div class="container">
+            <div class="company-header-card">
+                <div class="company-logo-wrapper">
+                    <img src="https://ui-avatars.com/api/?name=Soluciones+Tech&size=120&background=1ba3a3&color=fff&bold=true" alt="Logo" id="companyLogo" class="company-logo-img">
+                    <button class="btn-edit-logo-new" id="btnEditLogo" title="Cambiar logo">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                            <path d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="company-info-wrapper">
+                    <div class="company-title-section">
+                        <h1 id="companyName">Soluciones Tech Cartagena</h1>
+                        <button class="btn-edit-profile-inline" id="btnEditProfile">Editar Perfil</button>
+                    </div>
+                    <p class="company-industry" id="companyIndustry">Tecnología | Software Development</p>
+                    <div class="company-meta-tags">
+                        <span class="meta-tag">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                            </svg>
+                            Cartagena de Indias
+                        </span>
+                        <span class="meta-tag">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855-.173.324-.33.682-.468 1.068H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5H3.82zm6.853 3.472A7.024 7.024 0 0 0 13.745 12H11.91a9.27 9.27 0 0 1-.64 1.539 6.688 6.688 0 0 1-.597.933zM8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855.173-.324.33-.682.468-1.068H8.5zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.65 13.65 0 0 1-.312 2.5zm2.802-3.5a6.959 6.959 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5h2.49zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7.024 7.024 0 0 0-3.072-2.472c.218.284.418.598.597.933zM10.855 4a7.966 7.966 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4h2.355z"/>
+                            </svg>
+                            www.solucionestech.com
+                        </span>
+                        <span class="meta-tag">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8Zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022ZM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816ZM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0Zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>
+                            </svg>
+                            1,245 seguidores
+                        </span>
+                    </div>
+                </div>
+                <div class="company-quick-stats">
+                    <div class="quick-stat-item">
+                        <div class="stat-number">8</div>
+                        <div class="stat-text">Ofertas Activas</div>
+                    </div>
+                    <div class="quick-stat-item">
+                        <div class="stat-number">156</div>
+                        <div class="stat-text">Candidatos</div>
+                    </div>
+                    <div class="quick-stat-item">
+                        <div class="stat-number">12</div>
+                        <div class="stat-text">Contratados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="company-content">
+        <div class="container">
+            <div class="company-grid-layout">
+                <!-- Left Sidebar -->
+                <aside class="company-sidebar-left">
+                    <div class="sidebar-widget">
+                        <h3 class="widget-title"><i data-ico="chart"></i> Resumen de Actividad</h3>
+                        <div class="activity-stats">
+                            <div class="activity-row">
+                                <span class="activity-label">Ofertas Publicadas</span>
+                                <span class="activity-value" id="statOfertasPublicadas">0</span>
+                            </div>
+                            <div class="activity-row">
+                                <span class="activity-label">Candidatos Contactados</span>
+                                <span class="activity-value" id="statCandidatosContactados">0</span>
+                            </div>
+                            <div class="activity-row">
+                                <span class="activity-label">Contrataciones Exitosas</span>
+                                <span class="activity-value" id="statContratacionesExitosas">0</span>
+                            </div>
+                            <div class="activity-row">
+                                <span class="activity-label">Miembros del Equipo</span>
+                                <span class="activity-value" id="statMiembrosEquipo">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-widget">
+                        <h3 class="widget-title"><i data-ico="trophy"></i> Certificaciones</h3>
+                        <div class="certifications-grid">
+                            <span class="certification-badge">ISO 9001:2015</span>
+                            <span class="certification-badge">CMMI Level 3</span>
+                            <span class="certification-badge">Great Place to Work</span>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-widget">
+                        <h3 class="widget-title"><i data-ico="sparkle"></i> Beneficios</h3>
+                        <ul class="benefits-simple-list">
+                            <li>Salario competitivo</li>
+                            <li>Seguro médico integral</li>
+                            <li>Capacitación continua</li>
+                            <li>Trabajo remoto</li>
+                            <li>Horarios flexibles</li>
+                            <li>Bonos por desempeño</li>
+                        </ul>
+                    </div>
+                </aside>
+
+                <!-- Main Content Area -->
+                <main class="company-main-area">
+                    <!-- About Section -->
+                    <div class="content-section-card">
+                        <div class="section-card-header">
+                            <h2>Acerca de Nosotros</h2>
+                            <button class="btn-icon-action" id="btnEditAbout" title="Editar descripción">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="section-card-body" id="companyAbout">
+                            <p>Cargando información de la empresa...</p>
+                        </div>
+                    </div>
+
+                    <!-- Job Offers Section -->
+                    <div class="content-section-card" id="ofertas">
+                        <div class="section-card-header">
+                            <h2>Ofertas de Empleo Activas</h2>
+                            <button class="btn-new-offer" id="btnNewOffer">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                </svg>
+                                Nueva Oferta
+                            </button>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="offers-list" id="offersList">
+                                <!-- Offer Card 1 -->
+                                <div class="offer-card">
+                                    <div class="offer-card-header">
+                                        <div class="offer-title-section">
+                                            <h3>Practicante Desarrollador Frontend</h3>
+                                            <span class="offer-type-badge practice">Práctica</span>
+                                        </div>
+                                        <button class="offer-menu-btn" title="Opciones">⋮</button>
+                                    </div>
+                                    <div class="offer-card-info">
+                                        <div class="offer-info-row">
+                                            <span class="info-label">Candidatos:</span>
+                                            <span class="info-value">24 interesados</span>
+                                        </div>
+                                        <div class="offer-info-row">
+                                            <span class="info-label">Publicado:</span>
+                                            <span class="info-value">Hace 3 días</span>
+                                        </div>
+                                        <div class="offer-info-row">
+                                            <span class="info-label">Estado:</span>
+                                            <span class="status-badge active">Activa</span>
+                                        </div>
+                                    </div>
+                                    <div class="offer-card-actions">
+                                        <button class="btn-offer-action primary">Ver Candidatos</button>
+                                        <button class="btn-offer-action">Editar</button>
+                                        <button class="btn-offer-action">Archivar</button>
+                                    </div>
+                                </div>
+
+                                <!-- Offer Card 2 -->
+                                <div class="offer-card">
+                                    <div class="offer-card-header">
+                                        <div class="offer-title-section">
+                                            <h3>Developer Backend Senior</h3>
+                                            <span class="offer-type-badge employment">Empleo</span>
+                                        </div>
+                                        <button class="offer-menu-btn" title="Opciones">⋮</button>
+                                    </div>
+                                    <div class="offer-card-info">
+                                        <div class="offer-info-row">
+                                            <span class="info-label">Candidatos:</span>
+                                            <span class="info-value">12 interesados</span>
+                                        </div>
+                                        <div class="offer-info-row">
+                                            <span class="info-label">Publicado:</span>
+                                            <span class="info-value">Hace 1 semana</span>
+                                        </div>
+                                        <div class="offer-info-row">
+                                            <span class="info-label">Estado:</span>
+                                            <span class="status-badge active">Activa</span>
+                                        </div>
+                                    </div>
+                                    <div class="offer-card-actions">
+                                        <button class="btn-offer-action primary">Ver Candidatos</button>
+                                        <button class="btn-offer-action">Editar</button>
+                                        <button class="btn-offer-action">Archivar</button>
+                                    </div>
+                                </div>
+
+                                <!-- Offer Card 3 -->
+                                <div class="offer-card">
+                                    <div class="offer-card-header">
+                                        <div class="offer-title-section">
+                                            <h3>Proyecto Freelance: Migración a Cloud</h3>
+                                            <span class="offer-type-badge freelance">Freelance</span>
+                                        </div>
+                                        <button class="offer-menu-btn" title="Opciones">⋮</button>
+                                    </div>
+                                    <div class="offer-card-info">
+                                        <div class="offer-info-row">
+                                            <span class="info-label">Candidatos:</span>
+                                            <span class="info-value">8 interesados</span>
+                                        </div>
+                                        <div class="offer-info-row">
+                                            <span class="info-label">Publicado:</span>
+                                            <span class="info-value">Hace 2 semanas</span>
+                                        </div>
+                                        <div class="offer-info-row">
+                                            <span class="info-label">Estado:</span>
+                                            <span class="status-badge inactive">Cerrada</span>
+                                        </div>
+                                    </div>
+                                    <div class="offer-card-actions">
+                                        <button class="btn-offer-action primary">Ver Candidatos</button>
+                                        <button class="btn-offer-action">Editar</button>
+                                        <button class="btn-offer-action success">Reabrir</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommended Candidates Section -->
+                    <div class="content-section-card" id="candidatos">
+                        <div class="section-card-header">
+                            <h2>Candidatos Recomendados</h2>
+                            <a href="#" class="link-view-all">Ver todos <i data-ico="arrow"></i></a>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="candidates-grid" id="candidatesList">
+                                <!-- Candidate Card 1 -->
+                                <div class="candidate-mini-card">
+                                    <div class="candidate-card-header">
+                                        <img src="https://ui-avatars.com/api/?name=Juan+Rodriguez&background=1ba3a3&color=fff" alt="Candidato" class="candidate-mini-avatar">
+                                        <div class="candidate-match-score">98%</div>
+                                    </div>
+                                    <h4 class="candidate-mini-name">Juan Rodríguez</h4>
+                                    <p class="candidate-mini-title">Estudiante de Contabilidad y Finanzas</p>
+                                    <p class="candidate-mini-match">3 habilidades coinciden</p>
+                                    <div class="candidate-mini-skills">
+                                        <span class="skill-mini-tag">React</span>
+                                        <span class="skill-mini-tag">JavaScript</span>
+                                        <span class="skill-mini-tag">Node.js</span>
+                                    </div>
+                                    <div class="candidate-mini-actions">
+                                        <button class="btn-mini-action primary">Ver Perfil</button>
+                                        <button class="btn-mini-action">Contactar</button>
+                                    </div>
+                                </div>
+
+                                <!-- Candidate Card 2 -->
+                                <div class="candidate-mini-card">
+                                    <div class="candidate-card-header">
+                                        <img src="https://ui-avatars.com/api/?name=Maria+Garcia&background=1ba3a3&color=fff" alt="Candidato" class="candidate-mini-avatar">
+                                        <div class="candidate-match-score">94%</div>
+                                    </div>
+                                    <h4 class="candidate-mini-name">María García López</h4>
+                                    <p class="candidate-mini-title">Estudiante de Diseño / UX</p>
+                                    <p class="candidate-mini-match">4 habilidades coinciden</p>
+                                    <div class="candidate-mini-skills">
+                                        <span class="skill-mini-tag">Python</span>
+                                        <span class="skill-mini-tag">SQL</span>
+                                        <span class="skill-mini-tag">Django</span>
+                                    </div>
+                                    <div class="candidate-mini-actions">
+                                        <button class="btn-mini-action primary">Ver Perfil</button>
+                                        <button class="btn-mini-action">Contactar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Right Sidebar -->
+                <aside class="company-sidebar-right">
+                    <div class="sidebar-widget">
+                        <h3 class="widget-title"><i data-ico="book"></i> Recursos Útiles</h3>
+                        <ul class="resources-links-list">
+                            <li><a href="#"><i data-ico="book"></i> Guía de Contratación</a></li>
+                            <li><a href="#"><i data-ico="bulb"></i> Mejores Prácticas</a></li>
+                            <li><a href="#"><i data-ico="chart"></i> Reportes de Mercado</a></li>
+                            <li><a href="#"><i data-ico="cap"></i> Capacitaciones</a></li>
+                            <li><a href="#"><i data-ico="phone"></i> Soporte</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="sidebar-widget">
+                        <h3 class="widget-title"><i data-ico="briefcase"></i> Plan Actual</h3>
+                        <div class="plan-info">
+                            <p class="plan-name-text">Plan Professional</p>
+                            <ul class="plan-features-list">
+                                <li><i data-ico="check"></i> 10 Ofertas Activas</li>
+                                <li><i data-ico="check"></i> Mensajería Directa</li>
+                                <li><i data-ico="check"></i> Analytics Avanzado</li>
+                            </ul>
+                            <button class="btn-upgrade-plan">Upgrade Plan</button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
+            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/perfil-empresa.js"></script>
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>

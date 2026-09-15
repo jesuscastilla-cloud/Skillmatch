@@ -1,0 +1,20 @@
+# Entorno
+.env
+*.env
+!.env.example
+
+# Build
+target/
+build/
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log

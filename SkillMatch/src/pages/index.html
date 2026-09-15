@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillMatch Cartagena</title>
+    <meta name="description" content="Conecta usuarios de Cartagena con oportunidades laborales locales. Perfiles profesionales, oportunidades personalizadas y networking con empresas.">
+    <meta name="keywords" content="empleo, prácticas, usuarios, Cartagena, empresas, oportunidades, networking, tecnología, diseño, marketing, finanzas, recursos humanos, logística, salud, legal">
+    <meta property="og:title" content="SkillMatch Cartagena">
+    <meta property="og:description" content="Conectando talento local con empresas de Cartagena">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="../assets/img/logo.png">
+    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+
+    <!-- CSS PRINCIPALES -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+
+<body> 
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <header>
+        <nav class="container" aria-label="Principal">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100"></a>
+                </div>
+                <ul class="nav-links nav-principales">
+                    <li><a href="#main">Inicio</a></li>
+                    <li><a href="#innovacion">Innovación</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="login.html" class="btn-login">Iniciar Sesión</a></li>
+                <li><a href="seleccionar-registro.html" class="btn-register">Unirse ahora</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero" id="main">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-copy">
+                    <h1>El trabajo que buscas ya está en Cartagena</h1>
+                    <p>SkillMatch compara tus habilidades con cada vacante de la ciudad y te muestra
+                       qué tan cerca estás de conseguirla, antes de que te postules.</p>
+
+                    <div class="hero-actions">
+                        <a href="seleccionar-registro.html" class="btn btn-accent">Crear mi perfil</a>
+                        <a href="oportunidades.html" class="btn btn-secondary">Ver vacantes abiertas</a>
+                    </div>
+
+                    <div class="hero-proof">
+                        <div>
+                            <span class="stat-number" data-stat="jobs">—</span>
+                            <span class="stat-label">vacantes abiertas</span>
+                        </div>
+                        <div>
+                            <span class="stat-number" data-stat="companies">—</span>
+                            <span class="stat-label">empresas publicando</span>
+                        </div>
+                        <div>
+                            <span class="stat-number" data-stat="users">—</span>
+                            <span class="stat-label">perfiles registrados</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Muestra de lo que hace el producto, con datos de ejemplo -->
+                <div class="hero-card" aria-label="Ejemplo de vacante con porcentaje de compatibilidad">
+                    <div class="result-header">
+                        <div style="display:flex; gap:14px; align-items:flex-start; min-width:0">
+                            <div class="result-logo">TS</div>
+                            <div style="min-width:0">
+                                <h3 class="job-title">Desarrollador Backend Java</h3>
+                                <p class="company-name">TechSolutions · Cartagena</p>
+                            </div>
+                        </div>
+                        <div class="match-ring" data-pct="92"></div>
+                    </div>
+                    <div class="card-meta" style="margin-top:16px">
+                        <span class="meta-item"><i data-ico="pin" class="ico-sm"></i> Híbrido</span>
+                        <span class="meta-item"><i data-ico="briefcase" class="ico-sm"></i> Tiempo completo</span>
+                        <span class="meta-item result-salary"><i data-ico="money" class="ico-sm"></i> $4.5M – $6M</span>
+                    </div>
+                    <div class="card-skills" style="margin-top:14px">
+                        <span class="skill-tag">Java</span>
+                        <span class="skill-tag">Spring Boot</span>
+                        <span class="skill-tag">MongoDB</span>
+                        <span class="skill-tag">Docker</span>
+                    </div>
+                    <p class="suggestion-reason" style="margin-top:16px">
+                        Coincides en 11 de 12 requisitos. Te falta experiencia con Kubernetes.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+    <section class="search-section">
+        <div class="container">
+            <div class="search-box">
+                <input type="text" placeholder="Busca por cargo, habilidad o empresa..." class="search-input">
+                <button class="search-btn"><i data-ico="search"></i> Buscar</button>
+            </div>
+            <div class="quick-filters">
+                <div class="filter-group">
+                    <label for="location-select" class="sr-only">Lugar</label>
+                    <select id="location-select" class="filter-select">
+                        <option value="">Lugar (todas)</option>
+                        <optgroup label="Principales Ciudades">
+                            <option value="bogota">Bogotá D.C.</option>
+                            <option value="medellin">Medellín</option>
+                            <option value="cali">Cali</option>
+                            <option value="barranquilla">Barranquilla</option>
+                            <option value="cartagena">Cartagena de Indias</option>
+                            <option value="bucaramanga">Bucaramanga</option>
+                            <option value="pereira">Pereira</option>
+                            <option value="manizales">Manizales</option>
+                            <option value="armenia">Armenia</option>
+                            <option value="ibague">Ibagué</option>
+                            <option value="pasto">Pasto</option>
+                            <option value="cucuta">Cúcuta</option>
+                            <option value="villavicencio">Villavicencio</option>
+                            <option value="santa_marta">Santa Marta</option>
+                            <option value="valledupar">Valledupar</option>
+                            <option value="neiva">Neiva</option>
+                            <option value="popayan">Popayán</option>
+                            <option value="tunja">Tunja</option>
+                            <option value="riohacha">Riohacha</option>
+                        </optgroup>
+                        <optgroup label="Departamentos / Regiones">
+                            <option value="yopal">Yopal</option>
+                            <option value="florencia">Florencia</option>
+                            <option value="mocoa">Mocoa</option>
+                            <option value="quibdo">Quibdó</option>
+                        </optgroup>
+                        <optgroup label="Área Metropolitana y Municipios">
+                            <option value="soledad">Soledad (Atlántico)</option>
+                            <option value="envigado">Envigado (Antioquia)</option>
+                            <option value="bello">Bello (Antioquia)</option>
+                            <option value="itagui">Itagüí (Antioquia)</option>
+                            <option value="sabaneta">Sabaneta (Antioquia)</option>
+                            <option value="dosquebradas">Dosquebradas (Risaralda)</option>
+                            <option value="palmira">Palmira (Valle)</option>
+                            <option value="jamundi">Jamundí (Valle)</option>
+                            <option value="turbaco">Turbaco (Bolívar)</option>
+                            <option value="magangue">Magangué (Bolívar)</option>
+                            <option value="arjona">Arjona (Bolívar)</option>
+                            <option value="funza">Funza (Cundinamarca)</option>
+                            <option value="mosquera">Mosquera (Cundinamarca)</option>
+                            <option value="chia">Chía (Cundinamarca)</option>
+                            <option value="zipaquira">Zipaquirá (Cundinamarca)</option>
+                            <option value="facatativa">Facatativá (Cundinamarca)</option>
+                            <option value="barichara">Barichara (Santander)</option>
+                        </optgroup>
+                        <option value="otras">Otras ciudades / municipios</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="modality-select" class="sr-only">Modalidad</label>
+                    <select id="modality-select" class="filter-select">
+                        <option value="">Modalidad</option>
+                        <option value="presencial">Presencial</option>
+                        <option value="virtual">Virtual</option>
+                        <option value="hibrida">Híbrida</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="experience-select" class="sr-only">Experiencia</label>
+                    <select id="experience-select" class="filter-select">
+                        <option value="">Experiencia</option>
+                        <option value="junior">Junior (0-1 año)</option>
+                        <option value="mid">Mid (1-3 años)</option>
+                        <option value="senior">Senior (3+ años)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="salary-select" class="sr-only">Salario</label>
+                    <select id="salary-select" class="filter-select">
+                        <option value="">Rango</option>
+                        <option value="0-1000">Hasta $1.000.000</option>
+                        <option value="1000-2000">$1.000.000 - $2.000.000</option>
+                        <option value="2000-3000">$2.000.000 - $3.000.000</option>
+                        <option value="3000-5000">$3.000.000 - $5.000.000</option>
+                        <option value="5000+">Más de $5.000.000</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTENEDOR DE RESULTADOS DE BÚSQUEDA -->
+    <section id="results-container" class="results-section hidden">
+        <div class="container">
+            <!-- Los resultados se renderizarán aquí dinámicamente -->
+        </div>
+    </section>
+
+    <!-- ESTADÍSTICAS IMPACTANTES -->
+    <section class="impact-stats">
+        <div class="container">
+            <div class="stat-box">
+                <div class="stat-value" id="stat-users">—</div>
+                <div class="stat-label">Usuarios Activos</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="stat-companies">—</div>
+                <div class="stat-label">Empresas Aliadas</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="stat-jobs">—</div>
+                <div class="stat-label">Oportunidades Publicadas</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="stat-applications">—</div>
+                <div class="stat-label">Aplicaciones Enviadas</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title-large">¿Cómo Funciona?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="../assets/img/usuario-profile.png" alt="Perfil de Usuario" />
+                    </div>
+                    <h3>Perfil de Usuario</h3>
+                    <p>Registra tus habilidades, proyectos y experiencia. Nuestro algoritmo creará tu perfil profesional único.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="../assets/img/business-opportunities.png" alt="Ofertas Empresariales" />
+                    </div>
+                    <h3>Ofertas Empresariales</h3>
+                    <p>Empresas locales publican prácticas, freelance y empleos junior en tecnología, diseño, marketing, finanzas, logística, recursos humanos y más áreas profesionales.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="../assets/img/match-intelligent.png" alt="Match Inteligente" />
+                    </div>
+                    <h3>Match Inteligente</h3>
+                    <p>IA avanzada analiza compatibilidad y recomienda las mejores oportunidades para cada perfil.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="benefits-section" id="beneficios">
+        <div class="container">
+            <div class="why-header">
+                <h2>¿Por qué SkillMatch?</h2>
+                <p>Una plataforma enfocada en resultados: talento local, oportunidades reales y procesos simples.</p>
+            </div>
+            <div class="why-grid">
+                <div class="benefit-item">
+                    <div class="benefit-badge"><i data-ico="target"></i></div>
+                    <h3>Matching con precisión</h3>
+                    <ul>
+                        <li>Alineación de habilidades y objetivos</li>
+                        <li>Algoritmo con señales relevantes</li>
+                        <li>Mejor fit por vacante</li>
+                    </ul>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-badge"><i data-ico="globe"></i></div>
+                    <h3>Foco en lo local</h3>
+                    <ul>
+                        <li>Conecta con empresas cercanas</li>
+                        <li>Impulso al ecosistema regional</li>
+                        <li>Más visibilidad para tu perfil</li>
+                    </ul>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-badge"><i data-ico="settings"></i></div>
+                    <h3>Proceso simple</h3>
+                    <ul>
+                        <li>Publicación y gestión ágil</li>
+                        <li>Seguimiento claro de candidaturas</li>
+                        <li>Feedback y métricas útiles</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="usuarios-empresas" id="usuarios-empresas">
+        <div class="container">
+            <div class="section-header-center">
+                <h2>Elige cómo quieres usar SkillMatch</h2>
+                <p>Como usuario, construyes tu perfil profesional. Como empresa, encuentras talento listo para aportar.</p>
+            </div>
+
+            <div class="pathways">
+                <div class="pathway-card usuario">
+                    <div class="pathway-header">
+                        <div class="pathway-icon"><i data-ico="cap"></i></div>
+                        <div>
+                            <h3>Para Usuarios</h3>
+                            <p>Construye tu perfil profesional y conecta con oportunidades reales.</p>
+                        </div>
+                    </div>
+                    <ul class="pathway-features">
+                        <li>Perfil y portafolio con logros y proyectos</li>
+                        <li>Recomendaciones según tu perfil y habilidades</li>
+                        <li>Seguimiento de candidaturas y feedback</li>
+                    </ul>
+                    <a href="login-usuario.html" class="btn btn-primary">Comienza tu camino <i data-ico="arrow"></i></a>
+                </div>
+
+                <div class="pathway-card empresa">
+                    <div class="pathway-header">
+                        <div class="pathway-icon"><i data-ico="briefcase"></i></div>
+                        <div>
+                            <h3>Para Empresas</h3>
+                            <p>Encuentra talento joven local y acelera tus procesos.</p>
+                        </div>
+                    </div>
+                    <ul class="pathway-features">
+                        <li>Acceso a talento verificado de la región</li>
+                        <li>Matching inteligente para cada vacante</li>
+                        <li>Gestión simple de ofertas y candidatos</li>
+                    </ul>
+                    <a href="login-empresa.html" class="btn btn-primary">Encuentra talento <i data-ico="arrow"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="innovation-section" id="innovacion">
+        <div class="container">
+            <div class="innovation-header">
+                <h2> Innovación Futura</h2>
+                <p>Roadmap de funcionalidades enfocadas en impacto y resultados.</p>
+            </div>
+
+            <div class="roadmap-grid">
+                <article class="roadmap-card">
+                    <div class="roadmap-header">
+                        <div class="roadmap-icon"><i data-ico="chat"></i></div>
+                        <div class="roadmap-title">
+                            <h3>Simulador de Entrevistas IA</h3>
+                            <span class="status-badge status-building">En desarrollo</span>
+                        </div>
+                    </div>
+                    <p>Practica entrevistas con IA y recibe feedback accionable.</p>
+                    <ul class="roadmap-points">
+                        <li>Rúbricas por rol y seniority</li>
+                        <li>Métricas y seguimiento de progreso</li>
+                        <li>Informe exportable</li>
+                    </ul>
+                </article>
+
+                <article class="roadmap-card">
+                    <div class="roadmap-header">
+                        <div class="roadmap-icon"><i data-ico="chart"></i></div>
+                        <div class="roadmap-title">
+                            <h3>Predictor de Demanda Laboral</h3>
+                            <span class="status-badge status-planned">Próximo</span>
+                        </div>
+                    </div>
+                    <p>Recomendaciones de habilidades según la demanda local.</p>
+                    <ul class="roadmap-points">
+                        <li>Señales del mercado regional</li>
+                        <li>Trayectorias de aprendizaje sugeridas</li>
+                        <li>Alertas de tendencia</li>
+                    </ul>
+                </article>
+
+                <article class="roadmap-card">
+                    <div class="roadmap-header">
+                        <div class="roadmap-icon"><i data-ico="trophy"></i></div>
+                        <div class="roadmap-title">
+                            <h3>Sistema de Reputación</h3>
+                            <span class="status-badge status-idea">Idea</span>
+                        </div>
+                    </div>
+                    <p>Reconoce el desempeño con señales verificables.</p>
+                    <ul class="roadmap-points">
+                        <li>Badges por proyectos y feedback</li>
+                        <li>Ranking transparente y justo</li>
+                        <li>Verificación de logros</li>
+                    </ul>
+                </article>
+
+                <article class="roadmap-card">
+                    <div class="roadmap-header">
+                        <div class="roadmap-icon"><i data-ico="handshake"></i></div>
+                        <div class="roadmap-title">
+                            <h3>Red de Mentorías</h3>
+                            <span class="status-badge status-planned">Próximo</span>
+                        </div>
+                    </div>
+                    <p>Mentoría con profesionales locales de alto impacto.</p>
+                    <ul class="roadmap-points">
+                        <li>Match mentor-mentee por objetivos</li>
+                        <li>Sesiones con agenda y materiales</li>
+                        <li>Seguimiento y retroalimentación</li>
+                    </ul>
+                </article>
+            </div>
+
+            <div class="roadmap-cta">
+                <a href="#" class="btn btn-secondary">Ver roadmap completo <i data-ico="arrow"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
+            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts para búsqueda y filtros -->
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/search-handler.js"></script>
+    <script src="../assets/js/index.js"></script>
+
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>

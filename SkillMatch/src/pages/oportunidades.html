@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oportunidades - SkillMatch Cartagena</title>
+    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100"></a>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="oportunidades.html" class="active-nav">Oportunidades</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="conexiones.html">Conexiones</a></li>
+                <li><a href="perfil-usuario.html">Mi Perfil</a></li>
+                <li><a href="login.html" class="btn-login">Cerrar Sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="opportunities-header">
+        <div class="container">
+            <h1>Oportunidades Personalizadas</h1>
+            <p>Encuentra el trabajo perfecto que impulse tu carrera profesional</p>
+            
+            <div class="search-bar-main">
+                <input type="text" id="searchInput" placeholder=" Buscar por cargo, empresa o habilidad..." class="search-input-main">
+                <button class="btn-search-main">Buscar</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="opportunities-container">
+        <div class="container">
+            <div class="opportunities-layout">
+                <!-- Sidebar de Filtros -->
+                <aside class="opportunities-sidebar">
+                    <div class="filter-card">
+                        <div class="filter-header">
+                            <h3><i data-ico="target"></i> Filtros</h3>
+                            <button class="btn-clear-filters">Limpiar Todo</button>
+                        </div>
+
+                        <details class="filter-section" open>
+                            <summary class="filter-section-header">
+                                <span class="filter-section-title"><i data-ico="list"></i> Tipo de Oportunidad</span>
+                                <span class="filter-count" data-group="type"></span>
+                            </summary>
+                            <div class="filter-options">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="type" value="empleo" checked>
+                                    <span class="checkbox-text"><i data-ico="briefcase"></i> Empleo</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="type" value="practica" checked>
+                                    <span class="checkbox-text"><i data-ico="cap"></i> Práctica</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="type" value="freelance">
+                                    <span class="checkbox-text"><i data-ico="rocket"></i> Freelance</span>
+                                </label>
+                            </div>
+                        </details>
+
+                        <details class="filter-section" open>
+                            <summary class="filter-section-header">
+                                <span class="filter-section-title"><i data-ico="briefcase"></i> Nivel de Experiencia</span>
+                                <span class="filter-count" data-group="experience"></span>
+                            </summary>
+                            <div class="filter-options">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="experience" value="sin-experiencia" checked>
+                                    <span class="checkbox-text"><i data-ico="sprout"></i> Sin Experiencia</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="experience" value="junior">
+                                    <span class="checkbox-text"><i data-ico="book"></i> Junior</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="experience" value="semi-senior">
+                                    <span class="checkbox-text"><i data-ico="star"></i> Semi-Senior</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="experience" value="senior">
+                                    <span class="checkbox-text"><i data-ico="trophy"></i> Senior</span>
+                                </label>
+                            </div>
+                        </details>
+
+                        <details class="filter-section" open>
+                            <summary class="filter-section-header">
+                                <span class="filter-section-title"><i data-ico="pin"></i> Modalidad</span>
+                                <span class="filter-count" data-group="modality"></span>
+                            </summary>
+                            <div class="filter-options">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="modality" value="remoto" checked>
+                                    <span class="checkbox-text"><i data-ico="home"></i> Remoto</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="modality" value="presencial" checked>
+                                    <span class="checkbox-text"><i data-ico="building"></i> Presencial</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="modality" value="hibrido">
+                                    <span class="checkbox-text"><i data-ico="refresh"></i> Híbrido</span>
+                                </label>
+                            </div>
+                        </details>
+
+                        <details class="filter-section" open>
+                            <summary class="filter-section-header">
+                                <span class="filter-section-title"><i data-ico="money"></i> Salario Mensual Máximo</span>
+                            </summary>
+                            <div class="filter-salary-group">
+                                <input type="range" min="0" max="10000000" step="500000" value="10000000" class="salary-range" id="salaryRange" aria-label="Salario mensual máximo">
+                                <div class="range-display">
+                                    <span class="range-label">Hasta:</span>
+                                    <span id="maxSalary" class="range-value">$10.000.000</span>
+                                </div>
+                            </div>
+                        </details>
+
+                        <button type="button" class="btn-apply-filters">
+                            <span><i data-ico="check"></i></span> Aplicar Filtros
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Contenido Principal -->
+                <main class="opportunities-main">
+                    <div class="opportunities-toolbar">
+                        <div class="results-info">
+                            <span id="resultsCount" class="results-count">Mostrando 1 oportunidad</span>
+                        </div>
+                        <div class="sort-controls">
+                            <label for="sortSelect">Ordenar por:</label>
+                            <select id="sortSelect" class="sort-select">
+                                <option value="match">Mayor Match</option>
+                                <option value="recent">Más Reciente</option>
+                                <option value="salary">Mejor Salario</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Oportunidades (se llenará dinámicamente) -->
+                    <div class="opportunities-list">
+                        <div class="loading-message">
+                            <div class="loading-spinner"></div>
+                            <p>Cargando oportunidades...</p>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
+            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/oportunidades.js"></script>
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>

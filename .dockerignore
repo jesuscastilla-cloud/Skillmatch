@@ -1,0 +1,10 @@
+**/target/
+**/node_modules/
+**/.git/
+**/.gitignore
+**/.mvn/
+**/*.md
+!backend/pom.xml
+.vscode/
+*.log
+*.zip

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicadores - SkillMatch Cartagena</title>
+    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <header>
+        <nav class="container" aria-label="Principal">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio">
+                        <img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100">
+                    </a>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="oportunidades.html">Oportunidades</a></li>
+                    <li><a href="dashboard.html" class="active-nav">Indicadores</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="conexiones.html">Conexiones</a></li>
+                <li><a href="perfil-usuario.html">Mi Perfil</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="main" class="dashboard-container">
+        <div style="margin-bottom:24px">
+            <h1 style="font-size:2rem">Indicadores del mercado laboral</h1>
+            <p class="lede" style="margin-top:8px">
+                Cómo se mueven las vacantes, las empresas y las postulaciones en Cartagena.
+                Los datos se actualizan cada vez que abres esta página.
+            </p>
+        </div>
+
+        <div class="dashboard-frame">
+            <iframe title="Informe de indicadores de SkillMatch"
+                    src="https://app.powerbi.com/reportEmbed?reportId=8835f14a-13e4-4b8d-a7c6-098fe87b082c&autoAuth=true&ctid=9d12bf3f-e4f6-47ab-912f-1a2f0fc48aa4"
+                    frameborder="0" allowFullScreen="true" loading="lazy"></iframe>
+        </div>
+    </main>
+
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>
