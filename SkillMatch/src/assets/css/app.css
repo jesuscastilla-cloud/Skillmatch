@@ -34,6 +34,10 @@
     --naranja-deep:   #D65E0A;
     --naranja-soft:   #FFEEDF;
 
+    /* Grano fotografico para fondos oscuros — SVG de ruido, no es
+       una imagen descargada ni una libreria, va inline. */
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
     /* Estados */
     --sol:            #E0900F;
     --sol-soft:       #FDF1DC;
@@ -1342,10 +1346,15 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
 .hero {
     position: relative;
     padding: var(--s9) 0 var(--s8);
-    background: var(--bg-deep);
+    background: var(--grain), var(--bg-deep);
+    background-blend-mode: overlay;
+    background-size: 220px 220px, auto;
     color: #fff;
     overflow: hidden;
 }
+/* Mesh de marca: turquesa arriba-derecha y naranja abajo-izquierda,
+   sobre el azul marino de --bg-deep. Deriva muy lenta, solo
+   transform/opacity, para que el fondo se sienta vivo sin distraer. */
 .hero::before {
     content: "";
     position: absolute;
@@ -1354,15 +1363,25 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
     background: radial-gradient(circle, rgba(11,126,140,.5), transparent 62%);
     filter: blur(20px);
     pointer-events: none;
+    animation: mesh-drift-a 22s var(--ease-in-out) infinite;
 }
 .hero::after {
     content: "";
     position: absolute;
     inset: auto auto -40% -12%;
     width: 620px; height: 620px;
-    background: radial-gradient(circle, rgba(216,30,91,.34), transparent 65%);
+    background: radial-gradient(circle, rgba(255,118,24,.32), transparent 65%);
     filter: blur(24px);
     pointer-events: none;
+    animation: mesh-drift-b 27s var(--ease-in-out) infinite;
+}
+@keyframes mesh-drift-a {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }
+    50%      { transform: translate(-4%, 3%) scale(1.08); opacity: .85; }
+}
+@keyframes mesh-drift-b {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }
+    50%      { transform: translate(4%, -3%) scale(1.1); opacity: .88; }
 }
 .hero .container { position: relative; z-index: 1; }
 
@@ -1722,11 +1741,30 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     border-radius: var(--r-lg) var(--r-lg) 0 0;
     overflow: hidden;
 }
+/* Cabecera por defecto cuando no hay foto de portada: mismo mesh de
+   marca que el heroe, pero estatico — ui.js/profile.js reemplazan
+   background-image en linea con la foto real y esto desaparece solo. */
+.profile-cover {
+    height: 200px;
+    background:
+        var(--grain),
+        radial-gradient(circle at 85% 0%, rgba(11,126,140,.45), transparent 60%),
+        radial-gradient(circle at 0% 110%, rgba(255,118,24,.35), transparent 62%),
+        linear-gradient(120deg, var(--ink), var(--sea-deep));
+    background-blend-mode: overlay, normal, normal, normal;
+    background-size: 220px 220px, auto, auto, auto;
+}
 .company-cover-img, .profile-cover-img {
     width: 100%;
     height: 200px;
     object-fit: cover;
-    background: linear-gradient(120deg, var(--ink), var(--sea-deep));
+    background:
+        var(--grain),
+        radial-gradient(circle at 85% 0%, rgba(11,126,140,.45), transparent 60%),
+        radial-gradient(circle at 0% 110%, rgba(255,118,24,.35), transparent 62%),
+        linear-gradient(120deg, var(--ink), var(--sea-deep));
+    background-blend-mode: overlay, normal, normal, normal;
+    background-size: 220px 220px, auto, auto, auto;
 }
 .company-logo-img, .profile-avatar-img {
     width: 112px; height: 112px;
