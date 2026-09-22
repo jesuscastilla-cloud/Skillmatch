@@ -2,7 +2,7 @@
    SkillMatch Cartagena — Sistema de diseño
    ---------------------------------------------------------------------
    Paleta tomada de la ciudad: azul noche del mar Caribe como base,
-   turquesa para las acciones, y magenta buganvilia como unico acento
+   turquesa para las acciones, y el naranja del logo como unico acento
    fuerte. El gesto memorable de la interfaz es el anillo de
    compatibilidad; el resto se mantiene deliberadamente callado.
    ===================================================================== */
@@ -29,10 +29,10 @@
     --sea-light:      #E2F2F3;
     --sea-glow:       rgba(11, 126, 140, .28);
 
-    /* Acento unico */
-    --buganvilla:     #D81E5B;
-    --buganvilla-deep:#B01048;
-    --buganvilla-soft:#FDE7EE;
+    /* Acento unico — el naranja del logo, la chispa del match */
+    --naranja:        #FF7618;
+    --naranja-deep:   #D65E0A;
+    --naranja-soft:   #FFEEDF;
 
     /* Estados */
     --sol:            #E0900F;
@@ -422,21 +422,21 @@ a.btn {
     box-shadow: 0 2px 4px rgba(8,32,60,.12), 0 12px 24px -10px var(--sea-glow);
 }
 
-/* El magenta se reserva para la accion decisiva de cada pantalla */
+/* El naranja se reserva para la accion decisiva de cada pantalla */
 .btn-accent,
 .btn-apply,
 .btn-apply-compact {
-    background: var(--buganvilla);
+    background: var(--naranja);
     color: #fff;
-    box-shadow: 0 1px 2px rgba(8,32,60,.12), 0 6px 18px -8px rgba(216,30,91,.35);
+    box-shadow: 0 1px 2px rgba(8,32,60,.12), 0 6px 18px -8px rgba(255,118,24,.35);
 }
 .btn-accent:hover,
 .btn-apply:hover,
 .btn-apply-compact:hover {
-    background: var(--buganvilla-deep);
+    background: var(--naranja-deep);
     color: #fff;
     transform: translateY(-1.5px);
-    box-shadow: 0 2px 6px rgba(8,32,60,.14), 0 14px 28px -10px rgba(216,30,91,.42);
+    box-shadow: 0 2px 6px rgba(8,32,60,.14), 0 14px 28px -10px rgba(255,118,24,.42);
 }
 
 .btn-secondary,
@@ -895,7 +895,7 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
     color: var(--ring-color, var(--sea-deep));
     letter-spacing: -0.03em;
 }
-.match-ring[data-level="alto"] { --ring-color: var(--buganvilla); }
+.match-ring[data-level="alto"] { --ring-color: var(--naranja); }
 .match-ring[data-level="medio"] { --ring-color: var(--sea); }
 .match-ring[data-level="bajo"] { --ring-color: var(--ink-muted); }
 .match-ring-sm { width: 44px; height: 44px; }
@@ -921,8 +921,8 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
     gap: 5px;
     padding: 4px var(--s3);
     border-radius: var(--r-pill);
-    background: var(--buganvilla-soft);
-    color: var(--buganvilla-deep);
+    background: var(--naranja-soft);
+    color: var(--naranja-deep);
     font-size: var(--t-xs);
     font-weight: 700;
     letter-spacing: -0.005em;
@@ -997,7 +997,7 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
     min-width: 19px; height: 19px;
     padding: 0 5px;
     border-radius: var(--r-pill);
-    background: var(--buganvilla);
+    background: var(--naranja);
     color: #fff;
     font-size: 11px;
     font-weight: 700;
@@ -1113,7 +1113,7 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
     z-index: 200;
     height: 3px;
     width: 0;
-    background: linear-gradient(90deg, var(--sea), var(--buganvilla));
+    background: linear-gradient(90deg, var(--sea), var(--naranja));
     box-shadow: 0 0 12px var(--sea-glow);
     transition: width .3s var(--ease-out), opacity .3s var(--ease);
     pointer-events: none;
@@ -1640,7 +1640,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .btn-clear-filters {
     font-size: var(--t-sm);
     font-weight: 600;
-    color: var(--buganvilla);
+    color: var(--naranja);
 }
 .btn-clear-filters:hover { text-decoration: underline; }
 
@@ -2042,7 +2042,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 }
 .employment { background: var(--sea-light);       color: var(--sea-deep); }
 .practice   { background: var(--sol-soft);        color: #8A5A00; }
-.freelance  { background: var(--buganvilla-soft); color: var(--buganvilla-deep); }
+.freelance  { background: var(--naranja-soft); color: var(--naranja-deep); }
 
 .status-building { background: var(--sol-soft);   color: #8A5A00; }
 .status-idea     { background: var(--hairline-soft); color: var(--ink-muted); }
@@ -2139,7 +2139,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .choice-title { font-family: var(--font-display); font-size: var(--t-lg); color: var(--ink); font-weight: 700; }
 .choice-cta { margin-top: auto; padding-top: var(--s5); }
 /* La segunda tarjeta usa el acento para diferenciar el camino de empresa */
-.choice-panel:last-child .choice-icon { background: var(--buganvilla-soft); color: var(--buganvilla-deep); }
+.choice-panel:last-child .choice-icon { background: var(--naranja-soft); color: var(--naranja-deep); }
 
 /* ---- Perfil ---- */
 .profile-container, .profile-main, .opportunities-main { min-width: 0; }
@@ -2196,7 +2196,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .progress-bar { height: 8px; border-radius: var(--r-pill); background: var(--hairline-soft); overflow: hidden; }
 .progress-fill {
     height: 100%; border-radius: var(--r-pill);
-    background: linear-gradient(90deg, var(--sea), var(--buganvilla));
+    background: linear-gradient(90deg, var(--sea), var(--naranja));
     transition: width .8s var(--ease-out);
 }
 .progress-text { font-size: var(--t-sm); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -2281,7 +2281,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .candidate-mini-match, .candidate-match-score {
     display: inline-flex; align-items: center;
     padding: 3px 10px; border-radius: var(--r-pill);
-    background: var(--buganvilla-soft); color: var(--buganvilla-deep);
+    background: var(--naranja-soft); color: var(--naranja-deep);
     font-size: var(--t-xs); font-weight: 700;
 }
 .candidate-info { min-width: 0; }
@@ -2291,10 +2291,10 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .btn-upgrade-plan {
     width: 100%; margin-top: var(--s4);
     padding: 11px var(--s5); border-radius: var(--r-pill);
-    background: var(--buganvilla); color: #fff; font-weight: 600;
+    background: var(--naranja); color: #fff; font-weight: 600;
     transition: background-color .18s var(--ease), transform .16s var(--ease);
 }
-.btn-upgrade-plan:hover { background: var(--buganvilla-deep); transform: translateY(-1px); }
+.btn-upgrade-plan:hover { background: var(--naranja-deep); transform: translateY(-1px); }
 .btn-new-offer, .btn-new-message { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ---- Mensajes ---- */
