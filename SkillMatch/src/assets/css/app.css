@@ -2249,6 +2249,35 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .feature-card h3, .benefit-item h3, .pathway-card h3 { font-size: var(--t-md); margin-bottom: var(--s2); }
 .feature-card p, .benefit-item p, .pathway-card p { color: var(--ink-3); font-size: var(--t-base); }
 
+/* ---- Portada: fotografia real de Cartagena ---- */
+.cartagena-section { padding: var(--s9) 0; }
+.cartagena-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--s5);
+}
+.cartagena-photo {
+    position: relative;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: var(--sh-2);
+    aspect-ratio: 4 / 5;
+}
+.cartagena-photo img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+.cartagena-photo figcaption {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: var(--s5) var(--s4) var(--s3);
+    background: linear-gradient(to top, rgba(6,26,49,.78), transparent);
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-md);
+}
+
 .benefits-simple-list, .pathway-features, .choice-points, .plan-features-list, .progress-checklist, .resources-links-list {
     display: flex; flex-direction: column; gap: 9px; margin-top: var(--s4);
 }
