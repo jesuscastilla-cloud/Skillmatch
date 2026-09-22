@@ -23,6 +23,11 @@
     --surface:        #FFFFFF;
     --surface-sunk:   #F6F9FC;
 
+    /* Superficie oscura fija: toasts, avatar sin foto, botones
+       principales — se queda igual en modo claro y en modo oscuro,
+       por eso no es --ink (que sí cambia de color entre temas). */
+    --surface-inverse: #08203C;
+
     /* Accion */
     --sea:            #0B7E8C;
     --sea-deep:       #096670;
@@ -41,6 +46,7 @@
     /* Estados */
     --sol:            #E0900F;
     --sol-soft:       #FDF1DC;
+    --sol-deep:       #8A5A00;
     --verde:          #11845A;
     --verde-soft:     #E0F4EC;
     --rojo:           #C62B3E;
@@ -181,7 +187,7 @@ small { font-size: var(--t-sm); }
 .skip-link {
     position: absolute; top: -100px; left: var(--s4);
     z-index: 999;
-    background: var(--ink); color: #fff;
+    background: var(--surface-inverse); color: #fff;
     padding: var(--s3) var(--s5);
     border-radius: 0 0 var(--r-md) var(--r-md);
     font-weight: 600;
@@ -313,6 +319,28 @@ header > nav {
 @keyframes nav-underline {
     from { transform: scaleX(0); opacity: 0; }
     to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* Interruptor de tema — lo inyecta ui.js dentro de la barra */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px; height: 38px;
+    flex: 0 0 auto;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+    color: var(--ink-3);
+    transition: background-color .18s var(--ease), color .18s var(--ease),
+                border-color .18s var(--ease), transform .16s var(--ease);
+}
+.theme-toggle:hover { background: var(--hairline-soft); color: var(--ink); }
+.theme-toggle:active { transform: scale(.92); }
+.theme-toggle .ico { animation: theme-ico-in .3s var(--ease-out) both; }
+@keyframes theme-ico-in {
+    from { opacity: 0; transform: scale(.5) rotate(-90deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0); }
 }
 
 /* Boton de sesion dentro de la barra */
@@ -711,7 +739,7 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
 .btn-search-main {
     padding: 11px var(--s6);
     border-radius: var(--r-pill);
-    background: var(--ink);
+    background: var(--surface-inverse);
     color: #fff;
     font-weight: 600;
     transition: background-color .18s var(--ease), transform .16s var(--ease);
@@ -956,7 +984,7 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
     border: 1px solid transparent;
 }
 
-.status-badge.pendiente,  .badge-warn  { background: var(--sol-soft);  color: #8A5A00; }
+.status-badge.pendiente,  .badge-warn  { background: var(--sol-soft);  color: var(--sol-deep); }
 .status-badge.aceptada,   .badge-ok    { background: var(--verde-soft); color: var(--verde); }
 .status-badge.rechazada,  .badge-error { background: var(--rojo-soft);  color: var(--rojo); }
 .status-badge.revisada,   .badge-info  { background: var(--sea-light);  color: var(--sea-deep); }
@@ -1194,7 +1222,7 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
     min-width: 280px;
     max-width: 380px;
     padding: var(--s3) var(--s4);
-    background: var(--ink);
+    background: var(--surface-inverse);
     color: #fff;
     border-radius: var(--r-md);
     box-shadow: var(--sh-4);
@@ -2005,6 +2033,73 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     .btn { padding-inline: var(--s4); }
 }
 
+/* ---------- Modo oscuro ----------
+   Un solo interruptor con [data-theme] en <html> (lo pone un script
+   inline en el <head> de cada pagina antes de cargar este CSS, para
+   que no haya parpadeo). Como casi todo el archivo ya usa var(--token),
+   con redefinir los tokens semanticos se adapta solo casi todo; el
+   resto de este bloque son las pocas excepciones que tenian un color
+   suelto en vez de una variable. --bg-deep y el mesh de .hero/.profile-cover
+   quedan igual en los dos temas: ya eran superficies oscuras a proposito. */
+
+[data-theme="dark"] {
+    --ink:            #EEF3FA;
+    --ink-2:          #C7D5E5;
+    --ink-3:          #93A8BF;
+    --ink-muted:      #6C8199;
+    --hairline:       #24384F;
+    --hairline-soft:  #1A2A3E;
+
+    --bg:             #0B1B2C;
+    --surface:        #112238;
+    --surface-sunk:   #0D1D30;
+
+    --sea:            #2BB6C6;
+    --sea-deep:       #1E93A3;
+    --sea-light:      rgba(43, 182, 198, .16);
+    --sea-glow:       rgba(43, 182, 198, .35);
+
+    --naranja-deep:   #FFA05C;
+    --naranja-soft:   rgba(255, 118, 24, .16);
+
+    --sol:            #F0A233;
+    --sol-soft:       rgba(224, 144, 15, .16);
+    --sol-deep:       #F2B84B;
+    --verde:          #3FCB93;
+    --verde-soft:     rgba(63, 203, 147, .16);
+    --rojo:           #FF6B7A;
+    --rojo-soft:      rgba(255, 107, 122, .16);
+
+    --sh-1: 0 1px 2px rgba(0, 0, 0, .35);
+    --sh-2: 0 2px 8px rgba(0, 0, 0, .4), 0 1px 2px rgba(0, 0, 0, .3);
+    --sh-3: 0 12px 28px -8px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .3);
+    --sh-4: 0 28px 60px -20px rgba(0, 0, 0, .65);
+}
+
+[data-theme="dark"] header { background: rgba(8, 18, 30, .82); }
+[data-theme="dark"] header.is-scrolled { box-shadow: 0 1px 16px -4px rgba(0, 0, 0, .45); }
+
+[data-theme="dark"] .btn-danger,
+[data-theme="dark"] .btn-reject,
+[data-theme="dark"] .btn-delete-item { border-color: rgba(255, 107, 122, .35); }
+[data-theme="dark"] .btn-accept:hover { background: #2E9F72; }
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: #5B7086; }
+[data-theme="dark"] input:hover,
+[data-theme="dark"] select:hover,
+[data-theme="dark"] textarea:hover { border-color: #3A506C; }
+[data-theme="dark"] input[type="checkbox"],
+[data-theme="dark"] input[type="radio"] { border-color: #3A506C; }
+
+[data-theme="dark"] .offer-card:hover,
+[data-theme="dark"] .opportunity-card:hover,
+[data-theme="dark"] .result-card:hover,
+[data-theme="dark"] .choice-card:hover,
+[data-theme="dark"] .candidate-mini-card:hover { border-color: #33496B; }
+
+[data-theme="dark"] .nav-notification-item.unread:hover { background: rgba(43, 182, 198, .24); }
+
 /* ---------- 27. Preferencias del sistema ---------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -2066,7 +2161,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .btn-register {
     padding: var(--s2) var(--s5) !important;
     border-radius: var(--r-pill) !important;
-    background: var(--ink); color: #fff !important; font-weight: 600 !important;
+    background: var(--surface-inverse); color: #fff !important; font-weight: 600 !important;
 }
 .btn-register:hover { background: var(--sea-deep); color: #fff !important; transform: translateY(-1px); }
 .modal-content-small { max-width: 420px; }
@@ -2079,10 +2174,10 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     background: var(--hairline-soft); color: var(--ink-3);
 }
 .employment { background: var(--sea-light);       color: var(--sea-deep); }
-.practice   { background: var(--sol-soft);        color: #8A5A00; }
+.practice   { background: var(--sol-soft);        color: var(--sol-deep); }
 .freelance  { background: var(--naranja-soft); color: var(--naranja-deep); }
 
-.status-building { background: var(--sol-soft);   color: #8A5A00; }
+.status-building { background: var(--sol-soft);   color: var(--sol-deep); }
 .status-idea     { background: var(--hairline-soft); color: var(--ink-muted); }
 .status-planned  { background: var(--sea-light);  color: var(--sea-deep); }
 
@@ -2099,7 +2194,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .search-btn {
     display: inline-flex; align-items: center; gap: var(--s2);
     padding: 11px var(--s6); border-radius: var(--r-pill);
-    background: var(--ink); color: #fff; font-weight: 600;
+    background: var(--surface-inverse); color: #fff; font-weight: 600;
     transition: background-color .18s var(--ease), transform .16s var(--ease);
 }
 .search-btn:hover { background: var(--sea-deep); transform: translateY(-1px); }
@@ -2201,7 +2296,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     width: 112px; height: 112px;
     border-radius: 24px;
     border: 4px solid var(--surface);
-    background: var(--ink); color: #fff;
+    background: var(--surface-inverse); color: #fff;
     font-family: var(--font-display); font-size: 2.2rem; font-weight: 700;
     box-shadow: var(--sh-3);
     object-fit: cover;
@@ -2283,7 +2378,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .cert-badge, .certification-badge {
     display: grid; place-items: center;
     width: 40px; height: 40px; border-radius: var(--r-md);
-    background: var(--sol-soft); color: #8A5A00;
+    background: var(--sol-soft); color: var(--sol-deep);
 }
 .cert-issuer, .rec-company, .project-tech { font-size: var(--t-sm); color: var(--ink-3); font-weight: 600; }
 .cert-date, .rec-date, .project-date { font-size: var(--t-xs); color: var(--ink-muted); }

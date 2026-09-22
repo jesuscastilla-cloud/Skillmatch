@@ -68,7 +68,9 @@
         filter:    '<path d="M4 6h16M7 12h10M10 18h4"/>',
         logout:    '<path d="M14 7V5.5A1.5 1.5 0 0 0 12.5 4h-6A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h6a1.5 1.5 0 0 0 1.5-1.5V17"/><path d="M10 12h10M17 8.5l3.5 3.5L17 15.5"/>',
         plus:      '<path d="M12 5v14M5 12h14"/>',
-        desktop:   '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/>'
+        desktop:   '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/>',
+        sun:       '<circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.2M12 18.8V21M4.2 12H2M22 12h-2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>',
+        moon:      '<path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/>'
     };
 
     // Un emoji puede no existir en el equipo del usuario y cambia de forma
@@ -174,6 +176,47 @@
 
         document.body.appendChild(nav);
         document.body.classList.add('has-tabbar');
+    }
+
+    /** Tema oscuro: el <head> de cada pagina ya deja [data-theme] puesto
+     *  en <html> antes de pintar (evita el parpadeo); aqui solo se
+     *  agrega el boton para cambiarlo y se recuerda la eleccion. */
+    const TEMA_KEY = 'skillmatch_theme';
+
+    function aplicarTema(tema) {
+        document.documentElement.setAttribute('data-theme', tema);
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', tema === 'dark' ? '#0B1B2C' : '#EDF2F8');
+    }
+
+    function construirInterruptorTema() {
+        if (document.querySelector('.theme-toggle')) return;
+        const listas = document.querySelectorAll('header .nav-links');
+        const lista = listas[listas.length - 1];
+        if (!lista) return;
+
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'theme-toggle';
+
+        const pintar = function () {
+            const oscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+            boton.innerHTML = svgIcon(oscuro ? 'sun' : 'moon');
+            boton.setAttribute('aria-pressed', String(oscuro));
+            boton.setAttribute('aria-label', oscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+        };
+        pintar();
+
+        boton.addEventListener('click', function () {
+            const nuevo = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            localStorage.setItem(TEMA_KEY, nuevo);
+            aplicarTema(nuevo);
+            pintar();
+        });
+
+        const li = document.createElement('li');
+        li.appendChild(boton);
+        lista.insertBefore(li, lista.firstChild);
     }
 
     /** Sombra en la barra superior solo cuando hay contenido arriba. */
@@ -384,6 +427,7 @@
         iconObserver.observe(document.body, { childList: true, subtree: true });
         marcarNavegacionActiva();
         construirTabbar();
+        construirInterruptorTema();
         barraAlHacerScroll();
         progresoDeNavegacion();
         movimientoDeEntrada();
