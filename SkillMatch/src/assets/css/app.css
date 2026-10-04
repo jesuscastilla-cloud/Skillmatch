@@ -268,7 +268,7 @@ header > nav {
 .logo { display: flex; align-items: center; flex: 0 0 auto; }
 .logo img {
     width: auto;
-    height: 34px;
+    height: 40px;
     object-fit: contain;
 }
 .logo a { display: flex; align-items: center; }
