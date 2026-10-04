@@ -36,10 +36,10 @@
 
     /* Acento unico — el naranja del logo, la chispa del match */
     --naranja:        #FF7618;
-    --naranja-deep:   #D65E0A;
+    --naranja-deep:   #A34600; /* naranja para texto: 5.4:1 sobre --naranja-soft */
     --naranja-soft:   #FFEEDF;
     --naranja-hover:  #FF8A3D; /* fondo al pasar el mouse; el texto va en azul marino */
-    --naranja-texto:  #B84E00; /* naranja legible como texto sobre blanco (5.1:1) */
+    --naranja-texto:  var(--naranja-deep); /* naranja legible como texto */
 
     /* Grano fotografico para fondos oscuros — SVG de ruido, no es
        una imagen descargada ni una libreria, va inline. */
@@ -847,13 +847,12 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 }
 .btn-save { border: 1px solid var(--hairline); background: var(--surface); color: var(--ink-2); }
 .btn-save:hover { border-color: var(--sea); color: var(--sea-deep); background: var(--sea-light); }
-.btn-save.saved { border-color: transparent; background: var(--naranja-soft); color: #A34600; }
+.btn-save.saved { border-color: transparent; background: var(--naranja-soft); color: var(--naranja-texto); }
 .btn-apply:active, .btn-save:active { transform: scale(.96); }
 .btn-apply.applied {
     background: var(--verde-soft); color: #0D7050;
     box-shadow: none; transform: none; pointer-events: none;
 }
-[data-theme="dark"] .btn-save.saved { color: var(--naranja-texto); }
 [data-theme="dark"] .btn-apply.applied { color: var(--verde); }
 /* En pantallas tactiles, los botones pequenos crecen hasta 44px y los
    enlaces/iconos diminutos reciben una zona tactil invisible */
@@ -1949,10 +1948,9 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     font-size: var(--t-xs); font-weight: 700;
     background: var(--sea-light); color: var(--sea-deep);
 }
-.match-badge-small.match-excellent { background: var(--naranja-soft); color: #A34600; }
+.match-badge-small.match-excellent { background: var(--naranja-soft); color: var(--naranja-texto); }
 .match-badge-small.match-fair { background: var(--hairline-soft); color: var(--ink-3); }
 [data-theme="dark"] .match-badge-small { color: var(--sea); }
-[data-theme="dark"] .match-badge-small.match-excellent { color: var(--naranja-texto); }
 [data-theme="dark"] .match-badge-small.match-fair { color: var(--ink-3); }
 .conversation-info, .company-info-compact, .opportunity-header-compact { min-width: 0; flex: 1; }
 .conversation-preview, .opportunity-location-compact, .opportunity-company-compact {
@@ -2199,7 +2197,7 @@ header  { view-transition-name: barra-superior; }
     --surface-sunk:   #0D1D30;
 
     --sea:            #2BB6C6;
-    --sea-deep:       #1E93A3;
+    --sea-deep:       #219CAD; /* enlaces: 4.9:1 sobre --surface oscuro */
     --sea-light:      rgba(43, 182, 198, .16);
     --sea-glow:       rgba(43, 182, 198, .35);
 
@@ -2236,6 +2234,11 @@ header  { view-transition-name: barra-superior; }
 [data-theme="dark"] .btn-primary:hover,
 [data-theme="dark"] .btn.primary:hover,
 [data-theme="dark"] .btn-primary-modal:hover { background: #3CC3D2; color: var(--surface-inverse); }
+/* Botones que al pasar el mouse se vuelven turquesa: texto azul marino en oscuro */
+[data-theme="dark"] .btn-search-main:hover,
+[data-theme="dark"] .search-btn:hover,
+[data-theme="dark"] .btn-send:hover { color: var(--surface-inverse); }
+[data-theme="dark"] .btn-register:hover { color: var(--surface-inverse) !important; }
 /* Iniciales y etiquetas sobre fondo turquesa suave: --sea-deep no se lee en oscuro (3.3:1) */
 [data-theme="dark"] .company-logo-opp, [data-theme="dark"] .result-logo,
 [data-theme="dark"] .company-logo-compact, [data-theme="dark"] .connection-avatar-circle,
@@ -2609,19 +2612,23 @@ header  { view-transition-name: barra-superior; }
 .company-quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--s3); }
 .company-content { padding-bottom: var(--s9); }
 
-.candidate-mini-card, .candidate-card-header {
-    display: flex; align-items: center; gap: var(--s3);
-    padding: var(--s3);
+/* Tarjeta de candidato recomendado: vertical (avatar y %, nombre, carrera,
+   habilidades, acciones). Antes todo iba en una fila y desbordaba el celular. */
+.candidate-mini-card {
+    display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+    padding: var(--s4);
     border: 1px solid var(--hairline);
     border-radius: var(--r-md);
     background: var(--surface);
     transition: border-color .16s var(--ease), box-shadow .2s var(--ease);
 }
+.candidate-card-header { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-bottom: 4px; }
 .candidate-mini-card:hover { border-color: #C6D6E6; box-shadow: var(--sh-2); }
 .candidate-mini-name { font-weight: 700; color: var(--ink); font-size: var(--t-base); }
 .candidate-mini-title { font-size: var(--t-sm); color: var(--ink-muted); }
 .candidate-mini-skills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-.candidate-mini-actions { display: flex; gap: 6px; margin-left: auto; }
+.candidate-mini-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s2); }
+.candidate-mini-card .candidate-mini-match { align-self: flex-start; }
 .candidate-mini-match, .candidate-match-score {
     display: inline-flex; align-items: center;
     padding: 3px 10px; border-radius: var(--r-pill);
