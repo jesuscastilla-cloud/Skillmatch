@@ -406,9 +406,9 @@ header > nav {
 
 /* ---------- 8. Botones ---------- */
 
-.btn,
-button.btn,
-a.btn {
+/* Solo .btn: si se escribe a.btn, gana a las variantes (.btn-outline,
+   .btn-secondary...) y los botones que son enlaces pierden su borde. */
+.btn {
     position: relative;
     display: inline-flex;
     align-items: center;
