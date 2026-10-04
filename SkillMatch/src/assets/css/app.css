@@ -213,6 +213,7 @@ main { display: block; }
 /* ---------- 5. Iconos ---------- */
 
 .ico {
+    display: inline-block; /* el reset pone los svg en bloque y el icono saltaba de linea */
     width: 20px; height: 20px;
     flex: 0 0 auto;
     stroke: currentColor;
@@ -720,6 +721,13 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
 }
 
 .checkbox-text { font-size: var(--t-base); color: var(--ink-2); line-height: 1.5; }
+/* Icono y texto del filtro en la misma linea (el reset pone los svg en bloque) */
+.checkbox-text:has(.ico) { display: inline-flex; align-items: center; gap: var(--s2); }
+.checkbox-text .ico { color: var(--ink-muted); }
+
+/* Deslizador (salario): color de marca y zona tactil comoda */
+input[type="range"] { accent-color: var(--sea); cursor: pointer; }
+@media (pointer: coarse) { input[type="range"] { min-height: 44px; } }
 
 /* Buscador principal */
 .search-bar-main {
@@ -823,6 +831,30 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
     gap: var(--s2);
     flex-wrap: wrap;
 }
+
+/* Guardar / Aplicar en cada vacante. oportunidades.js y search-handler.js
+   les agregan .saved y .applied: aqui se ve ese cambio de estado. */
+.btn-save,
+.btn-apply {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 36px;
+    padding: 7px var(--s4);
+    border-radius: var(--r-pill);
+    font-size: var(--t-sm); font-weight: 600;
+    transition: background-color .18s var(--ease), border-color .18s var(--ease),
+                color .18s var(--ease), transform .16s var(--ease);
+}
+.btn-save { border: 1px solid var(--hairline); background: var(--surface); color: var(--ink-2); }
+.btn-save:hover { border-color: var(--sea); color: var(--sea-deep); background: var(--sea-light); }
+.btn-save.saved { border-color: transparent; background: var(--naranja-soft); color: #A34600; }
+.btn-apply:active, .btn-save:active { transform: scale(.96); }
+.btn-apply.applied {
+    background: var(--verde-soft); color: #0D7050;
+    box-shadow: none; transform: none; pointer-events: none;
+}
+[data-theme="dark"] .btn-save.saved { color: var(--naranja-texto); }
+[data-theme="dark"] .btn-apply.applied { color: var(--verde); }
+@media (pointer: coarse) { .btn-save, .btn-apply { min-height: 44px; } }
 
 /* Tarjeta de oferta: el bloque mas repetido de la app.
    Hover discreto — sube 2px y el borde toma color, nada mas. */
@@ -1688,7 +1720,9 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .filter-card { padding: var(--s5); }
 .filter-header { padding-bottom: var(--s4); border-bottom: 1px solid var(--hairline-soft); margin-bottom: var(--s2); }
 .filter-header h3 { font-size: var(--t-md); }
+.btn-clear-filters::after { content: ""; position: absolute; inset: -12px -8px; } /* zona tactil 44px */
 .btn-clear-filters {
+    position: relative;
     font-size: var(--t-sm);
     font-weight: 600;
     color: var(--naranja-texto);
@@ -2586,6 +2620,10 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     .search-box { flex-direction: column; border-radius: var(--r-lg); padding: var(--s3); }
     .search-input { padding-left: var(--s4) !important; }
     .search-btn, .btn-search-main { width: 100%; justify-content: center; }
+    /* Oportunidades: la caja de texto encima del boton, como en la portada */
+    .search-bar-main { flex-direction: column; border-radius: var(--r-lg); padding: var(--s3); }
+    .search-input-main { min-height: 44px; padding-left: var(--s4) !important; }
+    .btn-search-main { min-height: 44px; }
     .quick-filters { grid-template-columns: 1fr; }
     .profile-avatar-section, .company-logo-wrapper { margin-top: -44px; }
     .profile-avatar, .profile-avatar-initials,
