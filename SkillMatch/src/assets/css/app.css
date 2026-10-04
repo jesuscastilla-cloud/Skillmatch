@@ -14,7 +14,7 @@
     --ink:            #08203C;
     --ink-2:          #12365E;
     --ink-3:          #3A5A80;
-    --ink-muted:      #6B839F;
+    --ink-muted:      #587089; /* 4.5:1 sobre --bg y 5.1:1 sobre blanco */
     --hairline:       #DCE6F0;
     --hairline-soft:  #EBF1F7;
 
@@ -38,6 +38,8 @@
     --naranja:        #FF7618;
     --naranja-deep:   #D65E0A;
     --naranja-soft:   #FFEEDF;
+    --naranja-hover:  #FF8A3D; /* fondo al pasar el mouse; el texto va en azul marino */
+    --naranja-texto:  #B84E00; /* naranja legible como texto sobre blanco (5.1:1) */
 
     /* Grano fotografico para fondos oscuros — SVG de ruido, no es
        una imagen descargada ni una libreria, va inline. */
@@ -396,7 +398,7 @@ header > nav {
     gap: 3px;
     padding: var(--s2) var(--s1);
     border-radius: var(--r-md);
-    font-size: 11px;
+    font-size: var(--t-xs);
     font-weight: 600;
     color: var(--ink-muted);
     transition: color .16s var(--ease), background-color .16s var(--ease);
@@ -415,6 +417,7 @@ header > nav {
     justify-content: center;
     gap: var(--s2);
     padding: 11px var(--s5);
+    min-height: 44px; /* tamano minimo para tocar con el dedo */
     border-radius: var(--r-pill);
     border: 1px solid transparent;
     font-family: var(--font-text);
@@ -454,19 +457,20 @@ header > nav {
     box-shadow: 0 2px 4px rgba(8,32,60,.12), 0 12px 24px -10px var(--sea-glow);
 }
 
-/* El naranja se reserva para la accion decisiva de cada pantalla */
+/* El naranja se reserva para la accion decisiva de cada pantalla.
+   Texto en azul marino: el blanco sobre este naranja no se lee bien (2.7:1). */
 .btn-accent,
 .btn-apply,
 .btn-apply-compact {
     background: var(--naranja);
-    color: #fff;
+    color: var(--surface-inverse);
     box-shadow: 0 1px 2px rgba(8,32,60,.12), 0 6px 18px -8px rgba(255,118,24,.35);
 }
 .btn-accent:hover,
 .btn-apply:hover,
 .btn-apply-compact:hover {
-    background: var(--naranja-deep);
-    color: #fff;
+    background: var(--naranja-hover);
+    color: var(--surface-inverse);
     transform: translateY(-1.5px);
     box-shadow: 0 2px 6px rgba(8,32,60,.14), 0 14px 28px -10px rgba(255,118,24,.42);
 }
@@ -1687,7 +1691,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .btn-clear-filters {
     font-size: var(--t-sm);
     font-weight: 600;
-    color: var(--naranja);
+    color: var(--naranja-texto);
 }
 .btn-clear-filters:hover { text-decoration: underline; }
 
@@ -2046,7 +2050,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     --ink:            #EEF3FA;
     --ink-2:          #C7D5E5;
     --ink-3:          #93A8BF;
-    --ink-muted:      #6C8199;
+    --ink-muted:      #7D93AB;
     --hairline:       #24384F;
     --hairline-soft:  #1A2A3E;
 
@@ -2061,6 +2065,8 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 
     --naranja-deep:   #FFA05C;
     --naranja-soft:   rgba(255, 118, 24, .16);
+    --naranja-hover:  #FFA05C;
+    --naranja-texto:  #FFA05C;
 
     --sol:            #F0A233;
     --sol-soft:       rgba(224, 144, 15, .16);
@@ -2083,6 +2089,18 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 [data-theme="dark"] .btn-reject,
 [data-theme="dark"] .btn-delete-item { border-color: rgba(255, 107, 122, .35); }
 [data-theme="dark"] .btn-accept:hover { background: #2E9F72; }
+/* En oscuro el turquesa es claro: el texto blanco no se lee (2.4:1), va en azul marino */
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .btn.primary,
+[data-theme="dark"] .btn-primary-modal { color: var(--surface-inverse); }
+[data-theme="dark"] .btn-primary:hover,
+[data-theme="dark"] .btn.primary:hover,
+[data-theme="dark"] .btn-primary-modal:hover { background: #3CC3D2; color: var(--surface-inverse); }
+/* Iniciales y etiquetas sobre fondo turquesa suave: --sea-deep no se lee en oscuro (3.3:1) */
+[data-theme="dark"] .company-logo-opp, [data-theme="dark"] .result-logo,
+[data-theme="dark"] .company-logo-compact, [data-theme="dark"] .connection-avatar-circle,
+[data-theme="dark"] .conversation-avatar, [data-theme="dark"] .candidate-mini-avatar,
+[data-theme="dark"] .status-planned { color: var(--sea); }
 
 [data-theme="dark"] input::placeholder,
 [data-theme="dark"] textarea::placeholder { color: #5B7086; }
@@ -2136,7 +2154,9 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .form-hint, .signup-hint { font-size: var(--t-sm); color: var(--ink-muted); }
 .option-row { display: flex; flex-wrap: wrap; gap: var(--s4); }
 .option-row label { display: inline-flex; align-items: center; gap: var(--s2); cursor: pointer; font-weight: 500; }
-.forgot-password { font-size: var(--t-sm); font-weight: 600; color: var(--sea-deep); }
+.forgot-password { position: relative; font-size: var(--t-sm); font-weight: 600; color: var(--sea-deep); }
+/* Zona tactil de 44px sin mover nada de lugar */
+.forgot-password::after { content: ""; position: absolute; inset: -14px -8px; }
 .forgot-password:hover { text-decoration: underline; }
 .meta-tag {
     display: inline-flex; align-items: center; gap: 5px;
@@ -2462,10 +2482,10 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .btn-upgrade-plan {
     width: 100%; margin-top: var(--s4);
     padding: 11px var(--s5); border-radius: var(--r-pill);
-    background: var(--naranja); color: #fff; font-weight: 600;
+    background: var(--naranja); color: var(--surface-inverse); font-weight: 600;
     transition: background-color .18s var(--ease), transform .16s var(--ease);
 }
-.btn-upgrade-plan:hover { background: var(--naranja-deep); transform: translateY(-1px); }
+.btn-upgrade-plan:hover { background: var(--naranja-hover); transform: translateY(-1px); }
 .btn-new-offer, .btn-new-message { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ---- Mensajes ---- */
