@@ -16,6 +16,8 @@
     'use strict';
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Carpeta de ui.js: desde ahi se encuentran vendor/ y ../lottie/ en cualquier pagina
+    const RUTA_JS = ((document.currentScript && document.currentScript.src) || '').replace(/[^/]*$/, '');
 
     /* ---------- 1. Iconos ---------- */
 
@@ -575,9 +577,68 @@
                 if (node.nodeType !== 1 || node.classList.contains('ripple')) continue;
                 revelar(node);
                 marcarEfectos(node);
+                hidratarLottie(node);
             }
         }
     });
+
+    /* ---------- 11. Iconos animados (Lottie, de Lottieflow) ---------- */
+
+    // La libreria (vendor/lottie_light.min.js, ~165 KB) solo se descarga
+    // la primera vez que una pagina pide una animacion.
+    let cargaLottie = null;
+    function cargarLottie() {
+        if (window.lottie) return Promise.resolve(window.lottie);
+        if (!cargaLottie) {
+            cargaLottie = new Promise(function (ok, falla) {
+                const s = document.createElement('script');
+                s.src = RUTA_JS + 'vendor/lottie_light.min.js';
+                s.onload = function () { ok(window.lottie); };
+                s.onerror = falla;
+                document.head.appendChild(s);
+            });
+        }
+        return cargaLottie;
+    }
+
+    /** Dibuja assets/lottie/<nombre>.json dentro del contenedor. Si el archivo
+     *  no existe o algo falla, el contenedor se queda como estaba. Con
+     *  movimiento reducido se muestra el ultimo cuadro, quieto. */
+    function lottie(contenedor, nombre, opciones) {
+        const destino = typeof contenedor === 'string' ? document.querySelector(contenedor) : contenedor;
+        if (!destino) return Promise.resolve(null);
+        const o = Object.assign({ loop: false, autoplay: true }, opciones);
+        const datos = fetch(RUTA_JS + '../lottie/' + nombre + '.json').then(function (r) {
+            if (!r.ok) throw new Error('No existe ' + nombre + '.json');
+            return r.json();
+        });
+        return Promise.all([cargarLottie(), datos]).then(function (res) {
+            destino.innerHTML = '';
+            const anim = res[0].loadAnimation({
+                container: destino, renderer: 'svg', animationData: res[1],
+                loop: o.loop && !reduceMotion, autoplay: false
+            });
+            anim.addEventListener('DOMLoaded', function () {
+                if (reduceMotion) anim.goToAndStop(anim.totalFrames - 1, true);
+                else if (o.autoplay) anim.play();
+            });
+            return anim;
+        }).catch(function () { return null; });
+    }
+
+    /** <span data-lottie="exito"></span> se convierte solo en la animacion
+     *  (data-lottie-loop para que se repita). Lo de adentro es el respaldo. */
+    function hidratarLottie(raiz) {
+        if (!raiz.querySelectorAll) return;
+        const elementos = Array.from(raiz.querySelectorAll('[data-lottie]'));
+        if (raiz.hasAttribute && raiz.hasAttribute('data-lottie')) elementos.push(raiz);
+        elementos.forEach(function (el) {
+            if (el.dataset.lottieHecho) return;
+            el.dataset.lottieHecho = '1';
+            lottie(el, el.getAttribute('data-lottie'), { loop: el.hasAttribute('data-lottie-loop') });
+        });
+    }
+    UI.lottie = lottie;
 
     /* ---------- 9. Arranque ---------- */
 
@@ -592,6 +653,7 @@
         progresoDeNavegacion();
         movimientoDeEntrada();
         movimientoConMouse();
+        hidratarLottie(document.body);
         observadorNuevos.observe(document.body, { childList: true, subtree: true });
         modalesAccesibles();
         validacionVisible();
