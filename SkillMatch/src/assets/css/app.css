@@ -2167,7 +2167,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .modal-content-small { max-width: 420px; }
 
 /* Etiquetas de tipo de vacante */
-.offer-type-badge, .employment, .practice, .freelance, .empresa, .usuario {
+.offer-type-badge, .employment, .practice, .freelance {
     display: inline-flex; align-items: center;
     padding: 3px 11px; border-radius: var(--r-pill);
     font-size: var(--t-xs); font-weight: 600;
@@ -2217,8 +2217,8 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .results-count strong { color: var(--ink); }
 
 /* ---- Portada: secciones de contenido ---- */
-.innovation-section, .benefits-section, .features, .pathways, .usuarios-empresas { padding: var(--s9) 0; }
-.benefits-section, .pathways { background: var(--surface); }
+.innovation-section, .benefits-section, .features, .usuarios-empresas { padding: var(--s9) 0; }
+.benefits-section { background: var(--surface); }
 .innovation-header, .why-header, .section-header-center {
     max-width: 62ch; margin: 0 auto var(--s7); text-align: center;
 }
@@ -2236,7 +2236,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     border-radius: var(--r-lg);
     box-shadow: var(--sh-1);
 }
-.benefits-section .benefit-item, .pathways .pathway-card { background: var(--bg); }
+.benefits-section .benefit-item { background: var(--bg); }
 
 .feature-icon, .benefit-badge, .pathway-icon, .choice-icon {
     display: grid; place-items: center;
@@ -2288,6 +2288,15 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .benefits-simple-list .ico, .pathway-features .ico, .choice-points .ico, .plan-features-list .ico { color: var(--sea); margin-top: 3px; }
 
 .pathway-header { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); }
+/* Dos caminos (usuario / empresa) lado a lado; en celular, uno debajo del otro */
+.pathways {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    gap: var(--s5);
+}
+.pathway-card { display: flex; flex-direction: column; }
+.pathway-card .pathway-features { margin-bottom: var(--s5); }
+.pathway-card .btn { margin-top: auto; align-self: flex-start; }
 .roadmap-cta { margin-top: var(--s7); text-align: center; }
 .impact-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s5); }
 .stat-content { min-width: 0; }
