@@ -464,7 +464,7 @@ async function toggleSaveJob(jobId, buttonElement) {
             if (response.ok) {
                 savedJobIds.delete(jobId);
                 buttonElement.classList.remove('saved');
-                buttonElement.textContent = '<i data-ico="save"></i> Guardar';
+                buttonElement.innerHTML = '<i data-ico="save"></i> Guardar';
             }
         } else {
             // Agregar a guardados
@@ -476,7 +476,7 @@ async function toggleSaveJob(jobId, buttonElement) {
             if (response.ok) {
                 savedJobIds.add(jobId);
                 buttonElement.classList.add('saved');
-                buttonElement.textContent = '<i data-ico="heart"></i> Guardado';
+                buttonElement.innerHTML = '<i data-ico="heart"></i> Guardado';
             }
         }
     } catch (error) {
