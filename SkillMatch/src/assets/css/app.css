@@ -1426,7 +1426,7 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
     letter-spacing: -0.035em;
     line-height: 1.02;
 }
-.hero p {
+.hero-copy p {
     color: rgba(255,255,255,.72);
     font-size: var(--t-md);
     line-height: 1.6;
