@@ -835,7 +835,8 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 /* Guardar / Aplicar en cada vacante. oportunidades.js y search-handler.js
    les agregan .saved y .applied: aqui se ve ese cambio de estado. */
 .btn-save,
-.btn-apply {
+.btn-apply,
+.btn-apply-compact {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     min-height: 36px;
     padding: 7px var(--s4);
@@ -854,7 +855,15 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 }
 [data-theme="dark"] .btn-save.saved { color: var(--naranja-texto); }
 [data-theme="dark"] .btn-apply.applied { color: var(--verde); }
-@media (pointer: coarse) { .btn-save, .btn-apply { min-height: 44px; } }
+/* En pantallas tactiles, los botones pequenos crecen hasta 44px y los
+   enlaces/iconos diminutos reciben una zona tactil invisible */
+@media (pointer: coarse) {
+    .btn-save, .btn-apply, .btn-apply-compact, .btn-new-message, .btn-add-skill,
+    .btn-edit-profile, .btn-edit-cover { min-height: 44px; }
+    .btn-edit-avatar { min-width: 44px; min-height: 44px; }
+    .btn-remove-skill, .project-link { position: relative; }
+    .btn-remove-skill::after, .project-link::after { content: ""; position: absolute; inset: -12px; }
+}
 
 /* Tarjeta de oferta: el bloque mas repetido de la app.
    Hover discreto — sube 2px y el borde toma color, nada mas. */
@@ -1369,7 +1378,8 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 
 .notifications-list { max-height: 400px; overflow-y: auto; }
 
-.nav-notification-item {
+/* notifications.js dibuja cada aviso como .notification-item */
+.nav-notification-item, .notification-item {
     display: flex;
     gap: var(--s3);
     padding: var(--s3) var(--s5);
@@ -1377,9 +1387,9 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     cursor: pointer;
     transition: background-color .14s var(--ease);
 }
-.nav-notification-item:hover { background: var(--surface-sunk); }
-.nav-notification-item.unread { background: var(--sea-light); }
-.nav-notification-item.unread:hover { background: #D6ECEE; }
+.nav-notification-item:hover, .notification-item:hover { background: var(--surface-sunk); }
+.nav-notification-item.unread, .notification-item.unread { background: var(--sea-light); }
+.nav-notification-item.unread:hover, .notification-item.unread:hover { background: #D6ECEE; }
 
 .notification-icon { width: 36px; height: 36px; border-radius: var(--r-sm); }
 .notification-content { min-width: 0; }
@@ -1675,9 +1685,10 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 }
 .step.active .step-index { background: var(--sea); border-color: var(--sea); color: #fff; box-shadow: 0 0 0 4px var(--sea-light); }
 .step.active .step-label { color: var(--ink); }
-.step.done .step-index { background: var(--verde); border-color: var(--verde); color: #fff; }
-.step.done .step-label { color: var(--ink-3); }
-.step.done::after { background: var(--verde); }
+/* auth.js y registro-usuario.js marcan los pasos terminados como .completed */
+.step.done .step-index, .step.completed .step-index { background: var(--verde); border-color: var(--verde); color: #fff; }
+.step.done .step-label, .step.completed .step-label { color: var(--ink-3); }
+.step.done::after, .step.completed::after { background: var(--verde); }
 
 .form-step { display: none; }
 .form-step.active { display: block; animation: form-in .3s var(--ease-out) both; }
@@ -1924,6 +1935,25 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     background: var(--surface-sunk);
 }
 .conversation-item.active { background: var(--sea-light); }
+/* Vacante recomendada (perfil): una debajo de otra, no todo en una fila;
+   en fila se salia de la pantalla del celular */
+.opportunity-item-compact { flex-direction: column; align-items: stretch; gap: 4px; }
+.opportunity-header-compact { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.opportunity-header-compact h4 { min-width: 0; overflow-wrap: anywhere; }
+.opportunity-item-compact .btn-apply-compact { align-self: flex-start; margin-top: var(--s2); }
+/* Porcentaje de match: el naranja se reserva para los matches altos */
+.match-badge-small {
+    flex: 0 0 auto;
+    padding: 2px 9px;
+    border-radius: var(--r-pill);
+    font-size: var(--t-xs); font-weight: 700;
+    background: var(--sea-light); color: var(--sea-deep);
+}
+.match-badge-small.match-excellent { background: var(--naranja-soft); color: #A34600; }
+.match-badge-small.match-fair { background: var(--hairline-soft); color: var(--ink-3); }
+[data-theme="dark"] .match-badge-small { color: var(--sea); }
+[data-theme="dark"] .match-badge-small.match-excellent { color: var(--naranja-texto); }
+[data-theme="dark"] .match-badge-small.match-fair { color: var(--ink-3); }
 .conversation-info, .company-info-compact, .opportunity-header-compact { min-width: 0; flex: 1; }
 .conversation-preview, .opportunity-location-compact, .opportunity-company-compact {
     font-size: var(--t-sm);
@@ -2226,7 +2256,8 @@ header  { view-transition-name: barra-superior; }
 [data-theme="dark"] .choice-card:hover,
 [data-theme="dark"] .candidate-mini-card:hover { border-color: #33496B; }
 
-[data-theme="dark"] .nav-notification-item.unread:hover { background: rgba(43, 182, 198, .24); }
+[data-theme="dark"] .nav-notification-item.unread:hover,
+[data-theme="dark"] .notification-item.unread:hover { background: rgba(43, 182, 198, .24); }
 
 /* ---------- 27. Preferencias del sistema ---------- */
 
@@ -2552,7 +2583,19 @@ header  { view-transition-name: barra-superior; }
 .cert-date, .rec-date, .project-date { font-size: var(--t-xs); color: var(--ink-muted); }
 .project-header, .rec-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); }
 .project-desc, .rec-text { font-size: var(--t-base); color: var(--ink-3); line-height: 1.6; }
-.rec-info { min-width: 0; }
+.rec-info { min-width: 0; flex: 1; }
+/* Logo de quien recomienda: tamano de avatar (sin esto se mostraba a su
+   tamano real y empujaba el texto fuera de la pantalla del celular) */
+.rec-header img {
+    flex: 0 0 auto;
+    width: 44px; height: 44px;
+    object-fit: contain;
+    padding: 4px;
+    border-radius: var(--r-sm);
+    background: var(--surface-sunk);
+    order: -1;
+}
+.rec-header { justify-content: flex-start; }
 .project-link { font-weight: 600; font-size: var(--t-sm); }
 .recommendations-list, .offers-list, .suggestions-list, .connections-list,
 .applications-container, .conversations-list { display: flex; flex-direction: column; gap: var(--s3); }
