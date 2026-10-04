@@ -187,6 +187,17 @@
         document.documentElement.setAttribute('data-theme', tema);
         const meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute('content', tema === 'dark' ? '#0B1B2C' : '#EDF2F8');
+        logoSegunTema(tema);
+    }
+
+    /** "Skill" va en azul oscuro en el logo y no se lee sobre fondo oscuro:
+     *  en modo oscuro se cambia por logo-oscuro.png (mismo logo, azul claro). */
+    function logoSegunTema(tema) {
+        const archivo = tema === 'dark' ? 'logo-oscuro.png' : 'logo.png';
+        document.querySelectorAll('.logo img').forEach(function (img) {
+            const src = img.getAttribute('src');
+            if (src) img.setAttribute('src', src.replace(/logo(-oscuro)?\.png$/, archivo));
+        });
     }
 
     function construirInterruptorTema() {
@@ -428,6 +439,7 @@
         marcarNavegacionActiva();
         construirTabbar();
         construirInterruptorTema();
+        logoSegunTema(document.documentElement.getAttribute('data-theme'));
         barraAlHacerScroll();
         progresoDeNavegacion();
         movimientoDeEntrada();
