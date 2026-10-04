@@ -2013,8 +2013,84 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .reveal.is-visible {
     opacity: 1;
     transform: none;
-    transition: opacity .5s var(--ease-out), transform .5s var(--ease-out);
+    transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
     transition-delay: var(--reveal-delay, 0ms);
+}
+/* Sin JavaScript nada se queda escondido */
+@media (scripting: none) { .reveal { opacity: 1; transform: none; } }
+
+/* ---------- 25b. Movimiento global (Fase 1, seccion 3 del plan) ----------
+   Reglas: solo se anima transform y opacity; todo lo que sigue al mouse
+   se apaga en pantallas tactiles y con prefers-reduced-motion.
+   ui.js agrega las clases (.spot, .tilt, .magnetic): el HTML no cambia. */
+
+:root {
+    --dur-1: 150ms;  /* respuesta inmediata: presionar, hover */
+    --dur-2: 260ms;  /* cambios de estado */
+    --dur-3: 480ms;  /* entradas al hacer scroll */
+    --stagger: 40ms; /* separacion entre tarjetas de una lista */
+}
+
+/* Transiciones entre paginas (View Transitions API). La barra superior y
+   la inferior se quedan quietas; el contenido sale y entra con un fundido.
+   En navegadores sin soporte simplemente se navega normal. */
+@view-transition { navigation: auto; }
+header  { view-transition-name: barra-superior; }
+.tabbar { view-transition-name: barra-inferior; }
+::view-transition-old(root) { animation: vt-salida var(--dur-2) var(--ease-in-out) both; }
+::view-transition-new(root) { animation: vt-entrada var(--dur-3) var(--ease-out) both; }
+@keyframes vt-salida  { to   { opacity: 0; transform: translateY(-8px); } }
+@keyframes vt-entrada { from { opacity: 0; transform: translateY(12px); } }
+/* Con transiciones entre paginas, la barra ya no "cae" en cada visita */
+@supports (view-transition-name: none) { .page-enter header { animation: none; } }
+
+/* Onda al hacer clic, desde el punto exacto (Material) */
+.has-ripple { position: relative; overflow: hidden; }
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .22;
+    transform: scale(0);
+    pointer-events: none;
+    animation: ripple .6s var(--ease-out) forwards;
+}
+@keyframes ripple { to { transform: scale(1); opacity: 0; } }
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    /* Foco de luz que sigue al mouse dentro de la tarjeta. Solo cambia la
+       opacidad; la posicion la ponen --mx / --my desde ui.js. */
+    .spot { position: relative; isolation: isolate; }
+    .spot::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: inherit;
+        pointer-events: none;
+        background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), var(--sea-glow), transparent 55%);
+        opacity: 0;
+        transition: opacity var(--dur-2) var(--ease-out);
+    }
+    .spot:hover::before { opacity: .6; }
+
+    /* Inclinacion 3D de las tarjetas de vacante (3-4 grados) */
+    .tilt { transform-style: preserve-3d; will-change: transform; }
+    .tilt.is-tilting { transition: transform 80ms linear, border-color .2s var(--ease), box-shadow .24s var(--ease); }
+
+    /* Botones magneticos: se acercan unos pixeles al cursor. Se usa la
+       propiedad translate para no pisar el transform del hover. */
+    .magnetic {
+        translate: var(--tx, 0px) var(--ty, 0px);
+        transition: translate .3s var(--ease-out), transform .16s var(--ease),
+                    box-shadow .22s var(--ease), background-color .18s var(--ease),
+                    border-color .18s var(--ease), color .18s var(--ease);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+    .ripple { display: none; }
 }
 
 /* ---------- 26. Adaptacion a pantallas ---------- */

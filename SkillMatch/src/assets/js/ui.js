@@ -1,11 +1,13 @@
 /* =====================================================================
  *  SkillMatch — capa de interfaz
  *
- *  Se encarga de cuatro cosas, y de nada mas:
+ *  Se encarga de cinco cosas, y de nada mas:
  *    1. Iconos SVG (reemplazan a los emojis, se ven igual en todos lados)
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
  *    4. Avisos al usuario (toast) y modales accesibles
+ *    5. Movimiento: aparicion al hacer scroll, foco de luz, inclinacion,
+ *       botones magneticos y onda al hacer clic (seccion 10)
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -272,23 +274,53 @@
 
     /* ---------- 3. Entrada de la pagina ---------- */
 
+    /** Encabezados y tarjetas que aparecen al hacer scroll. Se marcan solos
+     *  (tambien las vacantes que llegan despues desde la API), sin tocar el HTML. */
+    const REVELAR = '.reveal, .section-header-center, .innovation-header, .why-header, ' +
+                    '.feature-card, .benefit-item, .pathway-card, .roadmap-card, ' +
+                    '.cartagena-photo, .opportunity-card';
+    let observadorEntrada = null;
+
+    function revelar(raiz) {
+        if (!raiz.querySelectorAll) return;
+        const elementos = Array.from(raiz.querySelectorAll(REVELAR));
+        if (raiz.matches && raiz.matches(REVELAR)) elementos.push(raiz);
+        elementos.forEach(function (el) {
+            if (el.dataset.revelado) return;
+            el.dataset.revelado = '1';
+            if (observadorEntrada) {
+                el.classList.add('reveal');
+                observadorEntrada.observe(el);
+            } else if (el.classList.contains('reveal')) {
+                // Movimiento reducido o navegador viejo: se muestra ya, sin animar
+                el.classList.add('is-visible');
+            }
+        });
+    }
+
     /** Una sola secuencia al cargar, y revelado por scroll en secciones largas. */
     function movimientoDeEntrada() {
         document.body.classList.add('page-enter');
-        if (reduceMotion || !('IntersectionObserver' in window)) {
-            document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('is-visible'); });
-            return;
+        if (!reduceMotion && 'IntersectionObserver' in window) {
+            observadorEntrada = new IntersectionObserver(function (entradas) {
+                let n = 0;
+                entradas.forEach(function (entrada) {
+                    if (!entrada.isIntersecting) return;
+                    // 40 ms entre tarjetas; tope de 8 para que una lista larga no se haga lenta
+                    const el = entrada.target;
+                    const retraso = Math.min(n++, 8) * 40;
+                    el.style.setProperty('--reveal-delay', retraso + 'ms');
+                    el.classList.add('is-visible');
+                    observadorEntrada.unobserve(el);
+                    // Al terminar, la tarjeta recupera su hover y sus transiciones propias
+                    setTimeout(function () {
+                        el.classList.remove('reveal', 'is-visible');
+                        el.style.removeProperty('--reveal-delay');
+                    }, retraso + 700);
+                });
+            }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
         }
-        const io = new IntersectionObserver(function (entradas) {
-            entradas.forEach(function (entrada, i) {
-                if (!entrada.isIntersecting) return;
-                entrada.target.style.setProperty('--reveal-delay', (i * 70) + 'ms');
-                entrada.target.classList.add('is-visible');
-                io.unobserve(entrada.target);
-            });
-        }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
-
-        document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+        revelar(document.body);
     }
 
     /* ---------- 4. Estados de carga ---------- */
@@ -431,6 +463,122 @@
         });
     }
 
+    /* ---------- 10. Movimiento con el mouse y al hacer clic ---------- */
+
+    // Lo que sigue al cursor solo existe con mouse y sin movimiento reducido.
+    const conMouse = !reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    const SPOT      = '.hero-card, .opportunity-card, .feature-card, .pathway-card, .choice-card, .benefit-item, .roadmap-card';
+    const TILT      = '.hero-card, .opportunity-card';
+    const MAGNETICO = '.btn-accent, .hero .btn, .pathway-card .btn, .choice-card .btn, .btn-search-main, .search-btn';
+    const ONDA      = '.btn, .btn-save, .btn-apply, .btn-search-main, .search-btn, .btn-login, .btn-register';
+
+    /** Marca con clases (.spot, .tilt, .magnetic) lo que debe moverse. */
+    function marcarEfectos(raiz) {
+        if (!conMouse || !raiz.querySelectorAll) return;
+        [[SPOT, 'spot'], [TILT, 'tilt'], [MAGNETICO, 'magnetic']].forEach(function (par) {
+            if (raiz.matches && raiz.matches(par[0])) raiz.classList.add(par[1]);
+            raiz.querySelectorAll(par[0]).forEach(function (el) { el.classList.add(par[1]); });
+        });
+    }
+
+    let tiltActual = null, magnetActual = null;
+
+    function soltarTilt() {
+        if (!tiltActual) return;
+        tiltActual.classList.remove('is-tilting');
+        tiltActual.style.transform = '';
+        tiltActual = null;
+    }
+    function soltarMagnet() {
+        if (!magnetActual) return;
+        magnetActual.style.setProperty('--tx', '0px');
+        magnetActual.style.setProperty('--ty', '0px');
+        magnetActual = null;
+    }
+
+    function moverConMouse(e) {
+        const objetivo = e.target instanceof Element ? e.target : null;
+
+        // Foco de luz: la posicion del cursor dentro de la tarjeta
+        const spot = objetivo && objetivo.closest('.spot');
+        if (spot) {
+            const r = spot.getBoundingClientRect();
+            spot.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+            spot.style.setProperty('--my', (e.clientY - r.top) + 'px');
+        }
+
+        // Inclinacion 3D: maximo 3.5 grados hacia el cursor
+        const tilt = objetivo && objetivo.closest('.tilt');
+        if (tilt !== tiltActual) soltarTilt();
+        if (tilt) {
+            // La animacion de entrada (fill: both) bloquearia el transform en linea
+            if (tilt.getAnimations) tilt.getAnimations().forEach(function (a) { if (a.playState === 'finished') a.cancel(); });
+            const r = tilt.getBoundingClientRect();
+            const x = (e.clientX - r.left) / r.width - .5;
+            const y = (e.clientY - r.top) / r.height - .5;
+            tilt.classList.add('is-tilting');
+            tilt.style.transform = 'perspective(900px) rotateX(' + (-y * 7).toFixed(2) + 'deg) rotateY(' +
+                                   (x * 7).toFixed(2) + 'deg) translateY(-2px)';
+            tiltActual = tilt;
+        }
+
+        // Boton magnetico: se acerca hasta 6px al cursor
+        const magnet = objetivo && objetivo.closest('.magnetic');
+        if (magnet !== magnetActual) soltarMagnet();
+        if (magnet) {
+            const r = magnet.getBoundingClientRect();
+            const dx = Math.max(-6, Math.min(6, (e.clientX - (r.left + r.width / 2)) * .25));
+            const dy = Math.max(-6, Math.min(6, (e.clientY - (r.top + r.height / 2)) * .35));
+            magnet.style.setProperty('--tx', dx.toFixed(1) + 'px');
+            magnet.style.setProperty('--ty', dy.toFixed(1) + 'px');
+            magnetActual = magnet;
+        }
+    }
+
+    /** Onda desde el punto exacto del clic (tambien en tactil). */
+    function ondaAlPulsar(e) {
+        if (reduceMotion || !(e.target instanceof Element)) return;
+        const boton = e.target.closest(ONDA);
+        if (!boton || boton.disabled) return;
+        const r = boton.getBoundingClientRect();
+        const lado = Math.max(r.width, r.height) * 2.2;
+        const onda = document.createElement('span');
+        onda.className = 'ripple';
+        onda.setAttribute('aria-hidden', 'true');
+        onda.style.width = onda.style.height = lado + 'px';
+        onda.style.left = (e.clientX - r.left - lado / 2) + 'px';
+        onda.style.top = (e.clientY - r.top - lado / 2) + 'px';
+        boton.classList.add('has-ripple');
+        boton.appendChild(onda);
+        onda.addEventListener('animationend', function () { onda.remove(); });
+    }
+
+    function movimientoConMouse() {
+        document.addEventListener('pointerdown', ondaAlPulsar, { passive: true });
+        if (!conMouse) return;
+        marcarEfectos(document.body);
+        // Un solo cuadro por fotograma, aunque el mouse mande mas eventos
+        let pendiente = 0, ultimo = null;
+        document.addEventListener('pointermove', function (e) {
+            ultimo = e;
+            if (pendiente) return;
+            pendiente = requestAnimationFrame(function () { pendiente = 0; moverConMouse(ultimo); });
+        }, { passive: true });
+        document.documentElement.addEventListener('mouseleave', function () { soltarTilt(); soltarMagnet(); });
+    }
+
+    // Tarjetas que llegan despues (vacantes de la API): aparecen y se mueven igual
+    const observadorNuevos = new MutationObserver(function (mutations) {
+        for (const m of mutations) {
+            for (const node of m.addedNodes) {
+                if (node.nodeType !== 1 || node.classList.contains('ripple')) continue;
+                revelar(node);
+                marcarEfectos(node);
+            }
+        }
+    });
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -443,6 +591,8 @@
         barraAlHacerScroll();
         progresoDeNavegacion();
         movimientoDeEntrada();
+        movimientoConMouse();
+        observadorNuevos.observe(document.body, { childList: true, subtree: true });
         modalesAccesibles();
         validacionVisible();
         anillos(document);
