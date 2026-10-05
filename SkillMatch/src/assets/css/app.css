@@ -929,6 +929,15 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     font-size: var(--t-sm);
     color: var(--ink-muted);
 }
+/* Titulo y empresa (vacante) / nombre y titular (conexion): uno debajo del
+   otro y ocupando el espacio libre, no en fila como los datos de arriba */
+.card-info, .connection-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
 
 .meta-item, .offer-info-row, .post-date, .card-meta span {
     display: inline-flex;
