@@ -1695,6 +1695,25 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .toggle-form:hover { text-decoration: underline; }
 
 .registro-section { padding: var(--s7) 0 var(--s9); }
+/* Registro de usuario / empresa: titulo centrado y formulario en tarjeta.
+   Antes el titulo iba a la izquierda y el formulario flotaba en 440px,
+   apretando las dos columnas de campos. */
+.registro-section > .container > h2 {
+    text-align: center;
+    font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.5rem);
+    margin-bottom: var(--s6);
+}
+.registro-section > .container > .registro-form {
+    max-width: 760px;
+    padding: var(--s7);
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-3);
+}
+@media (max-width: 760px) {
+    .registro-section > .container > .registro-form { padding: var(--s5) var(--s4); }
+}
 
 /* Pasos del registro */
 .stepper {
@@ -2279,6 +2298,8 @@ header  { view-transition-name: barra-superior; }
 }
 
 [data-theme="dark"] header { background: rgba(8, 18, 30, .82); }
+/* La barra inferior del celular tambien se oscurece (se quedaba blanca) */
+[data-theme="dark"] .tabbar { background: rgba(8, 18, 30, .9); }
 [data-theme="dark"] header.is-scrolled { box-shadow: 0 1px 16px -4px rgba(0, 0, 0, .45); }
 
 [data-theme="dark"] .btn-danger,
