@@ -640,6 +640,241 @@
     }
     UI.lottie = lottie;
 
+    /* ---------- 12. Paleta de comandos (Ctrl+K / Cmd+K) ---------- */
+
+    const ES_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    const API_PALETA = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL
+        : (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8080/api' : location.origin + '/api');
+
+    let paleta = null, paletaAntes = null, opciones = [], elegida = 0, busquedaVacantes = null;
+
+    /** Sin tildes ni mayusculas, para que "practica" encuentre "Práctica". */
+    function normalizar(texto) {
+        return (texto || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    }
+
+    function sesion() {
+        try { return JSON.parse(localStorage.getItem('userData') || 'null'); } catch (e) { return null; }
+    }
+
+    /** Acciones fijas: navegar, cuenta y preferencias. */
+    function accionesFijas() {
+        const s = sesion();
+        const esEmpresa = s && s.userType === 'empresa';
+        const lista = DESTINOS.map(function (d) {
+            const href = (d.href === 'perfil-usuario.html' && esEmpresa) ? 'perfil-empresa.html' : d.href;
+            return { grupo: 'Ir a', ico: d.ico, titulo: d.label === 'Perfil' ? 'Mi perfil' : d.label, claves: d.href, href: href };
+        });
+        if (!localStorage.getItem('token')) {
+            lista.push({ grupo: 'Cuenta', ico: 'user', titulo: 'Iniciar sesión', claves: 'entrar login acceder', href: 'login.html' });
+            lista.push({ grupo: 'Cuenta', ico: 'sparkle', titulo: 'Crear mi perfil', claves: 'registro registrarme cuenta nueva', href: 'seleccionar-registro.html' });
+        }
+        const oscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+        lista.push({
+            grupo: 'Preferencias', ico: oscuro ? 'sun' : 'moon',
+            titulo: oscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro', claves: 'tema oscuro claro noche',
+            accion: function () {
+                const boton = document.querySelector('.theme-toggle');
+                if (boton) boton.click();
+                else { const nuevo = oscuro ? 'light' : 'dark'; localStorage.setItem(TEMA_KEY, nuevo); aplicarTema(nuevo); }
+            }
+        });
+        return lista;
+    }
+
+    function construirPaleta() {
+        paleta = document.createElement('div');
+        paleta.className = 'cmdk';
+        paleta.hidden = true;
+        paleta.setAttribute('role', 'dialog');
+        paleta.setAttribute('aria-modal', 'true');
+        paleta.setAttribute('aria-label', 'Buscar vacantes y navegar');
+        paleta.innerHTML =
+            '<div class="cmdk-fondo" data-cerrar></div>' +
+            '<div class="cmdk-panel">' +
+                '<div class="cmdk-campo">' + svgIcon('search') +
+                    '<input type="text" role="combobox" aria-expanded="true" aria-controls="cmdk-lista" aria-autocomplete="list" ' +
+                    'autocomplete="off" spellcheck="false" placeholder="Busca vacantes o escribe a dónde ir…" aria-label="Buscar">' +
+                    '<kbd>Esc</kbd>' +
+                '</div>' +
+                '<ul class="cmdk-lista" id="cmdk-lista" role="listbox" aria-label="Resultados"></ul>' +
+                '<div class="cmdk-pie"><span><kbd>↑</kbd><kbd>↓</kbd> moverse</span>' +
+                '<span><kbd>Enter</kbd> abrir</span><span><kbd>' + (ES_MAC ? '⌘' : 'Ctrl') + '</kbd><kbd>K</kbd> abrir o cerrar</span></div>' +
+            '</div>';
+        document.body.appendChild(paleta);
+
+        const campo = paleta.querySelector('input');
+        campo.addEventListener('input', function () { pintarPaleta(campo.value); buscarVacantes(campo.value); });
+        campo.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowDown') { e.preventDefault(); moverEleccion(1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); moverEleccion(-1); }
+            else if (e.key === 'Enter') { e.preventDefault(); ejecutar(opciones[elegida]); }
+            else if (e.key === 'Escape') { e.preventDefault(); cerrarPaleta(); }
+            else if (e.key === 'Tab') { e.preventDefault(); } // el foco se queda en la paleta
+        });
+        paleta.addEventListener('click', function (e) {
+            if (e.target.closest('[data-cerrar]')) return cerrarPaleta();
+            const item = e.target.closest('.cmdk-item');
+            if (item) ejecutar(opciones[+item.dataset.i]);
+        });
+        paleta.addEventListener('mousemove', function (e) {
+            const item = e.target.closest('.cmdk-item');
+            if (item && +item.dataset.i !== elegida) { elegida = +item.dataset.i; marcarEleccion(false); }
+        });
+    }
+
+    /** Dibuja la lista: primero "buscar en vacantes", luego vacantes reales y acciones. */
+    function pintarPaleta(texto, vacantes) {
+        const q = normalizar(texto.trim());
+        opciones = [];
+        if (q) opciones.push({ grupo: 'Vacantes', ico: 'search', titulo: 'Buscar "' + texto.trim() + '" en vacantes', href: 'oportunidades.html?q=' + encodeURIComponent(texto.trim()) });
+        (vacantes || []).forEach(function (v) {
+            opciones.push({
+                grupo: 'Vacantes', ico: 'briefcase', titulo: v.title,
+                detalle: [v.companyName || (v.company && v.company.name), v.location].filter(Boolean).join(' · '),
+                href: 'oportunidades.html?q=' + encodeURIComponent(v.title)
+            });
+        });
+        accionesFijas().forEach(function (a) {
+            if (!q || normalizar(a.titulo + ' ' + a.claves + ' ' + a.grupo).indexOf(q) !== -1) opciones.push(a);
+        });
+        elegida = Math.min(elegida, Math.max(opciones.length - 1, 0));
+
+        const lista = paleta.querySelector('.cmdk-lista');
+        lista.innerHTML = '';
+        if (!opciones.length) {
+            lista.innerHTML = '<li class="cmdk-vacio" role="presentation">Sin resultados. Prueba con un cargo, como "desarrollador".</li>';
+            return;
+        }
+        let grupoActual = '';
+        opciones.forEach(function (o, i) {
+            if (o.grupo !== grupoActual) {
+                grupoActual = o.grupo;
+                const titulo = document.createElement('li');
+                titulo.className = 'cmdk-grupo';
+                titulo.setAttribute('role', 'presentation');
+                titulo.textContent = o.grupo;
+                lista.appendChild(titulo);
+            }
+            const li = document.createElement('li');
+            li.className = 'cmdk-item';
+            li.id = 'cmdk-op-' + i;
+            li.dataset.i = i;
+            li.setAttribute('role', 'option');
+            li.innerHTML = svgIcon(o.ico) + '<span class="cmdk-item-titulo"></span>' + (o.detalle ? '<span class="cmdk-item-detalle"></span>' : '');
+            li.querySelector('.cmdk-item-titulo').textContent = o.titulo; // texto de la API: nunca como HTML
+            if (o.detalle) li.querySelector('.cmdk-item-detalle').textContent = o.detalle;
+            lista.appendChild(li);
+        });
+        marcarEleccion(false);
+    }
+
+    function marcarEleccion(desplazar) {
+        paleta.querySelectorAll('.cmdk-item').forEach(function (li) {
+            li.setAttribute('aria-selected', String(+li.dataset.i === elegida));
+        });
+        const actual = paleta.querySelector('#cmdk-op-' + elegida);
+        paleta.querySelector('input').setAttribute('aria-activedescendant', actual ? actual.id : '');
+        if (actual && desplazar) actual.scrollIntoView({ block: 'nearest' });
+    }
+
+    function moverEleccion(paso) {
+        if (!opciones.length) return;
+        elegida = (elegida + paso + opciones.length) % opciones.length;
+        marcarEleccion(true);
+    }
+
+    /** Vacantes reales mientras se escribe (GET /api/jobs/search es publico). */
+    const buscarVacantes = (function () {
+        let espera = 0;
+        return function (texto) {
+            clearTimeout(espera);
+            const q = texto.trim();
+            if (busquedaVacantes) busquedaVacantes.abort();
+            if (q.length < 2) return;
+            espera = setTimeout(function () {
+                busquedaVacantes = new AbortController();
+                fetch(API_PALETA + '/jobs/search?keyword=' + encodeURIComponent(q), { signal: busquedaVacantes.signal })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (datos) {
+                        if (!datos || paleta.hidden) return;
+                        const vacantes = (datos.content || datos || []).slice(0, 5);
+                        if (paleta.querySelector('input').value.trim() === q) pintarPaleta(q, vacantes);
+                    })
+                    .catch(function () { /* sin backend: quedan las acciones */ });
+            }, 220);
+        };
+    })();
+
+    function ejecutar(opcion) {
+        if (!opcion) return;
+        cerrarPaleta();
+        if (opcion.accion) opcion.accion();
+        else if (opcion.href) window.location.href = opcion.href;
+    }
+
+    function abrirPaleta() {
+        if (!paleta) construirPaleta();
+        if (!paleta.hidden) return;
+        paletaAntes = document.activeElement;
+        paleta.hidden = false;
+        document.documentElement.classList.add('cmdk-abierta');
+        const campo = paleta.querySelector('input');
+        campo.value = '';
+        elegida = 0;
+        pintarPaleta('');
+        campo.focus();
+    }
+
+    function cerrarPaleta() {
+        if (!paleta || paleta.hidden) return;
+        paleta.hidden = true;
+        document.documentElement.classList.remove('cmdk-abierta');
+        if (busquedaVacantes) busquedaVacantes.abort();
+        if (paletaAntes && paletaAntes.focus) paletaAntes.focus();
+    }
+    UI.paleta = { abrir: abrirPaleta, cerrar: cerrarPaleta };
+
+    /** Atajo de teclado y boton en la barra superior para descubrirla. */
+    function paletaDeComandos() {
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                e.preventDefault();
+                if (paleta && !paleta.hidden) cerrarPaleta(); else abrirPaleta();
+            }
+        });
+        const toggle = document.querySelector('.theme-toggle');
+        if (!toggle || document.querySelector('.cmdk-boton')) return;
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'cmdk-boton';
+        boton.setAttribute('aria-label', 'Buscar vacantes y navegar (' + (ES_MAC ? 'Cmd' : 'Ctrl') + ' + K)');
+        boton.innerHTML = svgIcon('search') + '<span class="cmdk-texto">Buscar</span><kbd class="cmdk-atajo">' + (ES_MAC ? '⌘K' : 'Ctrl K') + '</kbd>';
+        boton.addEventListener('click', abrirPaleta);
+        const li = document.createElement('li');
+        li.appendChild(boton);
+        toggle.parentElement.parentElement.insertBefore(li, toggle.parentElement);
+    }
+
+    /** oportunidades.html?q=texto: llena el buscador y lanza la busqueda. */
+    function busquedaDesdeUrl() {
+        const q = new URLSearchParams(location.search).get('q');
+        const campo = document.getElementById('searchInput');
+        if (!q || !campo) return;
+        campo.value = q;
+        // Se espera a que oportunidades.js pinte la lista inicial; si se busca
+        // antes, esa lista llega despues y tapa el resultado de la busqueda.
+        const inicio = Date.now();
+        const espera = setInterval(function () {
+            const listo = document.querySelector('.opportunity-card, .no-results, .empty-state, .error-message');
+            if (listo || Date.now() - inicio > 6000) {
+                clearInterval(espera);
+                campo.value = q;
+                campo.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }, 150);
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -648,6 +883,8 @@
         marcarNavegacionActiva();
         construirTabbar();
         construirInterruptorTema();
+        paletaDeComandos();
+        busquedaDesdeUrl();
         logoSegunTema(document.documentElement.getAttribute('data-theme'));
         barraAlHacerScroll();
         progresoDeNavegacion();

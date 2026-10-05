@@ -2198,6 +2198,125 @@ header  { view-transition-name: barra-superior; }
     .ripple { display: none; }
 }
 
+/* ---------- 25c. Paleta de comandos (Ctrl+K) ---------- */
+
+kbd {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 22px;
+    padding: 1px 6px;
+    border: 1px solid var(--hairline);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    background: var(--surface-sunk);
+    color: var(--ink-3);
+    font: 600 var(--t-xs)/1.5 var(--font-text);
+}
+
+/* Boton en la barra superior para descubrir el atajo */
+.cmdk-boton {
+    display: inline-flex; align-items: center; gap: var(--s2);
+    height: 38px;
+    padding: 0 6px 0 12px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    color: var(--ink-3);
+    font-size: var(--t-sm); font-weight: 500;
+    transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.cmdk-boton:hover { border-color: var(--sea); color: var(--ink); }
+.cmdk-boton .ico { width: 18px; height: 18px; }
+@media (max-width: 760px) {
+    .cmdk-boton { width: 44px; height: 44px; padding: 0; justify-content: center; border: 0; background: none; }
+    .cmdk-boton .cmdk-texto, .cmdk-boton .cmdk-atajo { display: none; }
+    /* En movil la barra superior solo deja marca y sesion; la lupa se queda
+       porque desde la paleta tambien se cambia el tema (el boton no cabe) */
+    header > nav > .nav-links > li:has(> .cmdk-boton):not(:last-child) { display: flex; }
+}
+
+.cmdk-abierta { overflow: hidden; }
+.cmdk {
+    position: fixed; inset: 0;
+    z-index: 300;
+    display: grid; place-items: start center;
+    padding: 12vh var(--s4) var(--s4);
+}
+.cmdk[hidden] { display: none; }
+.cmdk-fondo {
+    position: absolute; inset: 0;
+    background: rgba(6, 26, 49, .5);
+    -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+    animation: fade-in var(--dur-2) var(--ease-out) both;
+}
+.cmdk-panel {
+    position: relative;
+    display: flex; flex-direction: column;
+    width: min(640px, 100%);
+    max-height: 72vh;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-4);
+    animation: cmdk-entrada var(--dur-2) var(--ease-out) both;
+}
+@keyframes cmdk-entrada { from { opacity: 0; transform: translateY(-10px) scale(.98); } }
+
+.cmdk-campo {
+    display: flex; align-items: center; gap: var(--s3);
+    padding: var(--s4) var(--s5);
+    border-bottom: 1px solid var(--hairline-soft);
+}
+.cmdk-campo > .ico { color: var(--sea-deep); }
+.cmdk-campo input {
+    all: unset;
+    flex: 1; min-width: 0;
+    font-size: var(--t-md);
+    color: var(--ink);
+}
+.cmdk-campo input::placeholder { color: var(--ink-muted); }
+
+.cmdk-lista { overflow-y: auto; padding: var(--s2); }
+.cmdk-grupo {
+    padding: var(--s3) var(--s3) var(--s1);
+    font-size: var(--t-xs); font-weight: 700;
+    letter-spacing: .05em; text-transform: uppercase;
+    color: var(--ink-muted);
+}
+.cmdk-item {
+    display: flex; align-items: center; gap: var(--s3);
+    min-height: 44px;
+    padding: 8px var(--s3);
+    border-radius: var(--r-md);
+    color: var(--ink-2);
+    cursor: pointer;
+}
+.cmdk-item .ico { flex: 0 0 auto; color: var(--ink-muted); }
+.cmdk-item-titulo { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmdk-item-detalle {
+    margin-left: auto; max-width: 45%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: var(--t-sm); color: var(--ink-muted);
+}
+.cmdk-item[aria-selected="true"] { background: var(--sea-light); color: var(--ink); }
+.cmdk-item[aria-selected="true"] .ico { color: var(--sea-deep); }
+.cmdk-vacio { padding: var(--s6) var(--s4); text-align: center; color: var(--ink-muted); }
+.cmdk-pie {
+    display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5);
+    padding: var(--s3) var(--s5);
+    border-top: 1px solid var(--hairline-soft);
+    font-size: var(--t-xs); color: var(--ink-muted);
+}
+.cmdk-pie span { display: inline-flex; align-items: center; gap: 4px; }
+@media (hover: none) { .cmdk-pie { display: none; } }
+/* Pantallas angostas: empresa y ciudad en una segunda linea, sin cortar el cargo */
+@media (max-width: 760px) {
+    .cmdk-item { flex-wrap: wrap; row-gap: 0; }
+    .cmdk-item-titulo { flex: 1; }
+    .cmdk-item-detalle { flex-basis: 100%; max-width: none; margin-left: calc(20px + var(--s3)); }
+}
+
 /* ---------- 26. Adaptacion a pantallas ---------- */
 
 @media (max-width: 1080px) {
