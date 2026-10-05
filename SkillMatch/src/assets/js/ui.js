@@ -875,6 +875,77 @@
         }, 150);
     }
 
+    /* ---------- 13. Tooltips animados ---------- */
+
+    // Botones de solo icono (title), el interruptor de tema y el anillo de match.
+    // Aparecen al pasar el mouse (con una pausa corta) o al llegar con el teclado.
+    const CON_TOOLTIP = 'button[title], a[title], [role="button"][title], [data-tooltip], .theme-toggle, .match-ring[aria-label]';
+    let globo = null, globoDe = null, esperaGlobo = 0;
+
+    function textoTooltip(el) {
+        // El title nativo se pasa a data-tooltip (si no, salen dos globos) sin perder el nombre accesible
+        if (el.hasAttribute('title')) {
+            const t = el.getAttribute('title');
+            el.removeAttribute('title');
+            if (!el.dataset.tooltip) el.dataset.tooltip = t;
+            if (!el.hasAttribute('aria-label') && !el.textContent.trim()) el.setAttribute('aria-label', t);
+        }
+        return el.dataset.tooltip || el.getAttribute('aria-label') || '';
+    }
+
+    function mostrarTooltip(el) {
+        const texto = textoTooltip(el);
+        if (!texto) return;
+        if (!globo) {
+            globo = document.createElement('div');
+            globo.className = 'tooltip';
+            globo.setAttribute('role', 'tooltip');
+            document.body.appendChild(globo);
+        }
+        globo.textContent = texto;
+        globo.classList.remove('is-visible');
+        const r = el.getBoundingClientRect(), g = globo.getBoundingClientRect();
+        const abajo = r.top - g.height - 10 < 8;
+        const izquierda = Math.max(8, Math.min(window.innerWidth - g.width - 8, r.left + r.width / 2 - g.width / 2));
+        globo.dataset.lado = abajo ? 'abajo' : 'arriba';
+        globo.style.left = izquierda + 'px';
+        globo.style.top = (abajo ? r.bottom + 10 : r.top - g.height - 10) + 'px';
+        globo.style.setProperty('--flecha', (r.left + r.width / 2 - izquierda) + 'px');
+        globoDe = el;
+        requestAnimationFrame(function () { globo.classList.add('is-visible'); });
+    }
+
+    function ocultarTooltip() {
+        clearTimeout(esperaGlobo);
+        if (globo) globo.classList.remove('is-visible');
+        globoDe = null;
+    }
+
+    function tooltips() {
+        const conMouseFino = window.matchMedia('(hover: hover)').matches;
+        if (conMouseFino) {
+            document.addEventListener('pointerover', function (e) {
+                const el = e.target instanceof Element && e.target.closest(CON_TOOLTIP);
+                if (!el || el === globoDe) return;
+                clearTimeout(esperaGlobo);
+                textoTooltip(el); // quita el title de inmediato para que no salga el nativo
+                esperaGlobo = setTimeout(function () { mostrarTooltip(el); }, 350);
+            });
+            document.addEventListener('pointerout', function (e) {
+                const el = e.target instanceof Element && e.target.closest(CON_TOOLTIP);
+                if (el && !el.contains(e.relatedTarget)) ocultarTooltip();
+            });
+        }
+        document.addEventListener('focusin', function (e) {
+            const el = e.target instanceof Element && e.target.closest(CON_TOOLTIP);
+            if (el && el.matches(':focus-visible')) mostrarTooltip(el);
+        });
+        document.addEventListener('focusout', ocultarTooltip);
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') ocultarTooltip(); });
+        window.addEventListener('scroll', ocultarTooltip, { passive: true });
+        document.addEventListener('pointerdown', ocultarTooltip, { passive: true });
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -885,6 +956,7 @@
         construirInterruptorTema();
         paletaDeComandos();
         busquedaDesdeUrl();
+        tooltips();
         logoSegunTema(document.documentElement.getAttribute('data-theme'));
         barraAlHacerScroll();
         progresoDeNavegacion();

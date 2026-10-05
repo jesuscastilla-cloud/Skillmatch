@@ -2310,6 +2310,39 @@ kbd {
 }
 .cmdk-pie span { display: inline-flex; align-items: center; gap: 4px; }
 @media (hover: none) { .cmdk-pie { display: none; } }
+/* ---------- 25d. Tooltips animados (ui.js, seccion 13) ---------- */
+.tooltip {
+    position: fixed;
+    z-index: 400;
+    max-width: 240px;
+    padding: 6px 10px;
+    border-radius: var(--r-sm);
+    background: var(--surface-inverse);
+    color: #fff;
+    font-size: var(--t-xs); font-weight: 600; line-height: 1.4;
+    box-shadow: var(--sh-3);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px) scale(.96);
+    transform-origin: 50% 100%;
+    transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-out);
+}
+.tooltip[data-lado="abajo"] { transform: translateY(-4px) scale(.96); transform-origin: 50% 0; }
+.tooltip.is-visible { opacity: 1; transform: none; }
+.tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%; left: var(--flecha, 50%);
+    border: 5px solid transparent;
+    border-top-color: var(--surface-inverse);
+    transform: translateX(-50%);
+}
+.tooltip[data-lado="abajo"]::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--surface-inverse); }
+/* En oscuro el globo va claro para separarse del fondo */
+[data-theme="dark"] .tooltip { background: #EEF3FA; color: #08203C; }
+[data-theme="dark"] .tooltip::after { border-top-color: #EEF3FA; }
+[data-theme="dark"] .tooltip[data-lado="abajo"]::after { border-top-color: transparent; border-bottom-color: #EEF3FA; }
+
 /* Pantallas angostas: empresa y ciudad en una segunda linea, sin cortar el cargo */
 @media (max-width: 760px) {
     .cmdk-item { flex-wrap: wrap; row-gap: 0; }
