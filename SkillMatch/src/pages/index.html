@@ -45,7 +45,17 @@
         <div class="container">
             <div class="hero-grid">
                 <div class="hero-copy">
-                    <h1>El trabajo que buscas ya está en Cartagena</h1>
+                    <!-- Titular palabra por palabra; la palabra clave rota (index.js).
+                         El lector de pantalla lee la frase completa del aria-label. -->
+                    <h1 class="hero-titular" aria-label="El trabajo, la práctica o el proyecto que buscas ya está en Cartagena">
+                        <span class="hero-rotador" aria-hidden="true"><span class="hero-clave is-activa">El trabajo</span><span class="hero-clave">La práctica</span><span class="hero-clave">El proyecto</span></span>
+                        <span aria-hidden="true">que</span>
+                        <span aria-hidden="true">buscas</span>
+                        <span aria-hidden="true">ya</span>
+                        <span aria-hidden="true">está</span>
+                        <span aria-hidden="true">en</span>
+                        <span aria-hidden="true">Cartagena</span>
+                    </h1>
                     <p>SkillMatch compara tus habilidades con cada vacante de la ciudad y te muestra
                        qué tan cerca estás de conseguirla, antes de que te postules.</p>
 
@@ -70,31 +80,34 @@
                     </div>
                 </div>
 
-                <!-- Muestra de lo que hace el producto, con datos de ejemplo -->
-                <div class="hero-card" aria-label="Ejemplo de vacante con porcentaje de compatibilidad">
+                <!-- Demo del match en vivo (Fase 2 del plan): vacante de ejemplo; el
+                     visitante marca sus habilidades y el anillo se recalcula (index.js) -->
+                <div class="hero-card match-demo" role="group" aria-labelledby="demo-titulo">
                     <div class="result-header">
-                        <div style="display:flex; gap:14px; align-items:flex-start; min-width:0">
+                        <div class="hero-card-empresa">
                             <div class="result-logo">TS</div>
-                            <div style="min-width:0">
-                                <h3 class="job-title">Desarrollador Backend Java</h3>
+                            <div class="hero-card-texto">
+                                <h3 class="job-title" id="demo-titulo">Desarrollador Backend Java</h3>
                                 <p class="company-name">TechSolutions · Cartagena</p>
                             </div>
                         </div>
-                        <div class="match-ring" data-pct="92"></div>
+                        <div class="match-ring" data-pct="92" role="img" aria-label="92 por ciento de coincidencia con esta vacante"></div>
                     </div>
-                    <div class="card-meta" style="margin-top:16px">
+                    <div class="card-meta">
                         <span class="meta-item"><i data-ico="pin" class="ico-sm"></i> Híbrido</span>
                         <span class="meta-item"><i data-ico="briefcase" class="ico-sm"></i> Tiempo completo</span>
                         <span class="meta-item result-salary"><i data-ico="money" class="ico-sm"></i> $4.5M – $6M</span>
                     </div>
-                    <div class="card-skills" style="margin-top:14px">
-                        <span class="skill-tag">Java</span>
-                        <span class="skill-tag">Spring Boot</span>
-                        <span class="skill-tag">MongoDB</span>
-                        <span class="skill-tag">Docker</span>
+                    <p class="demo-instruccion"><i data-ico="sparkle" class="ico-sm"></i> Pruébalo: marca las habilidades que tienes</p>
+                    <div class="demo-habilidades" role="group" aria-label="Habilidades que pide la vacante">
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="30"><i data-ico="check" class="ico-sm"></i>Java</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="25"><i data-ico="check" class="ico-sm"></i>Spring Boot</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>MongoDB</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="17"><i data-ico="check" class="ico-sm"></i>Docker</button>
+                        <button type="button" class="demo-skill" aria-pressed="false" data-peso="8"><i data-ico="check" class="ico-sm"></i>Kubernetes</button>
                     </div>
-                    <p class="suggestion-reason" style="margin-top:16px">
-                        Coincides en 11 de 12 requisitos. Te falta experiencia con Kubernetes.
+                    <p class="suggestion-reason demo-razon" aria-live="polite">
+                        Coincides en 4 de 5 requisitos. Te falta Kubernetes.
                     </p>
                 </div>
             </div>

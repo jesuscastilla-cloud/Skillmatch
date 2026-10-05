@@ -1555,6 +1555,77 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     to   { opacity: 1; transform: translateY(0) rotate(0); }
 }
 
+/* ---- Fase 2: titular palabra por palabra con palabra clave en bucle ---- */
+.hero-titular > * {
+    display: inline-block;
+    animation: palabra-entra .7s var(--ease-out) both;
+}
+.hero-titular > :nth-child(2) { animation-delay: 70ms; }
+.hero-titular > :nth-child(3) { animation-delay: 140ms; }
+.hero-titular > :nth-child(4) { animation-delay: 210ms; }
+.hero-titular > :nth-child(5) { animation-delay: 280ms; }
+.hero-titular > :nth-child(6) { animation-delay: 350ms; }
+.hero-titular > :nth-child(7) { animation-delay: 420ms; }
+@keyframes palabra-entra {
+    from { opacity: 0; transform: translateY(.35em); }
+}
+/* Solo la palabra clave visible ocupa espacio (sin hueco despues de la mas
+   corta); las otras se superponen encima. index.js cambia cual se ve. */
+.hero-titular > .hero-rotador { position: relative; color: var(--sea-luz); }
+.hero-clave {
+    position: absolute;
+    left: 0; top: 0;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(.45em);
+    transition: opacity .45s var(--ease-out), transform .6s var(--ease-out);
+}
+.hero-clave.is-activa   { position: relative; opacity: 1; transform: none; }
+.hero-clave.is-saliendo { opacity: 0; transform: translateY(-.45em); }
+
+/* El gradiente de fondo se desplaza un poco hacia el lado contrario del
+   mouse (index.js pone --hx/--hy entre -1 y 1). Se usa la propiedad
+   translate para no pisar la deriva lenta, que va en transform. */
+.hero::before { translate: calc(var(--hx, 0) * -48px) calc(var(--hy, 0) * -36px); transition: translate 1.2s var(--ease-out); }
+.hero::after  { translate: calc(var(--hx, 0) * 40px)  calc(var(--hy, 0) * 30px);  transition: translate 1.2s var(--ease-out); }
+
+/* ---- Fase 2: demo del match en vivo (tarjeta del hero) ---- */
+.hero-card-empresa { display: flex; gap: 14px; align-items: flex-start; min-width: 0; }
+.hero-card-texto { min-width: 0; }
+.hero-card .card-meta { margin-top: var(--s4); }
+.demo-instruccion {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: var(--s4);
+    font-size: var(--t-xs); font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+    color: var(--ink-muted);
+}
+.demo-instruccion .ico { color: var(--naranja); }
+.demo-habilidades { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s2); }
+.demo-skill {
+    display: inline-flex; align-items: center; gap: 4px;
+    min-height: 32px;
+    padding: 4px 12px;
+    border: 1px dashed var(--ink-muted);
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--ink-3);
+    font-size: var(--t-xs); font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+                color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.demo-skill .ico { display: none; width: 14px; height: 14px; stroke-width: 2.6; }
+.demo-skill:hover { border-color: var(--sea); color: var(--sea-deep); }
+.demo-skill:active { transform: scale(.95); }
+.demo-skill[aria-pressed="true"] {
+    border-style: solid; border-color: transparent;
+    background: var(--sea-light); color: var(--sea-deep);
+}
+.demo-skill[aria-pressed="true"] .ico { display: inline-block; animation: check-pop .22s var(--ease-out); }
+.match-demo .demo-razon { margin-top: var(--s4); }
+@media (pointer: coarse) { .demo-skill { min-height: 44px; } }
+
 .section { padding: var(--s9) 0; }
 .section-sunk { background: var(--surface); }
 
