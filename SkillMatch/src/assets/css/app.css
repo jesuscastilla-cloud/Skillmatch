@@ -1518,13 +1518,13 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     gap: var(--s3);
     margin-top: var(--s6);
 }
-.hero .btn-secondary {
+.hero .btn-secondary, .cta-final .btn-secondary {
     background: rgba(255,255,255,.08);
     border-color: rgba(255,255,255,.22);
     color: #fff;
     backdrop-filter: blur(8px);
 }
-.hero .btn-secondary:hover {
+.hero .btn-secondary:hover, .cta-final .btn-secondary:hover {
     background: rgba(255,255,255,.16);
     border-color: rgba(255,255,255,.4);
     color: #fff;
@@ -1626,6 +1626,58 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 .match-demo .demo-razon { margin-top: var(--s4); }
 @media (pointer: coarse) { .demo-skill { min-height: 44px; } }
 
+/* ---- Fase 2: ola bajo el hero que se desliza lento (solo transform).
+   Mascara SVG + color de la seccion siguiente, asi cambia sola en oscuro. ---- */
+.hero { padding-bottom: calc(var(--s8) + 32px); }
+.hero-ola {
+    position: absolute;
+    left: 0; bottom: -1px;
+    width: 200%; height: 48px;
+    background: var(--surface);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C180 0 540 0 720 24S1260 48 1440 24V48H0Z'/%3E%3C/svg%3E") left bottom / 50% 100% repeat-x;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C180 0 540 0 720 24S1260 48 1440 24V48H0Z'/%3E%3C/svg%3E") left bottom / 50% 100% repeat-x;
+    animation: ola-desliza 32s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+@keyframes ola-desliza { to { transform: translateX(-50%); } }
+
+/* ---- Fase 2: llamada final, franja oscura que continua en el pie ---- */
+.cta-final {
+    position: relative;
+    overflow: hidden;
+    padding: var(--s9) 0 var(--s8);
+    background: var(--grain), var(--bg-deep);
+    background-blend-mode: overlay;
+    background-size: 220px 220px, auto;
+    color: #fff;
+    text-align: center;
+}
+.cta-final::before, .cta-final::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(22px);
+    pointer-events: none;
+}
+.cta-final::before {
+    inset: -55% auto auto 50%;
+    width: 760px; height: 760px; margin-left: -380px;
+    background: radial-gradient(circle, rgba(11,126,140,.45), transparent 62%);
+    animation: mesh-drift-a 24s var(--ease-in-out) infinite;
+}
+.cta-final::after {
+    inset: auto auto -60% -10%;
+    width: 520px; height: 520px;
+    background: radial-gradient(circle, rgba(255,118,24,.25), transparent 65%);
+    animation: mesh-drift-b 29s var(--ease-in-out) infinite;
+}
+.cta-final .container { position: relative; z-index: 1; }
+.cta-final h2 { color: #fff; font-size: clamp(2rem, 1.3rem + 2.6vw, 3rem); max-width: 18ch; margin: 0 auto; }
+.cta-final p { color: rgba(255,255,255,.72); font-size: var(--t-md); max-width: 52ch; margin: var(--s4) auto 0; }
+.cta-final-acciones { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s3); margin-top: var(--s6); }
+.cta-final + footer { padding-top: var(--s6); border-top: 1px solid rgba(255,255,255,.08); }
+
 /* ---- Fase 2: cifras de impacto en una fila (la cuadricula estaba en la
    seccion y no en el contenedor de las cifras, que salian apiladas) ---- */
 .impact-stats { display: block; padding: var(--s7) 0 0; }
@@ -1683,7 +1735,7 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 .cf-avatar {
     display: grid; place-items: center; flex: 0 0 auto;
     width: 64px; height: 64px; border-radius: 50%;
-    background: var(--sea); color: var(--surface-inverse);
+    background: var(--sea-luz); color: var(--surface-inverse);
     font-family: var(--font-display); font-weight: 800;
 }
 .cf-lineas { flex: 1; display: flex; flex-direction: column; gap: 10px; }
@@ -2667,7 +2719,7 @@ kbd {
     --surface-sunk:   #0D1D30;
 
     --sea:            #2BB6C6;
-    --sea-deep:       #219CAD; /* enlaces: 4.9:1 sobre --surface oscuro */
+    --sea-deep:       #2BB6C6; /* texto turquesa: 4.9:1 o mas sobre cualquier fondo oscuro, incluido --sea-light */
     --sea-light:      rgba(43, 182, 198, .16);
     --sea-glow:       rgba(43, 182, 198, .35);
 

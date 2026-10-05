@@ -476,7 +476,7 @@
                       '.roadmap-card, .connection-card, .suggestion-card, .offer-card, .candidate-mini-card, ' +
                       '.application-card, .opportunity-item-compact, .company-item-compact';
     const TILT      = '.hero-card, .opportunity-card';
-    const MAGNETICO = '.btn-accent, .hero .btn, .pathway-card .btn, .choice-card .btn, .btn-search-main, .search-btn';
+    const MAGNETICO = '.btn-accent, .hero .btn, .cta-final .btn, .pathway-card .btn, .choice-card .btn, .btn-search-main, .search-btn';
     const ONDA      = '.btn, .btn-save, .btn-apply, .btn-search-main, .search-btn, .btn-login, .btn-register';
 
     /** Marca con clases (.spot, .tilt, .magnetic) lo que debe moverse. */
