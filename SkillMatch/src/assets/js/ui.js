@@ -280,7 +280,8 @@
      *  (tambien las vacantes que llegan despues desde la API), sin tocar el HTML. */
     const REVELAR = '.reveal, .section-header-center, .innovation-header, .why-header, ' +
                     '.feature-card, .benefit-item, .pathway-card, .roadmap-card, ' +
-                    '.cartagena-photo, .opportunity-card';
+                    '.cartagena-photo, .opportunity-card, .connection-card, .suggestion-card, ' +
+                    '.offer-card, .candidate-mini-card, .application-card';
     let observadorEntrada = null;
 
     function revelar(raiz) {
@@ -470,7 +471,10 @@
     // Lo que sigue al cursor solo existe con mouse y sin movimiento reducido.
     const conMouse = !reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-    const SPOT      = '.hero-card, .opportunity-card, .feature-card, .pathway-card, .choice-card, .benefit-item, .roadmap-card';
+    // Toda tarjeta con la que se interactua lleva el foco de luz
+    const SPOT      = '.hero-card, .opportunity-card, .feature-card, .pathway-card, .choice-card, .benefit-item, ' +
+                      '.roadmap-card, .connection-card, .suggestion-card, .offer-card, .candidate-mini-card, ' +
+                      '.application-card, .opportunity-item-compact, .company-item-compact';
     const TILT      = '.hero-card, .opportunity-card';
     const MAGNETICO = '.btn-accent, .hero .btn, .pathway-card .btn, .choice-card .btn, .btn-search-main, .search-btn';
     const ONDA      = '.btn, .btn-save, .btn-apply, .btn-search-main, .search-btn, .btn-login, .btn-register';
@@ -946,6 +950,58 @@
         document.addEventListener('pointerdown', ocultarTooltip, { passive: true });
     }
 
+    /* ---------- 14. Avisos de la marca en lugar de alert() ---------- */
+
+    // Los modulos usan alert() (unas 80 veces) y el navegador lo muestra como
+    // una ventana gris que bloquea la pagina. Aqui se convierte en un aviso de
+    // SkillMatchUI.aviso. Si la pagina cambia justo despues (por ejemplo
+    // "Registro exitoso" y luego ir al login), el aviso aparece en la siguiente.
+    // confirm() no se toca: necesita una respuesta si/no en el momento.
+    const AVISOS_KEY = 'skillmatch_avisos_pendientes';
+    const avisosRecientes = [];
+
+    function tipoDeAviso(texto) {
+        const t = normalizar(texto);
+        if (/error|no se pudo|no pudimos|invalid|incorrect|debe|complet|fall|requerid|no coincid|ingresa|selecciona|inicia sesion/.test(t)) return 'error';
+        if (/exito|exitos|guardad|enviad|correctamente|actualizad|cread|registrad|eliminad|agregad|bienvenid|aplicaste/.test(t)) return 'ok';
+        return 'info';
+    }
+
+    function escaparHtml(texto) {
+        return texto.replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function mostrarAviso(texto, tipo) {
+        UI.aviso(escaparHtml(texto), tipo, tipo === 'error' ? 6500 : 4200);
+    }
+
+    // Se instala al cargar ui.js (no al terminar la pagina): algunos modulos
+    // avisan en su propio DOMContentLoaded, que corre antes que el de ui.js.
+    window.alert = function (mensaje) {
+        const texto = String(mensaje == null ? '' : mensaje);
+        const tipo = tipoDeAviso(texto);
+        avisosRecientes.push({ texto: texto, tipo: tipo, t: Date.now() });
+        if (document.body) mostrarAviso(texto, tipo);
+    };
+    window.addEventListener('pagehide', function () {
+        // Solo los avisos que dispararon el cambio de pagina (alert + redireccion seguida)
+        const vigentes = avisosRecientes.filter(function (a) { return Date.now() - a.t < 800; });
+        if (!vigentes.length) return;
+        try { sessionStorage.setItem(AVISOS_KEY, JSON.stringify(vigentes)); } catch (e) { /* modo privado */ }
+    });
+
+    /** Muestra los avisos que quedaron pendientes de la pagina anterior. */
+    function avisosPendientes() {
+        let pendientes = [];
+        try {
+            pendientes = JSON.parse(sessionStorage.getItem(AVISOS_KEY) || '[]');
+            sessionStorage.removeItem(AVISOS_KEY);
+        } catch (e) { return; }
+        pendientes.forEach(function (a) { mostrarAviso(a.texto, a.tipo); });
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -957,6 +1013,7 @@
         paletaDeComandos();
         busquedaDesdeUrl();
         tooltips();
+        avisosPendientes();
         logoSegunTema(document.documentElement.getAttribute('data-theme'));
         barraAlHacerScroll();
         progresoDeNavegacion();
