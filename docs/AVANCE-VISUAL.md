@@ -58,15 +58,23 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 - Scroll-telling "¿Cómo funciona?" con 4 escenas (sin librerías).
 - Cifras de impacto que cuentan al entrar en pantalla.
 - Ola bajo el hero y llamada final unida al pie.
+- Mapa SVG de Cartagena (sección nueva tras las fotos): Centro, Bocagrande, Manga y Mamonal
+  con puntos que laten; la lista de zonas y el mapa se resaltan juntos (mouse, toque o
+  teclado) y un brillo naranja viaja a la zona activa. **Decisión:** sin cifras por barrio,
+  porque las vacantes solo guardan la ciudad (`location`), no el barrio; se describe qué
+  trabajo mueve cada zona. Las cifras reales llegarán con la "vista de mapa por barrio"
+  de la Fase 3, que necesita ese campo en el backend.
 
 ## Pendiente
 
-- **Fase 2:** mapa SVG de Cartagena con barrios (siguiente paso); asistente Skilly
-  (necesita `/api/assistant` en el backend: hablarlo con Jesús).
+- **Fase 2:** asistente Skilly (siguiente paso; necesita `/api/assistant` en el backend:
+  hablarlo con Jesús).
 - **En pausa por contenido real:** historias de éxito y cinta de logos (no se inventan).
 - **Lottie:** faltan los JSON de Lottieflow (`exito`, `cargando`, `bajar`, `vacio`, `guardar`)
   en `assets/lottie/`.
-- `confirm()` sigue siendo el del navegador (cambiarlo exige un modal asíncrono).
+- `confirm()` sigue siendo el del navegador (cambiarlo exige un modal asíncrono). Además,
+  el `confirm()` de "Aplicar" en `oportunidades.js` muestra el texto `<i data-ico="...">`
+  literal (un `confirm()` no dibuja HTML): se arregla al cambiarlo por el modal.
 - Pie de página grande en todas las páginas (hoy solo la portada tiene la llamada final).
 - Hablar con Jesús: este avance, la contraseña de Atlas y cuándo abrir el PR hacia
   `fase-1-identidad`.
