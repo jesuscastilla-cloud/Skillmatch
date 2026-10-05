@@ -33,23 +33,22 @@
         </nav>
     </header>
 
-    <section class="registro-section">
-        <div class="container">
-            <div class="welcome-text">
-                <h1>Portal de Usuarios</h1>
-                <p>Encuentra oportunidades para impulsar tu desarrollo profesional</p>
-            </div>
-            
+    <main class="auth-shell" id="main">
+        <div class="auth-panel">
             <div class="login-container">
+                <div class="welcome-text">
+                    <span class="auth-eyebrow"><i data-ico="cap"></i> Portal de Usuarios</span>
+                    <h1>Vuelve a tu búsqueda</h1>
+                    <p>Encuentra oportunidades para impulsar tu desarrollo profesional</p>
+                </div>
+
                 <div class="login-form registro-form active" id="loginForm">
                     <h2>Iniciar Sesión</h2>
-                    
-                    <!-- Mensaje de error -->
-                    <div id="error-message"></div>
-                    
-                    <!-- Mensaje de éxito -->
-                    <div id="success-message"></div>
-                    
+
+                    <!-- Mensajes: auth.js los muestra; role los anuncia al lector de pantalla -->
+                    <div id="error-message" role="alert"></div>
+                    <div id="success-message" role="status"></div>
+
                     <form id="usuario-login-form" method="post" novalidate>
                         <div class="form-group">
                             <label for="email">Correo Electrónico</label>
@@ -58,18 +57,27 @@
                         <div class="form-group">
                             <label for="password">Contraseña</label>
                             <input type="password" id="password" name="password" autocomplete="current-password" required>
+                            <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
                         </div>
-                        <button type="submit" class="btn btn-primary" id="login-btn">Iniciar Sesión</button>
+                        <button type="submit" class="btn btn-primary btn-full" id="login-btn">Iniciar Sesión</button>
                     </form>
-                    <p class="form-footer">
-                        <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
-                    </p>
                     <div class="divider">o</div>
-                    <a href="registro-usuario.html" class="btn btn-secondary">Crear cuenta de Usuario</a>
+                    <a href="registro-usuario.html" class="btn btn-secondary btn-full">Crear cuenta de Usuario</a>
+                    <p class="auth-switch">¿Representas a una empresa? <a href="login-empresa.html">Accede como empresa</a></p>
                 </div>
             </div>
         </div>
-    </section>
+
+        <aside class="auth-aside">
+            <img class="auth-aside-foto" src="../assets/img/cartagena-estudiantes.webp" alt="" loading="lazy" aria-hidden="true">
+            <h2>Tu perfil trabaja mientras tú no estás</h2>
+            <ul class="auth-points">
+                <li><i data-ico="check"></i> Perfil y portafolio con logros y proyectos</li>
+                <li><i data-ico="check"></i> Recomendaciones según tu perfil y habilidades</li>
+                <li><i data-ico="check"></i> Seguimiento de candidaturas y feedback</li>
+            </ul>
+        </aside>
+    </main>
 
     <footer>
         <div class="container">

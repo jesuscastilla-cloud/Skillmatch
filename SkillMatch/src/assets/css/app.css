@@ -1591,6 +1591,64 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .auth-aside h2 { color: #fff; }
 .auth-aside p { color: rgba(255,255,255,.7); }
 
+/* Foto de Cartagena detras del panel: se desvanece hacia el texto y se
+   acerca muy lento (solo transform; con movimiento reducido queda quieta) */
+.auth-aside:has(.auth-aside-foto) { justify-content: flex-end; }
+.auth-aside > .auth-aside-foto {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: .55;
+    -webkit-mask-image: linear-gradient(180deg, #000 20%, transparent 80%);
+            mask-image: linear-gradient(180deg, #000 20%, transparent 80%);
+    animation: foto-lenta 24s var(--ease-in-out) infinite alternate;
+}
+@keyframes foto-lenta {
+    from { transform: scale(1); }
+    to   { transform: scale(1.08) translate(-1.5%, 1%); }
+}
+
+.auth-points { display: flex; flex-direction: column; gap: var(--s3); margin-top: var(--s5); }
+.auth-points li { display: flex; align-items: flex-start; gap: var(--s3); color: rgba(255,255,255,.86); }
+.auth-points .ico {
+    width: 24px; height: 24px; padding: 4px;
+    border-radius: 50%;
+    background: rgba(43, 182, 198, .2);
+    color: #5FD0DC;
+    stroke-width: 2.4;
+}
+
+/* Logins de usuario y empresa: encabezado del formulario */
+.auth-panel .welcome-text { margin-bottom: var(--s6); }
+.auth-panel .welcome-text h1 { font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.4rem); margin: var(--s3) 0 var(--s2); }
+/* Un solo titular grande por pantalla: el del formulario baja de tamano */
+.auth-panel .welcome-text + .login-form > h2 { font-size: var(--t-lg); margin-bottom: var(--s4); }
+.auth-eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px 5px 10px;
+    border-radius: var(--r-pill);
+    background: var(--sea-light); color: var(--sea-deep);
+    font-size: var(--t-xs); font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+}
+.auth-eyebrow .ico { width: 16px; height: 16px; }
+.form-group .forgot-password { display: block; width: fit-content; margin: var(--s1) 0 0 auto; }
+.auth-switch { margin-top: var(--s5); text-align: center; font-size: var(--t-sm); color: var(--ink-3); }
+.auth-switch a { font-weight: 600; }
+
+/* Mensajes del login (auth.js los llena y los muestra) */
+#error-message, #success-message {
+    display: none;
+    margin-bottom: var(--s4);
+    padding: var(--s3) var(--s4);
+    border-radius: var(--r-md);
+    font-size: var(--t-sm); font-weight: 500;
+}
+#error-message   { background: var(--rojo-soft);  color: var(--rojo); }
+#success-message { background: var(--verde-soft); color: #0D7050; }
+[data-theme="dark"] #success-message { color: var(--verde); }
+
 .login-container, .registro-form, .login-form {
     width: 100%;
     max-width: 440px;
@@ -2288,7 +2346,13 @@ header  { view-transition-name: barra-superior; }
 
 /* ---- Utilidades ---- */
 .hidden, .is-hidden, .avatar-img-hidden { display: none !important; }
-.divider { height: 1px; background: var(--hairline); border: 0; margin: var(--s5) 0; }
+/* Separador con texto ("o") entre dos acciones */
+.divider {
+    display: flex; align-items: center; gap: var(--s3);
+    margin: var(--s5) 0;
+    color: var(--ink-muted); font-size: var(--t-sm);
+}
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: currentColor; opacity: .3; }
 .success { color: var(--verde); font-weight: 600; }
 .inactive { opacity: .55; }
 .btn-full, .btn-block { width: 100%; }
