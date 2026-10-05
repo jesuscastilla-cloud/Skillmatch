@@ -298,8 +298,9 @@ async function performSearch() {
             { signal: searchAbortController.signal }
         );
         if (response.ok) {
-            const jobs = await response.json();
-            displayJobs(jobs);
+            // /jobs/search responde con una pagina { content: [...] }, igual que /jobs
+            const data = await response.json();
+            displayJobs(Array.isArray(data) ? data : (data.content || []));
         } else {
             displayJobs([]);
         }
