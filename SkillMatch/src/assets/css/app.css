@@ -51,6 +51,8 @@
     --sol-deep:       #8A5A00;
     --verde:          #11845A;
     --verde-soft:     #E0F4EC;
+    --verde-texto:    #0D7050; /* verde legible como texto sobre --verde-soft */
+    --sea-luz:        #5FD0DC; /* turquesa luminoso sobre superficies oscuras */
     --rojo:           #C62B3E;
     --rojo-soft:      #FCE8EA;
 
@@ -850,10 +852,9 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 .btn-save.saved { border-color: transparent; background: var(--naranja-soft); color: var(--naranja-texto); }
 .btn-apply:active, .btn-save:active { transform: scale(.96); }
 .btn-apply.applied {
-    background: var(--verde-soft); color: #0D7050;
+    background: var(--verde-soft); color: var(--verde-texto);
     box-shadow: none; transform: none; pointer-events: none;
 }
-[data-theme="dark"] .btn-apply.applied { color: var(--verde); }
 /* En pantallas tactiles, los botones pequenos crecen hasta 44px y los
    enlaces/iconos diminutos reciben una zona tactil invisible */
 @media (pointer: coarse) {
@@ -1647,7 +1648,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     width: 24px; height: 24px; padding: 4px;
     border-radius: 50%;
     background: rgba(43, 182, 198, .2);
-    color: #5FD0DC;
+    color: var(--sea-luz);
     stroke-width: 2.4;
 }
 
@@ -1678,8 +1679,7 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
     font-size: var(--t-sm); font-weight: 500;
 }
 #error-message   { background: var(--rojo-soft);  color: var(--rojo); }
-#success-message { background: var(--verde-soft); color: #0D7050; }
-[data-theme="dark"] #success-message { color: var(--verde); }
+#success-message { background: var(--verde-soft); color: var(--verde-texto); }
 
 .login-container, .registro-form, .login-form {
     width: 100%;
@@ -2371,9 +2371,9 @@ kbd {
 }
 .tooltip[data-lado="abajo"]::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--surface-inverse); }
 /* En oscuro el globo va claro para separarse del fondo */
-[data-theme="dark"] .tooltip { background: #EEF3FA; color: #08203C; }
-[data-theme="dark"] .tooltip::after { border-top-color: #EEF3FA; }
-[data-theme="dark"] .tooltip[data-lado="abajo"]::after { border-top-color: transparent; border-bottom-color: #EEF3FA; }
+[data-theme="dark"] .tooltip { background: var(--ink); color: var(--surface-inverse); }
+[data-theme="dark"] .tooltip::after { border-top-color: var(--ink); }
+[data-theme="dark"] .tooltip[data-lado="abajo"]::after { border-top-color: transparent; border-bottom-color: var(--ink); }
 
 /* Pantallas angostas: empresa y ciudad en una segunda linea, sin cortar el cargo */
 @media (max-width: 760px) {
@@ -2472,6 +2472,7 @@ kbd {
     --sol-deep:       #F2B84B;
     --verde:          #3FCB93;
     --verde-soft:     rgba(63, 203, 147, .16);
+    --verde-texto:    var(--verde);
     --rojo:           #FF6B7A;
     --rojo-soft:      rgba(255, 107, 122, .16);
 
@@ -2496,7 +2497,7 @@ kbd {
 [data-theme="dark"] .btn-primary-modal { color: var(--surface-inverse); }
 [data-theme="dark"] .btn-primary:hover,
 [data-theme="dark"] .btn.primary:hover,
-[data-theme="dark"] .btn-primary-modal:hover { background: #3CC3D2; color: var(--surface-inverse); }
+[data-theme="dark"] .btn-primary-modal:hover { background: var(--sea-luz); color: var(--surface-inverse); }
 /* Botones que al pasar el mouse se vuelven turquesa: texto azul marino en oscuro */
 [data-theme="dark"] .btn-search-main:hover,
 [data-theme="dark"] .search-btn:hover,
