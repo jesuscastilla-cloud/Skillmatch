@@ -2176,9 +2176,20 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .lp-linea { opacity: 0; }
 .lp-boca-o, .lp-boca-risa { transform: scale(0); }
 
+/* Ropa de oficina (solo en el login de empresas): azul marino con detalles
+   naranja del logo. Corbata y carnet se mecen como pendulos desde el JS. */
+.lp-traje { fill: var(--surface-inverse); }
+.lp-cuello, .lp-carnet { fill: #fff; }
+.lp-nudo, .lp-carnet-banda { fill: var(--naranja); }
+.lp-raya { fill: none; stroke: var(--naranja); stroke-width: 2; }
+.lp-carnet-texto { fill: none; stroke: var(--surface-inverse); stroke-width: 1.6; }
+.lp-cinta { stroke: var(--surface-inverse); stroke-width: 2.4; }
+.lp-lentes { fill: none; stroke: var(--surface-inverse); stroke-width: 2.6; }
+
 /* Cada parte se transforma desde su propio punto (los pies, el centro del
    ojo o de la boca): el JS pone ese punto en px del lienzo */
-.lp-pj, .lp-ojo, .lp-boca, .lp-sombra, .lp-polvo { transform-box: view-box; }
+.lp-pj, .lp-ojo, .lp-boca, .lp-sombra, .lp-polvo,
+.lp-corbata, .lp-colgante, .lp-cinta { transform-box: view-box; }
 
 /* Campo de contrasena con boton para mostrarla (lo agrega login-personajes.js) */
 .campo-clave { position: relative; }

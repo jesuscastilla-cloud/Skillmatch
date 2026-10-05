@@ -8,6 +8,9 @@
 //  - Miran el correo mientras se escribe; cierran los ojos en la contrasena
 //    y con "mostrar contrasena" la chispa naranja se acerca a espiar.
 //  - Miran el boton mientras carga, niegan si hay error y saltan si entra.
+//  - En el login de empresas (data-variante="empresa") van de oficina:
+//    corbata, corbatin, carnet y lentes. La corbata y el carnet son
+//    pendulos: cuelgan, el aire los levanta al caer y se mecen al frenar.
 // El movimiento sale de un motor de fisica pequeno: resortes (lo mismo que
 // usan Framer Motion o React Spring) y gravedad, calculados en cada cuadro.
 // No toca auth.js: solo observa el boton y los mensajes que auth.js ya usa.
@@ -40,6 +43,7 @@
     const demo = modoDemo();
     const reducido = !demo && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const conMouse = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const empresa = contenedor.dataset.variante === 'empresa';
     function ahora() { return performance.now() / 1000; }
 
     /* ---------- 1. Dibujo ---------- */
@@ -86,11 +90,51 @@
             <path class="lp-boca lp-boca-risa" style="${origen(x, y + w * 0.2)}" d="M${x - m},${y - 1} Q${x},${y + w * 0.8} ${x + m},${y - 1}Z"/>`;
     }
 
+    // Ropa de oficina, solo en el login de empresas. "cuerpo" va sobre el
+    // cuerpo y "cara" se mueve con la cara (los lentes siguen a los ojos).
+    // Lo que cuelga es un pendulo: "pivote" es el punto del que cuelga,
+    // "largo" la distancia hasta su centro (mas largo = se mece mas lento),
+    // "aire" cuanto lo levanta el viento al caer, "sesgo" hacia que hombro
+    // se va, "amort" cuanto tarda en quedarse quieto y "pecho" cuanto lo
+    // sujeta el cuerpo (la corbata va pegada; el carnet cuelga libre).
+    // Las cintas del carnet van de [x, y] en el cuello a [x, y] en la tarjeta.
+    const ROPA = {
+        azul: {
+            cuerpo: `<path class="lp-cuello" d="M104,123 L118,142 L132,123 Q118,129 104,123 Z"/>
+                <g class="lp-corbata">
+                    <g class="lp-colgante" style="${origen(118, 131)}">
+                        <path class="lp-traje" d="M115,131 L121,131 L126,184 L118,195 L110,184 Z"/>
+                        <path class="lp-raya" d="M115.5,147 L121.5,153 M114.5,163 L123,171.5"/>
+                    </g>
+                    <path class="lp-traje" d="M112,123 L124,123 L121,133 L115,133 Z"/>
+                </g>`,
+            colgante: { pivote: [118, 131], largo: 32, aire: 0.005, sesgo: -0.35, amort: 6, pecho: 40 }
+        },
+        turquesa: {
+            cuerpo: `<line class="lp-cinta" x1="0" y1="0" x2="0" y2="1" style="${origen(0, 0)}"/>
+                <line class="lp-cinta" x1="0" y1="0" x2="0" y2="1" style="${origen(0, 0)}"/>
+                <g class="lp-colgante" style="${origen(244, 151)}">
+                    <rect class="lp-carnet" x="235" y="190" width="18" height="23" rx="2.5"/>
+                    <rect class="lp-carnet-banda" x="238" y="194" width="12" height="4" rx="1"/>
+                    <path class="lp-carnet-texto" d="M238,203 H250 M238,207 H246"/>
+                </g>
+                <path class="lp-traje" d="M232,147 L244,153 L232,159 Z M256,147 L244,153 L256,159 Z"/>
+                <circle class="lp-nudo" cx="244" cy="153" r="3.6"/>`,
+            colgante: { pivote: [244, 151], largo: 50, aire: 0.006, sesgo: 0.3, amort: 4.5, pecho: 0,
+                        cintas: [[236, 152, 240, 192], [252, 152, 248, 192]] }
+        },
+        naranja: {
+            cara: `<g class="lp-lentes"><circle cx="162" cy="224" r="14"/><circle cx="198" cy="224" r="14"/><path d="M176,222 Q180,219 184,222"/></g>`
+        }
+    };
+
     function personaje(d) {
+        const ropa = (empresa && ROPA[d.id]) || {};
         const craneo = d.cabeza ? `<circle class="lp-color" cx="${d.cabeza[0]}" cy="${d.cabeza[1]}" r="${d.cabeza[2]}"/>` : '';
-        const cara = d.ojos.map(function (o) { return ojo(o[0], o[1], o[2]); }).join('') + boca(d.boca[0], d.boca[1], d.boca[2]);
+        const cara = d.ojos.map(function (o) { return ojo(o[0], o[1], o[2]); }).join('') + boca(d.boca[0], d.boca[1], d.boca[2]) + (ropa.cara || '');
         return `<g class="lp-pj" data-pj="${d.id}" style="${origen(d.pie, PISO)}">
             <path class="lp-color" d="${d.cuerpo}"/>
+            ${ropa.cuerpo || ''}
             <g class="lp-cabeza">${craneo}<g class="lp-cara">${cara}</g></g>
         </g>`;
     }
@@ -221,11 +265,20 @@
             y: 0, vy: 0, enAire: false, cayendo: false, inicio: 0, // caida y saltos
             apoyo: -1, rebote: 0,                                   // instante en el piso tras un golpe
             cx: 0, cy: 0,                                           // centro de la cara en pantalla
-            parpadeo: -1, sacudida: -1, salto: -1, polvoDesde: -1   // momentos de cada reaccion
+            parpadeo: -1, sacudida: -1, salto: -1, polvoDesde: -1,  // momentos de cada reaccion
+            corbata: g.querySelector('.lp-corbata'),                // solo en el login de empresas
+            colgante: null, cintas: [], ajuste: -1, ajustando: ''
         };
         p.resortes = [p.px, p.py, p.fx, p.fy, p.hx, p.hy, p.cuerpo, p.aplaste, p.estira, p.hundir,
                       p.alegre, p.bSonrisa, p.bGiro, p.bO, p.bRisa]
             .concat(p.ojos.map(function (o) { return o.cierre; }));
+        // Pendulo de la corbata o del carnet: angulo (th, 0 = colgando derecho)
+        // y velocidad de giro (w), mas lo que hace falta para medir su apoyo
+        const ropa = empresa && ROPA[d.id];
+        if (ropa && ropa.colgante) {
+            p.colgante = Object.assign({ el: g.querySelector('.lp-colgante'), th: 0, w: 0, antes: null, vel: null }, ropa.colgante);
+            p.cintas = Array.from(g.querySelectorAll('.lp-cinta'));
+        }
         return p;
     });
 
@@ -279,7 +332,76 @@
             // Primer contacto: deja de estar asustado, parpadea y sonrie
             p.cayendo = false;
             p.parpadeo = t + 0.12;
+            if (p.corbata) arreglarCorbata(p);
             actualizar();
+        }
+    }
+
+    // Al aterrizar, el de corbata se la arregla: la mira, le da un tiron
+    // hacia arriba y queda satisfecho (con los ojos felices)
+    function arreglarCorbata(p) {
+        setTimeout(function () { p.ajustando = 'mirar'; actualizar(); }, 650);
+        setTimeout(function () { p.ajuste = ahora(); p.colgante.w += 2; despertar(); }, 900);
+        setTimeout(function () { p.ajustando = 'orgullo'; actualizar(); }, 1250);
+        setTimeout(function () { p.ajustando = ''; actualizar(); }, 1900);
+    }
+
+    // Pasa un punto del dibujo del personaje al lienzo, con la caida, la
+    // inclinacion y el aplaste que tiene el cuerpo en este cuadro
+    function aMundo(tf, ox, oy, x, y) {
+        const ax = (x - ox) * tf.sx, ay = (y - oy) * tf.sy;
+        const c = Math.cos(tf.giro), s = Math.sin(tf.giro);
+        return { x: ox + tf.dx + ax * c - ay * s, y: oy + tf.y + ax * s + ay * c };
+    }
+
+    // Pendulo: se mide cuanto cambio la velocidad del punto del que cuelga.
+    // Si ese punto frena o arranca, lo que cuelga sigue de largo (inercia);
+    // en caida libre flota y el aire lo empuja hacia arriba; la gravedad lo
+    // devuelve abajo y la amortiguacion lo va calmando.
+    function mecer(c, tf, d, dt) {
+        const apoyo = aMundo(tf, d.pie, PISO, c.pivote[0], c.pivote[1]);
+        if (!c.antes) { c.antes = apoyo; c.vel = { x: 0, y: 0 }; }
+        const vx = (apoyo.x - c.antes.x) / dt, vy = (apoyo.y - c.antes.y) / dt;
+        const dvx = vx - c.vel.x, dvy = vy - c.vel.y;
+        c.antes = apoyo;
+        c.vel = { x: vx, y: vy };
+        const rapidez = Math.hypot(vx, vy);
+        const viento = Math.atan2(vx, -vy) + c.sesgo; // el aire lo lleva al lado contrario del movimiento
+        const pasos = 8, h = dt / pasos;
+        for (let i = 0; i < pasos; i++) {
+            c.w += (dvx * Math.cos(c.th) + dvy * Math.sin(c.th)) / c.largo / pasos;
+            const giro = -GRAVEDAD * Math.sin(c.th) / c.largo
+                + c.aire * rapidez * rapidez / c.largo * Math.sin(viento - c.th)
+                - (c.amort + 0.004 * rapidez) * c.w
+                - c.pecho * (c.th - tf.giro);
+            c.w = limitar(c.w + giro * h, -14, 14);
+            c.th += c.w * h;
+        }
+    }
+
+    // Dibuja la corbata o el carnet en su angulo. El pendulo se calcula
+    // respecto al piso, pero el cuerpo ya esta girado: se descuenta su giro.
+    function colgar(p, tf, t, dt) {
+        const c = p.colgante;
+        if (!reducido && dt > 0) mecer(c, tf, p.d, dt);
+        const local = reducido ? 0 : c.th - tf.giro;
+        poner(c.el, `rotate(${n2(local * 180 / Math.PI)}deg)`);
+        // Cada cinta va de su punto en el cuello a la esquina de la tarjeta
+        // ya girada: se calcula su angulo y su largo, asi nunca se despegan
+        const cos = Math.cos(local), sen = Math.sin(local);
+        p.cintas.forEach(function (cinta, i) {
+            const k = c.cintas[i];
+            const ex = k[2] - c.pivote[0], ey = k[3] - c.pivote[1];
+            const dx = c.pivote[0] + ex * cos - ey * sen - k[0];
+            const dy = c.pivote[1] + ex * sen + ey * cos - k[1];
+            poner(cinta, `translate(${n2(k[0])}px,${n2(k[1])}px) rotate(${n2(Math.atan2(-dx, dy) * 180 / Math.PI)}deg) scale(1,${n2(Math.hypot(dx, dy), 3)})`);
+        });
+        // Tiron de la corbata hacia arriba al arreglarsela
+        if (p.corbata) {
+            const s = p.ajuste >= 0 ? t - p.ajuste : -1;
+            if (s >= 0.36) p.ajuste = -1;
+            const tiron = s > 0 && s < 0.36 ? Math.sin(Math.PI * s / 0.36) : 0;
+            poner(p.corbata, `translate(0px,${n2(-3 * tiron)}px)`);
         }
     }
 
@@ -333,7 +455,7 @@
     }
 
     // Convierte los valores de la fisica en transform y opacity
-    function pintar(p, t) {
+    function pintar(p, t, dt) {
         const sinCabeza = !p.d.cabeza;
         // Respiracion: el cuerpo se estira y encoge apenas; la cabeza va un poco detras
         const fase = t * 1.85 + p.d.fase;
@@ -349,6 +471,7 @@
         const giro = (sinCabeza ? p.cuerpo.x * 1.5 : p.cuerpo.x * 4) + no * 3;
         const dx = sinCabeza ? p.cuerpo.x * 6 : 0;
         poner(p.g, `translate(${n2(dx)}px,${n2(p.y)}px) rotate(${n2(giro)}deg) scale(${n2(sx, 3)},${n2(sy, 3)})`);
+        if (p.colgante) colgar(p, { dx: dx, y: p.y, giro: giro * Math.PI / 180, sx: sx, sy: sy }, t, dt || 0);
 
         const hundir = limitar(p.hundir.x, -9, 9);
         poner(p.cabeza, `translate(${n2(p.hx.x * 4 + no * 5)}px,${n2(p.hy.x * 3 + hundir + vaiven)}px)`);
@@ -415,9 +538,10 @@
             // Cuanto mas rapido cae, mas se estira (hasta un 10 %)
             p.estira.meta = Math.min(Math.abs(p.vy) * 0.00007, 0.1);
             p.resortes.forEach(function (r) { avanzar(r, dt); });
-            pintar(p, t);
+            pintar(p, t, dt);
             if ((p.enAire && p.inicio < Infinity) || p.apoyo >= 0 || p.salto >= 0 || p.sacudida >= 0 ||
-                p.parpadeo >= 0 || p.polvoDesde >= 0 || !p.resortes.every(quieto)) sigue = true;
+                p.parpadeo >= 0 || p.polvoDesde >= 0 || p.ajuste >= 0 || !p.resortes.every(quieto) ||
+                (p.colgante && Math.abs(p.colgante.w) > 0.01)) sigue = true;
         });
         enMarcha = sigue ? requestAnimationFrame(cuadro) : 0;
     }
@@ -497,6 +621,8 @@
 
     function objetivo(p, estado) {
         if (p.cayendo) return { x: 0, y: -0.9 }; // miran hacia arriba mientras caen
+        // Arreglandose la corbata (solo si nadie esta escribiendo): la mira y luego al frente
+        if (p.ajustando && estado === 'libre') return p.ajustando === 'mirar' ? { x: 0, y: 1 } : { x: 0, y: -0.2 };
         switch (estado) {
             case 'correo':   return hacia(p, finDelTexto(email));
             case 'cerrados': return aOtroLado(p);
@@ -518,6 +644,10 @@
         if (p.cayendo) {
             // Asustados en el aire: ojos muy abiertos y boca de "¡oh!"
             g.ojos = [-0.15, -0.15]; g.sonrisa = 0; g.o = 1;
+            return g;
+        }
+        if (p.ajustando === 'orgullo' && estado === 'libre') {
+            g.ojos = [1, 1]; g.alegre = 1; // corbata arreglada: ojos felices
             return g;
         }
         switch (estado) {
