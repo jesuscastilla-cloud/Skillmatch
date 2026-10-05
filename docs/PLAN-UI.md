@@ -16,6 +16,9 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
 - **Fondos con textura**: grano sutil y degradados *mesh* suaves con los tres colores de marca (portada y cabeceras). *(Stripe)*
 - **Fotografía real de Cartagena y estudiantes** en WebP dentro de `assets/img` (muralla, Getsemaní, gente trabajando).
 - **Ilustraciones SVG animadas propias** para estados vacíos, onboarding y errores.
+- **Login con personajes que miran** *(idea de Luis, agregada el 2026-10-04)*: las figuras del logo
+  siguen al mouse, miran el campo donde se escribe, cierran los ojos con la contraseña, una espía con
+  "mostrar contraseña" y reaccionan al error y al éxito. SVG propio, sin librerías.
 - **Modo oscuro** completo con interruptor en la barra superior que recuerda la elección. *(Linear, GitHub)*
 
 ### 3. Movimiento global y el mouse

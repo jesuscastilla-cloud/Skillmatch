@@ -56,6 +56,8 @@
     --mapa-tierra:    #0E2D4C; /* tierra del mapa de Cartagena, sobre --bg-deep */
     --mapa-costa:     rgba(95, 208, 220, .45); /* linea de costa: --sea-luz suave */
     --mapa-laguna:    #0B3A50; /* agua de la Cienaga de la Virgen, distinta del mar */
+    --personaje-azul:     #2B66E0; /* figura azul del logo, aclarada para verse sobre --bg-deep */
+    --personaje-turquesa: #00B4CC; /* figura turquesa del logo */
     --rojo:           #C62B3E;
     --rojo-soft:      #FCE8EA;
 
@@ -2144,6 +2146,69 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .form-group .forgot-password { display: block; width: fit-content; margin: var(--s1) 0 0 auto; }
 .auth-switch { margin-top: var(--s5); text-align: center; font-size: var(--t-sm); color: var(--ink-3); }
 .auth-switch a { font-weight: 600; }
+
+/* ---- Login: personajes que miran (idea de Luis, seccion 1 del plan) ----
+   login-personajes.js dibuja las figuras del logo dentro de .login-personajes
+   y las mueve con un motor de fisica (resortes y gravedad) que solo escribe
+   transform y opacity. Aqui van los colores y el estado inicial. */
+.login-personajes { width: min(100%, 400px); margin: 0 auto var(--s6); }
+/* Con JavaScript se reserva el espacio antes de dibujar: nada salta al cargar */
+@media (scripting: enabled) { .login-personajes { aspect-ratio: 360 / 280; } }
+.lp { display: block; width: 100%; height: auto; overflow: visible; }
+.lp-sombra { fill: rgba(0,0,0,.24); }
+.lp-polvo { fill: #fff; opacity: 0; }
+
+.lp-pj[data-pj="azul"]     { --pj: var(--personaje-azul); }
+.lp-pj[data-pj="turquesa"] { --pj: var(--personaje-turquesa); }
+.lp-pj[data-pj="naranja"]  { --pj: var(--naranja); }
+.lp-color { fill: var(--pj); }
+.lp-blanco { fill: #fff; }
+.lp-pupila circle { fill: var(--surface-inverse); }
+.lp-pupila .lp-brillo { fill: #fff; }
+.lp-linea, .lp-boca-sonrisa {
+    fill: none;
+    stroke: var(--surface-inverse);
+    stroke-width: 2.8;
+    stroke-linecap: round;
+}
+.lp-boca-o, .lp-boca-risa { fill: var(--surface-inverse); }
+/* Antes del primer cuadro: ojos cerrados ocultos, sin "o" ni risa */
+.lp-linea { opacity: 0; }
+.lp-boca-o, .lp-boca-risa { transform: scale(0); }
+
+/* Cada parte se transforma desde su propio punto (los pies, el centro del
+   ojo o de la boca): el JS pone ese punto en px del lienzo */
+.lp-pj, .lp-ojo, .lp-boca, .lp-sombra, .lp-polvo { transform-box: view-box; }
+
+/* Campo de contrasena con boton para mostrarla (lo agrega login-personajes.js) */
+.campo-clave { position: relative; }
+.campo-clave input { padding-right: 52px; }
+.campo-clave-ver {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    display: grid; place-items: center;
+    width: 48px;
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    color: var(--ink-muted);
+}
+.campo-clave-ver:hover { color: var(--sea-deep); }
+.campo-clave-ver .ico { width: 20px; height: 20px; }
+.campo-clave-ver[aria-pressed="false"] .ico:last-child,
+.campo-clave-ver[aria-pressed="true"] .ico:first-child { display: none; }
+.campo-clave-ver:focus-visible { outline-offset: -4px; }
+
+@media (max-width: 1080px) {
+    /* La columna oscura se oculta en pantallas angostas; si tiene personajes
+       vuelve como una franja encima del formulario, solo con ellos */
+    .auth-shell:has(.login-personajes svg) { grid-template-rows: auto 1fr; }
+    .auth-aside:has(.login-personajes svg) {
+        display: flex;
+        order: -1;
+        padding: var(--s5) var(--s4) 0;
+    }
+    .auth-aside:has(.login-personajes svg) > :not(.login-personajes) { display: none; }
+    .login-personajes { width: min(62%, 240px); margin-bottom: 0; }
+}
 
 /* Mensajes del login (auth.js los llena y los muestra) */
 #error-message, #success-message {
