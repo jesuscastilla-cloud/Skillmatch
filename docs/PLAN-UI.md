@@ -19,6 +19,15 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
 - **Login con personajes que miran** *(idea de Luis, agregada el 2026-10-04)*: las figuras del logo
   siguen al mouse, miran el campo donde se escribe, cierran los ojos con la contraseña, una espía con
   "mostrar contraseña" y reaccionan al error y al éxito. SVG propio, sin librerías.
+  Mejoras acordadas con Luis el 2026-10-05, en este orden:
+  1. **Accesorios con física** (acción secundaria): corbata, corbatín o carnet que se mecen con la
+     respiración, se levantan al caer y se asientan al aterrizar.
+  2. **Versión corporativa** en `login-empresa.html`: camisa y corbata (azul), corbatín (turquesa) y
+     lentes (naranja), en azul marino con detalles naranja; al aterrizar el azul se arregla la corbata.
+  3. **Asienten** cuando el correo ya tiene forma válida y **aviso de Bloq Mayús** en la contraseña.
+  4. **Profundidad** con el mouse (cada figura se mueve distinto), **se duermen** tras un rato sin uso
+     y **ladean la cabeza** si el mouse se queda quieto encima.
+  5. Pasar los personajes a `login.html` (el que abre la portada).
 - **Modo oscuro** completo con interruptor en la barra superior que recuerda la elección. *(Linear, GitHub)*
 
 ### 3. Movimiento global y el mouse

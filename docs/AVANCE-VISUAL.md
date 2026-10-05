@@ -5,9 +5,9 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 
 - **Rama:** `fase-1-visual`, creada desde `fase-1-identidad`. Solo local (sin subir a GitHub).
 - **Archivos tocados:** `assets/css/app.css`, `assets/js/ui.js`, `assets/js/index.js`,
-  `assets/js/oportunidades.js` (dos arreglos de una línea), `pages/index.html`,
-  `pages/login-usuario.html`, `pages/login-empresa.html`, `assets/img/logo.png`,
-  `assets/img/logo-oscuro.png`, `assets/js/vendor/lottie_light.min.js`.
+  `assets/js/oportunidades.js` (dos arreglos de una línea), `assets/js/login-personajes.js`,
+  `pages/index.html`, `pages/login-usuario.html`, `pages/login-empresa.html`,
+  `assets/img/logo.png`, `assets/img/logo-oscuro.png`, `assets/js/vendor/lottie_light.min.js`.
 - **No se tocó:** backend, `SecurityConfig.java`, IDs ni clases que usan los módulos JS.
 
 ## Cómo probar en este PC
@@ -50,6 +50,14 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 - Soporte Lottie (`SkillMatchUI.lottie`, `data-lottie`), librería verificada en `vendor/`.
 - `alert()` → avisos de la marca (sección 14), con paso a la página siguiente si redirige.
 - **Decisión:** sin cursor personalizado (distrae en una bolsa de empleo y empeora la accesibilidad).
+- Login de usuarios con **personajes que caen y miran** (idea de Luis, sección 1 del plan):
+  `assets/js/login-personajes.js` dibuja en SVG las figuras del logo y la chispa naranja, y las
+  mueve con un motor propio de resortes y gravedad (caída con estiramiento y aplaste, rebote,
+  polvo, sombras, mirada por capas). Miran el correo, cierran los ojos en la contraseña, la
+  chispa espía con "mostrar contraseña", niegan con el error y saltan con el éxito. No toca
+  `auth.js`. En celular, la columna oscura vuelve como franja encima del formulario.
+  Modo demo: `?animar` en la dirección fuerza el movimiento aunque Windows tenga las
+  animaciones apagadas (queda guardado; `?animar=0` lo quita).
 
 ### Fase 2 (sección 2 del plan) — portada
 - Titular palabra por palabra con "El trabajo / La práctica / El proyecto" en bucle.
@@ -67,6 +75,10 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 
 ## Pendiente
 
+- **Personajes del login (en curso, orden acordado con Luis el 2026-10-05):**
+  accesorios con física → versión corporativa en `login-empresa.html` (corbata, corbatín,
+  lentes) → asentir con correo válido y aviso de Bloq Mayús → profundidad, sueño y ladeo de
+  cabeza → pasarlos a `login.html`. Detalle en `docs/PLAN-UI.md`, sección 1.
 - **Fase 2:** asistente Skilly (siguiente paso; necesita `/api/assistant` en el backend:
   hablarlo con Jesús).
 - **En pausa por contenido real:** historias de éxito y cinta de logos (no se inventan).
