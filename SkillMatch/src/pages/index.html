@@ -237,31 +237,77 @@
         </div>
     </section>
 
-    <section class="features">
+    <!-- Fase 2 del plan: scroll-telling. Al bajar, cada paso enciende su escena
+         en la columna fija (index.js). Sin JavaScript se leen los 4 pasos. -->
+    <section class="features como-funciona" id="como-funciona" aria-labelledby="cf-titulo">
         <div class="container">
-            <h2 class="section-title-large">¿Cómo Funciona?</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <img src="../assets/img/usuario-profile.png" alt="Perfil de Usuario" />
+            <div class="section-header-center">
+                <h2 class="section-title-large" id="cf-titulo">¿Cómo Funciona?</h2>
+                <p>Cuatro pasos entre tu perfil y tu próximo trabajo en Cartagena.</p>
+            </div>
+
+            <div class="cf-layout" data-escena="1">
+                <div class="cf-visual" aria-hidden="true">
+                    <div class="cf-escenario">
+                        <!-- 1. Creas tu perfil -->
+                        <div class="cf-escena" data-escena="1">
+                            <div class="cf-perfil">
+                                <div class="cf-avatar">TÚ</div>
+                                <div class="cf-lineas"><span></span><span></span></div>
+                            </div>
+                            <div class="cf-chips"><span>Java</span><span>React</span><span>Inglés B2</span><span>Trabajo en equipo</span></div>
+                        </div>
+                        <!-- 2. Te comparamos -->
+                        <div class="cf-escena" data-escena="2">
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Desarrollador Backend</span><span class="cf-barra" style="--v:.92"></span></div>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Práctica en análisis de datos</span><span class="cf-barra" style="--v:.74"></span></div>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Soporte técnico</span><span class="cf-barra" style="--v:.51"></span></div>
+                        </div>
+                        <!-- 3. Recibes el match -->
+                        <div class="cf-escena" data-escena="3">
+                            <div class="cf-match">
+                                <div class="match-ring cf-anillo" data-pct="92"></div>
+                                <div>
+                                    <strong>Desarrollador Backend Java</strong>
+                                    <p>Coincides en 4 de 5 requisitos. Te falta Kubernetes.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 4. Te contratan -->
+                        <div class="cf-escena" data-escena="4">
+                            <div class="cf-aviso">
+                                <div class="cf-aviso-icono"><i data-ico="calendar"></i></div>
+                                <div>
+                                    <strong>TechSolutions quiere entrevistarte</strong>
+                                    <p>Jueves, 10:00 a. m. · Cartagena</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <h3>Perfil de Usuario</h3>
-                    <p>Registra tus habilidades, proyectos y experiencia. Nuestro algoritmo creará tu perfil profesional único.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <img src="../assets/img/business-opportunities.png" alt="Ofertas Empresariales" />
-                    </div>
-                    <h3>Ofertas Empresariales</h3>
-                    <p>Empresas locales publican prácticas, freelance y empleos junior en tecnología, diseño, marketing, finanzas, logística, recursos humanos y más áreas profesionales.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <img src="../assets/img/match-intelligent.png" alt="Match Inteligente" />
-                    </div>
-                    <h3>Match Inteligente</h3>
-                    <p>IA avanzada analiza compatibilidad y recomienda las mejores oportunidades para cada perfil.</p>
-                </div>
+
+                <ol class="cf-pasos">
+                    <li class="cf-paso" data-paso="1">
+                        <span class="cf-num">01</span>
+                        <h3>Creas tu perfil</h3>
+                        <p>Registra tus habilidades, proyectos y experiencia. Nuestro algoritmo creará tu perfil profesional único.</p>
+                    </li>
+                    <li class="cf-paso" data-paso="2">
+                        <span class="cf-num">02</span>
+                        <h3>Te comparamos</h3>
+                        <p>Empresas locales publican prácticas, freelance y empleos junior en tecnología, diseño, marketing, finanzas, logística, recursos humanos y más áreas profesionales. Cada una se compara con tu perfil.</p>
+                    </li>
+                    <li class="cf-paso" data-paso="3">
+                        <span class="cf-num">03</span>
+                        <h3>Recibes el match</h3>
+                        <p>El match inteligente analiza la compatibilidad y recomienda las mejores oportunidades para ti, con lo que te falta para llegar.</p>
+                    </li>
+                    <li class="cf-paso" data-paso="4">
+                        <span class="cf-num">04</span>
+                        <h3>Te contratan</h3>
+                        <p>Te postulas a las vacantes que más te convienen y la empresa ve tu perfil completo: habilidades, proyectos y logros.</p>
+                    </li>
+                </ol>
             </div>
         </div>
     </section>

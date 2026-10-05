@@ -1626,6 +1626,144 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 .match-demo .demo-razon { margin-top: var(--s4); }
 @media (pointer: coarse) { .demo-skill { min-height: 44px; } }
 
+/* ---- Fase 2: cifras de impacto en una fila (la cuadricula estaba en la
+   seccion y no en el contenedor de las cifras, que salian apiladas) ---- */
+.impact-stats { display: block; padding: var(--s7) 0 0; }
+.impact-stats > .container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--s4);
+}
+
+/* ---- Fase 2: scroll-telling "Como funciona" ----
+   Columna izquierda fija con 4 escenas; al bajar, index.js pone
+   data-escena en .cf-layout segun el paso que cruza el centro. */
+.cf-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--s8);
+    align-items: start;
+}
+.cf-visual { position: sticky; top: calc(var(--app-bar-h) + 12vh); }
+.cf-escenario {
+    position: relative;
+    aspect-ratio: 5 / 4;
+    overflow: hidden;
+    border-radius: var(--r-lg);
+    background: var(--grain), var(--bg-deep);
+    background-blend-mode: overlay;
+    background-size: 220px 220px, auto;
+    box-shadow: var(--sh-4);
+}
+.cf-escenario::before {
+    content: "";
+    position: absolute;
+    inset: -30% -30% auto auto;
+    width: 70%; aspect-ratio: 1;
+    background: radial-gradient(circle, rgba(11,126,140,.55), transparent 65%);
+    filter: blur(14px);
+}
+.cf-escena {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    gap: var(--s4);
+    padding: var(--s7);
+    color: #fff;
+    opacity: 0;
+    transform: translateY(18px) scale(.98);
+    transition: opacity .5s var(--ease-out), transform .7s var(--ease-out);
+}
+.cf-layout[data-escena="1"] .cf-escena[data-escena="1"],
+.cf-layout[data-escena="2"] .cf-escena[data-escena="2"],
+.cf-layout[data-escena="3"] .cf-escena[data-escena="3"],
+.cf-layout[data-escena="4"] .cf-escena[data-escena="4"] { opacity: 1; transform: none; }
+
+/* Escena 1: el perfil se arma */
+.cf-perfil { display: flex; align-items: center; gap: var(--s4); }
+.cf-avatar {
+    display: grid; place-items: center; flex: 0 0 auto;
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--sea); color: var(--surface-inverse);
+    font-family: var(--font-display); font-weight: 800;
+}
+.cf-lineas { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.cf-lineas span { height: 10px; border-radius: var(--r-pill); background: rgba(255,255,255,.75); width: 70%; }
+.cf-lineas span + span { width: 45%; background: rgba(255,255,255,.3); }
+.cf-chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.cf-chips span {
+    padding: 6px 14px;
+    border-radius: var(--r-pill);
+    border: 1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.08);
+    font-size: var(--t-sm); font-weight: 600;
+}
+.cf-layout[data-escena="1"] .cf-chips span { animation: chip-entra .5s var(--ease-out) both; }
+.cf-chips span:nth-child(2) { animation-delay: 90ms; }
+.cf-chips span:nth-child(3) { animation-delay: 180ms; }
+.cf-chips span:nth-child(4) { animation-delay: 270ms; }
+@keyframes chip-entra { from { opacity: 0; transform: translateY(8px) scale(.9); } }
+
+/* Escena 2: cada vacante se compara con el perfil (barras con scaleX) */
+.cf-comparacion { display: flex; flex-direction: column; gap: 6px; }
+.cf-etiqueta { font-size: var(--t-sm); font-weight: 600; color: rgba(255,255,255,.85); }
+.cf-barra { position: relative; display: block; height: 10px; overflow: hidden; border-radius: var(--r-pill); background: rgba(255,255,255,.1); }
+.cf-barra::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--sea), var(--sea-luz));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .9s var(--ease-out);
+}
+.cf-comparacion:first-child .cf-barra::after { background: linear-gradient(90deg, var(--naranja), var(--naranja-hover)); }
+.cf-layout[data-escena="2"] .cf-barra::after { transform: scaleX(var(--v)); }
+.cf-comparacion:nth-child(2) .cf-barra::after { transition-delay: 120ms; }
+.cf-comparacion:nth-child(3) .cf-barra::after { transition-delay: 240ms; }
+
+/* Escenas 3 y 4: tarjetas de la app sobre el escenario */
+.cf-match, .cf-aviso {
+    display: flex; align-items: center; gap: var(--s4);
+    padding: var(--s5);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--ink-2);
+    box-shadow: var(--sh-3);
+}
+.cf-match strong, .cf-aviso strong { display: block; color: var(--ink); font-family: var(--font-display); }
+.cf-match p, .cf-aviso p { margin-top: 4px; font-size: var(--t-sm); color: var(--ink-3); }
+.cf-anillo { width: 72px; height: 72px; }
+.cf-layout[data-escena="3"] .cf-anillo { animation: ring-draw .7s var(--ease-out) .15s both; }
+.cf-aviso-icono {
+    display: grid; place-items: center; flex: 0 0 auto;
+    width: 52px; height: 52px; border-radius: var(--r-md);
+    background: var(--naranja-soft); color: var(--naranja-texto);
+}
+.cf-layout[data-escena="4"] .cf-aviso { animation: aviso-entra .6s var(--ease-out) .1s both; }
+@keyframes aviso-entra { from { opacity: 0; transform: translateX(28px); } }
+
+/* Columna de pasos: el activo se lee, los demas se atenuan (solo con JS) */
+.cf-pasos { display: flex; flex-direction: column; }
+.cf-paso {
+    display: flex; flex-direction: column; justify-content: center;
+    min-height: 62vh;
+    padding: var(--s5) 0;
+    transition: opacity .4s var(--ease-out);
+}
+.cf-num { font-family: var(--font-display); font-size: var(--t-sm); font-weight: 800; letter-spacing: .08em; color: var(--naranja-texto); }
+.cf-paso h3 { font-size: var(--t-xl); margin: var(--s2) 0 var(--s3); }
+.cf-paso p { font-size: var(--t-md); color: var(--ink-3); max-width: 46ch; }
+.cf-layout.js-scroll .cf-paso:not(.is-activo) { opacity: .35; }
+
+@media (max-width: 1080px) {
+    .cf-layout { grid-template-columns: 1fr; gap: 0; }
+    /* En pantallas angostas el escenario queda fijo arriba y los pasos pasan debajo */
+    .cf-visual { top: calc(var(--app-bar-h) + var(--s2)); z-index: 2; }
+    .cf-escenario { aspect-ratio: 16 / 10; }
+    .cf-escena { padding: var(--s5); gap: var(--s3); }
+    .cf-paso { min-height: 55vh; }
+}
+
 .section { padding: var(--s9) 0; }
 .section-sunk { background: var(--surface); }
 

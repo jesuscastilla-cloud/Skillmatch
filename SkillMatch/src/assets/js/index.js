@@ -212,3 +212,63 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 })();
+
+/* ---------------------------------------------------------------
+ * Fase 2 — scroll-telling "Como funciona" y cifras de impacto
+ *  4. El paso que cruza el centro de la pantalla enciende su escena
+ *  5. Las cifras de impacto cuentan cuando la seccion entra en pantalla
+ * --------------------------------------------------------------- */
+(function () {
+    const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // 4. Scroll-telling
+    const layout = document.querySelector('.cf-layout');
+    const pasos = layout ? Array.from(layout.querySelectorAll('.cf-paso')) : [];
+    if (layout && pasos.length && 'IntersectionObserver' in window) {
+        layout.classList.add('js-scroll');
+        const activar = function (paso) {
+            pasos.forEach(function (p) { p.classList.toggle('is-activo', p === paso); });
+            layout.dataset.escena = paso.dataset.paso;
+        };
+        activar(pasos[0]);
+        // Una franja en el centro de la pantalla: el paso que la cruza es el activo
+        const observador = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (e) { if (e.isIntersecting) activar(e.target); });
+        }, { rootMargin: '-45% 0px -45% 0px' });
+        pasos.forEach(function (p) { observador.observe(p); });
+    }
+
+    // 5. Cifras de impacto: search-handler.js las escribe ("3,0K+"); aqui
+    //    solo se animan desde 0 cuando la seccion se ve, conservando el formato.
+    const impacto = document.querySelector('.impact-stats');
+    if (!impacto || reducido || !('IntersectionObserver' in window)) return;
+    let visto = false;
+
+    function contar(el) {
+        const m = el.textContent.trim().match(/^([\d.,]+)(.*)$/);
+        if (!m || el.dataset.contado) return;
+        el.dataset.contado = '1';
+        const decimales = (m[1].split(',')[1] || '').length;
+        const valor = parseFloat(m[1].replace(/\./g, '').replace(',', '.'));
+        const sufijo = m[2];
+        const inicio = performance.now();
+        const paso = function (ahora) {
+            const t = Math.min(1, (ahora - inicio) / 1100);
+            const suave = 1 - Math.pow(1 - t, 3);
+            el.textContent = (valor * suave).toFixed(decimales).replace('.', ',') + sufijo;
+            if (t < 1) requestAnimationFrame(paso);
+        };
+        requestAnimationFrame(paso);
+    }
+    function contarTodas() { impacto.querySelectorAll('.stat-value').forEach(contar); }
+
+    new IntersectionObserver(function (entradas, obs) {
+        if (!entradas[0].isIntersecting) return;
+        visto = true;
+        contarTodas();
+        obs.disconnect();
+    }, { threshold: 0.4 }).observe(impacto);
+    // Si las cifras llegan de la API cuando la seccion ya esta en pantalla
+    new MutationObserver(function () { if (visto) contarTodas(); })
+        .observe(impacto, { childList: true, subtree: true, characterData: true });
+})();
