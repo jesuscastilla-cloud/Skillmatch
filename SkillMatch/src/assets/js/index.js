@@ -272,3 +272,62 @@ document.addEventListener('DOMContentLoaded', () => {
     new MutationObserver(function () { if (visto) contarTodas(); })
         .observe(impacto, { childList: true, subtree: true, characterData: true });
 })();
+
+/* ---------------------------------------------------------------
+ * Fase 2 — mapa de Cartagena
+ *  6. Una sola zona activa, compartida entre la lista y el mapa:
+ *     pasar el mouse, tocar o enfocar con teclado la activa.
+ *  7. Los puntos aparecen uno tras otro cuando el mapa se ve.
+ * --------------------------------------------------------------- */
+(function () {
+    const seccion = document.querySelector('.mapa-section');
+    if (!seccion) return;
+    const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const conMouse = window.matchMedia('(hover: hover)').matches;
+    const mapa = seccion.querySelector('.mapa-ctg');
+    const lienzo = seccion.querySelector('.mapa-lienzo');
+    const foco = seccion.querySelector('.mapa-foco');
+    const zonas = Array.from(seccion.querySelectorAll('.mapa-zona'));
+    const puntos = Array.from(seccion.querySelectorAll('.mapa-punto'));
+
+    // 6. Zona activa
+    function activar(id) {
+        zonas.forEach(function (zona) {
+            const activa = zona.dataset.zona === id;
+            zona.classList.toggle('is-activa', activa);
+            zona.querySelector('.mapa-zona-btn').setAttribute('aria-pressed', String(activa));
+        });
+        puntos.forEach(function (punto) {
+            const activo = punto.dataset.zona === id;
+            punto.classList.toggle('is-activa', activo);
+            // El brillo naranja viaja hasta la coordenada del punto activo
+            if (activo && foco) {
+                foco.style.setProperty('--fx', punto.style.getPropertyValue('--x'));
+                foco.style.setProperty('--fy', punto.style.getPropertyValue('--y'));
+            }
+        });
+        lienzo.classList.add('con-foco');
+    }
+
+    zonas.forEach(function (zona) {
+        const boton = zona.querySelector('.mapa-zona-btn');
+        boton.addEventListener('click', function () { activar(zona.dataset.zona); });
+        boton.addEventListener('focus', function () { activar(zona.dataset.zona); });
+        if (conMouse) zona.addEventListener('mouseenter', function () { activar(zona.dataset.zona); });
+    });
+    puntos.forEach(function (punto) {
+        punto.addEventListener('click', function () { activar(punto.dataset.zona); });
+        if (conMouse) punto.addEventListener('mouseenter', function () { activar(punto.dataset.zona); });
+    });
+    if (zonas.length) activar(zonas[0].dataset.zona);
+
+    // 7. Entrada de los puntos (con movimiento reducido se ven desde el inicio)
+    if (!mapa || reducido || !('IntersectionObserver' in window)) return;
+    mapa.classList.add('mapa-espera');
+    new IntersectionObserver(function (entradas, obs) {
+        if (!entradas[0].isIntersecting) return;
+        mapa.classList.remove('mapa-espera');
+        mapa.classList.add('is-entrando');
+        obs.disconnect();
+    }, { threshold: 0.35 }).observe(mapa);
+})();

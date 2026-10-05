@@ -53,6 +53,9 @@
     --verde-soft:     #E0F4EC;
     --verde-texto:    #0D7050; /* verde legible como texto sobre --verde-soft */
     --sea-luz:        #5FD0DC; /* turquesa luminoso sobre superficies oscuras */
+    --mapa-tierra:    #0E2D4C; /* tierra del mapa de Cartagena, sobre --bg-deep */
+    --mapa-costa:     rgba(95, 208, 220, .45); /* linea de costa: --sea-luz suave */
+    --mapa-laguna:    #0B3A50; /* agua de la Cienaga de la Virgen, distinta del mar */
     --rojo:           #C62B3E;
     --rojo-soft:      #FCE8EA;
 
@@ -1814,6 +1817,217 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     .cf-escenario { aspect-ratio: 16 / 10; }
     .cf-escena { padding: var(--s5); gap: var(--s3); }
     .cf-paso { min-height: 55vh; }
+}
+
+/* ---- Fase 2: mapa SVG de Cartagena con puntos que laten por barrio ----
+   El dibujo es SVG; los puntos y los nombres son HTML encima, ubicados en %
+   (--x, --y), para que el texto conserve su tamaño legible en el celular.
+   index.js marca la zona activa (.is-activa) en la lista y en el mapa. */
+.mapa-section { padding: var(--s9) 0; background: var(--surface); }
+.mapa-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+    gap: var(--s7);
+    align-items: center;
+}
+
+.mapa-ctg {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--r-lg);
+    background: var(--bg-deep);
+    box-shadow: var(--sh-4);
+}
+.mapa-lienzo { position: relative; aspect-ratio: 6 / 5; }
+.mapa-lienzo svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mapa-mar { fill: url(#mapa-mar-puntos); }
+#mapa-mar-puntos circle { fill: rgba(255,255,255,.08); }
+.mapa-tierra {
+    fill: var(--mapa-tierra);
+    stroke: var(--mapa-costa);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+.mapa-laguna {
+    fill: var(--mapa-laguna);
+    stroke: var(--mapa-costa);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+}
+/* Nota debajo del dibujo (no encima: en el celular tapaba los nombres) */
+.mapa-nota {
+    padding: var(--s2) var(--s4) var(--s3);
+    border-top: 1px solid rgba(255,255,255,.08);
+    font-size: var(--t-xs);
+    color: rgba(255,255,255,.6);
+}
+
+/* Brillo naranja: ocupa todo el lienzo y se traslada (solo transform) para
+   que su centro quede sobre la zona activa (--fx, --fy en %). */
+.mapa-foco {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle 120px at 50% 50%, rgba(255,118,24,.3), transparent);
+    opacity: 0;
+    transform: translate(calc((var(--fx, 50) - 50) * 1%), calc((var(--fy, 50) - 50) * 1%));
+    transition: transform .8s var(--ease-out), opacity .5s var(--ease-out);
+    pointer-events: none;
+}
+.mapa-lienzo.con-foco .mapa-foco { opacity: 1; }
+
+/* Nombres del agua y de la isla: decorativos, en cursiva */
+.mapa-agua, .mapa-punto { position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); }
+.mapa-agua {
+    transform: translate(-50%, -50%);
+    max-width: 9em;
+    font-size: var(--t-xs);
+    font-style: italic;
+    line-height: 1.25;
+    letter-spacing: .02em;
+    text-align: center;
+    color: rgba(255,255,255,.55);
+    pointer-events: none;
+}
+
+/* Cada punto es una caja de 36 px centrada en su coordenada (zona para el mouse) */
+.mapa-punto {
+    display: grid; place-items: center;
+    width: 36px; height: 36px;
+    translate: -50% -50%;
+    cursor: pointer;
+}
+.mapa-punto-marca {
+    position: relative;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--sea-luz);
+    box-shadow: 0 0 0 3px var(--bg-deep);
+    transition: transform .35s var(--ease-out);
+}
+/* Latido: un anillo que crece y se desvanece; cada punto con su retraso */
+.mapa-punto-marca::before, .mapa-punto-marca::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: 50%;
+}
+.mapa-punto-marca::before {
+    background: inherit;
+    animation: mapa-latido 2.6s var(--ease-out) infinite;
+    animation-delay: calc(var(--orden) * 650ms);
+}
+.mapa-punto-marca::after { background: var(--naranja); opacity: 0; transition: opacity .3s var(--ease-out); }
+@keyframes mapa-latido {
+    0%       { transform: scale(1);   opacity: .6; }
+    70%, 100% { transform: scale(3.4); opacity: 0; }
+}
+
+.mapa-punto-nombre {
+    position: absolute;
+    padding: 3px 10px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: var(--r-pill);
+    background: rgba(6,26,49,.8);
+    color: #fff;
+    font-size: var(--t-xs); font-weight: 700;
+    white-space: nowrap;
+    isolation: isolate;
+}
+/* Capa naranja del nombre activo: aparece con opacidad, no con color */
+.mapa-punto-nombre::before {
+    content: "";
+    position: absolute; inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--naranja);
+    opacity: 0;
+    transition: opacity .3s var(--ease-out);
+}
+.mapa-punto[data-lado="izq"]    .mapa-punto-nombre { right: 100%; top: 50%; transform: translateY(-50%); }
+.mapa-punto[data-lado="der"]    .mapa-punto-nombre { left: 100%;  top: 50%; transform: translateY(-50%); }
+.mapa-punto[data-lado="arriba"] .mapa-punto-nombre { bottom: 100%; left: 50%; transform: translateX(-50%); }
+
+/* Zona activa: el punto crece y se vuelve naranja, el latido tambien */
+.mapa-punto.is-activa { z-index: 1; }
+.mapa-punto.is-activa .mapa-punto-marca { transform: scale(1.35); }
+.mapa-punto.is-activa .mapa-punto-marca::after,
+.mapa-punto.is-activa .mapa-punto-nombre::before { opacity: 1; }
+.mapa-punto.is-activa .mapa-punto-marca::before { background: var(--naranja); }
+.mapa-punto.is-activa .mapa-punto-nombre { color: var(--surface-inverse); border-color: transparent; }
+
+/* Entrada: los puntos aparecen uno tras otro cuando el mapa se ve (index.js).
+   "backwards" solo aplica el inicio durante el retraso; al terminar mandan
+   los estilos normales (por ejemplo, el punto activo agrandado). */
+.mapa-ctg.mapa-espera .mapa-punto { opacity: 0; }
+.mapa-ctg.is-entrando .mapa-punto-marca {
+    animation: punto-aparece .55s var(--ease-out) backwards;
+    animation-delay: calc(var(--orden) * 120ms + 150ms);
+}
+.mapa-ctg.is-entrando .mapa-punto-nombre {
+    animation: nombre-aparece .5s var(--ease-out) backwards;
+    animation-delay: calc(var(--orden) * 120ms + 300ms);
+}
+@keyframes punto-aparece  { from { opacity: 0; transform: scale(0); } }
+@keyframes nombre-aparece { from { opacity: 0; } }
+
+/* Lista de zonas: todo el texto siempre visible; la activa se marca */
+.mapa-zonas { display: flex; flex-direction: column; gap: var(--s3); }
+.mapa-zona {
+    position: relative;
+    display: flex; gap: var(--s4); align-items: flex-start;
+    padding: var(--s4) var(--s5);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    cursor: pointer;
+    transition: transform .25s var(--ease-out);
+}
+/* Barra naranja a la izquierda de la zona activa (crece con scaleY) */
+.mapa-zona::before {
+    content: "";
+    position: absolute;
+    left: -1px; top: 14px; bottom: 14px;
+    width: 3px;
+    border-radius: var(--r-pill);
+    background: var(--naranja);
+    transform: scaleY(0);
+    transition: transform .3s var(--ease-out);
+}
+.mapa-zona.is-activa { border-color: transparent; box-shadow: var(--sh-3); transform: translateX(4px); }
+.mapa-zona.is-activa::before { transform: scaleY(1); }
+.mapa-zona-icono {
+    display: grid; place-items: center; flex: 0 0 auto;
+    width: 40px; height: 40px;
+    border-radius: var(--r-sm);
+    background: var(--sea-light); color: var(--sea-deep);
+}
+.mapa-zona.is-activa .mapa-zona-icono { background: var(--naranja-soft); color: var(--naranja-texto); }
+.mapa-zona h3 { font-size: var(--t-md); line-height: 1.3; }
+/* El boton ocupa toda la tarjeta con ::after: se puede tocar en cualquier parte */
+.mapa-zona-btn { padding: 0; font: inherit; color: var(--ink); text-align: left; }
+.mapa-zona-btn::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.mapa-zona-btn:focus-visible { outline: none; }
+.mapa-zona-btn:focus-visible::after { outline: 2.5px solid var(--sea); outline-offset: 3px; }
+.mapa-zona-sector { margin-top: 2px; font-size: var(--t-sm); font-weight: 600; color: var(--sea-deep); }
+.mapa-zona.is-activa .mapa-zona-sector { color: var(--naranja-texto); }
+.mapa-zona-texto { margin-top: var(--s1); font-size: var(--t-sm); color: var(--ink-3); }
+.mapa-enlace { min-height: 44px; margin-top: var(--s3); }
+
+[data-theme="dark"] .mapa-ctg { box-shadow: var(--sh-4), 0 0 0 1px rgba(255,255,255,.06); }
+
+@media (max-width: 1080px) {
+    .mapa-layout { grid-template-columns: 1fr; gap: var(--s6); }
+    .mapa-ctg { width: 100%; max-width: 640px; margin-inline: auto; }
+    .mapa-zonas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+    .mapa-zona.is-activa { transform: none; }
+}
+@media (max-width: 520px) {
+    /* En el celular el lienzo es pequeño: se quita el nombre de la ciénaga */
+    .mapa-agua-cienaga { display: none; }
+    .mapa-agua { max-width: 6em; } /* "Tierra / Bomba" en dos lineas: no choca con la bahia */
+    .mapa-punto-nombre { padding: 2px 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mapa-punto-marca::before { display: none; }
 }
 
 .section { padding: var(--s9) 0; }
