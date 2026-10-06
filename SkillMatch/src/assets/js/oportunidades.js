@@ -49,7 +49,7 @@ async function loadJobs() {
             <div class="error-message">
                 <h3>Error al cargar oportunidades</h3>
                 <p>${error.message || 'Por favor, intenta de nuevo más tarde'}</p>
-                <button onclick="loadJobs()" class="btn-primary">Reintentar</button>
+                <button onclick="loadJobs()" class="btn btn-primary">Reintentar</button>
             </div>
         `;
     }

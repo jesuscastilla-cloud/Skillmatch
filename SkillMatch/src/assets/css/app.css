@@ -864,8 +864,15 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
    enlaces/iconos diminutos reciben una zona tactil invisible */
 @media (pointer: coarse) {
     .btn-save, .btn-apply, .btn-apply-compact, .btn-new-message, .btn-add-skill,
-    .btn-edit-profile, .btn-edit-cover { min-height: 44px; }
-    .btn-edit-avatar { min-width: 44px; min-height: 44px; }
+    .btn-edit-profile, .btn-edit-cover, .btn-apply-filters,
+    .btn-edit-profile-inline, .btn-edit-cover-new { min-height: 44px; }
+    /* Los del perfil de empresa faltaban: solo estaban los del perfil de usuario */
+    .btn-edit-avatar, .btn-edit-logo-new, .btn-icon-action { min-width: 44px; min-height: 44px; }
+    /* Botones de icono (agregar, menu de la oferta, cerrar) y acciones de las ofertas */
+    .btn-icon, .offer-menu-btn, .btn-close-modal, .modal-close, .notifications-btn { min-width: 44px; min-height: 44px; }
+    .btn-small, .btn-mini-action, .btn-offer-action { min-height: 44px; }
+    /* Barra superior: logo y botones de sesion; campo para subir archivos */
+    .logo a, .btn-login, .btn-register, input[type="file"] { min-height: 44px; }
     .btn-remove-skill, .project-link { position: relative; }
     .btn-remove-skill::after, .project-link::after { content: ""; position: absolute; inset: -12px; }
 }
@@ -1651,6 +1658,8 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 .demo-skill .ico { display: none; width: 14px; height: 14px; stroke-width: 2.6; }
 .demo-skill:hover { border-color: var(--sea); color: var(--sea-deep); }
 .demo-skill:active { transform: scale(.95); }
+/* En pantallas tactiles cada habilidad mide 44 px para tocarla con el dedo */
+@media (pointer: coarse) { .demo-skill { min-height: 44px; } }
 .demo-skill[aria-pressed="true"] {
     border-style: solid; border-color: transparent;
     background: var(--sea-light); color: var(--sea-deep);
@@ -2492,6 +2501,8 @@ footer.pie > .container { position: relative; z-index: 1; }
 /* Registro de usuario / empresa: titulo centrado y formulario en tarjeta.
    Antes el titulo iba a la izquierda y el formulario flotaba en 440px,
    apretando las dos columnas de campos. */
+/* El titulo de la pagina de registro es el h1 (antes h2: la pagina no tenia h1) */
+.registro-section > .container > h1,
 .registro-section > .container > h2 {
     text-align: center;
     font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.5rem);
@@ -2559,6 +2570,11 @@ footer.pie > .container { position: relative; z-index: 1; }
 .step.done .step-index, .step.completed .step-index { background: var(--verde); border-color: var(--verde); color: #fff; }
 .step.done .step-label, .step.completed .step-label { color: var(--ink-3); }
 .step.done::after, .step.completed::after { background: var(--verde); }
+/* En oscuro el turquesa y el verde son claros: el numero blanco no se leia
+   (2,4:1 y ~2:1). Va en azul marino, como el texto de los botones de color. */
+[data-theme="dark"] .step.active .step-index,
+[data-theme="dark"] .step.done .step-index,
+[data-theme="dark"] .step.completed .step-index { color: var(--surface-inverse); }
 
 .form-step { display: none; }
 .form-step.active { display: block; animation: form-in .3s var(--ease-out) both; }
@@ -2640,7 +2656,7 @@ footer.pie > .container { position: relative; z-index: 1; }
     border-radius: var(--r-pill);
     background: var(--sea-light);
     color: var(--sea-deep);
-    font-size: 11px;
+    font-size: var(--t-xs); /* 12 px: el minimo legible del sitio (antes 11 px) */
     font-weight: 700;
     text-align: center;
 }
@@ -3077,6 +3093,10 @@ kbd {
     .nav-links a.active-nav::after,
     .nav-links a.active::after { left: 6px; right: 6px; }
 }
+/* Celulares: los enlaces que quedan en la barra superior, con 44 px para el dedo */
+@media (max-width: 760px) and (pointer: coarse) {
+    header .nav-links a { min-height: 44px; }
+}
 /* Tabletas reales (se usan con el dedo): 44 px de alto para tocar comodo;
    el ancho no cambia, asi que todo sigue cabiendo */
 @media (width > 760px) and (width <= 1100px) and (pointer: coarse) {
@@ -3408,6 +3428,7 @@ kbd {
     font-size: var(--t-sm); font-weight: 600; color: var(--sea-deep);
 }
 .link-view-all:hover, .btn-view-all:hover { text-decoration: underline; }
+@media (pointer: coarse) { .link-view-all, .btn-view-all { min-height: 44px; } }
 .btn-outline {
     background: transparent; border: 1.5px solid var(--hairline); color: var(--ink);
 }
@@ -3667,10 +3688,23 @@ kbd {
     border-bottom: 1px solid var(--hairline-soft);
 }
 .cert-item:last-child, .project-item:last-child, .recommendation-item:last-child { border-bottom: 0; }
-.cert-badge, .certification-badge {
+/* Sello cuadrado con icono de cada certificacion (perfil de usuario) */
+.cert-badge {
     display: grid; place-items: center;
     width: 40px; height: 40px; border-radius: var(--r-md);
     background: var(--sol-soft); color: var(--sol-deep);
+}
+/* Certificaciones del perfil de empresa: son texto, no un icono. Antes
+   compartian la regla de arriba y el texto quedaba en 40 px, palabra por
+   palabra; ahora son pastillas que se acomodan en filas. */
+.certifications-grid:has(> .certification-badge) { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.certification-badge {
+    display: inline-flex; align-items: center;
+    min-height: 32px;
+    padding: 4px 12px;
+    border-radius: var(--r-pill);
+    background: var(--sol-soft); color: var(--sol-deep);
+    font-size: var(--t-sm); font-weight: 600; line-height: 1.3;
 }
 .cert-issuer, .rec-company, .project-tech { font-size: var(--t-sm); color: var(--ink-3); font-weight: 600; }
 .cert-date, .rec-date, .project-date { font-size: var(--t-xs); color: var(--ink-muted); }
@@ -3755,6 +3789,9 @@ kbd {
     box-shadow: var(--sh-1);
     overflow: hidden;
 }
+/* El titulo "Mensajes" es el h1 de la pagina; conserva el tamano que
+   tenia como h2 */
+.conversations-header h1 { font-size: clamp(1.6rem, 1.2rem + 1.8vw, var(--t-2xl)); }
 .conversations-header, .chat-header {
     display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
     padding: var(--s4) var(--s5);

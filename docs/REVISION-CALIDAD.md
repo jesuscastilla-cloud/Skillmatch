@@ -35,6 +35,19 @@ Páginas con sesión revisadas con las cuentas de prueba del seed local (`DataSe
 7. Enlace del logo con `alt="SkillMatch Logo"` en varias páginas; mejor "SkillMatch, ir al inicio" como en la portada.
 8. Estilos dentro del HTML en `login.html` (4) y `dashboard.html` (3): pasarlos a `app.css`.
 
+## Arreglado el 2026-10-06 (solo diseño, sin backend)
+- Certificaciones del perfil de empresa: pastillas que se acomodan en filas (`.certification-badge`
+  separada de `.cert-badge`).
+- Número de los pasos del registro en modo oscuro (activo y completados): azul marino, legible.
+- `h1` en `registro-usuario`, `registro-empresa` y `mensajes` (mismo tamaño que antes).
+- Botones táctiles: se completó el bloque `@media (pointer: coarse)` (filtros, botones del perfil de
+  empresa, botones de icono, acciones de ofertas, barra superior, subir archivo, "Ver todo",
+  habilidades de la demo). Re-auditado con emulación táctil: sin pendientes salvo los enlaces falsos
+  de "Recursos útiles" (dependen de Jesús).
+- Contadores de filtros a 12 px. Botón "Reintentar" de Oportunidades con la clase `btn`.
+- Falsos positivos confirmados: etiqueta activa del mapa (capa naranja en `::before`), botones del
+  mapa (la zona táctil es la tarjeta), "¿Olvidaste tu contraseña?" y "Limpiar" (zona invisible de 44 px).
+
 ## Falta revisar
 - Revisión visual página por página (espaciados, tipografía, consistencia) de: perfil de usuario, conexiones,
   mensajes, registros y el resto del perfil de empresa.
