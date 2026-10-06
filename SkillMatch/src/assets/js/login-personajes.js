@@ -12,6 +12,9 @@
 //  - Miran el boton mientras carga, niegan si hay error y saltan si entra.
 //  - Asienten cuando el correo ya tiene forma valida. Si Bloq Mayus esta
 //    activado en la contrasena, sale un aviso y la chispa abre los ojos.
+//  - Con el mouse, el de adelante se mueve mas que el de atras (profundidad);
+//    si el mouse se queda quieto encima, ladean la cabeza con curiosidad.
+//  - Si nadie hace nada por 20 s se duermen; con cualquier cosa despiertan.
 //  - En el login de empresas (data-variante="empresa") van de oficina:
 //    corbata, corbatin, carnet y lentes. La corbata y el carnet son
 //    pendulos: cuelgan, el aire los levanta al caer y se mecen al frenar.
@@ -58,18 +61,21 @@
     // "llegada": cuanto de lado de su sitio caen (x), los saltitos que dan
     // (a donde cae cada uno; 0 es su sitio) y cuanto esperan antes del primero
     // (calculado para que los tres terminen casi a la vez).
+    // "hondo": que tan cerca estan (1 = adelante): con el mouse, el de
+    // adelante se mueve mas que el de atras y eso se lee como profundidad.
+    // "ladeo": hacia donde inclinan la cabeza cuando sienten curiosidad.
     const PISO = 262;
     const PERSONAJES = [
-        { id: 'azul', pie: 118, ancho: 48, salida: -470, retraso: 0, fase: 0,
+        { id: 'azul', pie: 118, ancho: 48, salida: -470, retraso: 0, fase: 0, hondo: 0.35, ladeo: -12,
           llegada: { x: 150, saltos: [75, 0], espera: 0.45 },
           cuerpo: 'M70,262 V168 A48,48 0 0 1 166,168 V262 Z',
           cabeza: [118, 72, 38], ojos: [[104, 70, 9], [132, 70, 9]], boca: [118, 92, 16] },
-        { id: 'turquesa', pie: 244, ancho: 44, salida: -430, retraso: 0.16, fase: 2.1,
+        { id: 'turquesa', pie: 244, ancho: 44, salida: -430, retraso: 0.16, fase: 2.1, hondo: 0.6, ladeo: 11,
           llegada: { x: -150, saltos: [-75, 0], espera: 0.3 },
           cuerpo: 'M200,262 V190 A44,44 0 0 1 288,190 V262 Z',
           cabeza: [244, 98, 35], ojos: [[231, 96, 8.5], [257, 96, 8.5]], boca: [244, 117, 15] },
         // La chispa no tiene cabeza aparte: su cara se mueve sobre la cupula
-        { id: 'naranja', pie: 180, ancho: 72, salida: -400, retraso: 0.34, fase: 4.2,
+        { id: 'naranja', pie: 180, ancho: 72, salida: -400, retraso: 0.34, fase: 4.2, hondo: 0.8, ladeo: 8,
           llegada: { x: 60, saltos: [0], espera: 0.7 },
           cuerpo: 'M108,262 A72,72 0 0 1 252,262 Z',
           cabeza: null, ojos: [[162, 224, 10], [198, 224, 10]], boca: [180, 245, 18] }
@@ -138,14 +144,21 @@
         }
     };
 
+    // Las "z" de cuando se duermen: salen de la cabeza del azul, suben y se desvanecen
+    const ZETAS = [0, 1, 2].map(function (i) {
+        return `<text class="lp-z" x="146" y="44" font-size="${13 + i * 3}" style="${origen(146, 44)}">z</text>`;
+    }).join('');
+
     function personaje(d) {
         const ropa = (empresa && ROPA[d.id]) || {};
         const craneo = d.cabeza ? `<circle class="lp-color" cx="${d.cabeza[0]}" cy="${d.cabeza[1]}" r="${d.cabeza[2]}"/>` : '';
         const cara = d.ojos.map(function (o) { return ojo(o[0], o[1], o[2]); }).join('') + boca(d.boca[0], d.boca[1], d.boca[2]) + (ropa.cara || '');
+        // La cabeza se ladea desde el cuello; en la chispa, desde el centro de la cara
+        const cuello = d.cabeza ? origen(d.cabeza[0], d.cabeza[1] + d.cabeza[2]) : origen(d.pie, PISO - 30);
         return `<g class="lp-pj" data-pj="${d.id}" style="${origen(d.pie, PISO)}">
             <path class="lp-color" d="${d.cuerpo}"/>
             ${ropa.cuerpo || ''}
-            <g class="lp-cabeza">${craneo}<g class="lp-cara">${cara}</g></g>
+            <g class="lp-cabeza" style="${cuello}">${craneo}<g class="lp-cara">${cara}</g>${d.id === 'azul' ? ZETAS : ''}</g>
         </g>`;
     }
 
@@ -253,10 +266,12 @@
     const TIPOS = reducido
         ? { pupila: [320, 36], cara: [320, 36], cabeza: [320, 36], cuerpo: [320, 36],
             ojo: [500, 45], gesto: [400, 40], aplaste: [400, 40], hundir: [400, 40], estira: [900, 60],
-            inclina: [320, 36] }
+            inclina: [320, 36], hondo: [320, 36], sueno: [320, 36] }
         : { pupila: [240, 21], cara: [150, 19], cabeza: [95, 15], cuerpo: [55, 11],
             ojo: [520, 40], gesto: [300, 19], aplaste: [430, 15], hundir: [260, 11], estira: [1600, 75],
-            inclina: [90, 16] };
+            inclina: [90, 16], hondo: [40, 12], sueno: [6, 4.9] };
+    // El sueno llega lento (unos 2 s) y se va rapido (al despertar)
+    const DORMIRSE = [6, 4.9], ESPABILAR = [120, 22];
 
     function resorte(tipo, valor) {
         return { k: TIPOS[tipo][0], c: TIPOS[tipo][1], x: valor, v: 0, meta: valor };
@@ -306,6 +321,10 @@
             estira: resorte('estira', 0),   // estiramiento por la velocidad de caida
             hundir: resorte('hundir', 0),   // la cabeza se hunde al caer y vuelve
             inclina: resorte('inclina', 0), // en el aire se inclina hacia donde va (grados)
+            hondoX: resorte('hondo', 0), hondoY: resorte('hondo', 0), // profundidad con el mouse
+            ladeo: resorte('cabeza', 0),    // cabeza ladeada por curiosidad (grados)
+            sueno: resorte('sueno', 0),     // 0 despierto, 1 dormido
+            faseResp: d.fase,               // fase de la respiracion (se acumula: cambia de ritmo sin saltos)
             alegre: resorte('ojo', 0),      // ojos cerrados: 0 tranquilos, 1 felices
             bSonrisa: resorte('gesto', 1), bGiro: resorte('gesto', 1),
             bO: resorte('gesto', 0), bRisa: resorte('gesto', 0),
@@ -316,10 +335,11 @@
             cx: 0, cy: 0,                                           // centro de la cara en pantalla
             parpadeo: -1, sacudida: -1, asiente: -1, salto: -1, polvoDesde: -1, // momentos de cada reaccion
             corbata: g.querySelector('.lp-corbata'),                // solo en el login de empresas
-            colgante: null, cintas: [], ajuste: -1, ajustando: ''
+            colgante: null, cintas: [], ajuste: -1, ajustando: '',
+            zetas: Array.from(g.querySelectorAll('.lp-z'))
         };
         p.resortes = [p.px, p.py, p.fx, p.fy, p.hx, p.hy, p.cuerpo, p.aplaste, p.estira, p.hundir,
-                      p.inclina, p.alegre, p.bSonrisa, p.bGiro, p.bO, p.bRisa]
+                      p.inclina, p.hondoX, p.hondoY, p.ladeo, p.sueno, p.alegre, p.bSonrisa, p.bGiro, p.bO, p.bRisa]
             .concat(p.ojos.map(function (o) { return o.cierre; }));
         // Pendulo de la corbata o del carnet: angulo (th, 0 = colgando derecho)
         // y velocidad de giro (w), mas lo que hace falta para medir su apoyo
@@ -571,10 +591,13 @@
     // Convierte los valores de la fisica en transform y opacity
     function pintar(p, t, dt) {
         const sinCabeza = !p.d.cabeza;
-        // Respiracion: el cuerpo se estira y encoge apenas; la cabeza va un poco detras
-        const fase = t * 1.85 + p.d.fase;
-        const resp = reducido ? 0 : Math.sin(fase) * 0.016;
-        const vaiven = reducido ? 0 : Math.sin(fase - 0.8) * -1.1;
+        // Respiracion: el cuerpo se estira y encoge apenas; la cabeza va un poco
+        // detras. Dormidos respiran mas lento y mas hondo (la fase se acumula
+        // cuadro a cuadro, asi el cambio de ritmo no da saltos)
+        const dormir = limitar(p.sueno.x, 0, 1);
+        p.faseResp += (dt || 0) * (1.85 - 0.85 * dormir);
+        const resp = reducido ? 0 : Math.sin(p.faseResp) * (0.016 + 0.018 * dormir);
+        const vaiven = reducido ? 0 : Math.sin(p.faseResp - 0.8) * -(1.1 + 1.4 * dormir);
         // Cayendo rapido se estira; al chocar, el resorte "aplaste" lo achata y lo ensancha
         const estira = limitar(p.estira.x, -0.05, 0.12);
         const ap = limitar(p.aplaste.x, 0.72, 1.25);
@@ -584,14 +607,15 @@
         // Las figuras se inclinan; la chispa se desliza (girada hundiria una esquina).
         // En el aire, todos se inclinan hacia donde van.
         const giro = (sinCabeza ? p.cuerpo.x * 1.5 : p.cuerpo.x * 4) + no * 3 + p.inclina.x;
-        const dx = (sinCabeza ? p.cuerpo.x * 6 : 0) + p.x;
-        poner(p.g, `translate(${n2(dx)}px,${n2(p.y)}px) rotate(${n2(giro)}deg) scale(${n2(sx, 3)},${n2(sy, 3)})`);
-        if (p.colgante) colgar(p, { dx: dx, y: p.y, giro: giro * Math.PI / 180, sx: sx, sy: sy }, t, dt || 0);
+        const dx = (sinCabeza ? p.cuerpo.x * 6 : 0) + p.x + p.hondoX.x;
+        const ty = p.y + p.hondoY.x;
+        poner(p.g, `translate(${n2(dx)}px,${n2(ty)}px) rotate(${n2(giro)}deg) scale(${n2(sx, 3)},${n2(sy, 3)})`);
+        if (p.colgante) colgar(p, { dx: dx, y: ty, giro: giro * Math.PI / 180, sx: sx, sy: sy }, t, dt || 0);
 
         // Al asentir la cara baja mas que la cabeza: asi se lee como un "si"
         const si = asentimiento(p, t);
         const hundir = limitar(p.hundir.x, -9, 9);
-        poner(p.cabeza, `translate(${n2(p.hx.x * 4 + no * 5)}px,${n2(p.hy.x * 3 + hundir + vaiven + si * 5.5)}px)`);
+        poner(p.cabeza, `translate(${n2(p.hx.x * 4 + no * 5)}px,${n2(p.hy.x * 3 + hundir + vaiven + si * 5.5)}px) rotate(${n2(p.ladeo.x)}deg)`);
         poner(p.cara, `translate(${n2(p.fx.x * 6 + no * 2.5)}px,${n2(p.fy.x * 4 + hundir * 0.35 + si * 4)}px)`);
 
         // Las pupilas nunca se salen del ojo, aunque tiemblen al caer
@@ -600,8 +624,9 @@
         const pupila = `translate(${n2(p.px.x * tope * 4)}px,${n2(p.py.x * tope * 4)}px)`;
         const parpado = parpadeo(p, t);
         const alegre = limitar(p.alegre.x, 0, 1);
+        const sueno = tramo(0.1, 0.9, dormir); // dormidos, los ojos se cierran poco a poco
         p.ojos.forEach(function (o) {
-            const c = Math.max(limitar(o.cierre.x, -0.15, 1), parpado);
+            const c = Math.max(limitar(o.cierre.x, -0.15, 1), parpado, sueno);
             poner(o.g, `scale(1,${n2(1 - c * 0.92, 3)})`);
             opacidad(o.g, 1 - tramo(0.8, 1, c));
             const linea = tramo(0.6, 1, c);
@@ -616,8 +641,16 @@
         poner(p.risa, `scale(${n2(Math.max(0, p.bRisa.x), 3)})`);
 
         const cerca = 1 / (1 + Math.max(0, -p.y) / 150);
-        poner(p.sombra, `translate(${n2(p.x)}px,0px) scale(${n2(cerca * sx, 3)},${n2(cerca, 3)})`);
+        poner(p.sombra, `translate(${n2(p.x + p.hondoX.x)}px,${n2(p.hondoY.x)}px) scale(${n2(cerca * sx, 3)},${n2(cerca, 3)})`);
         opacidad(p.sombra, cerca);
+
+        // Las "z" del sueno: cada una sube en diagonal, crece y se desvanece, por turnos
+        p.zetas.forEach(function (z, i) {
+            if (dormir < 0.02) { opacidad(z, 0); return; }
+            const a = (t * 0.42 + i / 3) % 1;
+            poner(z, `translate(${n2(a * 16 + Math.sin(a * 6 + i) * 2)}px,${n2(-a * 34)}px) scale(${n2(0.6 + a * 0.7, 3)})`);
+            opacidad(z, Math.sin(Math.PI * a) * dormir);
+        });
 
         // Polvo: cada particula sale, frena y se desvanece en poco mas de medio segundo
         if (p.polvoDesde >= 0 && t - p.polvoDesde > 0.62) p.polvoDesde = -1;
@@ -695,7 +728,7 @@
         }
         if (activo === email) return 'correo';
         if (activo && activo !== document.body && panel.contains(activo)) return 'foco';
-        return 'libre';
+        return dormido ? 'dormido' : 'libre';
     }
 
     function centro(el) {
@@ -761,6 +794,7 @@
             case 'cargando': return hacia(p, centro(boton));
             case 'foco':     return hacia(p, centro(document.activeElement));
             case 'error':    return { x: 0, y: 0.8 };
+            case 'dormido':  return { x: 0, y: 0.55 }; // cabeza caida
             case 'exito':    return { x: 0, y: -0.5 };
             default:         return mouse ? hacia(p, mouse) : mirada;
         }
@@ -795,6 +829,9 @@
                 break;
             case 'error':
                 g.ojos = [0.3, 0.3]; g.giro = -1; // ojos caidos y boca triste
+                break;
+            case 'dormido':
+                g.sonrisa = 0.55; // sonrisa tranquila; los ojos los cierra el sueno, despacio
                 break;
             case 'exito':
                 g.ojos = [1, 1]; g.alegre = 1; g.sonrisa = 0; g.risa = 1;
@@ -863,14 +900,92 @@
     window.addEventListener('resize', function () { centrosViejos = true; actualizar(); });
     window.addEventListener('scroll', function () { centrosViejos = true; actualizar(); }, { passive: true });
 
+    // Profundidad: como capas que siguen al mouse, todos se corren un poco
+    // hacia el; el de adelante mas que el de atras (asi se suma a lo que la
+    // chispa ya se desliza al mirar, en vez de restarse)
+    function profundidad() {
+        const nx = mouse ? limitar(mouse.x / innerWidth * 2 - 1, -1, 1) : 0;
+        const ny = mouse ? limitar(mouse.y / innerHeight * 2 - 1, -1, 1) : 0;
+        pjs.forEach(function (p) {
+            p.hondoX.meta = nx * 10 * p.d.hondo;
+            p.hondoY.meta = ny * 3 * p.d.hondo;
+        });
+    }
+
+    // Curiosidad: si el mouse se queda quieto encima de ellos mas de 1,2 s,
+    // ladean la cabeza ("¿que paso?"); al moverlo se enderezan
+    let curiosos = false;
+    let esperaCuriosidad = 0;
+    function vigilarCuriosidad() {
+        if (curiosos) enderezar();
+        clearTimeout(esperaCuriosidad);
+        esperaCuriosidad = setTimeout(function () {
+            const r = contenedor.getBoundingClientRect();
+            const encima = mouse && mouse.x >= r.left && mouse.x <= r.right && mouse.y >= r.top && mouse.y <= r.bottom;
+            if (!encima || estadoActual !== 'libre') return;
+            curiosos = true;
+            pjs.forEach(function (p) { p.ladeo.meta = p.d.ladeo; });
+            despertar();
+        }, 1200);
+    }
+    function enderezar() {
+        curiosos = false;
+        clearTimeout(esperaCuriosidad);
+        pjs.forEach(function (p) { p.ladeo.meta = 0; });
+    }
+
     if (conMouse && !reducido) {
         window.addEventListener('pointermove', function (e) {
             if (e.pointerType !== 'mouse') return;
             mouse = { x: e.clientX, y: e.clientY };
+            profundidad();
+            vigilarCuriosidad();
             actualizar();
         }, { passive: true });
-        document.documentElement.addEventListener('mouseleave', function () { mouse = null; actualizar(); });
+        document.documentElement.addEventListener('mouseleave', function () {
+            mouse = null;
+            profundidad();
+            enderezar();
+            actualizar();
+        });
     }
+
+    // Sueno: si nadie hace nada por un rato, se duermen (ojos que se cierran
+    // despacio, respiracion lenta y unas "z"); con cualquier cosa despiertan
+    const INACTIVO = 20; // segundos
+    let dormido = false;
+    let ultimaActividad = ahora();
+
+    function dormirse() {
+        dormido = true;
+        enderezar();
+        pjs.forEach(function (p) { p.sueno.k = DORMIRSE[0]; p.sueno.c = DORMIRSE[1]; p.sueno.meta = 1; });
+        actualizar();
+    }
+
+    function espabilar() {
+        dormido = false;
+        const t = ahora();
+        pjs.forEach(function (p, i) {
+            p.sueno.k = ESPABILAR[0]; p.sueno.c = ESPABILAR[1]; p.sueno.meta = 0;
+            p.parpadeo = t + 0.25 + i * 0.06; // al abrir los ojos, un parpadeo
+        });
+        actualizar();
+    }
+
+    function actividad() {
+        ultimaActividad = ahora();
+        if (dormido) espabilar();
+    }
+    ['pointermove', 'pointerdown', 'keydown', 'focusin', 'wheel', 'touchstart', 'scroll'].forEach(function (tipo) {
+        window.addEventListener(tipo, actividad, { passive: true });
+    });
+
+    if (!reducido) setInterval(function () {
+        if (dormido || estadoActual !== 'libre' || document.hidden || !enPantalla) return;
+        if (pjs.some(function (p) { return p.cayendo || p.acomodando; })) return;
+        if (ahora() - ultimaActividad > INACTIVO) dormirse();
+    }, 1000);
 
     /* ---------- 6. Carga, error y exito (lo que auth.js muestra) ---------- */
 

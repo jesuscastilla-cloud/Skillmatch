@@ -2189,7 +2189,9 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 /* Cada parte se transforma desde su propio punto (los pies, el centro del
    ojo o de la boca): el JS pone ese punto en px del lienzo */
 .lp-pj, .lp-ojo, .lp-boca, .lp-sombra, .lp-polvo,
-.lp-corbata, .lp-colgante, .lp-cinta { transform-box: view-box; }
+.lp-corbata, .lp-colgante, .lp-cinta, .lp-cabeza, .lp-z { transform-box: view-box; }
+/* Las "z" de cuando se duermen (el JS las hace subir y desvanecerse) */
+.lp-z { font-family: var(--font-display); font-weight: 800; fill: #fff; opacity: 0; }
 
 /* Campo de contrasena con boton para mostrarla (lo agrega login-personajes.js) */
 .campo-clave { position: relative; }
