@@ -121,7 +121,11 @@ function displayUserProfile(user) {
     const fullName = `${user.firstName} ${user.lastName}`;
     document.getElementById('userName').textContent = fullName;
     document.getElementById('userHeadline').textContent = user.headline || 'Usuario de SkillMatch';
-    document.getElementById('userLocation').textContent = `<i data-ico="pin"></i> ${user.location || 'Cartagena, Colombia'}`;
+    // El icono va como HTML y la ciudad como texto (con textContent el icono
+    // salia escrito tal cual; con append la ciudad nunca se lee como codigo)
+    const ubicacion = document.getElementById('userLocation');
+    ubicacion.innerHTML = '<i data-ico="pin"></i> ';
+    ubicacion.append(user.location || 'Cartagena, Colombia');
 
     setProfileAvatar(user.profileImageUrl, fullName);
 
@@ -143,11 +147,9 @@ async function loadUserStatistics(userId) {
             document.getElementById('profileViews').textContent = stats.profileViews || 0;
             document.getElementById('applicationsCount').textContent = stats.applicationsCount || 0;
             document.getElementById('matchRate').textContent = (stats.matchRate || 0) + '%';
-            
-            // Actualizar barra de progreso con el valor del backend
-            const percentage = stats.profileCompleteness || 0;
-            document.getElementById('profileProgress').style.width = percentage + '%';
-            document.getElementById('progressPercentage').textContent = percentage;
+            // El progreso del perfil ya no se toma de aqui: el backend no cuenta
+            // experiencia ni educacion y decia 100 % con puntos pendientes. Lo
+            // calcula renderProfileChecklist con la misma lista que se muestra.
         } else {
             document.getElementById('profileViews').textContent = '0';
             document.getElementById('applicationsCount').textContent = '0';
@@ -186,12 +188,20 @@ function updateProfileChecklist(checkType, value) {
 function renderProfileChecklist() {
     const checklist = document.getElementById('profileChecklist');
     if (checklist) {
-        checklist.innerHTML = Object.entries(profileChecks).map(([key, value]) => 
+        checklist.innerHTML = Object.entries(profileChecks).map(([key, value]) =>
             `<li class="${value ? 'completed' : ''}">
-                ${value ? '<i data-ico="check"></i>' : '<i data-ico="bookmark"></i>'} ${key}
+                ${value ? '<i data-ico="check"></i>' : '<i data-ico="circle"></i>'} ${key}
             </li>`
         ).join('');
     }
+    // El porcentaje sale de la misma lista: 100 % solo con todo completo
+    const total = Object.keys(profileChecks).length;
+    const hechos = Object.values(profileChecks).filter(Boolean).length;
+    const porcentaje = Math.round(hechos / total * 100);
+    const barra = document.getElementById('profileProgress');
+    const texto = document.getElementById('progressPercentage');
+    if (barra) barra.style.width = porcentaje + '%';
+    if (texto) texto.textContent = porcentaje;
 }
 
 // Calcular progreso del perfil

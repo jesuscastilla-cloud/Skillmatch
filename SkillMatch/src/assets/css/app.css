@@ -2690,13 +2690,53 @@ footer.pie > .container { position: relative; z-index: 1; }
 
 /* ---------- 22. Perfil ---------- */
 
-.profile-section { padding: var(--s6) 0 var(--s9); }
+/* Secciones del centro en tarjetas blancas, como las de la barra izquierda
+   (antes iban sueltas sobre el fondo y con 96 px de aire abajo cada una) */
+.profile-main { display: flex; flex-direction: column; gap: var(--s5); }
+.profile-section {
+    padding: var(--s6);
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-1);
+}
+/* "+ Agregar" de cada seccion: pastilla de una linea, como el de Habilidades
+   (usaba el boton de solo icono, de 40 px, y el texto se partia en dos) */
+.profile-section .section-header .btn-icon {
+    width: auto;
+    padding: 0 var(--s4);
+    gap: 5px;
+    border: 1.5px dashed var(--hairline);
+    border-radius: var(--r-pill);
+    color: var(--sea-deep);
+    font-size: var(--t-sm); font-weight: 600;
+    white-space: nowrap;
+}
+.profile-section .section-header .btn-icon:hover { border-color: var(--sea); background: var(--sea-light); }
+/* Titulos de seccion al tamano de los de las tarjetas de la izquierda */
+.profile-section .section-header h2 { font-size: var(--t-lg); }
+/* Estadisticas del perfil: una fila compacta de tres (antes, tres tarjetas altas) */
+.profile-card .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); }
+.profile-card .stat-item { flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s3); }
+.profile-card .stat-icon { width: 36px; height: 36px; }
+.profile-card .stat-value { font-size: var(--t-lg); }
+/* Estrellas del nivel de cada habilidad, rellenas con el naranja del logo */
+.skill-level .ico { fill: currentColor; color: var(--naranja-texto); }
 
+/* Perfil de usuario en 3 columnas, como el de empresa: tarjeta, estadisticas,
+   habilidades y progreso a la izquierda; secciones al centro; recomendaciones
+   a la derecha. Antes eran 2 columnas para 3 bloques: el centro caia en la
+   columna angosta y la derecha bajaba a otra fila. */
 .profile-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: 300px minmax(0, 1fr) 300px;
     gap: var(--s6);
     align-items: start;
+}
+/* Escritorio mediano: las recomendaciones bajan debajo de las secciones */
+@media (width > 1080px) and (width < 1280px) {
+    .profile-layout { grid-template-columns: 300px minmax(0, 1fr); }
+    .profile-right-sidebar { grid-column: 2; position: static; }
 }
 
 .profile-header, .profile-cover {
@@ -3624,15 +3664,20 @@ kbd {
 }
 .profile-meta > * , .company-meta-tags > * { display: inline-flex; align-items: center; gap: 5px; }
 
-.profile-container, .company-grid-layout {
+/* En el perfil de usuario .profile-container es solo un envoltorio: antes
+   compartia esta cuadricula de 2 columnas con un solo hijo y dejaba 320 px
+   vacios a la derecha */
+.profile-container { padding-bottom: var(--s9); }
+.company-grid-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: 260px minmax(0, 1fr) 300px;
     gap: var(--s6);
     align-items: start;
     padding-bottom: var(--s9);
 }
-.company-grid-layout { grid-template-columns: 260px minmax(0, 1fr) 300px; }
-.profile-sidebar, .profile-right-sidebar, .company-sidebar-left, .company-sidebar-right {
+/* Las barras cortas acompanan el scroll. La izquierda del perfil de usuario
+   no: es mas alta que la pantalla y su parte de abajo nunca se veia. */
+.profile-right-sidebar, .company-sidebar-left, .company-sidebar-right {
     position: sticky;
     top: calc(var(--app-bar-h) + var(--s5));
 }

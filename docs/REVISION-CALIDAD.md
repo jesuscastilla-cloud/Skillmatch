@@ -48,6 +48,23 @@ Páginas con sesión revisadas con las cuentas de prueba del seed local (`DataSe
 - Falsos positivos confirmados: etiqueta activa del mapa (capa naranja en `::before`), botones del
   mapa (la zona táctil es la tarjeta), "¿Olvidaste tu contraseña?" y "Limpiar" (zona invisible de 44 px).
 
+## Perfil de usuario con datos reales (2026-10-06)
+Arreglado (frontend):
+- Escritorio: 3 columnas como el perfil de empresa (antes 2 columnas para 3 bloques: el centro en 320 px
+  y 360 px vacíos); 2 columnas entre 1081 y 1279 px. La barra izquierda ya no es "sticky" (era más alta
+  que la pantalla y su parte de abajo no se veía).
+- Secciones del centro en tarjetas; "+ Agregar" en una línea; títulos al tamaño de las tarjetas.
+- Ubicación: el icono salía como texto `<i data-ico="pin">` (profile.js usaba textContent).
+- Progreso: decía 100 % con experiencia y educación pendientes (el backend no las cuenta); ahora se
+  calcula con la misma lista que se muestra. Pendientes con círculo vacío (icono nuevo `circle`).
+- Estadísticas en una fila compacta; estrellas de nivel rellenas en naranja.
+
+Para Jesús (backend o contenido):
+- `GET /users/{id}/experiences` responde 400: "experienceService is null" (falta inyectar el servicio
+  en el controlador). Por eso "No se pudieron cargar las experiencias".
+- Contenido fijo en `perfil-usuario.html`: certificaciones, proyectos y recomendaciones de empresas
+  son iguales para todos. "0 conexiones" también es fijo (nadie lo actualiza).
+
 ## Falta revisar
 - Revisión visual página por página (espaciados, tipografía, consistencia) de: perfil de usuario, conexiones,
   mensajes, registros y el resto del perfil de empresa.
