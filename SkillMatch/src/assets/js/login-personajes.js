@@ -10,6 +10,8 @@
 //  - Miran el correo mientras se escribe; cierran los ojos en la contrasena
 //    y con "mostrar contrasena" la chispa naranja se acerca a espiar.
 //  - Miran el boton mientras carga, niegan si hay error y saltan si entra.
+//  - Asienten cuando el correo ya tiene forma valida. Si Bloq Mayus esta
+//    activado en la contrasena, sale un aviso y la chispa abre los ojos.
 //  - En el login de empresas (data-variante="empresa") van de oficina:
 //    corbata, corbatin, carnet y lentes. La corbata y el carnet son
 //    pendulos: cuelgan, el aire los levanta al caer y se mecen al frenar.
@@ -171,7 +173,7 @@
     </svg>`;
     const svg = contenedor.querySelector('.lp');
 
-    /* ---------- 2. Boton para mostrar la contrasena ---------- */
+    /* ---------- 2. Boton para mostrar la contrasena y aviso de Bloq Mayus ---------- */
 
     // El campo se envuelve para poner el boton encima; su id no cambia,
     // asi que auth.js lo sigue encontrando igual.
@@ -207,6 +209,40 @@
     });
     // Al enviar se vuelve a ocultar, para que el navegador la trate como contrasena
     if (clave.form) clave.form.addEventListener('submit', function () { mostrarClave(false); actualizar(); });
+
+    // Aviso de Bloq Mayus: va debajo del campo, en la fila de "¿Olvidaste tu
+    // contrasena?" (a la izquierda), asi el formulario no salta al aparecer.
+    // El texto vive en una region aria-live: el lector de pantalla lo anuncia.
+    const aviso = document.createElement('p');
+    aviso.className = 'aviso-mayus';
+    aviso.innerHTML = '<i data-ico="alert"></i><span aria-live="polite"></span>';
+    envoltura.appendChild(aviso);
+    const avisoTexto = aviso.querySelector('span');
+    let mayus = false;
+    let borrarAviso = 0;
+
+    function revisarMayus(e) {
+        if (!e.getModifierState) return;
+        const ahoraMayus = e.getModifierState('CapsLock');
+        if (ahoraMayus === mayus) return;
+        mayus = ahoraMayus;
+        clearTimeout(borrarAviso);
+        if (mayus) {
+            avisoTexto.textContent = 'Bloq Mayús activado';
+        } else {
+            // Se borra al terminar de ocultarse: si vuelve, se anuncia de nuevo
+            borrarAviso = setTimeout(function () { avisoTexto.textContent = ''; }, 200);
+        }
+        aviso.classList.toggle('visible', mayus);
+        actualizar();
+    }
+    ['keydown', 'keyup', 'mousedown'].forEach(function (tipo) { clave.addEventListener(tipo, revisarMayus); });
+    // Fuera del campo no se muestra (al volver, la proxima tecla lo revisa)
+    clave.addEventListener('blur', function () {
+        mayus = false;
+        aviso.classList.remove('visible');
+        borrarAviso = setTimeout(function () { avisoTexto.textContent = ''; }, 200);
+    });
 
     /* ---------- 3. Motor de movimiento: resortes y gravedad ---------- */
 
@@ -278,7 +314,7 @@
             saltos: [], destino: null, metaX: null, saltito: false, acomodando: false, // saltitos hasta su sitio
             apoyo: -1, rebote: 0,                                   // instante en el piso tras un golpe
             cx: 0, cy: 0,                                           // centro de la cara en pantalla
-            parpadeo: -1, sacudida: -1, salto: -1, polvoDesde: -1,  // momentos de cada reaccion
+            parpadeo: -1, sacudida: -1, asiente: -1, salto: -1, polvoDesde: -1, // momentos de cada reaccion
             corbata: g.querySelector('.lp-corbata'),                // solo en el login de empresas
             colgante: null, cintas: [], ajuste: -1, ajustando: ''
         };
@@ -513,6 +549,15 @@
         return Math.exp(-s / 0.24) * Math.sin(s * 2 * Math.PI * 4.2);
     }
 
+    // "Si" con la cabeza: baja primero y rebota dos veces, cada vez menos
+    function asentimiento(p, t) {
+        if (p.asiente < 0) return 0;
+        const s = t - p.asiente;
+        if (s < 0) return 0;
+        if (s > 0.9) { p.asiente = -1; return 0; }
+        return Math.exp(-s / 0.22) * Math.sin(s * 2 * Math.PI * 3);
+    }
+
     // Se escribe en el DOM solo si el valor cambio (el navegador no repinta de mas)
     function n2(n, d) { return n.toFixed(d === undefined ? 2 : d); }
     function poner(el, valor) {
@@ -543,9 +588,11 @@
         poner(p.g, `translate(${n2(dx)}px,${n2(p.y)}px) rotate(${n2(giro)}deg) scale(${n2(sx, 3)},${n2(sy, 3)})`);
         if (p.colgante) colgar(p, { dx: dx, y: p.y, giro: giro * Math.PI / 180, sx: sx, sy: sy }, t, dt || 0);
 
+        // Al asentir la cara baja mas que la cabeza: asi se lee como un "si"
+        const si = asentimiento(p, t);
         const hundir = limitar(p.hundir.x, -9, 9);
-        poner(p.cabeza, `translate(${n2(p.hx.x * 4 + no * 5)}px,${n2(p.hy.x * 3 + hundir + vaiven)}px)`);
-        poner(p.cara, `translate(${n2(p.fx.x * 6 + no * 2.5)}px,${n2(p.fy.x * 4 + hundir * 0.35)}px)`);
+        poner(p.cabeza, `translate(${n2(p.hx.x * 4 + no * 5)}px,${n2(p.hy.x * 3 + hundir + vaiven + si * 5.5)}px)`);
+        poner(p.cara, `translate(${n2(p.fx.x * 6 + no * 2.5)}px,${n2(p.fy.x * 4 + hundir * 0.35 + si * 4)}px)`);
 
         // Las pupilas nunca se salen del ojo, aunque tiemblen al caer
         const largo = Math.hypot(p.px.x, p.py.x);
@@ -611,7 +658,7 @@
             p.inclina.meta = limitar(p.vx * 0.05, -18, 18);
             p.resortes.forEach(function (r) { avanzar(r, dt); });
             pintar(p, t, dt);
-            if ((p.enAire && p.inicio < Infinity) || p.apoyo >= 0 || p.salto >= 0 || p.sacudida >= 0 ||
+            if ((p.enAire && p.inicio < Infinity) || p.apoyo >= 0 || p.salto >= 0 || p.sacudida >= 0 || p.asiente >= 0 ||
                 p.parpadeo >= 0 || p.polvoDesde >= 0 || p.ajuste >= 0 || p.acomodando ||
                 (p.metaX !== null && (Math.abs(p.x - p.metaX) > 0.05 || Math.abs(p.vx) > 0.5)) ||
                 !p.resortes.every(quieto) || (p.colgante && Math.abs(p.colgante.w) > 0.01)) sigue = true;
@@ -642,7 +689,10 @@
         if (enError) return 'error';
         if (boton && boton.disabled) return 'cargando';
         const activo = document.activeElement;
-        if (activo === clave || activo === ver) return clave.type === 'password' ? 'cerrados' : 'espia';
+        if (activo === clave || activo === ver) {
+            if (mayus) return 'mayus';
+            return clave.type === 'password' ? 'cerrados' : 'espia';
+        }
         if (activo === email) return 'correo';
         if (activo && activo !== document.body && panel.contains(activo)) return 'foco';
         return 'libre';
@@ -705,6 +755,9 @@
                 if (p.d.cabeza) return aOtroLado(p);
                 // La chispa se acerca de mas (k) para espiar lo escrito
                 return Object.assign(hacia(p, finDelTexto(clave)), { k: 2.6 });
+            case 'mayus':
+                // La chispa mira el aviso de Bloq Mayus; los otros siguen sin mirar
+                return p.d.cabeza ? aOtroLado(p) : hacia(p, centro(aviso));
             case 'cargando': return hacia(p, centro(boton));
             case 'foco':     return hacia(p, centro(document.activeElement));
             case 'error':    return { x: 0, y: 0.8 };
@@ -733,6 +786,10 @@
                 if (p.d.cabeza) { g.ojos = [1, 1]; break; }
                 g.ojos = [0, 1]; g.sonrisa = 0; g.o = 1; // un ojo abierto para espiar
                 break;
+            case 'mayus':
+                if (p.d.cabeza) { g.ojos = [1, 1]; break; }
+                g.ojos = [-0.15, -0.15]; g.sonrisa = 0; g.o = 1; // la chispa se sorprende: "¡ojo!"
+                break;
             case 'cargando':
                 g.ojos = [-0.12, -0.12]; g.sonrisa = 0; g.o = 1;
                 break;
@@ -756,6 +813,13 @@
         if (reducido) return;
         const t = ahora();
         pjs.forEach(function (p, i) { p.sacudida = t + i * 0.07; });
+    }
+
+    function asentir() {
+        if (reducido) return;
+        const t = ahora();
+        pjs.forEach(function (p, i) { p.asiente = t + i * 0.08; });
+        despertar();
     }
 
     // Se llama con cada evento: decide el estado y las metas de los resortes
@@ -786,7 +850,15 @@
     document.addEventListener('focusin', actualizar);
     // Al perder el foco, document.activeElement se actualiza un instante despues
     document.addEventListener('focusout', function () { setTimeout(actualizar, 0); });
-    email.addEventListener('input', actualizar);
+    // Cuando lo escrito pasa a tener forma de correo (algo@algo.algo), asienten
+    const FORMA_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    let correoValido = FORMA_CORREO.test(email.value.trim());
+    email.addEventListener('input', function () {
+        const valido = FORMA_CORREO.test(email.value.trim());
+        if (valido && !correoValido) asentir();
+        correoValido = valido;
+        actualizar();
+    });
     clave.addEventListener('input', actualizar);
     window.addEventListener('resize', function () { centrosViejos = true; actualizar(); });
     window.addEventListener('scroll', function () { centrosViejos = true; actualizar(); }, { passive: true });

@@ -2208,6 +2208,36 @@ footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 .campo-clave-ver[aria-pressed="true"] .ico:first-child { display: none; }
 .campo-clave-ver:focus-visible { outline-offset: -4px; }
 
+/* Aviso de Bloq Mayus (lo agrega login-personajes.js): flota debajo del
+   campo, a la izquierda de "¿Olvidaste tu contrasena?", sin mover el formulario */
+.aviso-mayus {
+    position: absolute;
+    top: calc(100% + 10px); /* centrado con el enlace de al lado */
+    left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 2px 10px 2px 8px;
+    border-radius: var(--r-pill);
+    background: var(--naranja-soft);
+    color: var(--naranja-texto);
+    font-size: var(--t-sm);
+    font-weight: 600;
+    line-height: 1.5;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity .18s ease, transform .18s ease;
+}
+.aviso-mayus.visible { opacity: 1; transform: none; }
+.aviso-mayus .ico { width: 14px; height: 14px; }
+/* En celulares muy angostos no cabe junto al enlace: sube a la fila de la
+   etiqueta "Contrasena", a la derecha, donde siempre hay espacio */
+@media (max-width: 359px) {
+    .aviso-mayus { top: auto; bottom: calc(100% + 4px); left: auto; right: 0; }
+}
+
 @media (max-width: 1080px) {
     /* La columna oscura se oculta en pantallas angostas; si tiene personajes
        vuelve como una franja encima del formulario, solo con ellos */
