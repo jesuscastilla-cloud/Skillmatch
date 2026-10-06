@@ -3,6 +3,8 @@
 // chispa naranja que las une, dibujadas en SVG propio (sin librerias).
 //  - Caen desde arriba uno tras otro: se estiran al caer, se aplastan al
 //    tocar el piso, rebotan y se acomodan (la cabeza sigue de largo y vuelve).
+//  - Cada uno cae en un lugar equivocado, mira hacia su sitio y va dando
+//    saltitos hasta acomodarse (el azul y el turquesa se cruzan en el aire).
 //  - Siguen al mouse con las pupilas, la cara, la cabeza y el cuerpo; cada
 //    parte llega a su ritmo, por eso el movimiento se ve fluido y no rigido.
 //  - Miran el correo mientras se escribe; cierran los ojos en la contrasena
@@ -51,16 +53,22 @@
     // Lienzo de 360 x 280 con el piso en y = 262. "pie" es el punto de apoyo
     // (desde ahi se inclinan y se aplastan), "ancho" la mitad del cuerpo,
     // "salida" la altura desde la que caen y "retraso" cuanto esperan.
+    // "llegada": cuanto de lado de su sitio caen (x), los saltitos que dan
+    // (a donde cae cada uno; 0 es su sitio) y cuanto esperan antes del primero
+    // (calculado para que los tres terminen casi a la vez).
     const PISO = 262;
     const PERSONAJES = [
         { id: 'azul', pie: 118, ancho: 48, salida: -470, retraso: 0, fase: 0,
+          llegada: { x: 150, saltos: [75, 0], espera: 0.45 },
           cuerpo: 'M70,262 V168 A48,48 0 0 1 166,168 V262 Z',
           cabeza: [118, 72, 38], ojos: [[104, 70, 9], [132, 70, 9]], boca: [118, 92, 16] },
         { id: 'turquesa', pie: 244, ancho: 44, salida: -430, retraso: 0.16, fase: 2.1,
+          llegada: { x: -150, saltos: [-75, 0], espera: 0.3 },
           cuerpo: 'M200,262 V190 A44,44 0 0 1 288,190 V262 Z',
           cabeza: [244, 98, 35], ojos: [[231, 96, 8.5], [257, 96, 8.5]], boca: [244, 117, 15] },
         // La chispa no tiene cabeza aparte: su cara se mueve sobre la cupula
         { id: 'naranja', pie: 180, ancho: 72, salida: -400, retraso: 0.34, fase: 4.2,
+          llegada: { x: 60, saltos: [0], espera: 0.7 },
           cuerpo: 'M108,262 A72,72 0 0 1 252,262 Z',
           cabeza: null, ojos: [[162, 224, 10], [198, 224, 10]], boca: [180, 245, 18] }
     ];
@@ -208,9 +216,11 @@
     // mas rebote. Con movimiento reducido todos son rapidos y sin rebote.
     const TIPOS = reducido
         ? { pupila: [320, 36], cara: [320, 36], cabeza: [320, 36], cuerpo: [320, 36],
-            ojo: [500, 45], gesto: [400, 40], aplaste: [400, 40], hundir: [400, 40], estira: [900, 60] }
+            ojo: [500, 45], gesto: [400, 40], aplaste: [400, 40], hundir: [400, 40], estira: [900, 60],
+            inclina: [320, 36] }
         : { pupila: [240, 21], cara: [150, 19], cabeza: [95, 15], cuerpo: [55, 11],
-            ojo: [520, 40], gesto: [300, 19], aplaste: [430, 15], hundir: [260, 11], estira: [1600, 75] };
+            ojo: [520, 40], gesto: [300, 19], aplaste: [430, 15], hundir: [260, 11], estira: [1600, 75],
+            inclina: [90, 16] };
 
     function resorte(tipo, valor) {
         return { k: TIPOS[tipo][0], c: TIPOS[tipo][1], x: valor, v: 0, meta: valor };
@@ -259,10 +269,13 @@
             aplaste: resorte('aplaste', 1), // 1 normal; menos = aplastado, mas = estirado
             estira: resorte('estira', 0),   // estiramiento por la velocidad de caida
             hundir: resorte('hundir', 0),   // la cabeza se hunde al caer y vuelve
+            inclina: resorte('inclina', 0), // en el aire se inclina hacia donde va (grados)
             alegre: resorte('ojo', 0),      // ojos cerrados: 0 tranquilos, 1 felices
             bSonrisa: resorte('gesto', 1), bGiro: resorte('gesto', 1),
             bO: resorte('gesto', 0), bRisa: resorte('gesto', 0),
             y: 0, vy: 0, enAire: false, cayendo: false, inicio: 0, // caida y saltos
+            x: 0, vx: 0, polvoX: 0,                                 // de lado: 0 es su sitio
+            saltos: [], destino: null, metaX: null, saltito: false, acomodando: false, // saltitos hasta su sitio
             apoyo: -1, rebote: 0,                                   // instante en el piso tras un golpe
             cx: 0, cy: 0,                                           // centro de la cara en pantalla
             parpadeo: -1, sacudida: -1, salto: -1, polvoDesde: -1,  // momentos de cada reaccion
@@ -270,7 +283,7 @@
             colgante: null, cintas: [], ajuste: -1, ajustando: ''
         };
         p.resortes = [p.px, p.py, p.fx, p.fy, p.hx, p.hy, p.cuerpo, p.aplaste, p.estira, p.hundir,
-                      p.alegre, p.bSonrisa, p.bGiro, p.bO, p.bRisa]
+                      p.inclina, p.alegre, p.bSonrisa, p.bGiro, p.bO, p.bRisa]
             .concat(p.ojos.map(function (o) { return o.cierre; }));
         // Pendulo de la corbata o del carnet: angulo (th, 0 = colgando derecho)
         // y velocidad de giro (w), mas lo que hace falta para medir su apoyo
@@ -282,9 +295,11 @@
         return p;
     });
 
-    // Antes de caer esperan arriba, fuera de la vista: el panel recorta lo que sobresale
+    // Antes de caer esperan arriba, fuera de la vista (el panel recorta lo que
+    // sobresale), cada uno corrido de su sitio
     if (!reducido) {
         pjs.forEach(function (p) {
+            p.x = p.d.llegada.x;
             p.y = p.d.salida;
             p.enAire = true;
             p.cayendo = true;
@@ -300,6 +315,12 @@
 
     // Gravedad, choque con el piso y rebote
     function fisica(p, t, dt) {
+        // En el piso se desliza hasta su meta con un resorte sin rebote
+        // (amortiguacion critica): conserva el impulso del saltito y frena suave
+        if (!p.enAire && p.metaX !== null) {
+            p.vx += (-60 * (p.x - p.metaX) - 15.5 * p.vx) * dt;
+            p.x += p.vx * dt;
+        }
         // Recien caido se queda apoyado un instante mientras se aplasta;
         // despues se impulsa (estirandose) y rebota, o se queda quieto
         if (p.apoyo >= 0) {
@@ -315,6 +336,7 @@
         if (!p.enAire || t < p.inicio) return;
         p.vy += GRAVEDAD * dt;
         p.y += p.vy * dt;
+        p.x += p.vx * dt;
         if (p.y < 0) return;
         // Toca el piso: el cuerpo se aplasta, la cabeza sigue de largo y los ojos tiemblan
         const golpe = p.vy;
@@ -322,28 +344,50 @@
         p.y = 0;
         p.vy = 0;
         p.enAire = false;
+        let rebota = true;
+        if (p.saltito) {
+            // De un saltito: no rebota ni frena en seco; conserva parte del
+            // impulso y el resorte de arriba lo desliza hasta su meta
+            p.saltito = false;
+            p.vx *= 0.6;
+            rebota = false;
+        } else {
+            p.vx = 0; // de la caida: el rebote es solo hacia arriba
+        }
         p.aplaste.v -= golpe * 0.003 * blando;
         p.hundir.v += golpe * 0.1;
         p.py.v += golpe * 0.004;
-        if (golpe > 700) p.polvoDesde = t;
-        p.rebote = golpe * REBOTE;
+        if (golpe > 700) { p.polvoDesde = t; p.polvoX = p.x; }
+        p.rebote = rebota ? golpe * REBOTE : 0;
         p.apoyo = t + Math.min(0.09, golpe * 0.00006); // mas fuerte el golpe, mas tiempo apoyado
         if (p.cayendo) {
-            // Primer contacto: deja de estar asustado, parpadea y sonrie
+            // Primer contacto: deja de estar asustado, parpadea, sonrie y
+            // se prepara para ir dando saltitos hasta su sitio. Entre un
+            // saltito y otro casi no espera: el aplaste al caer ya es el
+            // impulso del siguiente (saltos encadenados, como un canguro)
             p.cayendo = false;
             p.parpadeo = t + 0.12;
-            if (p.corbata) arreglarCorbata(p);
+            const ll = p.d.llegada;
+            p.saltos = ll.saltos.map(function (x, i) { return { x: x, espera: i ? 0.1 : ll.espera }; });
+            p.acomodando = true;
             actualizar();
         }
     }
 
-    // Al aterrizar, el de corbata se la arregla: la mira, le da un tiron
-    // hacia arriba y queda satisfecho (con los ojos felices)
+    // Ya en su sitio: vuelve a mirar al frente y, si lleva corbata, se la arregla
+    function llego(p) {
+        p.acomodando = false;
+        if (p.corbata) arreglarCorbata(p);
+        actualizar();
+    }
+
+    // El de corbata se la arregla: la mira, le da un tiron hacia arriba y
+    // queda satisfecho (con los ojos felices)
     function arreglarCorbata(p) {
-        setTimeout(function () { p.ajustando = 'mirar'; actualizar(); }, 650);
-        setTimeout(function () { p.ajuste = ahora(); p.colgante.w += 2; despertar(); }, 900);
-        setTimeout(function () { p.ajustando = 'orgullo'; actualizar(); }, 1250);
-        setTimeout(function () { p.ajustando = ''; actualizar(); }, 1900);
+        setTimeout(function () { p.ajustando = 'mirar'; actualizar(); }, 400);
+        setTimeout(function () { p.ajuste = ahora(); p.colgante.w += 2; despertar(); }, 650);
+        setTimeout(function () { p.ajustando = 'orgullo'; actualizar(); }, 1000);
+        setTimeout(function () { p.ajustando = ''; actualizar(); }, 1650);
     }
 
     // Pasa un punto del dibujo del personaje al lienzo, con la caida, la
@@ -405,14 +449,39 @@
         }
     }
 
-    // Salto de alegria: se agacha un instante y sale disparado hacia arriba
+    // Saltos: se agacha un instante (toma impulso) y sale disparado. El de
+    // alegria va derecho hacia arriba; los saltitos hasta su sitio llevan
+    // la velocidad de lado justa para caer en el destino
+    const SALTITO = 460; // impulso hacia arriba de cada saltito
+    const CORTO = 0.15;  // cae un 15 % antes de la meta y llega deslizandose
     function reacciones(p, t) {
-        if (p.salto < 0 || p.enAire || p.apoyo >= 0) return;
+        if (p.enAire || p.apoyo >= 0) return;
+        // El siguiente saltito empieza cuando ya esta quieto en el piso
+        if (p.salto < 0 && p.saltos.length) {
+            const s = p.saltos.shift();
+            p.salto = t + s.espera;
+            p.destino = s.x;
+        }
+        if (p.salto < 0) {
+            if (p.acomodando) llego(p);
+            return;
+        }
         if (t >= p.salto) {
             p.salto = -1;
             p.aplaste.meta = 1;
             p.aplaste.v += 3; // se estira al despegar
-            p.vy = -680;
+            if (p.destino === null) {
+                p.vy = -680;
+            } else {
+                // En el aire dura 2 x impulso / gravedad: con eso sale la
+                // velocidad de lado para caer un poco antes de la meta
+                const cae = p.destino + (p.x - p.destino) * CORTO;
+                p.vy = -SALTITO;
+                p.vx = (cae - p.x) / (2 * SALTITO / GRAVEDAD);
+                p.metaX = p.destino;
+                p.saltito = true;
+                p.destino = null;
+            }
             p.enAire = true;
             p.inicio = 0;
         } else if (t >= p.salto - 0.1) {
@@ -467,9 +536,10 @@
         const sy = ap * (1 + estira) * (1 + resp);
         const sx = (1 + (1 - ap) * 0.75) * (1 - estira * 0.45) * (1 - resp * 0.4);
         const no = sacudida(p, t);
-        // Las figuras se inclinan; la chispa se desliza (girada hundiria una esquina)
-        const giro = (sinCabeza ? p.cuerpo.x * 1.5 : p.cuerpo.x * 4) + no * 3;
-        const dx = sinCabeza ? p.cuerpo.x * 6 : 0;
+        // Las figuras se inclinan; la chispa se desliza (girada hundiria una esquina).
+        // En el aire, todos se inclinan hacia donde van.
+        const giro = (sinCabeza ? p.cuerpo.x * 1.5 : p.cuerpo.x * 4) + no * 3 + p.inclina.x;
+        const dx = (sinCabeza ? p.cuerpo.x * 6 : 0) + p.x;
         poner(p.g, `translate(${n2(dx)}px,${n2(p.y)}px) rotate(${n2(giro)}deg) scale(${n2(sx, 3)},${n2(sy, 3)})`);
         if (p.colgante) colgar(p, { dx: dx, y: p.y, giro: giro * Math.PI / 180, sx: sx, sy: sy }, t, dt || 0);
 
@@ -499,7 +569,7 @@
         poner(p.risa, `scale(${n2(Math.max(0, p.bRisa.x), 3)})`);
 
         const cerca = 1 / (1 + Math.max(0, -p.y) / 150);
-        poner(p.sombra, `scale(${n2(cerca * sx, 3)},${n2(cerca, 3)})`);
+        poner(p.sombra, `translate(${n2(p.x)}px,0px) scale(${n2(cerca * sx, 3)},${n2(cerca, 3)})`);
         opacidad(p.sombra, cerca);
 
         // Polvo: cada particula sale, frena y se desvanece en poco mas de medio segundo
@@ -510,7 +580,7 @@
             const a = p.polvoDesde >= 0 ? (t - p.polvoDesde - n.t0) / 0.55 : 0;
             if (a <= 0 || a >= 1) { poner(nube, 'scale(0)'); opacidad(nube, 0); return; }
             const e = 1 - Math.pow(1 - a, 3);
-            poner(nube, `translate(${n2(lado * n.d * e)}px,${n2(-n.s * e)}px) scale(${n2(0.4 + 0.9 * e, 3)})`);
+            poner(nube, `translate(${n2(p.polvoX + lado * n.d * e)}px,${n2(-n.s * e)}px) scale(${n2(0.4 + 0.9 * e, 3)})`);
             opacidad(nube, Math.pow(1 - a, 1.6) * 0.5);
         });
     }
@@ -535,13 +605,16 @@
         pjs.forEach(function (p) {
             fisica(p, t, dt);
             reacciones(p, t);
-            // Cuanto mas rapido cae, mas se estira (hasta un 10 %)
+            // Cuanto mas rapido cae, mas se estira (hasta un 10 %). Se inclina
+            // hacia donde va, en el aire y deslizandose: al frenar se endereza
             p.estira.meta = Math.min(Math.abs(p.vy) * 0.00007, 0.1);
+            p.inclina.meta = limitar(p.vx * 0.05, -18, 18);
             p.resortes.forEach(function (r) { avanzar(r, dt); });
             pintar(p, t, dt);
             if ((p.enAire && p.inicio < Infinity) || p.apoyo >= 0 || p.salto >= 0 || p.sacudida >= 0 ||
-                p.parpadeo >= 0 || p.polvoDesde >= 0 || p.ajuste >= 0 || !p.resortes.every(quieto) ||
-                (p.colgante && Math.abs(p.colgante.w) > 0.01)) sigue = true;
+                p.parpadeo >= 0 || p.polvoDesde >= 0 || p.ajuste >= 0 || p.acomodando ||
+                (p.metaX !== null && (Math.abs(p.x - p.metaX) > 0.05 || Math.abs(p.vx) > 0.5)) ||
+                !p.resortes.every(quieto) || (p.colgante && Math.abs(p.colgante.w) > 0.01)) sigue = true;
         });
         enMarcha = sigue ? requestAnimationFrame(cuadro) : 0;
     }
@@ -621,6 +694,8 @@
 
     function objetivo(p, estado) {
         if (p.cayendo) return { x: 0, y: -0.9 }; // miran hacia arriba mientras caen
+        // Acomodandose (si nadie esta escribiendo): miran hacia su sitio
+        if (p.acomodando && estado === 'libre' && p.x !== 0) return { x: p.x > 0 ? -0.9 : 0.9, y: 0.25 };
         // Arreglandose la corbata (solo si nadie esta escribiendo): la mira y luego al frente
         if (p.ajustando && estado === 'libre') return p.ajustando === 'mirar' ? { x: 0, y: 1 } : { x: 0, y: -0.2 };
         switch (estado) {

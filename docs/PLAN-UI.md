@@ -24,6 +24,9 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
      respiración, se levantan al caer y se asientan al aterrizar.
   2. **Versión corporativa** en `login-empresa.html`: camisa y corbata (azul), corbatín (turquesa) y
      lentes (naranja), en azul marino con detalles naranja; al aterrizar el azul se arregla la corbata.
+  2b. **Entrada con saltitos** *(idea de Luis, agregada el 2026-10-05; eligió la opción B del boceto)*:
+     cada personaje cae en un lugar equivocado, mira hacia su sitio y va saltando hasta acomodarse
+     (el azul y el turquesa se cruzan en el aire). En los dos logins.
   3. **Asienten** cuando el correo ya tiene forma válida y **aviso de Bloq Mayús** en la contraseña.
   4. **Profundidad** con el mouse (cada figura se mueve distinto), **se duermen** tras un rato sin uso
      y **ladean la cabeza** si el mouse se queda quieto encima.
