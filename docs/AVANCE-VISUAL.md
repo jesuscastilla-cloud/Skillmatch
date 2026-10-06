@@ -77,6 +77,10 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
   segundo, así que se probó con un reloj controlado (una copia de la página en un iframe donde
   el tiempo avanza cuadro a cuadro) y fotos en cada momento clave.
 
+- **Pie de página grande** en las 13 páginas: `ui.js` lo dibuja dentro del `<footer>` (una sola
+  fuente). Logo, frase, botón de búsqueda (Ctrl K), columnas de enlaces reales, año automático,
+  "Volver arriba", la ola del hero arriba y "SkillMatch" gigante y tenue al final.
+
 ### Fase 2 (sección 2 del plan) — portada
 - Titular palabra por palabra con "El trabajo / La práctica / El proyecto" en bucle. La palabra
   clave va en su propia línea (antes "El proyecto" partía el titular en 3 líneas y el hero
@@ -103,7 +107,8 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 - `confirm()` sigue siendo el del navegador (cambiarlo exige un modal asíncrono). Además,
   el `confirm()` de "Aplicar" en `oportunidades.js` muestra el texto `<i data-ico="...">`
   literal (un `confirm()` no dibuja HTML): se arregla al cambiarlo por el modal.
-- Pie de página grande en todas las páginas (hoy solo la portada tiene la llamada final).
+- **Barra superior en tableta (768 px):** se aprieta; "Oportunidades" se monta sobre los
+  iconos de búsqueda y tema, y en la portada "Inicio / Innovación" se parten en dos líneas.
 - Hablar con Jesús: este avance, la contraseña de Atlas y cuándo abrir el PR hacia
   `fase-1-identidad`.
 
