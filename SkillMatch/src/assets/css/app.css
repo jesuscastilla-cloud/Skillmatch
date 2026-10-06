@@ -3046,6 +3046,46 @@ kbd {
     header > nav > .nav-links > li:has(> .cmdk-boton):not(:last-child) { display: flex; }
 }
 
+/* ---- Barra superior en tableta (761 a 1100 px) ----
+   Entre el celular y el escritorio no cabian marca, enlaces, buscador, tema
+   y sesion: los enlaces se partian en dos lineas o el grupo de la derecha se
+   montaba sobre el de la izquierda. Aqui se compacta todo en una linea; el
+   celular y el escritorio no cambian. Con "width > 760px" no queda hueco
+   con la regla de celular (max-width: 760px) aunque el ancho tenga decimales,
+   como pasa con el zoom o el escalado de pantalla de Windows. */
+@media (width > 760px) and (width <= 1100px) {
+    header > nav { gap: var(--s2); }
+    .nav-left { gap: var(--s4); }
+    .logo img { height: 36px; }
+    .nav-principales { flex-wrap: nowrap; }
+    .nav-links a { padding: var(--s2); font-size: .875rem; }
+    .nav-links a.active-nav::after,
+    .nav-links a.active::after { left: var(--s2); right: var(--s2); }
+    .btn-login { padding: var(--s2) var(--s3) !important; }
+    .btn-register { padding: var(--s2) var(--s4) !important; }
+    /* El buscador queda solo con la lupa (el atajo Ctrl K sigue funcionando) */
+    .cmdk-boton { width: 38px; padding: 0; justify-content: center; }
+    .cmdk-boton .cmdk-texto, .cmdk-boton .cmdk-atajo { display: none; }
+}
+/* En tableta vertical, las paginas con sesion (hasta 6 enlaces) aun no
+   cabian: "Inicio" se oculta porque el logo ya lleva al inicio, y los
+   enlaces quedan un poco mas juntos */
+@media (width > 760px) and (width <= 900px) {
+    .nav-left .nav-links li:has(> a[href="index.html"]) { display: none; }
+    .nav-links { gap: 2px; }
+    .nav-links a { padding: var(--s2) 6px; }
+    .nav-links a.active-nav::after,
+    .nav-links a.active::after { left: 6px; right: 6px; }
+}
+/* Tabletas reales (se usan con el dedo): 44 px de alto para tocar comodo;
+   el ancho no cambia, asi que todo sigue cabiendo */
+@media (width > 760px) and (width <= 1100px) and (pointer: coarse) {
+    .nav-links a, .theme-toggle, .cmdk-boton { min-height: 44px; }
+    /* El enlace crece ~3 px hacia abajo: la linea de pagina activa sube lo mismo */
+    .nav-links a.active-nav::after,
+    .nav-links a.active::after { bottom: -18px; }
+}
+
 .cmdk-abierta { overflow: hidden; }
 .cmdk {
     position: fixed; inset: 0;
