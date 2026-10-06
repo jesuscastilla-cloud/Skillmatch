@@ -2094,6 +2094,160 @@ footer a { color: rgba(255,255,255,.82); }
 footer a:hover { color: #fff; }
 footer h4 { color: #fff; font-size: var(--t-base); margin-bottom: var(--s3); }
 
+/* ---- Pie de pagina grande (ui.js lo dibuja en todas las paginas) ----
+   Azul marino con grano y resplandor como la portada, la ola del hero
+   arriba y "SkillMatch" gigante al final. Solo transform y opacity. */
+footer.pie {
+    position: relative;
+    overflow: hidden;
+    padding: calc(var(--s9) + 16px) 0 0;
+    background: var(--grain), var(--bg-deep);
+    background-blend-mode: overlay;
+    background-size: 220px 220px, auto;
+    color: rgba(255,255,255,.7);
+}
+footer.pie::before {
+    content: "";
+    position: absolute;
+    inset: -40% -15% auto auto;
+    width: 640px; height: 640px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(11,126,140,.4), transparent 62%);
+    filter: blur(22px);
+    animation: mesh-drift-a 26s var(--ease-in-out) infinite;
+    pointer-events: none;
+}
+footer.pie > .container { position: relative; z-index: 1; }
+
+/* La ola: el color de la pagina baja en curva sobre el pie y se desliza lento */
+.pie-ola {
+    position: absolute;
+    left: 0; top: -1px;
+    width: 200%; height: 48px;
+    background: var(--bg);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 0H1440V24C1260 0 900 0 720 24S180 48 0 24Z'/%3E%3C/svg%3E") left top / 50% 100% repeat-x;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 0H1440V24C1260 0 900 0 720 24S180 48 0 24Z'/%3E%3C/svg%3E") left top / 50% 100% repeat-x;
+    animation: ola-desliza 36s linear infinite;
+    pointer-events: none;
+}
+/* En la portada la llamada final ya es oscura: el pie sigue sin ola */
+.cta-final + footer.pie { padding-top: var(--s8); }
+.cta-final + footer.pie .pie-ola { display: none; }
+
+.pie-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr);
+    gap: var(--s8);
+}
+.pie-logo { display: inline-block; }
+.pie-logo img { display: block; width: auto; height: 44px; }
+.pie-marca p { max-width: 36ch; margin-top: var(--s4); line-height: 1.6; color: rgba(255,255,255,.72); }
+.pie-buscar {
+    display: inline-flex; align-items: center; gap: var(--s2);
+    min-height: 44px;
+    margin-top: var(--s5);
+    padding: 0 8px 0 14px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: var(--r-pill);
+    background: rgba(255,255,255,.04);
+    color: rgba(255,255,255,.85);
+    font-size: var(--t-sm); font-weight: 600;
+    transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.pie-buscar:hover { border-color: rgba(95,208,220,.6); color: #fff; }
+.pie-buscar .ico { width: 18px; height: 18px; color: var(--sea-luz); }
+.pie-buscar kbd { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: rgba(255,255,255,.75); }
+
+.pie-columnas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s6); }
+.pie-titulo {
+    margin-bottom: var(--s3);
+    font-family: var(--font-display);
+    font-size: var(--t-xs); font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--sea-luz);
+}
+.pie-columnas ul { list-style: none; margin: 0; padding: 0; }
+.pie-columnas a {
+    position: relative;
+    display: inline-flex; align-items: center;
+    min-height: 34px;
+    color: rgba(255,255,255,.82);
+    font-size: var(--t-sm);
+    transition: color var(--dur-1) var(--ease);
+}
+/* Subrayado que crece desde la izquierda al pasar el mouse */
+.pie-columnas a::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 6px;
+    height: 1px;
+    background: var(--sea-luz);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .35s var(--ease-out);
+}
+.pie-columnas a:hover { color: #fff; }
+.pie-columnas a:hover::after { transform: scaleX(1); }
+
+.pie-base {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: var(--s3) var(--s5);
+    margin-top: var(--s8);
+    padding: var(--s5) 0;
+    border-top: 1px solid rgba(255,255,255,.1);
+    font-size: var(--t-xs);
+    color: rgba(255,255,255,.62);
+}
+.pie-arriba {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 44px;
+    color: rgba(255,255,255,.82);
+    font-size: var(--t-sm); font-weight: 600;
+}
+.pie-arriba .ico { width: 16px; height: 16px; transform: rotate(-90deg); transition: transform .3s var(--ease-out); }
+.pie-arriba:hover { color: #fff; }
+.pie-arriba:hover .ico { transform: rotate(-90deg) translateX(3px); }
+
+/* "SkillMatch" gigante: sale del borde de abajo, tenue y desvaneciendose */
+.pie-gigante {
+    position: relative;
+    display: flex; justify-content: center;
+    margin-bottom: -.14em;
+    font-family: var(--font-display);
+    font-size: clamp(4.5rem, 16.5vw, 16rem);
+    font-weight: 800;
+    line-height: .9;
+    letter-spacing: -.055em;
+    white-space: nowrap;
+    user-select: none;
+    pointer-events: none;
+}
+.pie-gigante span {
+    background: linear-gradient(180deg, rgba(95,208,220,.26), rgba(95,208,220,0) 82%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    opacity: 0;
+    transform: translateY(35%);
+    transition: opacity 1s var(--ease-out), transform 1.2s var(--ease-out);
+}
+.pie-gigante span + span {
+    background-image: linear-gradient(180deg, rgba(255,118,24,.26), rgba(255,118,24,0) 82%);
+    transition-delay: .12s;
+}
+.pie-gigante.is-visible span { opacity: 1; transform: none; }
+
+@media (max-width: 900px) {
+    .pie-grid { grid-template-columns: 1fr; gap: var(--s7); }
+}
+@media (max-width: 560px) {
+    .pie-columnas { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5) var(--s4); }
+    .pie-base { flex-direction: column; align-items: flex-start; margin-top: var(--s6); }
+}
+/* En pantallas tactiles, cada enlace con espacio para el dedo */
+@media (pointer: coarse) {
+    .pie-columnas a { min-height: 44px; }
+}
+
 /* ---------- 20. Acceso y registro ---------- */
 
 .auth-shell {

@@ -1003,9 +1003,89 @@
         pendientes.forEach(function (a) { mostrarAviso(a.texto, a.tipo); });
     }
 
+    /* ---------- 15. Pie de pagina grande (el mismo en todas las paginas) ---------- */
+
+    // Una sola fuente para las 13 paginas: aqui se dibuja dentro del <footer>
+    // que trae cada HTML (si el JS fallara, queda el texto corto de siempre).
+    // Solo enlaces reales; nada de redes ni datos de contacto inventados.
+    const PIE_COLUMNAS = [
+        { titulo: 'Estudiantes', enlaces: [
+            ['seleccionar-registro.html', 'Crear mi perfil'],
+            ['oportunidades.html', 'Ver vacantes'],
+            ['login-usuario.html', 'Iniciar sesión']
+        ] },
+        { titulo: 'Empresas', enlaces: [
+            ['registro-empresa.html', 'Registrar mi empresa'],
+            ['login-empresa.html', 'Acceso empresas']
+        ] },
+        { titulo: 'SkillMatch', enlaces: [
+            ['index.html#como-funciona', 'Cómo funciona'],
+            ['index.html#mapa-cartagena', 'Cartagena por zonas'],
+            ['dashboard.html', 'Indicadores del mercado'],
+            ['index.html#innovacion', 'Innovación']
+        ] }
+    ];
+
+    function construirPie() {
+        const pie = document.querySelector('body > footer');
+        if (!pie || pie.classList.contains('pie')) return;
+        pie.classList.add('pie');
+        pie.innerHTML =
+            '<div class="pie-ola" aria-hidden="true"></div>' +
+            '<div class="container">' +
+                '<div class="pie-grid">' +
+                    '<div class="pie-marca">' +
+                        '<a href="index.html" class="pie-logo"><img src="../assets/img/logo-oscuro.png" alt="SkillMatch, ir al inicio" width="531" height="160" loading="lazy"></a>' +
+                        '<p>La bolsa de empleo y networking de Cartagena: compara tus habilidades con cada vacante de la ciudad antes de postularte.</p>' +
+                        '<button type="button" class="pie-buscar"><i data-ico="search"></i>Buscar en SkillMatch<kbd>Ctrl K</kbd></button>' +
+                    '</div>' +
+                    '<nav class="pie-columnas" aria-label="Enlaces del pie de página">' +
+                        PIE_COLUMNAS.map(function (col) {
+                            return '<div><h2 class="pie-titulo">' + col.titulo + '</h2><ul>' +
+                                col.enlaces.map(function (e) { return '<li><a href="' + e[0] + '">' + e[1] + '</a></li>'; }).join('') +
+                                '</ul></div>';
+                        }).join('') +
+                    '</nav>' +
+                '</div>' +
+                '<div class="pie-base">' +
+                    '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias para conectar el talento local.</p>' +
+                    '<button type="button" class="pie-arriba"><i data-ico="arrow"></i>Volver arriba</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="pie-gigante" aria-hidden="true"><span>Skill</span><span>Match</span></div>';
+
+        // En Mac el atajo es Cmd+K
+        if (/Mac|iPhone|iPad/.test(navigator.platform)) pie.querySelector('.pie-buscar kbd').textContent = '⌘ K';
+        pie.querySelector('.pie-buscar').addEventListener('click', function () {
+            if (UI.paleta) UI.paleta.abrir();
+        });
+
+        // Volver arriba: sube (suave si se permite movimiento) y deja el foco
+        // en el logo de la barra, para que con teclado se siga desde ahi
+        pie.querySelector('.pie-arriba').addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+            const inicio = document.querySelector('header a');
+            if (inicio) inicio.focus({ preventScroll: true });
+        });
+
+        // La palabra gigante sube al entrar en pantalla
+        const gigante = pie.querySelector('.pie-gigante');
+        if (reduceMotion || !('IntersectionObserver' in window)) {
+            gigante.classList.add('is-visible');
+        } else {
+            const obs = new IntersectionObserver(function (entradas) {
+                if (!entradas[0].isIntersecting) return;
+                gigante.classList.add('is-visible');
+                obs.disconnect();
+            }, { threshold: 0.2 });
+            obs.observe(gigante);
+        }
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
+        construirPie();
         hydrateIcons(document);
         iconObserver.observe(document.body, { childList: true, subtree: true });
         marcarNavegacionActiva();
