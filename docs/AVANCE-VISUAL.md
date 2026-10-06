@@ -65,12 +65,20 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 - **Entrada con saltitos** en los dos logins (idea de Luis, opción B del boceto): cada uno cae
   lejos de su sitio y va saltando hasta acomodarse; saltos encadenados que terminan
   deslizándose, y los tres llegan a la vez.
+- **Asienten** cuando el correo ya tiene forma válida y **aviso de Bloq Mayús** en la contraseña
+  (pastilla naranja en la fila de "¿Olvidaste tu contraseña?", con `aria-live`; la chispa se
+  sorprende y lo mira).
+- **Profundidad** con el mouse (la chispa, adelante, se mueve más que el azul, atrás),
+  **curiosidad** (ladean la cabeza si el mouse se queda quieto encima) y **sueño** tras 20 s sin
+  actividad (ojos que se cierran despacio, respiración lenta, "z"); despiertan con un parpadeo.
 - **Cómo se verificó la animación:** el panel del navegador de Claude limita los cuadros por
   segundo, así que se probó con un reloj controlado (una copia de la página en un iframe donde
   el tiempo avanza cuadro a cuadro) y fotos en cada momento clave.
 
 ### Fase 2 (sección 2 del plan) — portada
-- Titular palabra por palabra con "El trabajo / La práctica / El proyecto" en bucle.
+- Titular palabra por palabra con "El trabajo / La práctica / El proyecto" en bucle. La palabra
+  clave va en su propia línea (antes "El proyecto" partía el titular en 3 líneas y el hero
+  crecía) y la que sale se deshace en **esporas** que el viento se lleva (idea de Luis).
 - Gradiente del hero que reacciona al mouse.
 - Demo del match en vivo en la tarjeta del hero.
 - Scroll-telling "¿Cómo funciona?" con 4 escenas (sin librerías).
@@ -86,9 +94,8 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 ## Pendiente
 
 - **Personajes del login (en curso, orden acordado con Luis el 2026-10-05):**
-  ~~accesorios con física y versión corporativa~~ (hecho) → ~~entrada con saltitos~~ (hecho)
-  → asentir con correo válido y aviso de Bloq Mayús → profundidad, sueño y ladeo de cabeza
-  → pasarlos a `login.html`. Detalle en `docs/PLAN-UI.md`, sección 1.
+  ~~accesorios con física y versión corporativa~~ → ~~entrada con saltitos~~ → ~~asentir y
+  Bloq Mayús~~ → ~~profundidad, sueño y ladeo de cabeza~~ (hechos) → pasarlos a `login.html`. Detalle en `docs/PLAN-UI.md`, sección 1.
 - **Fase 2:** asistente Skilly (siguiente paso; necesita `/api/assistant` en el backend:
   hablarlo con Jesús).
 - **En pausa por contenido real:** historias de éxito y cinta de logos (no se inventan).
