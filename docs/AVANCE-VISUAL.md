@@ -58,6 +58,16 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
   `auth.js`. En celular, la columna oscura vuelve como franja encima del formulario.
   Modo demo: `?animar` en la dirección fuerza el movimiento aunque Windows tenga las
   animaciones apagadas (queda guardado; `?animar=0` lo quita).
+- Login de empresas con los mismos personajes **de oficina** (`data-variante="empresa"`):
+  camisa y corbata, corbatín y carnet, lentes. La corbata y el carnet son péndulos de verdad
+  (reaccionan a cómo se mueve el punto del que cuelgan) y las cintas del carnet se recalculan
+  en cada cuadro para no despegarse nunca. Al llegar, el azul se arregla la corbata.
+- **Entrada con saltitos** en los dos logins (idea de Luis, opción B del boceto): cada uno cae
+  lejos de su sitio y va saltando hasta acomodarse; saltos encadenados que terminan
+  deslizándose, y los tres llegan a la vez.
+- **Cómo se verificó la animación:** el panel del navegador de Claude limita los cuadros por
+  segundo, así que se probó con un reloj controlado (una copia de la página en un iframe donde
+  el tiempo avanza cuadro a cuadro) y fotos en cada momento clave.
 
 ### Fase 2 (sección 2 del plan) — portada
 - Titular palabra por palabra con "El trabajo / La práctica / El proyecto" en bucle.
@@ -76,9 +86,9 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 ## Pendiente
 
 - **Personajes del login (en curso, orden acordado con Luis el 2026-10-05):**
-  accesorios con física → versión corporativa en `login-empresa.html` (corbata, corbatín,
-  lentes) → asentir con correo válido y aviso de Bloq Mayús → profundidad, sueño y ladeo de
-  cabeza → pasarlos a `login.html`. Detalle en `docs/PLAN-UI.md`, sección 1.
+  ~~accesorios con física y versión corporativa~~ (hecho) → ~~entrada con saltitos~~ (hecho)
+  → asentir con correo válido y aviso de Bloq Mayús → profundidad, sueño y ladeo de cabeza
+  → pasarlos a `login.html`. Detalle en `docs/PLAN-UI.md`, sección 1.
 - **Fase 2:** asistente Skilly (siguiente paso; necesita `/api/assistant` en el backend:
   hablarlo con Jesús).
 - **En pausa por contenido real:** historias de éxito y cinta de logos (no se inventan).
