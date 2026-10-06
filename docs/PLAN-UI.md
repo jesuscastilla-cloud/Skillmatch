@@ -49,6 +49,8 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
 ### 2. Portada
 - **Hero con gradiente vivo** que respira y reacciona al mouse. *(Stripe)*
 - **Titular palabra por palabra** con palabra clave en bucle: "El trabajo / la práctica / el proyecto que buscas ya está en Cartagena".
+  *(Idea de Luis, 2026-10-05)*: la palabra que sale se deshace en **esporas** que el viento se lleva y la
+  nueva aparece letra por letra. La palabra clave va en su propia línea para que el hero no cambie de alto.
 - **Demo del match en vivo**: el visitante marca 3–4 habilidades y el anillo recalcula en tiempo real.
 - **Scroll-telling tipo Apple**: sección *sticky* con 4 escenas (creas tu perfil → te comparamos → recibes el match → te contratan).
 - **Historias de éxito** en carrusel infinito que se detiene con hover.

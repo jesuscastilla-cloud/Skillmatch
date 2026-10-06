@@ -1574,19 +1574,47 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 @keyframes palabra-entra {
     from { opacity: 0; transform: translateY(.35em); }
 }
-/* Solo la palabra clave visible ocupa espacio (sin hueco despues de la mas
-   corta); las otras se superponen encima. index.js cambia cual se ve. */
-.hero-titular > .hero-rotador { position: relative; color: var(--sea-luz); }
+/* La palabra clave va en su propia linea: asi su ancho no cambia como se
+   parte el resto del titular y el hero mide siempre lo mismo (antes "El
+   proyecto" empujaba "buscas" a otra linea y el fondo crecia). Solo la
+   visible ocupa espacio; las otras se superponen encima. */
+.hero-titular > .hero-rotador { position: relative; display: block; width: fit-content; color: var(--sea-luz); }
 .hero-clave {
     position: absolute;
     left: 0; top: 0;
     white-space: nowrap;
     opacity: 0;
-    transform: translateY(.45em);
-    transition: opacity .45s var(--ease-out), transform .6s var(--ease-out);
 }
-.hero-clave.is-activa   { position: relative; opacity: 1; transform: none; }
-.hero-clave.is-saliendo { opacity: 0; transform: translateY(-.45em); }
+.hero-clave.is-activa   { position: relative; opacity: 1; }
+.hero-clave.is-saliendo { opacity: 1; } /* sus letras se van solas */
+
+/* index.js parte cada palabra en letras (--i = posicion): la nueva entra
+   letra por letra subiendo y la que sale se desvanece de izquierda a
+   derecha mientras suelta esporas */
+.hero-clave .letra {
+    display: inline-block;
+    white-space: pre;
+    opacity: 0;
+    transform: translateY(.4em) scale(.9);
+    transition: opacity .45s var(--ease-out), transform .6s var(--ease-out);
+    transition-delay: calc(300ms + var(--i, 0) * 40ms);
+}
+.hero-clave.is-activa .letra { opacity: 1; transform: none; }
+.hero-clave.is-saliendo .letra {
+    opacity: 0;
+    transform: translate(.1em, -.12em) scale(.85);
+    transition-duration: .4s, .5s;
+    transition-delay: calc(var(--i, 0) * 32ms);
+}
+/* Esporas: puntitos del color de la palabra que el viento se lleva */
+.espora {
+    position: absolute;
+    left: 0; top: 0;
+    border-radius: 50%;
+    background: currentColor;
+    pointer-events: none;
+    opacity: 0;
+}
 
 /* El gradiente de fondo se desplaza un poco hacia el lado contrario del
    mouse (index.js pone --hx/--hy entre -1 y 1). Se usa la propiedad
