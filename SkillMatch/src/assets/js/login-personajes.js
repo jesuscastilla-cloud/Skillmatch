@@ -223,8 +223,8 @@
     // Al enviar se vuelve a ocultar, para que el navegador la trate como contrasena
     if (clave.form) clave.form.addEventListener('submit', function () { mostrarClave(false); actualizar(); });
 
-    // Aviso de Bloq Mayus: va debajo del campo, en la fila de "¿Olvidaste tu
-    // contrasena?" (a la izquierda), asi el formulario no salta al aparecer.
+    // Aviso de Bloq Mayus: flota en la fila de la etiqueta "Contrasena", a la
+    // derecha (el CSS lo ubica), asi el formulario no salta al aparecer.
     // El texto vive en una region aria-live: el lector de pantalla lo anuncia.
     const aviso = document.createElement('p');
     aviso.className = 'aviso-mayus';

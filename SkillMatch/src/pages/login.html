@@ -42,6 +42,11 @@
                 </div>
                 <div class="login-form registro-form active" id="loginForm">
                     <h2>Iniciar Sesión</h2>
+
+                    <!-- Mensajes: auth.js los muestra; role los anuncia al lector de pantalla -->
+                    <div id="error-message" role="alert"></div>
+                    <div id="success-message" role="status"></div>
+
                     <form>
                         <div class="form-group">
                             <label for="email">Correo Electrónico</label>
@@ -138,6 +143,8 @@
         </div>
 
         <aside class="auth-aside">
+            <!-- Personajes que miran (login-personajes.js los dibuja y los anima) -->
+            <div class="login-personajes" aria-hidden="true"></div>
             <h2>Tu perfil trabaja mientras tú no estás</h2>
             <p style="margin-top:16px">Cada vez que una empresa de Cartagena publica una vacante,
                SkillMatch la compara con tus habilidades y te avisa si vale la pena postularte.</p>
@@ -163,6 +170,7 @@
 
     <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/login-personajes.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>
 </html>
