@@ -32,6 +32,9 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
      y **ladean la cabeza** si el mouse se queda quieto encima.
   5. Pasar los personajes a `login.html` (el que abre la portada).
 - **Modo oscuro** completo con interruptor en la barra superior que recuerda la elección. *(Linear, GitHub)*
+  *(Idea de Luis, 2026-10-05)*: al cambiar de tema, el nuevo se revela en círculo desde el botón y salen
+  esporas (estrellas al pasar a oscuro, chispas de sol al pasar a claro). Excepción acordada: el círculo
+  es un `clip-path` sobre la foto de la View Transition, no sobre la página.
 
 ### 3. Movimiento global y el mouse
 - **Cursor personalizado**: punto + anillo con retraso suave; crece sobre enlaces, dice "Ver" sobre tarjetas y "Arrastra" sobre carruseles. *(Awwwards)*

@@ -226,13 +226,68 @@
         boton.addEventListener('click', function () {
             const nuevo = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             localStorage.setItem(TEMA_KEY, nuevo);
-            aplicarTema(nuevo);
-            pintar();
+            cambiarTemaConEfecto(nuevo, boton, function () { aplicarTema(nuevo); pintar(); });
         });
 
         const li = document.createElement('li');
         li.appendChild(boton);
         lista.insertBefore(li, lista.firstChild);
+    }
+
+    /** Cambio de tema con efecto: el tema nuevo se revela en circulo desde el
+     *  boton (View Transitions: el navegador toma una foto antes y despues y
+     *  anima las fotos) y del boton salen esporas: estrellas al pasar a oscuro,
+     *  chispas de sol al pasar a claro. Sin soporte o con movimiento reducido,
+     *  el tema cambia al instante. El modo demo (?animar en los logins) lo
+     *  muestra igual, para verlo con las animaciones de Windows apagadas. */
+    function modoDemo() {
+        try { return localStorage.getItem('skillmatch_animar') === '1'; } catch (e) { return false; }
+    }
+
+    function cambiarTemaConEfecto(nuevo, boton, aplicar) {
+        if ((reduceMotion && !modoDemo()) || !document.startViewTransition) { aplicar(); return; }
+        const r = boton.getBoundingClientRect();
+        const x = r.left + r.width / 2, y = r.top + r.height / 2;
+        const radio = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+        const raiz = document.documentElement;
+        raiz.classList.add('tema-cambiando'); // sin fundido ni barras aparte (app.css)
+        const transicion = document.startViewTransition(aplicar);
+        transicion.ready.then(function () {
+            raiz.animate({ clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + radio + 'px at ' + x + 'px ' + y + 'px)'] },
+                         { duration: 650, easing: 'cubic-bezier(.4, 0, .2, 1)', pseudoElement: '::view-transition-new(root)' });
+            soltarChispas(x, y, nuevo === 'dark');
+        }).catch(function () {});
+        transicion.finished.finally(function () { raiz.classList.remove('tema-cambiando'); });
+    }
+
+    function soltarChispas(x, y, aOscuro) {
+        const colores = aOscuro ? ['#FFFFFF', '#BFE9F0', '#5FD0DC'] : ['#FFB070', '#FF7618', '#FFD199'];
+        for (let i = 0; i < 34; i++) {
+            const chispa = document.createElement('span');
+            chispa.className = 'chispa-tema';
+            const tam = 2 + Math.random() * 3.5;
+            chispa.style.width = chispa.style.height = tam.toFixed(1) + 'px';
+            chispa.style.left = (x - tam / 2).toFixed(1) + 'px';
+            chispa.style.top = (y - tam / 2).toFixed(1) + 'px';
+            chispa.style.background = colores[i % colores.length];
+            document.body.appendChild(chispa);
+            // Salen en todas direcciones; las estrellas suben un poco, las chispas caen
+            const angulo = Math.random() * Math.PI * 2;
+            const dist = 40 + Math.random() * 120;
+            const dx = Math.cos(angulo) * dist;
+            const dy = Math.sin(angulo) * dist * 0.8 + (aOscuro ? -10 : 15);
+            chispa.animate([
+                { transform: 'translate(0, 0) scale(.4)', opacity: 0 },
+                { transform: 'translate(' + (dx * 0.35).toFixed(1) + 'px, ' + (dy * 0.35).toFixed(1) + 'px) scale(1.2)', opacity: 1, offset: 0.25 },
+                { transform: 'translate(' + (dx * 0.7).toFixed(1) + 'px, ' + (dy * 0.7).toFixed(1) + 'px) scale(' + (aOscuro ? 0.6 : 1) + ')', opacity: aOscuro ? 0.4 : 0.8, offset: 0.6 },
+                { transform: 'translate(' + dx.toFixed(1) + 'px, ' + dy.toFixed(1) + 'px) scale(.2)', opacity: 0 }
+            ], {
+                duration: 800 + Math.random() * 600,
+                delay: Math.random() * 120,
+                easing: 'cubic-bezier(.2, .6, .3, 1)',
+                fill: 'both'
+            }).onfinish = function () { chispa.remove(); };
+        }
     }
 
     /** Sombra en la barra superior solo cuando hay contenido arriba. */

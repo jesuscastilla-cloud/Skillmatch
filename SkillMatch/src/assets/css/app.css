@@ -2943,6 +2943,24 @@ header  { view-transition-name: barra-superior; }
 /* Con transiciones entre paginas, la barra ya no "cae" en cada visita */
 @supports (view-transition-name: none) { .page-enter header { animation: none; } }
 
+/* Cambio de tema (ui.js): la foto nueva se revela en circulo desde el boton
+   sobre la vieja. Sin el fundido de las paginas, sin mezclar colores y con
+   las barras dentro de la misma foto (si no, quedarian como parches).
+   Excepcion acordada a "solo transform y opacity": el circulo es un
+   clip-path, pero se aplica a la foto del navegador, no a la pagina. */
+html.tema-cambiando::view-transition-old(root),
+html.tema-cambiando::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.tema-cambiando header,
+html.tema-cambiando .tabbar { view-transition-name: none; }
+/* Esporas del boton de tema: estrellas al pasar a oscuro, chispas al pasar a claro */
+.chispa-tema {
+    position: fixed;
+    z-index: 2147483647;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+}
+
 /* Onda al hacer clic, desde el punto exacto (Material) */
 .has-ripple { position: relative; overflow: hidden; }
 .ripple {
