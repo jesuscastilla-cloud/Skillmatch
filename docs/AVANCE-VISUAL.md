@@ -71,6 +71,8 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 - **Profundidad** con el mouse (la chispa, adelante, se mueve más que el azul, atrás),
   **curiosidad** (ladean la cabeza si el mouse se queda quieto encima) y **sueño** tras 20 s sin
   actividad (ojos que se cierran despacio, respiración lenta, "z"); despiertan con un parpadeo.
+- Los personajes también están en `login.html` (el de la portada), que ganó los mensajes de
+  error y éxito dentro del formulario. El aviso de Bloq Mayús va en la fila de la etiqueta.
 - **Cómo se verificó la animación:** el panel del navegador de Claude limita los cuadros por
   segundo, así que se probó con un reloj controlado (una copia de la página en un iframe donde
   el tiempo avanza cuadro a cuadro) y fotos en cada momento clave.
@@ -93,9 +95,6 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 
 ## Pendiente
 
-- **Personajes del login (en curso, orden acordado con Luis el 2026-10-05):**
-  ~~accesorios con física y versión corporativa~~ → ~~entrada con saltitos~~ → ~~asentir y
-  Bloq Mayús~~ → ~~profundidad, sueño y ladeo de cabeza~~ (hechos) → pasarlos a `login.html`. Detalle en `docs/PLAN-UI.md`, sección 1.
 - **Fase 2:** asistente Skilly (siguiente paso; necesita `/api/assistant` en el backend:
   hablarlo con Jesús).
 - **En pausa por contenido real:** historias de éxito y cinta de logos (no se inventan).
