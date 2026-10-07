@@ -35,6 +35,7 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
   *(Idea de Luis, 2026-10-05)*: al cambiar de tema, el nuevo se revela en círculo desde el botón y salen
   esporas (estrellas al pasar a oscuro, chispas de sol al pasar a claro). Excepción acordada: el círculo
   es un `clip-path` sobre la foto de la View Transition, no sobre la página.
+  *(2026-10-07: Luis prefirió quitar las esporas; se quedan el círculo y el giro del icono.)*
 
 ### 3. Movimiento global y el mouse
 - **Cursor personalizado**: punto + anillo con retraso suave; crece sobre enlaces, dice "Ver" sobre tarjetas y "Arrastra" sobre carruseles. *(Awwwards)*

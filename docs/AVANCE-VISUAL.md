@@ -120,6 +120,11 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
   (validación de píxeles mínimos, encuadre con arrastre y zoom, compresión a WebP) y hay una
   galería de 8 portadas ilustradas (Mar Caribe, Atardecer, Murallas, Getsemaní, Red de talento,
   Relieve, Aurora, Plano técnico).
+- **Barra superior y favicon:** favicon nuevo (las dos figuras del logo), barra igual en todas las
+  páginas según el tipo (visitante, estudiante, empresa), "Cerrar sesión" que funciona en todas,
+  botones parejos de 40 px, buscador como lupa y mayúsculas en español; el logo alineado con el
+  texto del menú.
+- **Cambio de tema:** sin esporas (Luis lo prefirió así); se quedan el círculo y el giro del icono.
 - **Tarjetas:** fuera el foco de luz que seguía al cursor. **Contraseñas:** fuera el ojo propio
   de Edge (salían dos).
 - Detalle de cada arreglo y lo que queda para Jesús (incluida una fuga de datos urgente en

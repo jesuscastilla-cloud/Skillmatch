@@ -114,6 +114,29 @@ El frontend (`conexiones.js`) solo usa esos campos públicos, así que no hay qu
   del usuario, y permitir quitar la foto (hoy el backend rechaza un valor vacío). Ojo: mientras
   `/connections/suggestions` devuelva el `User` entero, también arrastra estas imágenes.
 
+## Barra superior y favicon (2026-10-07)
+- Favicon: era `logo.png` entero (531 × 160, con la palabra) y a 16 px no se leía. Ahora el dibujo de
+  las dos figuras en un cuadro blanco redondeado (`assets/img/favicon/`: 32, 192 y apple-touch 180).
+- La barra era distinta en cada página y el enlace de la página actual saltaba de lugar. Ahora hay tres
+  versiones fijas: visitante (Inicio · Vacantes · Cómo funciona · Empresas | Iniciar sesión · Unirse
+  ahora), estudiante (Inicio · Vacantes · Conexiones · Mensajes | Mi perfil · Cerrar sesión) y empresa.
+  "Innovación" (hoja de ruta interna) y "Usuarios"/"Empresas" (iban al mismo sitio) salen del menú.
+- **"Cerrar sesión" no cerraba la sesión** en Oportunidades y Conexiones (solo llevaba al login) y en
+  Indicadores no existía. Ahora `ui.js` lo maneja en todas (`data-cerrar-sesion`): avisa al backend,
+  borra lo guardado y vuelve a la portada. En las páginas públicas, con sesión abierta, la barra
+  muestra "Mi perfil · Cerrar sesión" en vez de "Iniciar sesión · Unirse ahora".
+- Botones de la barra con la misma altura (40 px; antes 38, 40 y 42) y 8 px entre ellos; el buscador
+  queda como lupa (ya hay buscador en la portada y en Vacantes; Ctrl K sigue igual); la campana con
+  el mismo círculo que la lupa y el tema.
+- Mayúsculas en español: "Iniciar sesión", "Cerrar sesión", "Mi perfil", "Ver perfil", etc.
+- El logo de la barra: `alt="SkillMatch"` y el enlace dice "SkillMatch, ir al inicio" en todas.
+- Tableta: los enlaces ya no bajan a una segunda fila; entre 761 y 840 px se oculta "Cómo funciona".
+- Alineación óptica del logo: la palabra "SkillMatch" está en la parte baja de la imagen y quedaba 9 px
+  por debajo del texto del menú. El logo sube un 15 % de su alto y los enlaces bajan 3 px (medido:
+  centro de la palabra 37,1 px, del texto del menú 36,5 px).
+- Cambio de tema: se quitaron las esporas (a pedido de Luis); se quedan el círculo que revela el tema
+  nuevo y el giro del icono.
+
 ## Falta revisar
 - Revisión visual página por página (espaciados, tipografía, consistencia) de: perfil de usuario, conexiones,
   mensajes, registros y el resto del perfil de empresa.

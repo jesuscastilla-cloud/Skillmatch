@@ -282,6 +282,16 @@ header > nav {
     object-fit: contain;
 }
 .logo a { display: flex; align-items: center; }
+/* Alineacion optica del logo: la palabra "SkillMatch" ocupa la parte baja de
+   la imagen (las figuras son mas altas que las letras) y quedaba 9 px por
+   debajo del texto del menu. El logo sube un 15 % de su alto y los enlaces
+   bajan 3 px: la palabra queda a la altura del texto y los botones de la
+   derecha siguen centrados en la barra. */
+header .logo img { translate: 0 -15%; }
+.nav-left .nav-links a { translate: 0 3px; }
+/* La linea de pagina activa vuelve a su sitio (el enlace bajo 3 px) */
+.nav-left .nav-links a.active-nav::after,
+.nav-left .nav-links a.active::after { bottom: -18px; }
 
 .nav-links {
     display: flex;
@@ -3257,19 +3267,12 @@ header  { view-transition-name: barra-superior; }
    sobre la vieja. Sin el fundido de las paginas, sin mezclar colores y con
    las barras dentro de la misma foto (si no, quedarian como parches).
    Excepcion acordada a "solo transform y opacity": el circulo es un
-   clip-path, pero se aplica a la foto del navegador, no a la pagina. */
+   clip-path, pero se aplica a la foto del navegador, no a la pagina.
+   (Las esporas que acompanaban el circulo se quitaron a pedido de Luis.) */
 html.tema-cambiando::view-transition-old(root),
 html.tema-cambiando::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 html.tema-cambiando header,
 html.tema-cambiando .tabbar { view-transition-name: none; }
-/* Esporas del boton de tema: estrellas al pasar a oscuro, chispas al pasar a claro */
-.chispa-tema {
-    position: fixed;
-    z-index: 2147483647;
-    border-radius: 50%;
-    pointer-events: none;
-    opacity: 0;
-}
 
 /* Onda al hacer clic, desde el punto exacto (Material) */
 .has-ripple { position: relative; overflow: hidden; }
@@ -3531,6 +3534,8 @@ kbd {
     /* El enlace crece ~3 px hacia abajo: la linea de pagina activa sube lo mismo */
     .nav-links a.active-nav::after,
     .nav-links a.active::after { bottom: -18px; }
+    .nav-left .nav-links a.active-nav::after,
+    .nav-left .nav-links a.active::after { bottom: -15px; }
 }
 
 .cmdk-abierta { overflow: hidden; }
