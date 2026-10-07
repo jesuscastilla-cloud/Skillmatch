@@ -630,6 +630,9 @@ select, textarea {
     color: var(--ink);
     transition: border-color .16s var(--ease), box-shadow .16s var(--ease), background-color .16s var(--ease);
 }
+/* Edge dibuja su propio ojo dentro de las contrasenas: junto al boton de la
+   pagina salian dos ojos (captura de Luis en login-usuario) */
+input::-ms-reveal, input::-ms-clear { display: none; }
 
 input::placeholder, textarea::placeholder { color: #9FB2C7; }
 
@@ -3082,7 +3085,8 @@ footer.pie > .container { position: relative; z-index: 1; }
 /* ---------- 25b. Movimiento global (Fase 1, seccion 3 del plan) ----------
    Reglas: solo se anima transform y opacity; todo lo que sigue al mouse
    se apaga en pantallas tactiles y con prefers-reduced-motion.
-   ui.js agrega las clases (.spot, .magnetic): el HTML no cambia. */
+   ui.js agrega la clase .magnetic: el HTML no cambia. (El foco de luz que
+   seguia al cursor en las tarjetas se quito a pedido de Luis.) */
 
 :root {
     --dur-1: 150ms;  /* respuesta inmediata: presionar, hover */
@@ -3136,22 +3140,6 @@ html.tema-cambiando .tabbar { view-transition-name: none; }
 @keyframes ripple { to { transform: scale(1); opacity: 0; } }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-    /* Foco de luz que sigue al mouse dentro de la tarjeta. Solo cambia la
-       opacidad; la posicion la ponen --mx / --my desde ui.js. */
-    .spot { position: relative; isolation: isolate; }
-    .spot::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        border-radius: inherit;
-        pointer-events: none;
-        background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), var(--sea-glow), transparent 55%);
-        opacity: 0;
-        transition: opacity var(--dur-2) var(--ease-out);
-    }
-    .spot:hover::before { opacity: .6; }
-
     /* Botones magneticos: se acercan unos pixeles al cursor. Se usa la
        propiedad translate para no pisar el transform del hover. */
     .magnetic {

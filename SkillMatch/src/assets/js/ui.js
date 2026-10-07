@@ -7,7 +7,7 @@
  *    3. Estados de carga: esqueletos y botones ocupados
  *    4. Avisos al usuario (toast) y modales accesibles
  *    5. Movimiento: aparicion al hacer scroll (las listas se reparten como
- *       una baraja), foco de luz, botones magneticos y onda al hacer clic
+ *       una baraja), botones magneticos y onda al hacer clic
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -539,20 +539,16 @@
     // Lo que sigue al cursor solo existe con mouse y sin movimiento reducido.
     const conMouse = !reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-    // Toda tarjeta con la que se interactua lleva el foco de luz
-    const SPOT      = '.hero-card, .opportunity-card, .feature-card, .pathway-card, .choice-card, .benefit-item, ' +
-                      '.roadmap-card, .connection-card, .suggestion-card, .offer-card, .candidate-mini-card, ' +
-                      '.application-card, .opportunity-item-compact, .company-item-compact';
+    // (El foco de luz que seguia al cursor dentro de las tarjetas se quito a
+    // pedido de Luis: las tarjetas solo suben un poco al pasar el mouse.)
     const MAGNETICO = '.btn-accent, .hero .btn, .cta-final .btn, .pathway-card .btn, .choice-card .btn, .btn-search-main, .search-btn';
     const ONDA      = '.btn, .btn-save, .btn-apply, .btn-search-main, .search-btn, .btn-login, .btn-register';
 
-    /** Marca con clases (.spot, .magnetic) lo que debe moverse. */
+    /** Marca con la clase .magnetic los botones que se acercan al cursor. */
     function marcarEfectos(raiz) {
         if (!conMouse || !raiz.querySelectorAll) return;
-        [[SPOT, 'spot'], [MAGNETICO, 'magnetic']].forEach(function (par) {
-            if (raiz.matches && raiz.matches(par[0])) raiz.classList.add(par[1]);
-            raiz.querySelectorAll(par[0]).forEach(function (el) { el.classList.add(par[1]); });
-        });
+        if (raiz.matches && raiz.matches(MAGNETICO)) raiz.classList.add('magnetic');
+        raiz.querySelectorAll(MAGNETICO).forEach(function (el) { el.classList.add('magnetic'); });
     }
 
     let magnetActual = null;
@@ -566,14 +562,6 @@
 
     function moverConMouse(e) {
         const objetivo = e.target instanceof Element ? e.target : null;
-
-        // Foco de luz: la posicion del cursor dentro de la tarjeta
-        const spot = objetivo && objetivo.closest('.spot');
-        if (spot) {
-            const r = spot.getBoundingClientRect();
-            spot.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-            spot.style.setProperty('--my', (e.clientY - r.top) + 'px');
-        }
 
         // Boton magnetico: se acerca hasta 6px al cursor
         const magnet = objetivo && objetivo.closest('.magnetic');
