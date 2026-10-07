@@ -84,10 +84,13 @@ function hideEditButtons() {
     const editProfileBtn = document.getElementById('editProfileBtn');
     if (editProfileBtn) editProfileBtn.style.display = 'none';
     
-    // Ocultar sección de progreso del perfil
+    // Ocultar la tarjeta de progreso completa (antes quedaba el titulo solo)
     const profileProgress = document.querySelector('.profile-progress');
-    if (profileProgress) profileProgress.style.display = 'none';
-    
+    if (profileProgress) profileProgress.closest('.profile-card').style.display = 'none';
+
+    // Las postulaciones son las de quien inicio sesion, no las de este perfil
+    const applicationsCard = document.getElementById('applicationsCard');
+    if (applicationsCard) applicationsCard.style.display = 'none';
 }
 
 const AVATAR_COLORS = ['#0369a1','#0891b2','#0d9488','#059669','#7c3aed','#9333ea','#c026d3','#e11d48','#b45309'];
@@ -129,33 +132,30 @@ function displayUserProfile(user) {
 
     setProfileAvatar(user.profileImageUrl, fullName);
 
-    // Cargar estadísticas reales del backend
-    loadUserStatistics(user.id);
+    // Ya no se muestran las "estadisticas" de /users/{id}/statistics: las vistas
+    // del perfil son inventadas (50 + postulaciones x 5 + dias x 2) y el "match
+    // promedio" era en realidad el % de perfil completo, repetido y distinto
+    // del de la lista de progreso. Las postulaciones reales van a la derecha.
+
+    // Conexiones reales (antes el "0 conexiones" del HTML nunca cambiaba)
+    if (!user.isOtherUser) loadConnectionsCount();
 
     // Calcular progreso del perfil
     calculateProfileProgress(user);
 }
 
-// Cargar estadísticas reales del usuario
-async function loadUserStatistics(userId) {
+// Cuenta las conexiones de quien inicio sesion. En el perfil de otra persona
+// no hay de donde sacarlas, asi que el dato se oculta en vez de mentir.
+async function loadConnectionsCount() {
+    const destino = document.getElementById('userConnections');
+    if (!destino) return;
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/users/${userId}/statistics`);
-
-        if (response.ok) {
-            const stats = await response.json();
-            
-            document.getElementById('profileViews').textContent = stats.profileViews || 0;
-            document.getElementById('applicationsCount').textContent = stats.applicationsCount || 0;
-            document.getElementById('matchRate').textContent = (stats.matchRate || 0) + '%';
-            // El progreso del perfil ya no se toma de aqui: el backend no cuenta
-            // experiencia ni educacion y decia 100 % con puntos pendientes. Lo
-            // calcula renderProfileChecklist con la misma lista que se muestra.
-        } else {
-            document.getElementById('profileViews').textContent = '0';
-            document.getElementById('applicationsCount').textContent = '0';
-            document.getElementById('matchRate').textContent = '50%';
-        }
+        const response = await fetchWithAuth(`${API_BASE_URL}/connections/my-connections`);
+        if (!response.ok) throw new Error();
+        const total = (await response.json()).length;
+        destino.innerHTML = '<i data-ico="users"></i> ' + total + (total === 1 ? ' conexión' : ' conexiones');
     } catch (error) {
+        destino.style.display = 'none';
     }
 }
 
@@ -184,15 +184,35 @@ function updateProfileChecklist(checkType, value) {
     renderProfileChecklist();
 }
 
+// Que formulario abre cada pendiente de la lista
+const PASOS_PERFIL = {
+    'Información básica': () => openEditModal(),
+    'Teléfono': () => openEditModal(),
+    'Habilidades agregadas': () => openAddSkillModal(),
+    'Experiencia agregada': () => openAddExperienceModal(),
+    'Educación agregada': () => openAddEducationModal()
+};
+
 // Renderizar la lista de verificación
 function renderProfileChecklist() {
     const checklist = document.getElementById('profileChecklist');
     if (checklist) {
+        // Lo hecho queda como texto; lo pendiente es un boton que lleva directo
+        // al formulario que falta llenar
         checklist.innerHTML = Object.entries(profileChecks).map(([key, value]) =>
-            `<li class="${value ? 'completed' : ''}">
-                ${value ? '<i data-ico="check"></i>' : '<i data-ico="circle"></i>'} ${key}
-            </li>`
+            value
+                ? `<li class="completed"><i data-ico="check"></i> ${key}</li>`
+                : `<li><button type="button" class="progress-step" data-paso="${key}">
+                       <i data-ico="circle"></i> ${key} <i data-ico="plus"></i>
+                   </button></li>`
         ).join('');
+        if (!checklist.dataset.listo) {
+            checklist.dataset.listo = '1';
+            checklist.addEventListener('click', (e) => {
+                const paso = e.target.closest('.progress-step');
+                if (paso && PASOS_PERFIL[paso.dataset.paso]) PASOS_PERFIL[paso.dataset.paso]();
+            });
+        }
     }
     // El porcentaje sale de la misma lista: 100 % solo con todo completo
     const total = Object.keys(profileChecks).length;
@@ -227,12 +247,13 @@ async function loadUserSkills() {
             const skills = await response.json();
             displaySkills(skills);
         } else {
-            // Habilidades por defecto si no hay en backend
-            const defaultSkills = ['JavaScript', 'HTML', 'CSS', 'React'];
-            displaySkills(defaultSkills.map(name => ({ name })));
+            // Antes mostraba JavaScript, HTML, CSS y React como si fueran suyas
+            skillsContainer.innerHTML = '<p class="error-text">No se pudieron cargar las habilidades</p>';
+            setUserSkillNames([]);
         }
     } catch (error) {
         skillsContainer.innerHTML = '<p class="error-text">Error cargando habilidades</p>';
+        setUserSkillNames([]);
     }
 }
 
@@ -240,6 +261,9 @@ async function loadUserSkills() {
 function displaySkills(skills) {
     const skillsContainer = document.getElementById('userSkills');
     
+    // Las recomendaciones de la derecha se comparan con estas habilidades
+    setUserSkillNames((skills || []).map(skill => skill.name));
+
     if (!skills || skills.length === 0) {
         skillsContainer.innerHTML = '<p class="empty-text">Aún no has agregado habilidades</p>';
         updateProfileChecklist('skills', false);
@@ -604,6 +628,23 @@ async function deleteEducation(eduId) {
     }
 }
 
+// Recomendaciones: antes cada vacante mostraba un porcentaje al azar
+// (Math.random entre 80 y 100) que cambiaba al recargar. Ahora se cuenta
+// cuantas habilidades de la vacante tiene la persona y se ordena por eso.
+// Se pinta cuando ya llegaron las dos cosas: vacantes y habilidades.
+let recentJobs = null;      // null = todavia no llegan
+let userSkillNames = null;
+
+// Minusculas y sin tildes, para que "Programación" y "programacion" coincidan
+function normalizeSkill(nombre) {
+    return String(nombre || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function setUserSkillNames(nombres) {
+    userSkillNames = nombres.map(normalizeSkill);
+    if (recentJobs) displayRecommendedJobs();
+}
+
 // Cargar oportunidades recomendadas
 async function loadRecommendedJobs() {
     const user = getUserData();
@@ -616,15 +657,8 @@ async function loadRecommendedJobs() {
         const response = await fetchWithAuth(`${API_BASE_URL}/jobs/recent`);
 
         if (response.ok) {
-            let jobs = await response.json();
-            
-            // Limitar a 5 trabajos y calcular matchScore simulado
-            jobs = jobs.slice(0, 5).map(job => ({
-                ...job,
-                matchScore: Math.floor(Math.random() * 20) + 80 // 80-100%
-            }));
-            
-            displayRecommendedJobs(jobs);
+            recentJobs = await response.json();
+            if (userSkillNames) displayRecommendedJobs();
         } else {
             jobsContainer.innerHTML = '<p class="empty-text">No hay oportunidades disponibles en este momento</p>';
         }
@@ -634,32 +668,47 @@ async function loadRecommendedJobs() {
 }
 
 // Mostrar oportunidades recomendadas
-function displayRecommendedJobs(jobs) {
+function displayRecommendedJobs() {
     const jobsContainer = document.getElementById('recommendedJobs');
-    
-    if (!jobs || jobs.length === 0) {
+
+    if (!recentJobs || recentJobs.length === 0) {
         jobsContainer.innerHTML = '<p class="empty-text">No hay oportunidades disponibles</p>';
         return;
     }
 
-    jobsContainer.innerHTML = jobs.map(job => `
+    const propias = new Set(userSkillNames);
+    const jobs = recentJobs.map(job => {
+        // Los datos de prueba repiten habilidades ("Angular, Git, Angular")
+        const pedidas = [...new Set((job.skills || []).map(normalizeSkill))].filter(Boolean);
+        const tiene = pedidas.filter(s => propias.has(s)).length;
+        return { job, pedidas: pedidas.length, tiene };
+    });
+    // Mas coincidencias primero; a igualdad, la que pide menos (le falta menos).
+    // Sin habilidades no hay con que comparar: quedan las mas recientes.
+    if (propias.size) jobs.sort((a, b) => (b.tiene - a.tiene) || (a.pedidas - b.pedidas));
+    jobs.splice(4);
+
+    const aviso = propias.size === 0
+        ? '<p class="recommend-hint"><i data-ico="bulb"></i> Agrega tus habilidades y te mostramos cuáles vacantes encajan contigo.</p>'
+        : '';
+
+    jobsContainer.innerHTML = aviso + jobs.map(({ job, pedidas, tiene }) => {
+        // Naranja solo cuando tiene todas (el acento se reserva para el match alto)
+        const clase = tiene === 0 ? 'match-fair' : (tiene === pedidas ? 'match-excellent' : 'match-good');
+        const etiqueta = pedidas && propias.size
+            ? `<span class="match-badge-small ${clase}" title="Habilidades que ya tienes de las que pide la vacante">${tiene} de ${pedidas}</span>`
+            : '';
+        return `
         <div class="opportunity-item-compact">
             <div class="opportunity-header-compact">
                 <h4>${job.title}</h4>
-                <span class="match-badge-small ${getMatchClass(job.matchScore)}">${job.matchScore}%</span>
+                ${etiqueta}
             </div>
             <p class="opportunity-company-compact">${job.company?.name || job.companyName || ''}</p>
             <p class="opportunity-location-compact"><i data-ico="pin"></i> ${job.location}</p>
             <button class="btn-apply-compact" onclick="applyToJob('${job.id}')">Aplicar Ahora</button>
-        </div>
-    `).join('');
-}
-
-// Obtener clase de match
-function getMatchClass(score) {
-    if (score >= 90) return 'match-excellent';
-    if (score >= 80) return 'match-good';
-    return 'match-fair';
+        </div>`;
+    }).join('');
 }
 
 // Aplicar a oportunidad
@@ -682,8 +731,8 @@ async function applyToJob(jobId) {
 
         if (response.ok) {
             alert('¡Aplicación enviada exitosamente! La empresa revisará tu perfil pronto.');
-            // Recargar estadísticas para actualizar el contador
-            loadUserStatistics(user.id);
+            // Recargar las postulaciones para que aparezca la nueva
+            loadInterestedCompanies();
         } else {
             const error = await response.json();
             alert(error.message || 'Ya has aplicado a esta oferta o ocurrió un error');
@@ -714,6 +763,7 @@ async function loadInterestedCompanies() {
                     if (!companiesMap.has(app.jobId)) {
                         companiesMap.set(app.jobId, {
                             name: app.companyName,
+                            job: app.jobTitle,
                             appliedDate: new Date(app.appliedDate),
                             status: app.status
                         });
@@ -722,36 +772,55 @@ async function loadInterestedCompanies() {
             });
 
             const companies = Array.from(companiesMap.values())
-                .sort((a, b) => b.appliedDate - a.appliedDate)
-                .slice(0, 5);
+                .sort((a, b) => b.appliedDate - a.appliedDate);
 
             if (companies.length === 0) {
-                companiesContainer.innerHTML = '<p class="empty-text">Aún no has aplicado a ninguna empresa</p>';
+                companiesContainer.innerHTML = '<p class="empty-text">Aún no te has postulado a ninguna vacante.</p>' +
+                    '<a href="oportunidades.html" class="btn-view-all">Buscar vacantes <i data-ico="arrow"></i></a>';
                 return;
             }
 
-            companiesContainer.innerHTML = companies.map(company => {
+            // El backend manda el estado en minusculas ("revisada") y aqui se
+            // comparaba con "ACEPTADA": todas salian "En revision"
+            const ESTADOS = {
+                PENDIENTE: { texto: 'Enviada',   ico: 'clock' },
+                REVISADA:  { texto: 'Revisada',  ico: 'eye' },
+                ACEPTADA:  { texto: 'Aceptada',  ico: 'check' },
+                RECHAZADA: { texto: 'Rechazada', ico: 'close' }
+            };
+            const estadoDe = c => String(c.status || 'PENDIENTE').toUpperCase();
+            const cuenta = (...estados) => companies.filter(c => estados.includes(estadoDe(c))).length;
+
+            // Resumen arriba (reemplaza las estadisticas inventadas de la izquierda)
+            const resumen = `
+                <div class="apps-summary">
+                    <div><strong>${companies.length}</strong><span>Enviadas</span></div>
+                    <div><strong>${cuenta('PENDIENTE', 'REVISADA')}</strong><span>En proceso</span></div>
+                    <div><strong>${cuenta('ACEPTADA')}</strong><span>Aceptadas</span></div>
+                </div>`;
+
+            companiesContainer.innerHTML = resumen + companies.slice(0, 4).map(company => {
                 const daysAgo = Math.floor((new Date() - company.appliedDate) / (1000 * 60 * 60 * 24));
-                const statusText = company.status === 'ACEPTADA' ? '<i data-ico="check"></i> Aceptada' : 
-                                  company.status === 'RECHAZADA' ? '<i data-ico="close"></i> Rechazada' : 
-                                  '<i data-ico="clock"></i> En revisión';
-                
+                const cuando = daysAgo <= 0 ? 'Hoy' : `Hace ${daysAgo} ${daysAgo === 1 ? 'día' : 'días'}`;
+                const clave = estadoDe(company);
+                const estado = ESTADOS[clave] || ESTADOS.PENDIENTE;
+
                 return `
                     <div class="company-item-compact">
-                        <div class="company-logo-compact"><i data-ico="building"></i></div>
+                        <div class="company-logo-compact">${(company.name || '?').charAt(0)}</div>
                         <div class="company-info-compact">
-                            <h4>${company.name}</h4>
-                            <p>Aplicaste hace ${daysAgo} ${daysAgo === 1 ? 'día' : 'días'}</p>
-                            <p class="status-badge">${statusText}</p>
+                            <h4>${company.job || company.name}</h4>
+                            <p>${company.job ? company.name + ' · ' : ''}${cuando}</p>
+                            <p class="status-badge ${clave.toLowerCase()}"><i data-ico="${estado.ico}"></i> ${estado.texto}</p>
                         </div>
                     </div>
                 `;
             }).join('');
         } else {
-            companiesContainer.innerHTML = '<p class="empty-text">No se pudieron cargar las empresas</p>';
+            companiesContainer.innerHTML = '<p class="empty-text">No se pudieron cargar tus postulaciones</p>';
         }
     } catch (error) {
-        companiesContainer.innerHTML = '<p class="error-text">Error cargando empresas</p>';
+        companiesContainer.innerHTML = '<p class="error-text">Error cargando tus postulaciones</p>';
     }
 }
 

@@ -75,43 +75,7 @@
         <div class="container">
             <div class="profile-layout">
                 <aside class="profile-sidebar">
-                    <div class="profile-card">
-                        <h3 class="card-title"><i data-ico="chart"></i> Estadísticas</h3>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-icon"><i data-ico="eye"></i></div>
-                                <div class="stat-content">
-                                    <span class="stat-value" id="profileViews">0</span>
-                                    <span class="stat-label">Vistas del perfil</span>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon"><i data-ico="briefcase"></i></div>
-                                <div class="stat-content">
-                                    <span class="stat-value" id="applicationsCount">0</span>
-                                    <span class="stat-label">Aplicaciones</span>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon"><i data-ico="target"></i></div>
-                                <div class="stat-content">
-                                    <span class="stat-value" id="matchRate">0%</span>
-                                    <span class="stat-label">Match promedio</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-card">
-                        <div class="card-header-flex">
-                            <h3 class="card-title"><i data-ico="target"></i> Habilidades</h3>
-                            <button type="button" class="btn-add-skill" id="addSkillBtn">+ Agregar</button>
-                        </div>
-                        <div class="skills-list-new" id="userSkills">
-                            <p class="loading-text">Cargando habilidades...</p>
-                        </div>
-                    </div>
-
+                    <!-- Primero lo que le dice a la persona que le falta: cada pendiente abre su formulario -->
                     <div class="profile-card">
                         <h3 class="card-title"><i data-ico="trending"></i> Progreso del Perfil</h3>
                         <div class="profile-progress">
@@ -122,6 +86,16 @@
                             <ul class="progress-checklist" id="profileChecklist">
                                 <li>Cargando...</li>
                             </ul>
+                        </div>
+                    </div>
+
+                    <div class="profile-card">
+                        <div class="card-header-flex">
+                            <h3 class="card-title"><i data-ico="target"></i> Habilidades</h3>
+                            <button type="button" class="btn-add-skill" id="addSkillBtn">+ Agregar</button>
+                        </div>
+                        <div class="skills-list-new" id="userSkills">
+                            <p class="loading-text">Cargando habilidades...</p>
                         </div>
                     </div>
                 </aside>
@@ -251,8 +225,8 @@
                         <a href="oportunidades.html" class="btn-view-all">Ver todas <i data-ico="arrow"></i></a>
                     </div>
 
-                    <div class="sidebar-card">
-                        <h3 class="card-title"><i data-ico="building"></i> Empresas Interesadas</h3>
+                    <div class="sidebar-card" id="applicationsCard">
+                        <h3 class="card-title"><i data-ico="send"></i> Tus postulaciones</h3>
                         <div id="interestedCompanies">
                             <p class="loading-text">Cargando empresas...</p>
                         </div>

@@ -417,8 +417,10 @@ header > nav {
 /* ---------- 8. Botones ---------- */
 
 /* Solo .btn: si se escribe a.btn, gana a las variantes (.btn-outline,
-   .btn-secondary...) y los botones que son enlaces pierden su borde. */
-.btn {
+   .btn-secondary...) y los botones que son enlaces pierden su borde.
+   Los botones de las ventanas del perfil no llevan .btn en el HTML: sin
+   esta forma base salian cuadrados y sin relleno. */
+.btn, .btn-primary-modal, .btn-secondary-modal {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -441,7 +443,7 @@ header > nav {
                 color .18s var(--ease);
 }
 
-.btn:active { transform: translateY(1px) scale(.985); }
+.btn:active, .btn-primary-modal:active, .btn-secondary-modal:active { transform: translateY(1px) scale(.985); }
 
 .btn:disabled,
 .btn[aria-disabled="true"] {
@@ -1354,7 +1356,10 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     animation: fade-in .22s var(--ease-out) both;
 }
 
-.modal-content {
+/* .modal-content-small (foto, portada, habilidad) solo tenia el ancho: sin
+   fondo ni bordes, el titulo flotaba sobre la pagina borrosa */
+.modal-content,
+.modal-content-small {
     width: 100%;
     max-width: 560px;
     max-height: min(86vh, 760px);
@@ -1390,6 +1395,24 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     border-top: 1px solid var(--hairline-soft);
     background: var(--surface-sunk);
 }
+/* Formularios del perfil de usuario: van directo en la ventana, sin
+   .modal-body, y los campos quedaban pegados al borde. El formulario hace
+   de cuerpo: margen interior, scroll si no cabe y botones siempre abajo. */
+.modal-content > form,
+.modal-content-small > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+.modal-content > form > :not(.modal-actions),
+.modal-content-small > form > :not(.modal-actions) { margin-inline: var(--s5); }
+.modal-content > form > :first-child,
+.modal-content-small > form > :first-child { margin-top: var(--s5); }
+.modal-content > form > .modal-actions,
+.modal-content-small > form > .modal-actions { position: sticky; bottom: 0; margin-top: auto; }
+.modal-header .ico { color: var(--sea); }
 
 /* ---------- 18. Notificaciones ---------- */
 
@@ -2715,11 +2738,57 @@ footer.pie > .container { position: relative; z-index: 1; }
 .profile-section .section-header .btn-icon:hover { border-color: var(--sea); background: var(--sea-light); }
 /* Titulos de seccion al tamano de los de las tarjetas de la izquierda */
 .profile-section .section-header h2 { font-size: var(--t-lg); }
-/* Estadisticas del perfil: una fila compacta de tres (antes, tres tarjetas altas) */
-.profile-card .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); }
-.profile-card .stat-item { flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s3); }
-.profile-card .stat-icon { width: 36px; height: 36px; }
-.profile-card .stat-value { font-size: var(--t-lg); }
+/* Las tarjetas de la izquierda iban pegadas (sin separacion entre ellas);
+   la derecha ya la tenia con el margen de .sidebar-card */
+.profile-sidebar { display: flex; flex-direction: column; gap: var(--s4); }
+/* Titulos de las columnas laterales: a 22 px "Habilidades" y "+ Agregar" no
+   cabian en 300 px (el icono, el titulo y el boton se partian en dos lineas) */
+.profile-sidebar .card-title,
+.profile-right-sidebar .card-title {
+    display: flex; align-items: center; gap: var(--s2);
+    font-size: var(--t-md);
+}
+.profile-sidebar .profile-card > .card-title,
+.profile-right-sidebar .sidebar-card > .card-title { margin-bottom: var(--s4); }
+.btn-add-skill { white-space: nowrap; }
+
+/* Pendientes del progreso: cada uno es un boton que abre su formulario */
+.progress-step {
+    display: flex; align-items: center; gap: var(--s2);
+    width: calc(100% + 16px); margin: -4px -8px; padding: 4px 8px;
+    border-radius: var(--r-sm);
+    color: var(--ink-3); font-size: var(--t-sm); font-weight: 500; text-align: left;
+    transition: background-color .14s var(--ease), color .14s var(--ease);
+}
+.progress-step .ico-plus { margin-left: auto; color: var(--sea-deep); opacity: .55; transition: opacity .14s var(--ease); }
+.progress-step:hover { background: var(--sea-light); color: var(--sea-deep); }
+.progress-step:hover .ico-plus { opacity: 1; }
+@media (pointer: coarse) { .progress-step { min-height: 44px; } }
+
+/* Postulaciones: resumen de tres numeros reales encima de la lista */
+.apps-summary {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: var(--s3);
+    border: 1px solid var(--hairline-soft); border-radius: var(--r-md);
+    background: var(--surface-sunk);
+}
+.apps-summary > div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--s3) var(--s1); }
+.apps-summary > div + div { border-left: 1px solid var(--hairline-soft); }
+.apps-summary strong {
+    font-family: var(--font-display); font-size: var(--t-xl); line-height: 1.1;
+    color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.apps-summary span { font-size: var(--t-xs); color: var(--ink-muted); font-weight: 500; }
+.company-item-compact .status-badge { margin-top: 4px; }
+
+/* Aviso de las recomendaciones cuando aun no hay habilidades */
+.recommend-hint {
+    display: flex; gap: var(--s2); align-items: flex-start;
+    margin-bottom: var(--s3); padding: var(--s3);
+    border-radius: var(--r-md); background: var(--sol-soft);
+    color: var(--ink-3); font-size: var(--t-sm);
+}
+.recommend-hint .ico { flex: 0 0 auto; color: var(--sol-deep); margin-top: 2px; }
 /* Estrellas del nivel de cada habilidad, rellenas con el naranja del logo */
 .skill-level .ico { fill: currentColor; color: var(--naranja-texto); }
 
@@ -3450,7 +3519,7 @@ kbd {
     .results-grid { grid-template-columns: 1fr; }
     .section, .hero { padding: var(--s7) 0; }
     .modal { padding: 0; align-items: flex-end; }
-    .modal-content {
+    .modal-content, .modal-content-small {
         max-width: none;
         max-height: 92vh;
         border-radius: 22px 22px 0 0;
@@ -3636,7 +3705,8 @@ kbd {
     background: var(--surface-inverse); color: #fff !important; font-weight: 600 !important;
 }
 .btn-register:hover { background: var(--sea-deep); color: #fff !important; transform: translateY(-1px); }
-.modal-content-small { max-width: 420px; }
+/* En celular la ventana pequena tambien es una hoja a todo lo ancho */
+@media (width > 760px) { .modal-content-small { max-width: 420px; } }
 
 /* Etiquetas de tipo de vacante */
 .offer-type-badge, .employment, .practice, .freelance {
@@ -3801,16 +3871,47 @@ kbd {
     display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s5);
 }
 .profile-avatar-section, .company-logo-wrapper { margin-top: -64px; position: relative; z-index: 2; }
-.profile-avatar, .profile-avatar-initials {
-    display: grid; place-items: center;
-    width: 112px; height: 112px;
-    border-radius: 24px;
-    border: 4px solid var(--surface);
-    background: var(--surface-inverse); color: #fff;
-    font-family: var(--font-display); font-size: 2.2rem; font-weight: 700;
+/* Foto de perfil: el marco (.profile-avatar) y lo que lleva dentro eran la
+   misma regla, asi que salian dos cuadros de 112 px montados, corridos, y
+   las iniciales pegadas a la izquierda. Ahora el marco es un circulo con
+   aro blanco (lo habitual para personas; los logos de empresa siguen
+   cuadrados) y la foto o las iniciales lo llenan, centradas. */
+.profile-avatar {
+    position: relative;
+    width: 128px; height: 128px;
+    padding: 4px;
+    border-radius: 50%;
+    background: var(--surface);
     box-shadow: var(--sh-3);
+}
+.profile-avatar > img,
+.profile-avatar-initials {
+    width: 100%; height: 100%;
+    border-radius: 50%;
     object-fit: cover;
 }
+.profile-avatar-initials {
+    display: flex; align-items: center; justify-content: center; /* profile.js lo muestra con display:flex */
+    background: var(--surface-inverse); color: #fff;
+    font-family: var(--font-display); font-size: 2.6rem; font-weight: 700;
+    letter-spacing: .02em; line-height: 1;
+    /* luz arriba y sombra abajo para que el color plano no se vea como un
+       parche (sombra interior: profile.js pisa "background" en linea) */
+    box-shadow: inset 0 12px 24px rgba(255,255,255,.16), inset 0 -14px 28px rgba(0,0,0,.14);
+}
+/* La foto queda con su centro justo en el borde de la portada. Antes la fila
+   alineaba todo abajo (flex-end), eso anulaba el margen negativo y la foto
+   apenas tocaba la portada (22 px de 112). */
+.profile-header-content { align-items: flex-start; padding-inline: var(--s4); }
+.profile-avatar-section { align-self: flex-start; }
+/* El nombre ocupa el espacio libre, con aire bajo la portada, y "Editar
+   perfil" se va al borde derecho */
+.profile-info-header {
+    flex: 1 1 320px; min-width: 0;
+    align-items: center; justify-content: space-between;
+    padding-top: var(--s4);
+}
+.profile-name-section { min-width: 0; }
 .profile-name-section h1, .company-title-section h1 { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem); }
 .profile-headline, .company-industry {
     font-size: var(--t-md); color: var(--sea-deep); font-weight: 600;
@@ -3849,8 +3950,9 @@ kbd {
 }
 .progress-text { font-size: var(--t-sm); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
 .progress-checklist li { font-size: var(--t-sm); color: var(--ink-muted); }
-.progress-checklist li.done { color: var(--ink-3); }
-.progress-checklist li.done .ico { color: var(--verde); }
+/* profile.js marca lo hecho con .completed (la regla decia .done y nunca se aplicaba) */
+.progress-checklist li.completed { color: var(--ink-muted); }
+.progress-checklist li.completed .ico { color: var(--verde); }
 
 .skills-list-new { display: flex; flex-wrap: wrap; gap: 6px; }
 .btn-add-skill {
@@ -3882,6 +3984,8 @@ kbd {
     position: absolute; bottom: 0; right: 0;
     width: 34px; height: 34px; padding: 0; border-radius: 50%;
 }
+/* En el circulo, la camara se apoya sobre el aro (en la esquina quedaba fuera) */
+.profile-avatar .btn-edit-avatar { bottom: 4px; right: 4px; border: 2px solid var(--surface); }
 .profile-avatar-section, .company-logo-wrapper { display: inline-block; }
 .company-cover-container, .profile-header { position: relative; }
 
@@ -4081,8 +4185,10 @@ kbd {
     .btn-search-main { min-height: 44px; }
     .quick-filters { grid-template-columns: 1fr; }
     .profile-avatar-section, .company-logo-wrapper { margin-top: -44px; }
-    .profile-avatar, .profile-avatar-initials,
     .company-logo-img, .profile-avatar-img { width: 84px; height: 84px; font-size: 1.6rem; }
+    .profile-avatar { width: 96px; height: 96px; }
+    .profile-avatar-section { margin-top: -48px; }
+    .profile-avatar-initials { font-size: 2rem; }
     .features-grid, .why-grid, .roadmap-grid, .choice-split { grid-template-columns: 1fr; }
     .conversations-sidebar.chat-active { display: none; }
 }
