@@ -1,9 +1,14 @@
 ﻿// Script para la página de oportunidades con backend integration
 
 let allJobs = [];
+let shownJobs = [];          // lo que se ve ahora (con filtros o busqueda), para ordenar sin perderlo
 let currentFilters = {};
 let savedJobIds = new Set();
 let searchAbortController = null;
+// Habilidades de quien inicio sesion (nombres normalizados). null = no se
+// sabe (sin sesion, empresa o fallo la carga): entonces no se muestra %.
+let userSkills = null;
+let userSkillsReady = Promise.resolve();
 
 function debounce(fn, delay) {
     let timer;
@@ -15,6 +20,9 @@ function debounce(fn, delay) {
 
 // Cargar oportunidades al iniciar
 document.addEventListener('DOMContentLoaded', function() {
+    // Las habilidades se piden a la vez que las vacantes; loadJobs las espera
+    // para pintar una sola vez, ya con el % y el orden correctos
+    userSkillsReady = loadUserSkills();
     loadJobs();
     loadSavedJobs();
     setupEventListeners();
@@ -37,8 +45,7 @@ async function loadJobs() {
         if (response.ok) {
             const data = await response.json();
             allJobs = Array.isArray(data) ? data : (data.content || []);
-            if (allJobs.length > 0) {
-            }
+            await userSkillsReady;
             displayJobs(allJobs);
         } else {
             const errorText = await response.text();
@@ -55,11 +62,75 @@ async function loadJobs() {
     }
 }
 
+// Habilidades de quien inicio sesion (solo estudiantes: las empresas no tienen)
+async function loadUserSkills() {
+    const datos = JSON.parse(localStorage.getItem('userData') || 'null');
+    if (!datos || !datos.id || datos.userType === 'empresa') return;
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${datos.id}/skills`);
+        if (response.ok) {
+            userSkills = new Set((await response.json()).map(s => normalizeStr(s.name).trim()));
+        }
+    } catch (error) {
+        // Sin habilidades no hay %: las tarjetas salen sin anillo
+    }
+}
+
+// Habilidades que pide la vacante, sin repetir (los datos de prueba repiten:
+// "Angular, Git, Angular"). Conserva como esta escrita la primera aparicion.
+function uniqueJobSkills(job) {
+    const vistas = new Map();
+    (job.skills || []).forEach(s => {
+        const clave = normalizeStr(String(s)).trim();
+        if (clave && !vistas.has(clave)) vistas.set(clave, String(s).trim());
+    });
+    return vistas;
+}
+
+// Compatibilidad real: que parte de las habilidades que pide la vacante tienes.
+// Antes era 60 + 5 por habilidad pedida + 10 si era remota (no miraba tu perfil).
+function getSkillMatch(job) {
+    const pedidas = uniqueJobSkills(job);
+    // Sin habilidades tuyas todo daria 0 %: no se muestra (sale el aviso)
+    if (!userSkills || userSkills.size === 0 || pedidas.size === 0) return null;
+    const tiene = [...pedidas.keys()].filter(s => userSkills.has(s)).length;
+    return { pct: Math.round(tiene / pedidas.size * 100), tiene, pedidas: pedidas.size };
+}
+
+// Ordena segun el selector, sobre la lista que se este viendo
+function sortList(jobs) {
+    const criterio = document.getElementById('sortSelect')?.value || 'match';
+    const lista = [...jobs];
+    if (criterio === 'recent') {
+        lista.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
+    } else if (criterio === 'salary') {
+        lista.sort((a, b) => (b.salaryMax || 0) - (a.salaryMax || 0));
+    } else if (userSkills) {
+        // Mayor % primero; a igual %, la que tiene mas habilidades tuyas
+        const puntaje = job => { const m = getSkillMatch(job); return m ? m.pct * 100 + m.tiene : -1; };
+        lista.sort((a, b) => puntaje(b) - puntaje(a));
+    }
+    return lista;
+}
+
+// Aviso arriba de la lista cuando no se puede calcular el %
+function matchHint() {
+    const datos = JSON.parse(localStorage.getItem('userData') || 'null');
+    if (!datos) {
+        return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="login-usuario.html">Inicia sesión</a> para ver qué tanto encajas con cada vacante.</span></p>';
+    }
+    if (datos.userType !== 'empresa' && userSkills && userSkills.size === 0) {
+        return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="perfil-usuario.html">Agrega tus habilidades</a> y te mostramos qué tanto encajas con cada vacante.</span></p>';
+    }
+    return '';
+}
+
 // Mostrar trabajos en el DOM
 function displayJobs(jobs) {
     const container = document.querySelector('.opportunities-list');
-    
+
     if (!jobs || jobs.length === 0) {
+        shownJobs = [];
         container.innerHTML = `
             <div class="no-results-message">
                 <h3>No se encontraron oportunidades</h3>
@@ -70,7 +141,9 @@ function displayJobs(jobs) {
         return;
     }
 
-    container.innerHTML = jobs.map(job => createJobCard(job)).join('');
+    // Siempre en el orden elegido (antes los filtros y la busqueda lo ignoraban)
+    shownJobs = sortList(jobs);
+    container.innerHTML = matchHint() + shownJobs.map(job => createJobCard(job)).join('');
     updateResultsCount(jobs.length);
     attachJobCardListeners();
 }
@@ -83,12 +156,24 @@ function createJobCard(job) {
         ? `Desde ${formatCurrency(job.salaryMin)}`
         : 'Salario a convenir';
 
-    const skills = job.skills && job.skills.length > 0
-        ? job.skills.slice(0, 4).map(skill => `<span class="skill">${skill}</span>`).join('')
+    // Las habilidades que ya tienes van primero, en turquesa y con palomita:
+    // asi se ve de donde sale el % del anillo
+    const pedidas = uniqueJobSkills(job);
+    const tuyas = [...pedidas.keys()].filter(k => userSkills && userSkills.has(k));
+    const orden = [...tuyas, ...[...pedidas.keys()].filter(k => !tuyas.includes(k))];
+    const skills = orden.length > 0
+        ? orden.slice(0, 4).map(k => tuyas.includes(k)
+            ? `<span class="skill is-common"><i data-ico="check"></i>${pedidas.get(k)}</span>`
+            : `<span class="skill">${pedidas.get(k)}</span>`).join('')
         : '<span class="skill">Sin especificar</span>';
 
-    const matchScore = calculateMatchScore(job);
-    const matchClass = matchScore >= 80 ? 'match-high' : matchScore >= 60 ? 'match-medium' : 'match-low';
+    // Sin habilidades tuyas o de la vacante no hay con que comparar: sin anillo
+    const match = getSkillMatch(job);
+    const anillo = match
+        ? `<div class="match-ring" data-pct="${match.pct}" role="img"
+                title="Tienes ${match.tiene} de ${match.pedidas} habilidades que pide"
+                aria-label="${match.pct} por ciento: tienes ${match.tiene} de ${match.pedidas} habilidades que pide"></div>`
+        : '';
 
     const isSaved = savedJobIds.has(job.id);
     const saveButtonClass = isSaved ? 'btn-save saved' : 'btn-save';
@@ -102,8 +187,7 @@ function createJobCard(job) {
                     <h3 class="job-title">${job.title}</h3>
                     <p class="company-name">${job.companyName || 'Empresa Confidencial'}</p>
                 </div>
-                <div class="match-ring" data-pct="${matchScore}" role="img"
-                     aria-label="${matchScore} por ciento de coincidencia con tu perfil"></div>
+                ${anillo}
             </div>
             
             <div class="card-meta">
@@ -149,7 +233,8 @@ function setupEventListeners() {
         });
     }
 
-    // Filtros
+    // Filtros: se aplican al instante (antes habia que pulsar "Aplicar
+    // filtros" y, al cargar, salian casillas marcadas que no filtraban nada)
     const applyFilterBtn = document.querySelector('.btn-apply-filters');
     if (applyFilterBtn) {
         applyFilterBtn.addEventListener('click', applyFilters);
@@ -161,15 +246,21 @@ function setupEventListeners() {
     }
 
     document.querySelectorAll('.filter-card input[type="checkbox"]').forEach(cb => {
-        cb.addEventListener('change', updateFilterBadges);
+        cb.addEventListener('change', () => {
+            updateFilterBadges();
+            applyFilters();
+        });
     });
 
-    // Rango de salario - actualización en tiempo real
+    // Rango de salario: la cifra cambia mientras se arrastra y la lista se
+    // filtra cuando se deja quieto un momento
     const salaryRange = document.getElementById('salaryRange');
     if (salaryRange) {
+        const filtrarSalario = debounce(applyFilters, 200);
         salaryRange.addEventListener('input', function() {
             const value = parseInt(this.value);
             document.getElementById('maxSalary').textContent = formatCurrency(value);
+            filtrarSalario();
         });
     }
 
@@ -357,29 +448,16 @@ function clearFilters() {
 
     updateFilterBadges();
 
-    // Recargar todas las oportunidades
-    loadJobs();
+    // Mostrar todas otra vez (ya estan cargadas: no hace falta pedirlas)
+    if (allJobs.length) applyFilters(); else loadJobs();
 
 }
 
 // Ordenar trabajos
 function sortJobs() {
-    const sortValue = document.getElementById('sortSelect').value;
-    let sorted = [...allJobs];
-
-    switch(sortValue) {
-        case 'recent':
-            sorted.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
-            break;
-        case 'salary':
-            sorted.sort((a, b) => (b.salaryMax || 0) - (a.salaryMax || 0));
-            break;
-        case 'match':
-            sorted.sort((a, b) => calculateMatchScore(b) - calculateMatchScore(a));
-            break;
-    }
-
-    displayJobs(sorted);
+    // Reordena lo que se esta viendo (antes partia de todas las vacantes y se
+    // perdian los filtros y la busqueda); displayJobs aplica el orden elegido
+    displayJobs(shownJobs);
 }
 
 function updateFilterBadges() {
@@ -416,7 +494,8 @@ function translateJobType(type) {
         'practica': 'Práctica',
         'freelance': 'Freelance'
     };
-    return types[type] || type;
+    // Algunas vacantes llegan como "práctica" (con tilde) y salian en minuscula
+    return types[normalizeStr(type).trim()] || type;
 }
 
 function translateExperienceLevel(level) {
@@ -485,20 +564,4 @@ async function toggleSaveJob(jobId, buttonElement) {
     }
 }
 
-function calculateMatchScore(job) {
-    // Algoritmo simple de matching - puede mejorarse
-    let score = 60; // Base score
-    
-    // Bonus por habilidades (requiere lógica más compleja con el perfil del usuario)
-    if (job.skills && job.skills.length > 0) {
-        score += Math.min(20, job.skills.length * 5);
-    }
-    
-    // Bonus por modalidad remota
-    if (job.modality === 'remoto' || job.modality === 'híbrido') {
-        score += 10;
-    }
-    
-    return Math.min(100, score);
-}
 

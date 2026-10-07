@@ -2802,6 +2802,7 @@ footer.pie > .container { position: relative; z-index: 1; }
     color: var(--ink-3); font-size: var(--t-sm);
 }
 .recommend-hint .ico { flex: 0 0 auto; color: var(--sol-deep); margin-top: 2px; }
+.recommend-hint a { color: var(--sea-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 /* Estrellas del nivel de cada habilidad, rellenas con el naranja del logo */
 .skill-level .ico { fill: currentColor; color: var(--naranja-texto); }
 
@@ -3770,6 +3771,8 @@ kbd {
 .btn-apply-filters { width: 100%; }
 
 .sort-controls { display: flex; align-items: center; gap: var(--s2); }
+/* "Ordenar por:" se partia en dos lineas junto al selector */
+.sort-controls label { white-space: nowrap; }
 .sort-select { min-width: 180px; }
 .results-section { padding: var(--s7) 0 var(--s9); }
 .results-info { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s3); margin-bottom: var(--s5); }
