@@ -62,8 +62,9 @@ Arreglado (frontend):
 Para Jesús (backend o contenido):
 - `GET /users/{id}/experiences` responde 400: "experienceService is null" (falta inyectar el servicio
   en el controlador). Por eso "No se pudieron cargar las experiencias".
-- Contenido fijo en `perfil-usuario.html`: certificaciones, proyectos y recomendaciones de empresas
-  son iguales para todos. "0 conexiones" también es fijo (nadie lo actualiza).
+- Certificaciones, proyectos y recomendaciones de empresas eran contenido de ejemplo igual para
+  todos: **se quitaron del perfil** (2026-10-07; el HTML anterior está en el commit 0b22130).
+  Volverán cuando el backend los guarde. "0 conexiones" ya muestra el número real.
 
 ## URGENTE para Jesús: fuga de datos en `/api/connections/suggestions` (2026-10-07)
 `ConnectionController.getSuggestions` devuelve la entidad `User` completa (`List<User>`), no un DTO.
@@ -89,6 +90,16 @@ El frontend (`conexiones.js`) solo usa esos campos públicos, así que no hay qu
   (usa `/connections/sent-requests`) en vez de volver a ofrecer "Conectar".
 - Avisos: usaban textContent y mostraban `<i data-ico...>` como texto; ahora usan `SkillMatchUI.aviso`.
 - Rayita gris bajo la campana en todas las páginas: el `<li>` de la barra compartía estilos con cada aviso.
+
+## Oportunidades (2026-10-07, frontend)
+- El anillo de % no miraba el perfil (60 + 5 por habilidad pedida + 10 si era remota). Ahora es la
+  parte de las habilidades que pide la vacante que la persona tiene; esas habilidades salen marcadas.
+  Sin sesión o sin habilidades no se inventa un %: sale un aviso para iniciar sesión o agregarlas.
+- "Mayor Match" ordena por ese %; cambiar el orden ya no borra los filtros ni la búsqueda.
+- Filtros: al cargar salían casillas marcadas que no filtraban nada; ahora empiezan vacías y cada
+  cambio filtra al instante (sin botón "Aplicar filtros").
+- Tipo "práctica" (con tilde) salía en minúscula; "Ordenar por:" se partía en dos líneas.
+- Pendiente: la búsqueda de la portada (`search-handler.js`) también inventa el % (70-90 según el id).
 
 ## Falta revisar
 - Revisión visual página por página (espaciados, tipografía, consistencia) de: perfil de usuario, conexiones,

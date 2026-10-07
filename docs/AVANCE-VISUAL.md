@@ -112,6 +112,10 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 - **Conexiones:** pestaña Mensajes centrada, pestañas sin barra fantasma, franja del título,
   sugerencias en cuadrícula con motivo y "Solicitud enviada"; avisos con `SkillMatchUI.aviso`.
 - **Barra superior:** fuera la rayita gris bajo la campana (en todas las páginas).
+- **Oportunidades:** % de compatibilidad real (habilidades tuyas sobre las que pide la vacante),
+  habilidades tuyas marcadas, orden "Mayor Match" real que respeta los filtros, y filtros que se
+  aplican al instante.
+- **Perfil:** fuera las secciones de ejemplo (certificaciones, proyectos, recomendaciones).
 - Detalle de cada arreglo y lo que queda para Jesús (incluida una fuga de datos urgente en
   `/api/connections/suggestions`): `docs/REVISION-CALIDAD.md`.
 
