@@ -1425,6 +1425,143 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 .modal-content > form > .modal-actions,
 .modal-content-small > form > .modal-actions { position: sticky; bottom: 0; margin-top: auto; }
 .modal-header .ico { color: var(--sea); }
+/* Ventanas de foto y portada: un poco mas anchas para la galeria y el encuadre */
+.modal-imagen .modal-content { max-width: 640px; }
+.modal-imagen form > .tab-list { margin-bottom: var(--s4); }
+.modal-imagen .modal-actions .btn-primary-modal:disabled { opacity: .5; pointer-events: none; }
+
+/* ---------- Editor de imagenes (editor-imagen.js) ---------- */
+.editor-imagen { margin-bottom: var(--s5); }
+.editor-imagen [hidden] { display: none !important; }
+/* Zona para soltar o elegir el archivo */
+.editor-soltar {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    padding: var(--s7) var(--s5);
+    border: 2px dashed var(--hairline);
+    border-radius: var(--r-lg);
+    background: var(--surface-sunk);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .16s var(--ease), background-color .16s var(--ease);
+}
+.editor-soltar:hover, .editor-soltar.is-encima, .editor-soltar:focus-within {
+    border-color: var(--sea); background: var(--sea-light);
+}
+/* El input queda escondido pero se puede enfocar con Tab (el label lo abre) */
+.editor-archivo {
+    position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+.editor-soltar-icono {
+    display: grid; place-items: center;
+    width: 52px; height: 52px; margin-bottom: var(--s1);
+    border-radius: 50%;
+    background: var(--surface); color: var(--sea);
+    box-shadow: var(--sh-1);
+}
+.editor-soltar-icono .ico { width: 24px; height: 24px; }
+.editor-soltar strong { font-size: var(--t-md); color: var(--ink); }
+.editor-soltar > span { font-size: var(--t-sm); color: var(--ink-3); }
+.editor-enlace { color: var(--sea-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.editor-soltar small { margin-top: 4px; font-size: var(--t-xs); color: var(--ink-muted); }
+/* Encuadre: la foto se mueve dentro del marco (solo transform) */
+.editor-encuadre { display: flex; flex-direction: column; gap: var(--s3); }
+.editor-marco {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--r-md);
+    background: var(--surface-sunk);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+.editor-marco.es-redondo { max-width: 280px; margin-inline: auto; }
+.editor-marco.is-arrastrando { cursor: grabbing; }
+.editor-marco:focus-visible { outline: 3px solid var(--sea); outline-offset: 3px; }
+.editor-img {
+    position: absolute; left: 0; top: 0;
+    max-width: none; width: auto; height: auto;
+    transform-origin: 0 0;
+    pointer-events: none;
+}
+.editor-mascara {
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45);
+    pointer-events: none;
+}
+/* Foto de perfil: se oscurece lo que queda fuera del circulo */
+.editor-marco.es-redondo .editor-mascara {
+    border-radius: 50%;
+    box-shadow: 0 0 0 999px rgba(6, 26, 49, .55), inset 0 0 0 2px rgba(255, 255, 255, .85);
+}
+.editor-controles { display: flex; align-items: center; gap: var(--s2); }
+.editor-zoom { flex: 1; min-width: 0; }
+.editor-zoom-ico { display: inline-flex; color: var(--ink-muted); }
+.editor-otra { flex: 0 0 auto; margin-left: var(--s2); }
+.editor-ayuda { display: flex; align-items: center; gap: 6px; font-size: var(--t-xs); color: var(--ink-muted); }
+.editor-ayuda .ico { width: 15px; height: 15px; flex: 0 0 auto; }
+.editor-error {
+    display: flex; align-items: flex-start; gap: var(--s2);
+    margin-top: var(--s3); padding: var(--s3) var(--s4);
+    border-radius: var(--r-md);
+    background: var(--rojo-soft); color: var(--rojo);
+    font-size: var(--t-sm); font-weight: 500;
+}
+.editor-error .ico { flex: 0 0 auto; margin-top: 2px; }
+
+/* ---------- Galeria de portadas ---------- */
+.galeria-portadas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--s3);
+    margin-bottom: var(--s5);
+}
+.galeria-item {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 4px;
+    border-radius: var(--r-md);
+    text-align: left;
+}
+.galeria-item:focus-visible { outline: 3px solid var(--sea); outline-offset: 1px; }
+.galeria-miniatura {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 6;
+    border-radius: var(--r-sm);
+    background-position: center;
+    background-size: cover;
+    box-shadow: 0 0 0 1px var(--hairline);
+    transition: transform .18s var(--ease), box-shadow .18s var(--ease);
+}
+/* La portada de siempre (la del CSS de .profile-cover) */
+.galeria-miniatura.es-marca {
+    background:
+        var(--grain),
+        radial-gradient(circle at 85% 0%, rgba(11,126,140,.45), transparent 60%),
+        radial-gradient(circle at 0% 110%, rgba(255,118,24,.35), transparent 62%),
+        linear-gradient(120deg, var(--ink), var(--sea-deep));
+    background-blend-mode: overlay, normal, normal, normal;
+    background-size: 220px 220px, auto, auto, auto;
+}
+.galeria-item:hover .galeria-miniatura { transform: translateY(-2px); box-shadow: var(--sh-2), 0 0 0 1px var(--hairline); }
+.galeria-item[aria-checked="true"] .galeria-miniatura { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--sea); }
+.galeria-check {
+    position: absolute; top: 6px; right: 6px;
+    display: grid; place-items: center;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--sea); color: #fff;
+    opacity: 0; transform: scale(.6);
+    transition: opacity .16s var(--ease), transform .22s var(--ease-out);
+}
+.galeria-check .ico { width: 13px; height: 13px; }
+.galeria-item[aria-checked="true"] .galeria-check { opacity: 1; transform: none; }
+.galeria-nombre { font-size: var(--t-xs); font-weight: 600; color: var(--ink-3); }
+.galeria-item[aria-checked="true"] .galeria-nombre { color: var(--sea-deep); }
+@media (max-width: 520px) { .galeria-portadas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* La pestana escondida se esconde de verdad (display: grid le ganaba a hidden) */
+.galeria-portadas[hidden] { display: none; }
 
 /* ---------- 18. Notificaciones ---------- */
 

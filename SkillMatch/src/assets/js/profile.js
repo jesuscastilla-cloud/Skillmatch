@@ -80,9 +80,12 @@ function hideEditButtons() {
         btn.style.display = 'none';
     });
     
-    // Ocultar botón de editar perfil
-    const editProfileBtn = document.getElementById('editProfileBtn');
-    if (editProfileBtn) editProfileBtn.style.display = 'none';
+    // Ocultar botón de editar perfil, la portada, la foto y los "+ Agregar"
+    // (no tienen onclick y el selector de arriba no los encontraba)
+    ['editProfileBtn', 'editCoverBtn', 'editAvatarBtn', 'addSkillBtn', 'addExperienceBtn', 'addEducationBtn'].forEach(id => {
+        const boton = document.getElementById(id);
+        if (boton) boton.style.display = 'none';
+    });
     
     // Ocultar la tarjeta de progreso completa (antes quedaba el titulo solo)
     const profileProgress = document.querySelector('.profile-progress');
@@ -131,6 +134,9 @@ function displayUserProfile(user) {
     ubicacion.append(user.location || 'Cartagena, Colombia');
 
     setProfileAvatar(user.profileImageUrl, fullName);
+    // La portada guardada (antes solo se pintaba justo despues de cambiarla:
+    // al recargar volvia la de siempre)
+    applyCover(user.coverImageUrl);
 
     // Ya no se muestran las "estadisticas" de /users/{id}/statistics: las vistas
     // del perfil son inventadas (50 + postulaciones x 5 + dias x 2) y el "match
@@ -854,20 +860,94 @@ function closeEditModal() {
     document.getElementById('editProfileModal').style.display = 'none';
 }
 
+// Editores de imagen (editor-imagen.js). Se crean la primera vez que se abre
+// cada ventana. Los minimos de pixeles evitan fotos que se verian borrosas:
+// la foto se ve a 128 px (256 en pantallas nitidas) y la portada a ~1140 px.
+let photoEditor = null, coverEditor = null, coverGallery = null;
+
 function openPhotoModal() {
+    if (!photoEditor) {
+        photoEditor = SkillMatchImagen.editor(document.getElementById('photoEditor'), {
+            aspecto: [1, 1], minimo: [300, 300], salida: [400, 400], redondo: true,
+            nombre: 'tu foto de perfil', maxKB: 120,
+            alCambiar: listo => { document.getElementById('savePhotoBtn').disabled = !listo; }
+        });
+    }
+    photoEditor.reiniciar();
     document.getElementById('changePhotoModal').style.display = 'flex';
 }
 
 function closePhotoModal() {
     document.getElementById('changePhotoModal').style.display = 'none';
+    if (photoEditor) photoEditor.reiniciar();
+}
+
+// Pestanas de la ventana de portada: "Galeria" o "Subir foto"
+function showCoverTab(cual) {
+    const subir = cual === 'subir';
+    document.getElementById('coverTabGallery').classList.toggle('active', !subir);
+    document.getElementById('coverTabGallery').setAttribute('aria-selected', String(!subir));
+    document.getElementById('coverTabUpload').classList.toggle('active', subir);
+    document.getElementById('coverTabUpload').setAttribute('aria-selected', String(subir));
+    document.getElementById('coverGallery').hidden = subir;
+    document.getElementById('coverUpload').hidden = !subir;
+    updateCoverSaveButton();
+}
+
+// En "Subir foto" no se puede guardar hasta que haya una imagen valida
+function updateCoverSaveButton() {
+    const subir = !document.getElementById('coverUpload').hidden;
+    document.getElementById('saveCoverBtn').disabled = subir && !(coverEditor && coverEditor.listo());
 }
 
 function openCoverModal() {
+    if (!coverGallery) {
+        coverGallery = SkillMatchImagen.galeria(document.getElementById('coverGallery'), {
+            actual: currentUserProfile.coverImageUrl || 'galeria:marca'
+        });
+        coverEditor = SkillMatchImagen.editor(document.getElementById('coverUpload'), {
+            aspecto: [4, 1], minimo: [1200, 300], salida: [1600, 400],
+            nombre: 'la portada', maxKB: 320,
+            alCambiar: updateCoverSaveButton
+        });
+        document.getElementById('coverTabGallery').addEventListener('click', () => showCoverTab('galeria'));
+        document.getElementById('coverTabUpload').addEventListener('click', () => showCoverTab('subir'));
+    }
+    coverEditor.reiniciar();
+    // Si la portada actual es una foto propia, se abre en "Subir foto"
+    const actual = currentUserProfile.coverImageUrl || '';
+    showCoverTab(actual && actual.indexOf('galeria:') !== 0 ? 'subir' : 'galeria');
     document.getElementById('changeCoverModal').style.display = 'flex';
 }
 
 function closeCoverModal() {
     document.getElementById('changeCoverModal').style.display = 'none';
+    if (coverEditor) coverEditor.reiniciar();
+}
+
+// Pinta la portada guardada: de la galeria, una foto subida o la de siempre
+function applyCover(valor) {
+    const portada = document.querySelector('.profile-cover');
+    if (!portada) return;
+    const url = SkillMatchImagen.rutaPortada(valor);
+    if (url) {
+        portada.style.backgroundImage = `url("${url}")`;
+        portada.style.backgroundSize = 'cover';
+        portada.style.backgroundPosition = 'center';
+        portada.style.backgroundBlendMode = 'normal';
+    } else {
+        // "galeria:marca" o vacio: se queda la portada del CSS
+        portada.style.removeProperty('background-image');
+        portada.style.removeProperty('background-size');
+        portada.style.removeProperty('background-position');
+        portada.style.removeProperty('background-blend-mode');
+    }
+}
+
+// Avisos de ui.js (alert() mostraba "<i data-ico...>" como texto)
+function notify(mensaje, tipo) {
+    if (window.SkillMatchUI) SkillMatchUI.aviso(mensaje, tipo);
+    else alert(mensaje);
 }
 
 // Actualizar perfil
@@ -917,17 +997,19 @@ async function updateProfileImage(imageUrl) {
 
         if (response.ok) {
             const data = await response.json();
-            const user = getUserData();
-            setProfileAvatar(data.profileImageUrl, `${user.firstName} ${user.lastName}`);
-            alert('<i data-ico="check"></i> Foto de perfil actualizada exitosamente');
+            currentUserProfile.profileImageUrl = data.profileImageUrl;
+            const nombre = `${currentUserProfile.firstName || ''} ${currentUserProfile.lastName || ''}`.trim();
+            setProfileAvatar(data.profileImageUrl, nombre);
+            notify('Foto de perfil actualizada');
             closePhotoModal();
-        } else {
-            const error = await response.json();
-            alert('<i data-ico="close"></i> Error: ' + (error.message || 'No se pudo actualizar la foto'));
+            return true;
         }
+        const error = await response.json().catch(() => ({}));
+        notify(error.message || 'No se pudo actualizar la foto', 'error');
     } catch (error) {
-        alert('<i data-ico="close"></i> Error al actualizar la foto de perfil');
+        notify('Error al actualizar la foto de perfil', 'error');
     }
+    return false;
 }
 
 // Actualizar portada
@@ -942,18 +1024,18 @@ async function updateCoverImage(imageUrl) {
 
         if (response.ok) {
             const data = await response.json();
-            document.querySelector('.profile-cover').style.backgroundImage = `url(${data.coverImageUrl})`;
-            document.querySelector('.profile-cover').style.backgroundSize = 'cover';
-            document.querySelector('.profile-cover').style.backgroundPosition = 'center';
-            alert('<i data-ico="check"></i> Portada actualizada exitosamente');
+            currentUserProfile.coverImageUrl = data.coverImageUrl;
+            applyCover(data.coverImageUrl);
+            notify('Portada actualizada');
             closeCoverModal();
-        } else {
-            const error = await response.json();
-            alert('<i data-ico="close"></i> Error: ' + (error.message || 'No se pudo actualizar la portada'));
+            return true;
         }
+        const error = await response.json().catch(() => ({}));
+        notify(error.message || 'No se pudo actualizar la portada', 'error');
     } catch (error) {
-        alert('<i data-ico="close"></i> Error al actualizar la portada');
+        notify('Error al actualizar la portada', 'error');
     }
+    return false;
 }
 
 // Event Listeners
@@ -1026,20 +1108,49 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form cambiar foto
     const changePhotoForm = document.getElementById('changePhotoForm');
     if (changePhotoForm) {
-        changePhotoForm.addEventListener('submit', function(e) {
+        changePhotoForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            const imageUrl = document.getElementById('photoUrl').value;
-            updateProfileImage(imageUrl);
+            if (!photoEditor || !photoEditor.listo()) return;
+            const liberar = window.SkillMatchUI ? SkillMatchUI.ocupado(document.getElementById('savePhotoBtn')) : () => {};
+            try {
+                // La foto sale recortada, a 400 x 400 y comprimida (data URL)
+                await updateProfileImage(await photoEditor.exportar());
+            } catch (error) {
+                photoEditor.error('No se pudo preparar la foto. Prueba con otra imagen.');
+            } finally {
+                liberar();
+            }
         });
     }
 
     // Form cambiar portada
     const changeCoverForm = document.getElementById('changeCoverForm');
     if (changeCoverForm) {
-        changeCoverForm.addEventListener('submit', function(e) {
+        changeCoverForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            const imageUrl = document.getElementById('coverUrl').value;
-            updateCoverImage(imageUrl);
+            const subir = !document.getElementById('coverUpload').hidden;
+            let valor;
+            if (subir) {
+                if (!coverEditor || !coverEditor.listo()) return;
+            } else {
+                valor = coverGallery && coverGallery.valor();
+                // Nada elegido, o la misma que ya tiene: no hace falta guardar
+                if (!valor || valor === (currentUserProfile.coverImageUrl || 'galeria:marca')) {
+                    closeCoverModal();
+                    return;
+                }
+            }
+            const liberar = window.SkillMatchUI ? SkillMatchUI.ocupado(document.getElementById('saveCoverBtn')) : () => {};
+            try {
+                // Foto propia: recortada a 1600 x 400 y comprimida (data URL)
+                if (subir) valor = await coverEditor.exportar();
+                const ok = await updateCoverImage(valor);
+                if (ok && coverGallery && !subir) coverGallery.marcar(valor.slice('galeria:'.length));
+            } catch (error) {
+                if (coverEditor) coverEditor.error('No se pudo preparar la portada. Prueba con otra imagen.');
+            } finally {
+                liberar();
+            }
         });
     }
 

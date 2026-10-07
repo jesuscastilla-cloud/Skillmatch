@@ -116,6 +116,12 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
   habilidades tuyas marcadas, orden "Mayor Match" real que respeta los filtros, y filtros que se
   aplican al instante.
 - **Perfil:** fuera las secciones de ejemplo (certificaciones, proyectos, recomendaciones).
+- **Fotos:** la foto de perfil y la portada se suben desde el equipo con un editor propio
+  (validación de píxeles mínimos, encuadre con arrastre y zoom, compresión a WebP) y hay una
+  galería de 8 portadas ilustradas (Mar Caribe, Atardecer, Murallas, Getsemaní, Red de talento,
+  Relieve, Aurora, Plano técnico).
+- **Tarjetas:** fuera el foco de luz que seguía al cursor. **Contraseñas:** fuera el ojo propio
+  de Edge (salían dos).
 - Detalle de cada arreglo y lo que queda para Jesús (incluida una fuga de datos urgente en
   `/api/connections/suggestions`): `docs/REVISION-CALIDAD.md`.
 

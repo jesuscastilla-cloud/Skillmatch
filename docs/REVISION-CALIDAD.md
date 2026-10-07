@@ -101,6 +101,19 @@ El frontend (`conexiones.js`) solo usa esos campos públicos, así que no hay qu
 - Tipo "práctica" (con tilde) salía en minúscula; "Ordenar por:" se partía en dos líneas.
 - Pendiente: la búsqueda de la portada (`search-handler.js`) también inventa el % (70-90 según el id).
 
+## Fotos de perfil y portada (2026-10-07, frontend)
+- Ya no se pega una URL: se sube la imagen desde el equipo (`assets/js/editor-imagen.js`, sin librerías).
+  Se valida tipo (JPG/PNG/WebP), peso (10 MB) y píxeles mínimos (foto 300 × 300, portada 1200 × 300),
+  se encuadra arrastrando y con zoom, y se guarda recortada y comprimida (foto 400 × 400 ≈ 10-60 KB,
+  portada 1600 × 400 ≈ 20-300 KB, WebP) como data URL en el mismo campo (`profileImageUrl` /
+  `coverImageUrl`), por los endpoints que ya existían. La CSP ya permite `data:`.
+- Galería de 8 portadas propias (`assets/img/portadas/*.svg`); se guarda como `galeria:<id>`.
+- La portada guardada no se mostraba al recargar (solo justo después de cambiarla): arreglado.
+- En el perfil de otra persona ya no salen "Cambiar portada", la cámara ni los "+ Agregar".
+- Para Jesús, a futuro: guardar las imágenes como archivos (GridFS de MongoDB, gratis) en vez de dentro
+  del usuario, y permitir quitar la foto (hoy el backend rechaza un valor vacío). Ojo: mientras
+  `/connections/suggestions` devuelva el `User` entero, también arrastra estas imágenes.
+
 ## Falta revisar
 - Revisión visual página por página (espaciados, tipografía, consistencia) de: perfil de usuario, conexiones,
   mensajes, registros y el resto del perfil de empresa.

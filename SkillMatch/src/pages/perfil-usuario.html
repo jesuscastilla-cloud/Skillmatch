@@ -195,42 +195,42 @@
     </div>
 
     <!-- Modal Cambiar Foto -->
-    <div id="changePhotoModal" class="modal">
-        <div class="modal-content-small">
+    <!-- La foto se sube desde el equipo: editor-imagen.js la valida, deja
+         encuadrarla y la reduce antes de guardarla -->
+    <div id="changePhotoModal" class="modal modal-imagen">
+        <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="camera"></i> Cambiar Foto de Perfil</h2>
-                <button type="button" class="btn-close-modal" onclick="closePhotoModal()"><i data-ico="close"></i></button>
+                <h2><i data-ico="camera"></i> Cambiar foto de perfil</h2>
+                <button type="button" class="btn-close-modal" onclick="closePhotoModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
             </div>
             <form id="changePhotoForm">
-                <div class="form-group">
-                    <label for="photoUrl">URL de la imagen</label>
-                    <input type="url" id="photoUrl" placeholder="https://ejemplo.com/imagen.jpg" required>
-                    <p class="form-hint">Ingresa la URL de tu foto de perfil</p>
-                </div>
+                <div id="photoEditor"></div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closePhotoModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Actualizar Foto</button>
+                    <button type="submit" class="btn-primary-modal" id="savePhotoBtn" disabled>Guardar foto</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Cambiar Portada -->
-    <div id="changeCoverModal" class="modal">
-        <div class="modal-content-small">
+    <!-- Portada: una de la galeria de SkillMatch o una foto propia -->
+    <div id="changeCoverModal" class="modal modal-imagen">
+        <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="image"></i> Cambiar Portada</h2>
-                <button type="button" class="btn-close-modal" onclick="closeCoverModal()"><i data-ico="close"></i></button>
+                <h2><i data-ico="image"></i> Cambiar portada</h2>
+                <button type="button" class="btn-close-modal" onclick="closeCoverModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
             </div>
             <form id="changeCoverForm">
-                <div class="form-group">
-                    <label for="coverUrl">URL de la imagen</label>
-                    <input type="url" id="coverUrl" placeholder="https://ejemplo.com/portada.jpg" required>
-                    <p class="form-hint">Ingresa la URL de tu imagen de portada (recomendado: 1200x200px)</p>
+                <div class="tab-list" role="tablist" aria-label="Origen de la portada">
+                    <button type="button" class="tab-btn active" role="tab" id="coverTabGallery" aria-selected="true" aria-controls="coverGallery">Galería</button>
+                    <button type="button" class="tab-btn" role="tab" id="coverTabUpload" aria-selected="false" aria-controls="coverUpload">Subir foto</button>
                 </div>
+                <div id="coverGallery" role="tabpanel" aria-labelledby="coverTabGallery"></div>
+                <div id="coverUpload" role="tabpanel" aria-labelledby="coverTabUpload" hidden></div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeCoverModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Actualizar Portada</button>
+                    <button type="submit" class="btn-primary-modal" id="saveCoverBtn">Guardar portada</button>
                 </div>
             </form>
         </div>
@@ -371,6 +371,7 @@
 
     <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/editor-imagen.js"></script>
     <script src="../assets/js/profile.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>
