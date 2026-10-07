@@ -65,6 +65,31 @@ Para Jesús (backend o contenido):
 - Contenido fijo en `perfil-usuario.html`: certificaciones, proyectos y recomendaciones de empresas
   son iguales para todos. "0 conexiones" también es fijo (nadie lo actualiza).
 
+## URGENTE para Jesús: fuga de datos en `/api/connections/suggestions` (2026-10-07)
+`ConnectionController.getSuggestions` devuelve la entidad `User` completa (`List<User>`), no un DTO.
+Cualquier persona con sesión iniciada recibe de cada usuario sugerido (los de su misma ciudad, hasta 10):
+- `password`: el hash bcrypt de la contraseña (60 caracteres),
+- `email` y `phone`,
+- además `roles`, `authorities`, `enabled`, etc.
+
+Está también en `main`, o sea en el sitio publicado. Arreglo sugerido (backend, solo Jesús):
+devolver un DTO con lo público (`id`, `firstName`, `lastName`, `headline`, `location`, `profileImageUrl`,
+`skills` con nombre y nivel) y, como red de seguridad, `@JsonIgnore` en `User.password`. De paso, excluir
+de las sugerencias a quienes ya son conexión o tienen solicitud pendiente.
+El frontend (`conexiones.js`) solo usa esos campos públicos, así que no hay que tocarlo.
+
+## Conexiones (2026-10-07, frontend)
+- Pestaña Mensajes: texto y botón desalineados (el párrafo tenía el ancho máximo global de 72ch pegado a
+  la izquierda); ahora es una tarjeta centrada con icono.
+- Barrita gris a la derecha de las pestañas: el subrayado sobresalía 1 px y el `overflow-x: auto` sacaba
+  una barra vertical. Ahora la línea es una sombra interior y el subrayado va dentro.
+- Título pegado a la barra superior: franja como la de Oportunidades.
+- Sugerencias: nombre empujado al borde derecho y habilidades como "[object Object]". Ahora cuadrícula,
+  motivo ("También en Medellín", "N habilidades en común"), las comunes marcadas, y "Solicitud enviada"
+  (usa `/connections/sent-requests`) en vez de volver a ofrecer "Conectar".
+- Avisos: usaban textContent y mostraban `<i data-ico...>` como texto; ahora usan `SkillMatchUI.aviso`.
+- Rayita gris bajo la campana en todas las páginas: el `<li>` de la barra compartía estilos con cada aviso.
+
 ## Falta revisar
 - Revisión visual página por página (espaciados, tipografía, consistencia) de: perfil de usuario, conexiones,
   mensajes, registros y el resto del perfil de empresa.

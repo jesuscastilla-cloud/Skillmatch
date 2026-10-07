@@ -97,6 +97,24 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
   trabajo mueve cada zona. Las cifras reales llegarán con la "vista de mapa por barrio"
   de la Fase 3, que necesita ese campo en el backend.
 
+### Pedidos de Luis tras la revisión de calidad (octubre)
+
+- **Vacantes en baraja:** se quitó la inclinación 3D al pasar el mouse. Al bajar, cada vacante
+  sale de debajo de la anterior y se acomoda con un rebote suave (`BARAJA` en `ui.js`,
+  `.reveal.baraja` en `app.css`).
+- **Iconos animados:** cada icono hace su propio gesto al pasar el mouse por su botón, enlace
+  o filtro (maletín, birrete, cohete, estrella, campana, corazón, alfiler…). `ui.js` le pone
+  la clase `ico-<nombre>`; las animaciones están en la sección 25d de `app.css`.
+- **Perfil de usuario:** foto circular centrada en el borde de la portada; fuera las
+  "estadísticas" inventadas; progreso arriba con pendientes que abren su formulario;
+  recomendadas con "X de Y habilidades" reales; "Tus postulaciones" con conteos reales;
+  conexiones reales; ventanas (portada, foto, habilidad, editar) arregladas.
+- **Conexiones:** pestaña Mensajes centrada, pestañas sin barra fantasma, franja del título,
+  sugerencias en cuadrícula con motivo y "Solicitud enviada"; avisos con `SkillMatchUI.aviso`.
+- **Barra superior:** fuera la rayita gris bajo la campana (en todas las páginas).
+- Detalle de cada arreglo y lo que queda para Jesús (incluida una fuga de datos urgente en
+  `/api/connections/suggestions`): `docs/REVISION-CALIDAD.md`.
+
 ## Pendiente
 
 - **Fase 2:** asistente Skilly (siguiente paso; necesita `/api/assistant` en el backend:

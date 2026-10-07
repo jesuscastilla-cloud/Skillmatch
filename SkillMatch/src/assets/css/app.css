@@ -552,6 +552,15 @@ header > nav {
     color: var(--sea-deep);
     background: var(--sea-light);
 }
+/* Boton pequeno que es la accion principal (Conectar, Aceptar, Mensaje):
+   .btn-small va despues y le quitaba el turquesa a .btn-primary, asi que
+   quedaba igual al secundario de al lado */
+.btn-primary.btn-small {
+    background: var(--sea); border-color: var(--sea); color: #fff;
+}
+.btn-primary.btn-small:hover { background: var(--sea-deep); border-color: var(--sea-deep); color: #fff; }
+[data-theme="dark"] .btn-primary.btn-small,
+[data-theme="dark"] .btn-primary.btn-small:hover { color: var(--surface-inverse); }
 
 .btn-block { width: 100%; }
 
@@ -1445,8 +1454,12 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 
 .notifications-list { max-height: 400px; overflow-y: auto; }
 
-/* notifications.js dibuja cada aviso como .notification-item */
-.nav-notification-item, .notification-item {
+/* notifications.js dibuja cada aviso como .notification-item. El <li> de la
+   campana en la barra (.nav-notification-item) estaba en estas reglas y
+   heredaba la linea de abajo, el relleno y el fondo de un aviso: era la
+   rayita gris que salia bajo la campana en todas las paginas. */
+.nav-notification-item { display: flex; align-items: center; }
+.notification-item {
     display: flex;
     gap: var(--s3);
     padding: var(--s3) var(--s5);
@@ -1454,9 +1467,9 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     cursor: pointer;
     transition: background-color .14s var(--ease);
 }
-.nav-notification-item:hover, .notification-item:hover { background: var(--surface-sunk); }
-.nav-notification-item.unread, .notification-item.unread { background: var(--sea-light); }
-.nav-notification-item.unread:hover, .notification-item.unread:hover { background: #D6ECEE; }
+.notification-item:hover { background: var(--surface-sunk); }
+.notification-item.unread { background: var(--sea-light); }
+.notification-item.unread:hover { background: #D6ECEE; }
 
 .notification-icon { width: 36px; height: 36px; border-radius: var(--r-sm); }
 .notification-content { min-width: 0; }
@@ -2875,13 +2888,19 @@ footer.pie > .container { position: relative; z-index: 1; }
     font-weight: 600;
 }
 
-.tab-list, .tabs {
+/* La linea de abajo es una sombra interior y el subrayado de la pestana
+   activa va dentro (bottom: 0). Con borde y subrayado a -1px sobresalia 1 px
+   y, por el overflow-x: auto, salia una barrita de scroll vertical a la
+   derecha. La barra horizontal (celular) tambien se oculta. */
+.tab-list, .tabs, .connections-tabs {
     display: flex;
     gap: var(--s1);
-    border-bottom: 1px solid var(--hairline);
+    box-shadow: inset 0 -1px 0 var(--hairline);
     margin-bottom: var(--s5);
     overflow-x: auto;
+    scrollbar-width: none;
 }
+.tab-list::-webkit-scrollbar, .tabs::-webkit-scrollbar, .connections-tabs::-webkit-scrollbar { display: none; }
 .tab-btn {
     position: relative;
     padding: var(--s3) var(--s4);
@@ -2896,7 +2915,7 @@ footer.pie > .container { position: relative; z-index: 1; }
 .tab-btn.active::after {
     content: "";
     position: absolute;
-    left: var(--s3); right: var(--s3); bottom: -1px;
+    left: var(--s3); right: var(--s3); bottom: 0;
     height: 2.5px;
     background: var(--sea);
     border-radius: var(--r-pill);
@@ -3629,7 +3648,6 @@ kbd {
 [data-theme="dark"] .choice-card:hover,
 [data-theme="dark"] .candidate-mini-card:hover { border-color: #33496B; }
 
-[data-theme="dark"] .nav-notification-item.unread:hover,
 [data-theme="dark"] .notification-item.unread:hover { background: rgba(43, 182, 198, .24); }
 
 /* ---------- 27. Preferencias del sistema ---------- */
@@ -4145,20 +4163,69 @@ kbd {
     background: var(--hairline-soft);
     font-size: var(--t-sm);
 }
-.messages-redirect { padding: var(--s8) var(--s5); text-align: center; }
+/* Pestana "Mensajes" de Conexiones: tarjeta centrada. Antes el parrafo tenia
+   el ancho maximo de todos los parrafos (72ch) pegado a la izquierda y el
+   boton centrado, y quedaban desalineados. */
+.messages-redirect {
+    display: flex; flex-direction: column; align-items: center; gap: var(--s3);
+    max-width: 520px; margin: var(--s4) auto 0;
+    padding: var(--s8) var(--s6);
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-1);
+}
+.messages-redirect-icon {
+    display: grid; place-items: center;
+    width: 64px; height: 64px; margin-bottom: var(--s1);
+    border-radius: 50%;
+    background: var(--sea-light); color: var(--sea-deep);
+}
+.messages-redirect-icon .ico { width: 28px; height: 28px; }
+.messages-redirect h2 { font-size: var(--t-lg); }
+.messages-redirect p { color: var(--ink-muted); margin-inline: auto; }
+.messages-redirect .btn { margin-top: var(--s2); }
 
 /* ---- Conexiones ---- */
-.connections-container { padding: var(--s5) 0 var(--s9); }
+.connections-container { padding: var(--s6) 0 var(--s9); }
+/* Franja del titulo igual a la de Oportunidades. Antes era una fila flex sin
+   relleno arriba y el titulo quedaba pegado a la barra superior. */
 .connections-header {
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: var(--s3); margin-bottom: var(--s5);
-}
-.connections-tabs {
-    display: flex; gap: var(--s1);
+    padding: var(--s7) 0 var(--s6);
+    background: var(--surface);
     border-bottom: 1px solid var(--hairline);
-    margin-bottom: var(--s5); overflow-x: auto;
 }
-.suggestion-info { min-width: 0; }
+.connections-header h1 { font-size: clamp(1.9rem, 1.3rem + 2.4vw, 2.75rem); }
+.connections-header p { color: var(--ink-3); font-size: var(--t-md); margin-top: var(--s2); }
+/* Sugerencias en cuadricula de tarjetas (como "personas que quiza conozcas").
+   Antes la fila repartia el espacio a los extremos: el avatar y los botones a
+   la izquierda y el nombre pegado a la derecha, con un hueco en medio. */
+.suggestions-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--s4);
+}
+.suggestions-list > :is(.loading-message, .no-results-message, .error-message) { grid-column: 1 / -1; }
+.suggestion-card { display: flex; flex-direction: column; gap: var(--s3); }
+.suggestion-header { justify-content: flex-start; align-items: center; }
+.suggestion-info { flex: 1; min-width: 0; }
+.suggestion-info h3 { font-size: var(--t-md); overflow-wrap: anywhere; }
+.suggestion-headline { font-size: var(--t-sm); color: var(--sea-deep); font-weight: 600; margin-top: 2px; }
+/* Por que se sugiere: misma ciudad, habilidades en comun */
+.suggestion-card .suggestion-reason { display: flex; flex-wrap: wrap; gap: 4px var(--s4); }
+.suggestion-reason span { display: inline-flex; align-items: center; gap: 5px; }
+.suggestion-reason .ico { color: var(--sea); }
+/* Habilidades que ya tienes tambien tu: turquesa con palomita */
+.card-skills .skill.is-common {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--sea-light); color: var(--sea-deep);
+    border-color: transparent;
+}
+.card-skills .skill.is-common .ico { width: 13px; height: 13px; }
+/* Los botones siempre abajo, aunque una tarjeta tenga menos datos */
+.suggestion-actions { margin-top: auto; padding-top: var(--s1); }
+.suggestion-actions .btn:disabled { opacity: .75; }
 
 /* ---- Oportunidades: barra de herramientas ---- */
 .opportunities-toolbar {

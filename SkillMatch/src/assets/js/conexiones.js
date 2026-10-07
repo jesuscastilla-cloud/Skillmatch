@@ -45,12 +45,19 @@ function updateTabCount(spanId, count) {
     if (el) el.textContent = count > 0 ? ` (${count})` : '';
 }
 
+// Usa los avisos de ui.js (ya traen su icono). Antes se escribia con
+// textContent y el "<i data-ico...>" del mensaje salia como texto.
 function showToast(message, type = 'success') {
+    const texto = message.replace(/<i [^>]*><\/i>\s*/g, '');
+    if (window.SkillMatchUI) {
+        SkillMatchUI.aviso(texto, type === 'error' ? 'error' : 'ok');
+        return;
+    }
     const container = document.getElementById('toast-container');
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    toast.textContent = message;
+    toast.textContent = texto;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
@@ -171,6 +178,24 @@ function displayRequests(requests) {
 
 // ─── Sugerencias ─────────────────────────────────────────────────────────────
 
+// Personas a las que ya se les envio solicitud (el backend las sigue sugiriendo)
+let sentRequestIds = new Set();
+
+// Minusculas y sin tildes, para comparar habilidades y ciudades
+function normalizar(nombre) {
+    return String(nombre || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// Pide un recurso y, si falla, devuelve el valor por defecto sin romper lo demas
+async function getJsonOr(url, porDefecto) {
+    try {
+        const r = await fetchWithAuth(url);
+        return r.ok ? await r.json() : porDefecto;
+    } catch (e) {
+        return porDefecto;
+    }
+}
+
 async function loadSuggestions() {
     const container = document.getElementById('suggestions-container');
     container.innerHTML = '<div class="loading-message">Cargando sugerencias...</div>';
@@ -179,7 +204,19 @@ async function loadSuggestions() {
         const response = await fetchWithAuth(`${API_BASE_URL}/connections/suggestions`);
         if (response.ok) {
             const suggestions = await response.json();
-            displaySuggestions(suggestions);
+            // Lo propio para explicar cada sugerencia: ciudad, habilidades y
+            // solicitudes ya enviadas (si algo falla, la tarjeta sale sin ese dato)
+            const yo = getCurrentUserId();
+            const [perfil, misHabilidades, enviadas] = await Promise.all([
+                getJsonOr(`${API_BASE_URL}/users/${yo}`, {}),
+                getJsonOr(`${API_BASE_URL}/users/${yo}/skills`, []),
+                getJsonOr(`${API_BASE_URL}/connections/sent-requests`, [])
+            ]);
+            sentRequestIds = new Set(enviadas.map(r => String(r.connectedUserId)));
+            displaySuggestions(suggestions, {
+                ciudad: perfil.location || '',
+                habilidades: new Set(misHabilidades.map(s => normalizar(s.name)))
+            });
         } else {
             container.innerHTML = '<div class="error-message">Error al cargar sugerencias</div>';
         }
@@ -188,7 +225,7 @@ async function loadSuggestions() {
     }
 }
 
-function displaySuggestions(suggestions) {
+function displaySuggestions(suggestions, yo = { ciudad: '', habilidades: new Set() }) {
     const container = document.getElementById('suggestions-container');
 
     if (!suggestions.length) {
@@ -196,9 +233,38 @@ function displaySuggestions(suggestions) {
         return;
     }
 
-    container.innerHTML = suggestions.map(user => {
+    // Cada habilidad llega como objeto {name, level}: unirlas directo
+    // escribia "[object Object]"
+    const tarjetas = suggestions.map(user => {
+        const habilidades = (user.skills || []).map(s => (s && s.name) || s).filter(Boolean);
+        const comunes = habilidades.filter(h => yo.habilidades.has(normalizar(h)));
+        return { user, habilidades, comunes };
+    });
+    // Primero quienes comparten mas habilidades contigo
+    tarjetas.sort((a, b) => b.comunes.length - a.comunes.length);
+
+    container.innerHTML = tarjetas.map(({ user, habilidades, comunes }) => {
         const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-        const skills = user.skills ? user.skills.slice(0, 3).join(', ') : '';
+
+        // Por que se sugiere: misma ciudad y habilidades en comun
+        const motivos = [];
+        if (yo.ciudad && normalizar(user.location) === normalizar(yo.ciudad)) {
+            motivos.push(`<span><i data-ico="pin"></i> También en ${user.location}</span>`);
+        }
+        if (comunes.length) {
+            motivos.push(`<span><i data-ico="target"></i> ${comunes.length} ${comunes.length === 1 ? 'habilidad' : 'habilidades'} en común</span>`);
+        }
+
+        // Las comunes primero y marcadas; maximo 4 para que la tarjeta no crezca
+        const enComun = new Set(comunes);
+        const chips = [...comunes, ...habilidades.filter(h => !enComun.has(h))].slice(0, 4)
+            .map(h => `<span class="skill${enComun.has(h) ? ' is-common' : ''}">${enComun.has(h) ? '<i data-ico="check"></i>' : ''}${h}</span>`)
+            .join('');
+
+        const enviada = sentRequestIds.has(String(user.id));
+        const conectar = enviada
+            ? `<button class="btn btn-secondary btn-small" disabled><i data-ico="clock"></i> Solicitud enviada</button>`
+            : `<button class="btn btn-primary btn-small" onclick="sendConnectionRequest('${user.id}', this)"><i data-ico="handshake"></i> Conectar</button>`;
 
         return `
             <div class="suggestion-card">
@@ -206,12 +272,13 @@ function displaySuggestions(suggestions) {
                     ${avatarCircle(user.firstName)}
                     <div class="suggestion-info">
                         <h3>${name || 'Usuario'}</h3>
-                        <p class="suggestion-category">${user.headline || ''}</p>
-                        ${skills ? `<p class="suggestion-reason"><i data-ico="target"></i> ${skills}</p>` : ''}
+                        ${user.headline ? `<p class="suggestion-headline">${user.headline}</p>` : ''}
                     </div>
                 </div>
+                ${motivos.length ? `<p class="suggestion-reason">${motivos.join('')}</p>` : ''}
+                ${chips ? `<div class="card-skills">${chips}</div>` : ''}
                 <div class="suggestion-actions">
-                    <button class="btn btn-primary btn-small" onclick="sendConnectionRequest('${user.id}')"><i data-ico="handshake"></i> Conectar</button>
+                    ${conectar}
                     <button class="btn btn-secondary btn-small" onclick="viewProfile('${user.id}')">Ver Perfil</button>
                 </div>
             </div>`;
@@ -220,7 +287,7 @@ function displaySuggestions(suggestions) {
 
 // ─── Acciones ────────────────────────────────────────────────────────────────
 
-async function sendConnectionRequest(userId) {
+async function sendConnectionRequest(userId, boton) {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/connections`, {
             method: 'POST',
@@ -228,7 +295,14 @@ async function sendConnectionRequest(userId) {
         });
         if (response.ok) {
             showToast('<i data-ico="check"></i> Solicitud enviada');
-            loadSuggestions();
+            // Antes se recargaba la lista y la misma persona volvia a salir con
+            // "Conectar"; ahora el boton cambia en su sitio
+            sentRequestIds.add(String(userId));
+            if (boton) {
+                boton.outerHTML = '<button class="btn btn-secondary btn-small" disabled><i data-ico="clock"></i> Solicitud enviada</button>';
+            } else {
+                loadSuggestions();
+            }
         } else {
             const err = await response.json().catch(() => ({}));
             showToast(err.message || 'Error al enviar solicitud', 'error');
