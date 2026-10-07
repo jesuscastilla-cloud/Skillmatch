@@ -67,7 +67,7 @@ function avatarCircle(name) {
     return `<div class="connection-avatar-circle">${initial}</div>`;
 }
 
-// ─── Mis Conexiones ───────────────────────────────────────────────────────────
+// ─── Mis conexiones ───────────────────────────────────────────────────────────
 
 async function loadMyConnections() {
     const container = document.getElementById('connections-container');
@@ -116,7 +116,7 @@ function displayConnections(connections) {
                     </div>
                     <div class="connection-actions">
                         <button class="btn btn-primary btn-small" onclick="goToMessages('${otherId}')"><i data-ico="chat"></i> Mensaje</button>
-                        <button class="btn btn-secondary btn-small" onclick="viewProfile('${otherId}')">Ver Perfil</button>
+                        <button class="btn btn-secondary btn-small" onclick="viewProfile('${otherId}')">Ver perfil</button>
                     </div>
                 </div>
                 ${conn.message ? `<div class="connection-body"><p class="connection-note">${conn.message}</p></div>` : ''}
@@ -279,7 +279,7 @@ function displaySuggestions(suggestions, yo = { ciudad: '', habilidades: new Set
                 ${chips ? `<div class="card-skills">${chips}</div>` : ''}
                 <div class="suggestion-actions">
                     ${conectar}
-                    <button class="btn btn-secondary btn-small" onclick="viewProfile('${user.id}')">Ver Perfil</button>
+                    <button class="btn btn-secondary btn-small" onclick="viewProfile('${user.id}')">Ver perfil</button>
                 </div>
             </div>`;
     }).join('');

@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (errorMessage) { errorMessage.textContent = msg; errorMessage.style.display = 'block'; }
                     else alert(msg);
                     loginBtn.disabled = false;
-                    loginBtn.textContent = 'Iniciar Sesión';
+                    loginBtn.textContent = 'Iniciar sesión';
                     return;
                 }
 
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (errorMessage) { errorMessage.textContent = errorText; errorMessage.style.display = 'block'; }
                 else alert(errorText);
                 loginBtn.disabled = false;
-                loginBtn.textContent = 'Iniciar Sesión';
+                loginBtn.textContent = 'Iniciar sesión';
             }
 
         } catch (error) {
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (errorMessage) { errorMessage.textContent = msg; errorMessage.style.display = 'block'; }
             else alert(msg);
             loginBtn.disabled = false;
-            loginBtn.textContent = 'Iniciar Sesión';
+            loginBtn.textContent = 'Iniciar sesión';
         }
     });
 

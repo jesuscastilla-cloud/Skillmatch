@@ -165,6 +165,51 @@
         });
     }
 
+    /** Sesion en la barra superior.
+     *  - Todo enlace con data-cerrar-sesion cierra la sesion de verdad. Antes,
+     *    en Oportunidades y Conexiones "Cerrar sesion" solo llevaba al login y
+     *    la sesion seguia abierta.
+     *  - En las paginas publicas (portada, login, indicadores), si ya hay
+     *    sesion, "Iniciar sesion / Unirse ahora" pasan a "Mi perfil / Cerrar sesion". */
+    function sesionEnBarra() {
+        document.addEventListener('click', function (e) {
+            const enlace = e.target instanceof Element && e.target.closest('[data-cerrar-sesion]');
+            if (!enlace) return;
+            e.preventDefault();
+            const salir = function () { window.location.href = 'index.html'; };
+            if (typeof window.logout === 'function') {
+                // logout() (api-config.js) avisa al backend y borra los datos guardados
+                Promise.resolve(window.logout()).then(salir, salir);
+            } else {
+                ['token', 'userData', 'companyOffers', 'skillmatch_saved_opportunities'].forEach(function (k) {
+                    try { localStorage.removeItem(k); } catch (err) { /* sin almacenamiento */ }
+                });
+                salir();
+            }
+        });
+
+        let datos = null;
+        try {
+            datos = localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
+        } catch (err) { datos = null; }
+        if (!datos) return;
+        const entrar = document.querySelector('header .nav-links a.btn-login:not([data-cerrar-sesion])');
+        const unirse = document.querySelector('header .nav-links a.btn-register');
+        if (!entrar) return;
+        const esEmpresa = datos.userType === 'empresa';
+        entrar.textContent = 'Cerrar sesión';
+        entrar.setAttribute('href', 'index.html');
+        entrar.setAttribute('data-cerrar-sesion', '');
+        if (unirse) {
+            // Igual que en las paginas con sesion: "Mi perfil" como enlace y
+            // "Cerrar sesion" al final
+            unirse.textContent = esEmpresa ? 'Mi empresa' : 'Mi perfil';
+            unirse.setAttribute('href', esEmpresa ? 'perfil-empresa.html' : 'perfil-usuario.html');
+            unirse.classList.remove('btn-register');
+            unirse.parentElement.after(entrar.parentElement);
+        }
+    }
+
     /** Barra inferior en movil: cinco destinos, siempre los mismos. */
     function construirTabbar() {
         if (document.querySelector('.tabbar')) return;
@@ -889,6 +934,8 @@
         boton.type = 'button';
         boton.className = 'cmdk-boton';
         boton.setAttribute('aria-label', 'Buscar vacantes y navegar (' + (ES_MAC ? 'Cmd' : 'Ctrl') + ' + K)');
+        // En la barra se ve solo la lupa: el texto de ayuda sale al pasar el mouse
+        boton.setAttribute('title', 'Buscar (' + (ES_MAC ? '⌘' : 'Ctrl') + ' + K)');
         boton.innerHTML = svgIcon('search') + '<span class="cmdk-texto">Buscar</span><kbd class="cmdk-atajo">' + (ES_MAC ? '⌘K' : 'Ctrl K') + '</kbd>';
         boton.addEventListener('click', abrirPaleta);
         const li = document.createElement('li');
@@ -1124,6 +1171,7 @@
         hydrateIcons(document);
         iconObserver.observe(document.body, { childList: true, subtree: true });
         marcarNavegacionActiva();
+        sesionEnBarra();
         construirTabbar();
         construirInterruptorTema();
         paletaDeComandos();

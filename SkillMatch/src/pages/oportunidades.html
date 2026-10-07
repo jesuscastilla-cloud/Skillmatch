@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oportunidades - SkillMatch Cartagena</title>
-    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
     <meta name="theme-color" content="#EDF2F8">
     <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,20 +16,21 @@
 </head>
 <body>
     <header>
-        <nav class="container">
+        <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100"></a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
-                <ul class="nav-links">
+                <ul class="nav-links nav-principales">
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="oportunidades.html" class="active-nav">Oportunidades</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="conexiones.html">Conexiones</a></li>
+                    <li><a href="mensajes.html">Mensajes</a></li>
                 </ul>
             </div>
             <ul class="nav-links">
-                <li><a href="conexiones.html">Conexiones</a></li>
-                <li><a href="perfil-usuario.html">Mi Perfil</a></li>
-                <li><a href="login.html" class="btn-login">Cerrar Sesión</a></li>
+                <li><a href="perfil-usuario.html">Mi perfil</a></li>
+                <li><a href="index.html" class="btn-login" data-cerrar-sesion>Cerrar sesión</a></li>
             </ul>
         </nav>
     </header>
@@ -52,7 +55,7 @@
                     <div class="filter-card">
                         <div class="filter-header">
                             <h3><i data-ico="target"></i> Filtros</h3>
-                            <button class="btn-clear-filters">Limpiar Todo</button>
+                            <button class="btn-clear-filters">Limpiar todo</button>
                         </div>
 
                         <details class="filter-section" open>
@@ -147,9 +150,9 @@
                         <div class="sort-controls">
                             <label for="sortSelect">Ordenar por:</label>
                             <select id="sortSelect" class="sort-select">
-                                <option value="match">Mayor Match</option>
-                                <option value="recent">Más Reciente</option>
-                                <option value="salary">Mejor Salario</option>
+                                <option value="match">Mayor match</option>
+                                <option value="recent">Más reciente</option>
+                                <option value="salary">Mejor salario</option>
                             </select>
                         </div>
                     </div>

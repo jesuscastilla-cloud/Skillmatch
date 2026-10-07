@@ -243,19 +243,9 @@ function renderOffers(offers) {
 
 function setupEventListeners() {
     
-    // Botón Cerrar Sesión
-    const btnCerrarSesion = document.getElementById('btnCerrarSesion');
-    if (btnCerrarSesion) {
-        btnCerrarSesion.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('userData');
-                window.location.href = 'login.html';
-            }
-        });
-    }
-    
+    // "Cerrar sesión" (#btnCerrarSesion) lo maneja ui.js en todas las páginas
+    // (data-cerrar-sesion): avisa al backend y borra todo lo guardado
+
     // Botón Editar Portada
     const btnEditCover = document.getElementById('btnEditCover');
     if (btnEditCover) {
@@ -1112,7 +1102,7 @@ function createApplicationCard(application) {
                 <p class="cover-letter-preview">${application.coverLetter.substring(0, 150)}${application.coverLetter.length > 150 ? '...' : ''}</p>
             ` : ''}
             <div class="application-actions">
-                <button class="btn-view-profile" onclick="viewCandidateProfile('${application.userId}')">Ver Perfil</button>
+                <button class="btn-view-profile" onclick="viewCandidateProfile('${application.userId}')">Ver perfil</button>
                 ${normalizedStatus === 'pending' ? `
                     <button class="btn-accept" onclick="updateApplicationStatus('${application.id}', 'aceptada')"><i data-ico="check"></i> Aceptar</button>
                     <button class="btn-reject" onclick="updateApplicationStatus('${application.id}', 'rechazada')"><i data-ico="close"></i> Rechazar</button>

@@ -336,7 +336,7 @@ header > nav {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 38px; height: 38px;
+    width: 40px; height: 40px;
     flex: 0 0 auto;
     border-radius: var(--r-pill);
     border: 1px solid var(--hairline);
@@ -353,9 +353,17 @@ header > nav {
     to   { opacity: 1; transform: scale(1) rotate(0); }
 }
 
+/* Botones de la barra: todos de 40 px de alto (antes 38, 40 y 42, y no
+   quedaban parejos) y separados 8 px (antes 4) */
+header > nav > .nav-links { gap: var(--s2); }
+header > nav > .nav-links a:not(.btn-login):not(.btn-register) { min-height: 40px; }
+/* La campana, redonda y con borde como la lupa y el tema (era un icono suelto) */
+header .notifications-btn { border-radius: var(--r-pill); border-color: var(--hairline); background: var(--surface); }
+
 /* Boton de sesion dentro de la barra */
 .btn-login {
-    padding: var(--s2) var(--s4) !important;
+    height: 40px;
+    padding: 0 var(--s4) !important;
     border-radius: var(--r-pill) !important;
     border: 1px solid var(--hairline);
     background: var(--surface);
@@ -3452,10 +3460,13 @@ kbd {
 }
 
 /* Boton en la barra superior para descubrir el atajo */
+/* Buscador de la barra: solo la lupa, del tamano del boton de tema. Ya hay
+   buscador en la portada y en Vacantes; aqui sirve para saltar entre paginas
+   (el atajo Ctrl K sigue igual y el texto de ayuda sale al pasar el mouse). */
 .cmdk-boton {
-    display: inline-flex; align-items: center; gap: var(--s2);
-    height: 38px;
-    padding: 0 6px 0 12px;
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+    width: 40px; height: 40px;
+    padding: 0;
     border: 1px solid var(--hairline);
     border-radius: var(--r-pill);
     background: var(--surface);
@@ -3465,6 +3476,7 @@ kbd {
 }
 .cmdk-boton:hover { border-color: var(--sea); color: var(--ink); }
 .cmdk-boton .ico { width: 18px; height: 18px; }
+.cmdk-boton .cmdk-texto, .cmdk-boton .cmdk-atajo { display: none; }
 @media (max-width: 760px) {
     .cmdk-boton { width: 44px; height: 44px; padding: 0; justify-content: center; border: 0; background: none; }
     .cmdk-boton .cmdk-texto, .cmdk-boton .cmdk-atajo { display: none; }
@@ -3488,21 +3500,25 @@ kbd {
     .nav-links a { padding: var(--s2); font-size: .875rem; }
     .nav-links a.active-nav::after,
     .nav-links a.active::after { left: var(--s2); right: var(--s2); }
-    .btn-login { padding: var(--s2) var(--s3) !important; }
-    .btn-register { padding: var(--s2) var(--s4) !important; }
-    /* El buscador queda solo con la lupa (el atajo Ctrl K sigue funcionando) */
-    .cmdk-boton { width: 38px; padding: 0; justify-content: center; }
-    .cmdk-boton .cmdk-texto, .cmdk-boton .cmdk-atajo { display: none; }
+    .btn-login { padding: 0 var(--s3) !important; }
+    .btn-register { padding: 0 var(--s4) !important; }
 }
 /* En tableta vertical, las paginas con sesion (hasta 6 enlaces) aun no
    cabian: "Inicio" se oculta porque el logo ya lleva al inicio, y los
    enlaces quedan un poco mas juntos */
 @media (width > 760px) and (width <= 900px) {
-    .nav-left .nav-links li:has(> a[href="index.html"]) { display: none; }
+    .nav-left .nav-links li:has(> a[href="index.html"], > a[href="#main"]) { display: none; }
     .nav-links { gap: 2px; }
     .nav-links a { padding: var(--s2) 6px; }
     .nav-links a.active-nav::after,
     .nav-links a.active::after { left: 6px; right: 6px; }
+}
+/* Tableta angosta (761 a 840 px): la barra de visitante no cabia (los
+   grupos se montaban 35 px). "Cómo funciona" se oculta (esta en la portada
+   y en el pie) y el logo se achica un poco. */
+@media (width > 760px) and (width <= 840px) {
+    .nav-left .nav-links li:has(> a[href$="#como-funciona"]) { display: none; }
+    .logo img { height: 32px; }
 }
 /* Celulares: los enlaces que quedan en la barra superior, con 44 px para el dedo */
 @media (max-width: 760px) and (pointer: coarse) {
@@ -3844,7 +3860,9 @@ kbd {
 }
 .btn-outline:hover { border-color: var(--sea); color: var(--sea-deep); background: var(--sea-light); }
 .btn-register {
-    padding: var(--s2) var(--s5) !important;
+    height: 40px;
+    border: 1px solid transparent;
+    padding: 0 var(--s5) !important;
     border-radius: var(--r-pill) !important;
     background: var(--surface-inverse); color: #fff !important; font-weight: 600 !important;
 }
@@ -4390,7 +4408,9 @@ kbd {
 
 /* Ultimos detalles de marcado heredado */
 .hero-copy { min-width: 0; }
-.nav-principales { flex-wrap: wrap; }
+/* Los enlaces principales siempre en una fila (con wrap se partian en dos
+   filas en tableta; esta regla iba despues y le ganaba a la de tableta) */
+.nav-principales { flex-wrap: nowrap; }
 .checkbox { display: inline-flex; align-items: center; gap: var(--s2); }
 .roles-input { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .btn-view-profile {

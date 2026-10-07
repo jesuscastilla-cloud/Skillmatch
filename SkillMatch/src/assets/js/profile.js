@@ -712,7 +712,7 @@ function displayRecommendedJobs() {
             </div>
             <p class="opportunity-company-compact">${job.company?.name || job.companyName || ''}</p>
             <p class="opportunity-location-compact"><i data-ico="pin"></i> ${job.location}</p>
-            <button class="btn-apply-compact" onclick="applyToJob('${job.id}')">Aplicar Ahora</button>
+            <button class="btn-apply-compact" onclick="applyToJob('${job.id}')">Aplicar ahora</button>
         </div>`;
     }).join('');
 }
@@ -1054,18 +1054,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRecommendedJobs();
     loadInterestedCompanies();
 
-    // Botón cerrar sesión
-    const logoutBtns = document.querySelectorAll('a[href*="login"], .btn-login');
-    logoutBtns.forEach(btn => {
-        if (btn.textContent.includes('Cerrar Sesión') || btn.textContent.includes('Cerrar sesión')) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                    logout();
-                }
-            });
-        }
-    });
+    // "Cerrar sesión" lo maneja ui.js en todas las páginas (data-cerrar-sesion)
 
     // Botón editar perfil
     const editProfileBtn = document.getElementById('editProfileBtn');
