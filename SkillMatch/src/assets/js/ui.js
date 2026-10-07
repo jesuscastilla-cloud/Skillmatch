@@ -6,8 +6,8 @@
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
  *    4. Avisos al usuario (toast) y modales accesibles
- *    5. Movimiento: aparicion al hacer scroll, foco de luz, inclinacion,
- *       botones magneticos y onda al hacer clic (seccion 10)
+ *    5. Movimiento: aparicion al hacer scroll (las listas se reparten como
+ *       una baraja), foco de luz, botones magneticos y onda al hacer clic
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -103,7 +103,8 @@
     function svgIcon(name, extraClass) {
         const body = ICONS[name];
         if (!body) return '';
-        return '<svg class="ico ' + (extraClass || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + body + '</svg>';
+        // ico-<nombre> deja que el CSS anime cada icono a su manera (seccion 25d)
+        return '<svg class="ico ico-' + name + ' ' + (extraClass || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + body + '</svg>';
     }
 
     /** Convierte cada <i data-ico="nombre"> en un SVG real. */
@@ -339,6 +340,9 @@
                     '.feature-card, .benefit-item, .pathway-card, .roadmap-card, ' +
                     '.cartagena-photo, .opportunity-card, .connection-card, .suggestion-card, ' +
                     '.offer-card, .candidate-mini-card, .application-card';
+    // Las vacantes no suben desde abajo: salen de debajo de la tarjeta de
+    // arriba, una tras otra, como cartas que se reparten (idea de Luis)
+    const BARAJA = '.opportunity-card';
     let observadorEntrada = null;
 
     function revelar(raiz) {
@@ -350,6 +354,7 @@
             el.dataset.revelado = '1';
             if (observadorEntrada) {
                 el.classList.add('reveal');
+                if (el.matches(BARAJA)) el.classList.add('baraja');
                 observadorEntrada.observe(el);
             } else if (el.classList.contains('reveal')) {
                 // Movimiento reducido o navegador viejo: se muestra ya, sin animar
@@ -366,17 +371,23 @@
                 let n = 0;
                 entradas.forEach(function (entrada) {
                     if (!entrada.isIntersecting) return;
-                    // 40 ms entre tarjetas; tope de 8 para que una lista larga no se haga lenta
+                    // 40 ms entre tarjetas (90 en la baraja, para que se vea cada carta);
+                    // tope de 8 para que una lista larga no se haga lenta
                     const el = entrada.target;
-                    const retraso = Math.min(n++, 8) * 40;
+                    const baraja = el.classList.contains('baraja');
+                    const orden = Math.min(n++, 8);
+                    const retraso = orden * (baraja ? 90 : 40);
                     el.style.setProperty('--reveal-delay', retraso + 'ms');
+                    // Cada carta pasa por debajo de la que salio antes que ella
+                    if (baraja) el.style.setProperty('--baraja-z', -1 - orden);
                     el.classList.add('is-visible');
                     observadorEntrada.unobserve(el);
                     // Al terminar, la tarjeta recupera su hover y sus transiciones propias
                     setTimeout(function () {
-                        el.classList.remove('reveal', 'is-visible');
+                        el.classList.remove('reveal', 'is-visible', 'baraja');
                         el.style.removeProperty('--reveal-delay');
-                    }, retraso + 700);
+                        el.style.removeProperty('--baraja-z');
+                    }, retraso + (baraja ? 800 : 700));
                 });
             }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
         }
@@ -532,27 +543,20 @@
     const SPOT      = '.hero-card, .opportunity-card, .feature-card, .pathway-card, .choice-card, .benefit-item, ' +
                       '.roadmap-card, .connection-card, .suggestion-card, .offer-card, .candidate-mini-card, ' +
                       '.application-card, .opportunity-item-compact, .company-item-compact';
-    const TILT      = '.hero-card, .opportunity-card';
     const MAGNETICO = '.btn-accent, .hero .btn, .cta-final .btn, .pathway-card .btn, .choice-card .btn, .btn-search-main, .search-btn';
     const ONDA      = '.btn, .btn-save, .btn-apply, .btn-search-main, .search-btn, .btn-login, .btn-register';
 
-    /** Marca con clases (.spot, .tilt, .magnetic) lo que debe moverse. */
+    /** Marca con clases (.spot, .magnetic) lo que debe moverse. */
     function marcarEfectos(raiz) {
         if (!conMouse || !raiz.querySelectorAll) return;
-        [[SPOT, 'spot'], [TILT, 'tilt'], [MAGNETICO, 'magnetic']].forEach(function (par) {
+        [[SPOT, 'spot'], [MAGNETICO, 'magnetic']].forEach(function (par) {
             if (raiz.matches && raiz.matches(par[0])) raiz.classList.add(par[1]);
             raiz.querySelectorAll(par[0]).forEach(function (el) { el.classList.add(par[1]); });
         });
     }
 
-    let tiltActual = null, magnetActual = null;
+    let magnetActual = null;
 
-    function soltarTilt() {
-        if (!tiltActual) return;
-        tiltActual.classList.remove('is-tilting');
-        tiltActual.style.transform = '';
-        tiltActual = null;
-    }
     function soltarMagnet() {
         if (!magnetActual) return;
         magnetActual.style.setProperty('--tx', '0px');
@@ -569,21 +573,6 @@
             const r = spot.getBoundingClientRect();
             spot.style.setProperty('--mx', (e.clientX - r.left) + 'px');
             spot.style.setProperty('--my', (e.clientY - r.top) + 'px');
-        }
-
-        // Inclinacion 3D: maximo 3.5 grados hacia el cursor
-        const tilt = objetivo && objetivo.closest('.tilt');
-        if (tilt !== tiltActual) soltarTilt();
-        if (tilt) {
-            // La animacion de entrada (fill: both) bloquearia el transform en linea
-            if (tilt.getAnimations) tilt.getAnimations().forEach(function (a) { if (a.playState === 'finished') a.cancel(); });
-            const r = tilt.getBoundingClientRect();
-            const x = (e.clientX - r.left) / r.width - .5;
-            const y = (e.clientY - r.top) / r.height - .5;
-            tilt.classList.add('is-tilting');
-            tilt.style.transform = 'perspective(900px) rotateX(' + (-y * 7).toFixed(2) + 'deg) rotateY(' +
-                                   (x * 7).toFixed(2) + 'deg) translateY(-2px)';
-            tiltActual = tilt;
         }
 
         // Boton magnetico: se acerca hasta 6px al cursor
@@ -628,7 +617,7 @@
             if (pendiente) return;
             pendiente = requestAnimationFrame(function () { pendiente = 0; moverConMouse(ultimo); });
         }, { passive: true });
-        document.documentElement.addEventListener('mouseleave', function () { soltarTilt(); soltarMagnet(); });
+        document.documentElement.addEventListener('mouseleave', soltarMagnet);
     }
 
     // Tarjetas que llegan despues (vacantes de la API): aparecen y se mueven igual

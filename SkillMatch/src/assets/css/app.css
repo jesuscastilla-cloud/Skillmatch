@@ -2971,13 +2971,29 @@ footer.pie > .container { position: relative; z-index: 1; }
     transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
     transition-delay: var(--reveal-delay, 0ms);
 }
+/* Baraja (vacantes): cada carta empieza escondida bajo la de arriba, un poco
+   mas pequena y girada, y se desliza a su sitio con un rebote suave. Las
+   cartas que salen van debajo (z-index negativo, ui.js pone --baraja-z);
+   la lista aisla esas capas para que no se vayan detras del fondo. */
+.opportunities-list { isolation: isolate; }
+.reveal.baraja {
+    position: relative;
+    z-index: var(--baraja-z, -1);
+    transform: translateY(-64px) scale(.93) rotate(-1.4deg);
+    transform-origin: 50% 0;
+}
+.reveal.baraja.is-visible {
+    transform: none;
+    transition: opacity 280ms var(--ease-out), transform 640ms cubic-bezier(.2, 1.15, .35, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+}
 /* Sin JavaScript nada se queda escondido */
 @media (scripting: none) { .reveal { opacity: 1; transform: none; } }
 
 /* ---------- 25b. Movimiento global (Fase 1, seccion 3 del plan) ----------
    Reglas: solo se anima transform y opacity; todo lo que sigue al mouse
    se apaga en pantallas tactiles y con prefers-reduced-motion.
-   ui.js agrega las clases (.spot, .tilt, .magnetic): el HTML no cambia. */
+   ui.js agrega las clases (.spot, .magnetic): el HTML no cambia. */
 
 :root {
     --dur-1: 150ms;  /* respuesta inmediata: presionar, hover */
@@ -3047,10 +3063,6 @@ html.tema-cambiando .tabbar { view-transition-name: none; }
     }
     .spot:hover::before { opacity: .6; }
 
-    /* Inclinacion 3D de las tarjetas de vacante (3-4 grados) */
-    .tilt { transform-style: preserve-3d; will-change: transform; }
-    .tilt.is-tilting { transition: transform 80ms linear, border-color .2s var(--ease), box-shadow .24s var(--ease); }
-
     /* Botones magneticos: se acercan unos pixeles al cursor. Se usa la
        propiedad translate para no pisar el transform del hover. */
     .magnetic {
@@ -3064,6 +3076,151 @@ html.tema-cambiando .tabbar { view-transition-name: none; }
 @media (prefers-reduced-motion: reduce) {
     ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
     .ripple { display: none; }
+}
+
+/* ---------- 25d. Iconos animados ----------
+   Cada icono hace su propio gesto cuando el mouse entra en el boton, enlace u
+   opcion que lo contiene (ui.js le pone la clase ico-<nombre>). Se animan las
+   propiedades sueltas translate/rotate/scale: son transform igual de ligeras,
+   pero no pisan los transform que ya tienen algunos iconos. Fuera: el tema
+   (tiene su propia animacion) y las habilidades de la demo de la portada. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    :is(a, button, label, summary):not(.demo-skill, .theme-toggle):hover :is(
+        .ico-briefcase, .ico-cap, .ico-rocket, .ico-send, .ico-sprout, .ico-book, .ico-star,
+        .ico-trophy, .ico-home, .ico-building, .ico-refresh, .ico-pin, .ico-heart, .ico-bell,
+        .ico-calendar, .ico-money, .ico-target, .ico-arrow, .ico-camera, .ico-eye, .ico-check,
+        .ico-search, .ico-save, .ico-users, .ico-user, .ico-list, .ico-plus, .ico-close,
+        .ico-pencil, .ico-trending, .ico-chat, .ico-mail, .ico-image, .ico-bulb, .ico-logout, .ico-filter
+    ) {
+        animation: var(--ico-anim) .6s var(--ease-out);
+    }
+
+    /* Maletin: da un saltito y se aplasta al caer */
+    .ico-briefcase { --ico-anim: ico-saltito; transform-origin: 50% 100%; }
+    /* Birrete: sale lanzado hacia arriba, como en una graduacion */
+    .ico-cap { --ico-anim: ico-birrete; }
+    /* Cohete y avion de papel: salen volando por la esquina y vuelven por la contraria */
+    .ico-rocket, .ico-send { --ico-anim: ico-despegue; }
+    /* Brote: se encoge y crece */
+    .ico-sprout { --ico-anim: ico-brote; transform-origin: 50% 100%; }
+    /* Libro y lupa: un vaiven corto */
+    .ico-book, .ico-search, .ico-chat { --ico-anim: ico-vaiven; }
+    /* Estrella: media vuelta (a los 144 grados se ve igual, asi no salta al final) */
+    .ico-star { --ico-anim: ico-estrella; }
+    /* Trofeo y campana: se mecen desde su base o desde arriba */
+    .ico-trophy { --ico-anim: ico-mecer; transform-origin: 50% 100%; }
+    .ico-bell   { --ico-anim: ico-mecer; transform-origin: 50% 8%; }
+    /* Casa, grupo, persona: rebote con aplaste */
+    .ico-home, .ico-users, .ico-user { --ico-anim: ico-rebote; transform-origin: 50% 100%; }
+    /* Edificio: crece hacia arriba */
+    .ico-building, .ico-trending { --ico-anim: ico-crecer; transform-origin: 50% 100%; }
+    /* Refrescar: una vuelta completa */
+    .ico-refresh { --ico-anim: ico-vuelta; }
+    /* Ubicacion: cae como un alfiler sobre el mapa */
+    .ico-pin { --ico-anim: ico-alfiler; transform-origin: 50% 100%; }
+    /* Corazon: late */
+    .ico-heart { --ico-anim: ico-latido; }
+    /* Calendario y marcador: pasan la hoja */
+    .ico-calendar, .ico-save, .ico-mail { --ico-anim: ico-hoja; transform-origin: 50% 0; }
+    /* Moneda: gira sobre si misma */
+    .ico-money { --ico-anim: ico-moneda; }
+    /* Diana, camara, imagen, foco, filtro: pulso */
+    .ico-target, .ico-camera, .ico-image, .ico-bulb, .ico-filter { --ico-anim: ico-pulso; }
+    /* Flechas y salir: empujan hacia donde apuntan */
+    .ico-arrow, .ico-logout, .ico-list { --ico-anim: ico-empuje; }
+    /* Ojo: parpadea */
+    .ico-eye { --ico-anim: ico-parpadeo; }
+    /* Palomita: aparece con un golpe */
+    .ico-check { --ico-anim: ico-golpe; }
+    /* Mas y cerrar: un cuarto de vuelta */
+    .ico-plus, .ico-close { --ico-anim: ico-cuarto; }
+    /* Lapiz: garabatea */
+    .ico-pencil { --ico-anim: ico-garabato; transform-origin: 20% 80%; }
+}
+
+/* Al guardar una vacante el corazon late una vez (tambien en tactil) */
+@media (prefers-reduced-motion: no-preference) {
+    .btn-save.saved .ico-heart { animation: ico-latido .6s var(--ease-out); }
+}
+
+@keyframes ico-saltito {
+    35% { translate: 0 -3px; scale: 1; }
+    60% { translate: 0 0; scale: 1.08 .88; }
+    80% { translate: 0 -1px; scale: 1; }
+}
+@keyframes ico-birrete {
+    40% { translate: 0 -4px; rotate: -16deg; }
+    70% { translate: 0 0; rotate: 5deg; }
+}
+@keyframes ico-despegue {
+    40%  { translate: 6px -6px; opacity: 0; }
+    41%  { translate: -6px 6px; opacity: 0; }
+    100% { translate: 0 0; opacity: 1; }
+}
+@keyframes ico-brote {
+    30% { scale: .9 .6; }
+    65% { scale: 1 1.18; }
+}
+@keyframes ico-vaiven {
+    25% { rotate: -12deg; }
+    50% { rotate: 9deg; }
+    75% { rotate: -4deg; }
+}
+@keyframes ico-estrella {
+    50%  { scale: 1.25; }
+    100% { rotate: 144deg; }
+}
+@keyframes ico-mecer {
+    15% { rotate: 14deg; }
+    30% { rotate: -11deg; }
+    45% { rotate: 7deg; }
+    60% { rotate: -4deg; }
+    75% { rotate: 2deg; }
+}
+@keyframes ico-rebote {
+    30% { scale: 1.12 .86; }
+    60% { scale: .94 1.08; translate: 0 -2px; }
+}
+@keyframes ico-crecer {
+    40% { scale: 1 1.16; }
+    70% { scale: 1 .95; }
+}
+@keyframes ico-vuelta { to { rotate: 360deg; } }
+@keyframes ico-alfiler {
+    30% { translate: 0 -5px; }
+    55% { translate: 0 0; scale: 1.12 .88; }
+    75% { translate: 0 -1px; scale: 1; }
+}
+@keyframes ico-latido {
+    15% { scale: 1.28; }
+    30% { scale: .94; }
+    45% { scale: 1.16; }
+    70% { scale: 1; }
+}
+@keyframes ico-hoja {
+    35% { scale: 1 .8; }
+    70% { scale: 1 1.06; }
+}
+@keyframes ico-moneda { to { rotate: y 360deg; } }
+@keyframes ico-pulso {
+    30% { scale: .84; }
+    65% { scale: 1.14; }
+}
+@keyframes ico-empuje {
+    40% { translate: 4px 0; }
+}
+@keyframes ico-parpadeo {
+    40%, 60% { scale: 1; }
+    50% { scale: 1 .1; }
+}
+@keyframes ico-golpe {
+    40% { scale: 1.3; rotate: -10deg; }
+}
+@keyframes ico-cuarto { to { rotate: 90deg; } }
+@keyframes ico-garabato {
+    20% { rotate: -14deg; translate: -1px 0; }
+    45% { rotate: 6deg; translate: 1px 0; }
+    70% { rotate: -6deg; translate: 0 0; }
 }
 
 /* ---------- 25c. Paleta de comandos (Ctrl+K) ---------- */
