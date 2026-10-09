@@ -129,6 +129,26 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
   de Edge (salían dos).
 - Detalle de cada arreglo y lo que queda para Jesús (incluida una fuga de datos urgente en
   `/api/connections/suggestions`): `docs/REVISION-CALIDAD.md`.
+- **Listas de la portada (Lugar, Modalidad, Experiencia, Salario):** en vez de la lista nativa
+  (gris y cuadrada en Windows) una de la marca, hecha en `ui.js` (sección 16) para cualquier
+  `<select data-lista>`: el `<select>` queda escondido y sigue mandando, así `index.js` no
+  cambió. En Lugar se escribe y salen las coincidencias resaltadas, sin tildes y perdonando un
+  error ("cartajena" → "Quizás quisiste decir: Cartagena de Indias"); escribir un departamento
+  muestra sus ciudades. Cada opción dice cuántas vacantes encontraría con lo demás ya elegido.
+  Teclado completo (flechas, Enter, Esc) y en celular sin zoom.
+- **Búsqueda de la portada con vacantes reales:** la API entrega páginas (`{ content: [...] }`)
+  y el código esperaba una lista: fallaba sin avisar y mostraba 10 vacantes inventadas de
+  `oportunidades-mock.json` (borrado). Ahora trae las 200 más recientes cuando el visitante
+  toca el buscador. Además: la ciudad filtra con cualquier escritura ("Bogotá D.C." = "bogota"),
+  el salario cruza rangos (antes multiplicaba por un millón y nunca encontraba nada),
+  "semi-senior" ya no cuenta como "senior", fuera el % inventado, texto de la API escapado
+  (una empresa podía meter código con el título de su vacante), Enter busca y cambiar un
+  filtro actualiza los resultados.
+- **`--ease`:** tenía un "２" de ancho completo; el navegador descartaba el valor y las 45
+  transiciones que lo usan cambiaban de golpe.
+- **Reglas de la barra en `body > header`:** con `header` a secas también se pintaban las
+  cabeceras de las tarjetas de "Únete" (cuadro oscuro en modo oscuro, pegajosas, nombre de
+  transición repetido y ocultas al imprimir).
 
 ## Pendiente
 
@@ -144,6 +164,9 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
   iconos de búsqueda y tema, y en la portada "Inicio / Innovación" se parten en dos líneas.
 - Hablar con Jesús: este avance, la contraseña de Atlas y cuándo abrir el PR hacia
   `fase-1-identidad`.
+- Para Jesús: la portada cuenta y filtra sobre las 200 vacantes más recientes (lo dice en el
+  resultado). Para que sea sobre todas: un endpoint con los conteos por ciudad, modalidad,
+  experiencia y salario, o que `/jobs/filter` acepte también una palabra de búsqueda.
 
 ## Cómo se verificó
 

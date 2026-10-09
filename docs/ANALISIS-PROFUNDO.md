@@ -97,6 +97,12 @@ y lectura del código. El celular se auditó simulando pantalla táctil de verda
 - Para Jesús: permitir que la empresa edite sus datos (hoy `PUT /companies/{id}` es solo de ADMIN),
   agregar portada a `Company` y guardar beneficios como lista.
 
+- **Paso 6, en parte — Búsqueda de la portada (hecho):** fuera el % inventado (punto 11): el
+  anillo solo sale si el backend manda un % real. Al revisarla salió algo peor: nunca usó las
+  vacantes reales (la API es paginada y el código esperaba una lista, así que caía siempre a
+  10 vacantes de ejemplo). Ahora usa las reales, con filtros que sí filtran, listas nuevas con
+  conteos y el texto de cada vacante escapado. Detalle en `docs/AVANCE-VISUAL.md`.
+
 ## Propuesta de orden para corregir (solo frontend)
 1. Perfil de empresa: fechas, etiquetas cambiadas, cifras reales o fuera, quitar lo inventado
    (como se hizo en el perfil de usuario), cabecera y textos partidos.

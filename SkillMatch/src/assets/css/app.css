@@ -3969,6 +3969,139 @@ kbd {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: var(--s3); max-width: 900px; margin: var(--s5) auto 0;
 }
+
+/* ---- Listas desplegables (ui.js, select[data-lista]) ----
+   Reemplazan la lista nativa, que no se puede decorar (en Windows salia gris,
+   cuadrada y con todas las ciudades de golpe). Cerrada se ve como cualquier
+   campo; abierta es un panel con grupos, conteos y la opcion elegida marcada.
+   Lo que tiene un filtro puesto queda con borde turquesa. */
+.lista { position: relative; }
+/* En escritorio la columna del lugar es mas ancha: "Cartagena de Indias" cabe */
+@media (min-width: 1000px) {
+    .quick-filters:has(.lista-buscable) { grid-template-columns: 1.4fr repeat(3, 1fr); }
+}
+.lista-boton, .lista-campo {
+    display: flex; align-items: center; gap: var(--s2);
+    width: 100%; min-height: 48px;
+    padding: 0 var(--s3) 0 var(--s4);
+    background: var(--surface);
+    border: 1.5px solid var(--hairline);
+    border-radius: var(--r-md);
+    color: var(--ink);
+    font-size: var(--t-base);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .16s var(--ease), box-shadow .16s var(--ease);
+}
+.lista-boton:hover, .lista-campo:hover { border-color: #C3D3E2; }
+[data-theme="dark"] .lista-boton:hover, [data-theme="dark"] .lista-campo:hover { border-color: #3A506C; }
+.lista.tiene-valor .lista-boton, .lista.tiene-valor .lista-campo { border-color: var(--sea); }
+.lista-boton:focus-visible, .lista-campo:focus-within, .lista.is-abierta .lista-boton {
+    outline: none;
+    border-color: var(--sea);
+    box-shadow: 0 0 0 4px var(--sea-light);
+}
+.lista-campo input {
+    all: unset;
+    flex: 1; min-width: 0;
+    height: 45px;
+    font-size: var(--t-base);
+    color: var(--ink);
+    cursor: text;
+}
+.lista-campo input::placeholder { color: var(--ink-3); }
+.lista.tiene-valor:not(.is-abierta) .lista-campo input { font-weight: 600; }
+.lista-campo-icono { color: var(--ink-muted); }
+.lista.tiene-valor .lista-campo-icono { color: var(--sea-deep); }
+.lista-valor { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-3); }
+.lista.tiene-valor .lista-valor { color: var(--ink); font-weight: 600; }
+.lista-flecha { width: 18px; height: 18px; color: var(--ink-muted); transition: transform .22s var(--ease-out); }
+.lista.is-abierta .lista-flecha { transform: rotate(180deg); }
+.lista-limpiar {
+    display: grid; place-items: center; flex: 0 0 auto;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    color: var(--ink-muted);
+    transition: background-color .16s var(--ease), color .16s var(--ease);
+}
+.lista-limpiar[hidden] { display: none; }
+.lista-limpiar:hover { background: var(--surface-sunk); color: var(--ink); }
+.lista-limpiar .ico { width: 16px; height: 16px; }
+
+.lista-panel {
+    position: absolute; z-index: 60;
+    top: calc(100% + 6px); left: 0;
+    /* Tan ancha como su texto mas largo, nunca menos que el campo */
+    width: max-content; min-width: max(100%, 240px); max-width: calc(100vw - 2 * var(--s4));
+    max-height: 340px;
+    overflow-y: auto; overscroll-behavior: contain;
+    margin: 0; padding: var(--s2);
+    list-style: none;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-3);
+    transform-origin: top center;
+    animation: lista-entrada .18s var(--ease-out) both;
+}
+.lista-panel[hidden] { display: none; }
+.lista-buscable .lista-panel { width: 100%; min-width: min(320px, calc(100vw - 2 * var(--s4))); }
+/* Si a la derecha no cabe (la ultima columna), se alinea por la derecha */
+.lista.lista-derecha .lista-panel { left: auto; right: 0; }
+.lista.lista-arriba .lista-panel {
+    top: auto; bottom: calc(100% + 6px);
+    transform-origin: bottom center;
+    animation-name: lista-entrada-arriba;
+}
+@keyframes lista-entrada { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+@keyframes lista-entrada-arriba { from { opacity: 0; transform: translateY(4px) scale(.98); } }
+
+.lista-grupo {
+    padding: var(--s3) var(--s3) var(--s1);
+    font-size: var(--t-xs); font-weight: 700;
+    letter-spacing: .05em; text-transform: uppercase;
+    color: var(--ink-muted);
+}
+.lista-grupo:first-child { padding-top: var(--s1); }
+.lista-opcion {
+    display: flex; align-items: center; gap: var(--s3);
+    min-height: 40px;
+    padding: 8px var(--s3);
+    border-radius: var(--r-sm);
+    color: var(--ink-2);
+    cursor: pointer;
+}
+.lista-opcion.is-activa { background: var(--sea-light); color: var(--ink); }
+.lista-opcion[aria-selected="true"] { color: var(--ink); font-weight: 600; }
+.lista-icono { width: 18px; height: 18px; color: var(--ink-muted); }
+.lista-opcion.is-activa .lista-icono, .lista-opcion[aria-selected="true"] .lista-icono { color: var(--sea-deep); }
+.lista-texto { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lista-texto small { margin-left: 2px; font-size: var(--t-sm); font-weight: 400; color: var(--ink-muted); }
+.lista-texto mark { background: none; color: var(--sea-deep); font-weight: 700; }
+.lista-cuenta {
+    flex: 0 0 auto;
+    min-width: 28px; padding: 2px 8px;
+    border-radius: var(--r-pill);
+    background: var(--surface-sunk);
+    font-size: var(--t-xs); font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    color: var(--ink-2);
+}
+.lista-opcion.is-activa .lista-cuenta { background: var(--surface); }
+.lista-cuenta.es-cero { background: none; font-weight: 400; color: var(--ink-muted); }
+.lista-check { width: 16px; height: 16px; color: var(--sea-deep); }
+.lista-vacia { padding: var(--s4) var(--s3); font-size: var(--t-sm); line-height: 1.5; color: var(--ink-muted); }
+/* Al pasar el mouse por una opcion su icono hace su gesto (seccion 25d) */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .lista-opcion:hover .lista-icono { animation: var(--ico-anim) .6s var(--ease-out); }
+}
+@media (pointer: coarse) {
+    .lista-opcion { min-height: 44px; }
+    .lista-limpiar { width: 40px; height: 40px; }
+}
+/* En el iPhone un campo con letra menor de 16 px hace zoom al tocarlo */
+@media (max-width: 700px) { .lista-campo input { font-size: 16px; } }
 .filter-salary-group, .salary-range { display: flex; flex-direction: column; gap: 6px; }
 .range-display { display: flex; justify-content: space-between; font-size: var(--t-sm); }
 .range-label { color: var(--ink-muted); }

@@ -1,13 +1,14 @@
 /* =====================================================================
  *  SkillMatch — capa de interfaz
  *
- *  Se encarga de cinco cosas, y de nada mas:
+ *  Se encarga de seis cosas, y de nada mas:
  *    1. Iconos SVG (reemplazan a los emojis, se ven igual en todos lados)
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
  *    4. Avisos al usuario (toast) y modales accesibles
  *    5. Movimiento: aparicion al hacer scroll (las listas se reparten como
  *       una baraja) y onda al hacer clic
+ *    6. Listas desplegables de la marca en lugar de las nativas (data-lista)
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -75,6 +76,7 @@
         logout:    '<path d="M14 7V5.5A1.5 1.5 0 0 0 12.5 4h-6A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h6a1.5 1.5 0 0 0 1.5-1.5V17"/><path d="M10 12h10M17 8.5l3.5 3.5L17 15.5"/>',
         plus:      '<path d="M12 5v14M5 12h14"/>',
         minus:     '<path d="M5 12h14"/>',
+        chevron:   '<path d="m6 9 6 6 6-6"/>',
         upload:    '<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/>',
         desktop:   '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/>',
         sun:       '<circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.2M12 18.8V21M4.2 12H2M22 12h-2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>',
@@ -1083,6 +1085,355 @@
         }
     }
 
+    /* ---------- 16. Listas desplegables ---------- */
+
+    // La lista nativa de un <select> no se puede decorar: en Windows sale gris,
+    // cuadrada y con todas las ciudades de golpe. Con <select data-lista> se
+    // dibuja una de la marca y el <select> queda escondido como fuente de
+    // verdad: al elegir se cambia su valor y se lanza "change", asi el codigo
+    // de cada pagina no cambia. Con data-lista="buscable" se escribe para
+    // filtrar (sin tildes y perdonando un error de tipeo).
+    // Atributos opcionales: data-icono (icono del campo), data-todas (opcion
+    // para quitar el filtro), data-destacar (grupo arriba con las opciones que
+    // tienen resultados) y, en cada <option>, data-icono y data-cuenta.
+    // (data-icono y no data-ico: hydrateIcons cambiaria el <option> por un SVG.)
+    const LISTAS = [];
+    let listasCreadas = 0;
+
+    /** Opciones del <select>: "Turbaco (Bolívar)" -> texto "Turbaco", detalle "Bolívar". */
+    function leerOpciones(select) {
+        const items = [];
+        Array.from(select.options).forEach(function (op) {
+            if (!op.value) return;
+            const completo = op.textContent.trim();
+            const m = completo.match(/^(.*?)\s*\(([^)]+)\)$/);
+            const cuenta = op.getAttribute('data-cuenta');
+            items.push({
+                valor: op.value,
+                texto: m ? m[1] : completo,
+                detalle: m ? m[2] : '',
+                grupo: op.parentElement.tagName === 'OPTGROUP' ? op.parentElement.label : '',
+                icono: op.getAttribute('data-icono') || '',
+                cuenta: cuenta === null ? null : Number(cuenta),
+                clave: normalizar(completo)
+            });
+        });
+        return items;
+    }
+
+    // Cambios minimos para pasar de una palabra a otra (letra cambiada, de mas,
+    // de menos o dos invertidas): "cartajena" esta a 1 de "cartagena".
+    function distancia(a, b) {
+        const d = [];
+        for (let i = 0; i <= a.length; i++) d.push([i]);
+        for (let j = 1; j <= b.length; j++) d[0][j] = j;
+        for (let i = 1; i <= a.length; i++) {
+            for (let j = 1; j <= b.length; j++) {
+                d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+                if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+            }
+        }
+        return d[a.length][b.length];
+    }
+
+    // Que tan bien responde una opcion a lo escrito: 4 empieza igual, 3 una de
+    // sus palabras empieza igual, 2 lo contiene, 1 se parece (error de tipeo).
+    function parecido(item, q) {
+        if (item.clave.startsWith(q)) return 4;
+        if (item.clave.split(/[^a-z0-9]+/).some(function (p) { return p.startsWith(q); })) return 3;
+        if (item.clave.includes(q)) return 2;
+        if (q.length < 4) return 0;
+        const tolerancia = q.length >= 7 ? 2 : 1;
+        const palabras = item.clave.split(/[^a-z0-9]+/).filter(Boolean);
+        palabras.push(palabras.join(' '));
+        for (const p of palabras) {
+            for (let largo = q.length - 1; largo <= q.length + 1; largo++) {
+                if (largo > 0 && distancia(q, p.slice(0, largo)) <= tolerancia) return 1;
+            }
+        }
+        return 0;
+    }
+
+    /** Texto con la parte que coincide resaltada (el indice sirve igual sin tildes). */
+    function resaltar(texto, q) {
+        const i = q ? normalizar(texto).indexOf(q) : -1;
+        if (i < 0) return escaparHtml(texto);
+        return escaparHtml(texto.slice(0, i)) + '<mark>' + escaparHtml(texto.slice(i, i + q.length)) + '</mark>' + escaparHtml(texto.slice(i + q.length));
+    }
+
+    function itemElegido(L) {
+        return L.items.find(function (it) { return it.valor === L.select.value; }) || null;
+    }
+
+    /** Lo que muestra el campo cerrado: la opcion elegida o el texto de la vacia. */
+    function pintarControl(L) {
+        const it = itemElegido(L);
+        L.raiz.classList.toggle('tiene-valor', !!it);
+        if (L.buscable) {
+            if (document.activeElement !== L.control || !L.abierta) L.control.value = it ? it.texto : '';
+            L.limpiar.hidden = !it;
+        } else {
+            L.valor.textContent = it ? it.texto : L.vacia;
+        }
+    }
+
+    /** Arma la lista visible: grupos, coincidencias resaltadas y conteos. */
+    function pintarPanel(L) {
+        const q = L.buscable ? normalizar(L.control.value.trim()) : '';
+        const elegido = L.select.value;
+        let filas = [];
+        L.visibles = [];
+
+        if (q) {
+            const puntuados = L.items.map(function (it, orden) { return { it: it, p: parecido(it, q), orden: orden }; })
+                .filter(function (x) { return x.p > 0; });
+            const directos = puntuados.filter(function (x) { return x.p > 1; });
+            // Los parecidos solo salen si nada coincide de verdad ("¿quisiste decir?")
+            const usados = directos.length ? directos : puntuados;
+            usados.sort(function (a, b) {
+                return (b.p - a.p) || ((b.it.cuenta || 0) - (a.it.cuenta || 0)) || (a.orden - b.orden);
+            });
+            if (!directos.length && usados.length) filas.push({ grupo: 'Quizás quisiste decir' });
+            usados.forEach(function (x) { filas.push({ it: x.it }); });
+        } else {
+            if (L.todas && (elegido || !L.buscable)) filas.push({ it: { valor: '', texto: L.todas, detalle: '', icono: '', cuenta: null } });
+            let resto = L.items;
+            // El titulo del grupo se lee cada vez: la pagina lo cambia segun sus datos
+            const destacar = L.select.getAttribute('data-destacar') || '';
+            const conResultados = destacar ? L.items.filter(function (it) { return it.cuenta > 0; }) : [];
+            if (conResultados.length) {
+                filas.push({ grupo: destacar });
+                conResultados.slice().sort(function (a, b) { return b.cuenta - a.cuenta; })
+                    .forEach(function (it) { filas.push({ it: it }); });
+                resto = L.items.filter(function (it) { return !(it.cuenta > 0); });
+            }
+            let grupo = null;
+            resto.forEach(function (it) {
+                if (it.grupo && it.grupo !== grupo) filas.push({ grupo: it.grupo });
+                grupo = it.grupo;
+                filas.push({ it: it });
+            });
+        }
+
+        let html = '', grupoVisto = '';
+        filas.forEach(function (f) {
+            if (f.grupo) { grupoVisto = f.grupo; html += '<li class="lista-grupo" role="presentation">' + escaparHtml(f.grupo) + '</li>'; return; }
+            const it = f.it, n = L.visibles.length;
+            // Bajo el grupo "Bolívar" no hace falta repetir "Bolívar" en cada ciudad
+            const detalle = (it.detalle && (q || it.detalle !== grupoVisto)) ? it.detalle : '';
+            L.visibles.push(it);
+            const sel = it.valor === elegido;
+            html += '<li class="lista-opcion" role="option" id="' + L.id + '-op' + n + '" data-n="' + n + '" aria-selected="' + sel + '">' +
+                (it.icono ? svgIcon(it.icono, 'lista-icono') : '') +
+                '<span class="lista-texto">' + resaltar(it.texto, q) +
+                (detalle ? ' <small>' + resaltar(detalle, q) + '</small>' : '') + '</span>' +
+                (it.cuenta !== null && it.cuenta !== undefined
+                    ? '<span class="lista-cuenta' + (it.cuenta ? '' : ' es-cero') + '">' + it.cuenta + '<span class="sr-only">' + (it.cuenta === 1 ? ' vacante' : ' vacantes') + '</span></span>'
+                    : '') +
+                (sel ? svgIcon('check', 'lista-check') : '') + '</li>';
+        });
+        if (!L.visibles.length) {
+            html = '<li class="lista-vacia" role="presentation">No encontramos «' + escaparHtml(L.control.value.trim()) + '». ' +
+                   escaparHtml(L.select.getAttribute('data-vacio') || 'Prueba con otra palabra.') + '</li>';
+        }
+        L.panel.innerHTML = html;
+        if (L.buscable && q) {
+            L.estado.textContent = L.visibles.length ? L.visibles.length + (L.visibles.length === 1 ? ' resultado' : ' resultados') : 'Sin resultados';
+        }
+    }
+
+    /** Marca la opcion activa (la que eligen Enter o las flechas). */
+    function activar(L, n, desplazar) {
+        L.activa = Math.max(0, Math.min(n, L.visibles.length - 1));
+        L.panel.querySelectorAll('.lista-opcion.is-activa').forEach(function (li) { li.classList.remove('is-activa'); });
+        const li = L.panel.querySelector('[data-n="' + L.activa + '"]');
+        if (!li) { L.control.removeAttribute('aria-activedescendant'); return; }
+        li.classList.add('is-activa');
+        L.control.setAttribute('aria-activedescendant', li.id);
+        if (desplazar !== false) li.scrollIntoView({ block: 'nearest' });
+    }
+
+    function abrirLista(L) {
+        if (L.abierta) return;
+        LISTAS.forEach(function (otra) { if (otra !== L) cerrarLista(otra); });
+        L.abierta = true;
+        pintarPanel(L);
+        // Se abre hacia arriba si abajo no cabe (celular con el teclado abierto)
+        const r = L.raiz.getBoundingClientRect();
+        const abajo = window.innerHeight - r.bottom, arriba = r.top - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-bar-h')) || 0);
+        const haciaArriba = abajo < 240 && arriba > abajo;
+        L.raiz.classList.toggle('lista-arriba', haciaArriba);
+        L.panel.style.maxHeight = Math.max(160, Math.min(340, (haciaArriba ? arriba : abajo) - 16)) + 'px';
+        L.raiz.classList.remove('lista-derecha');
+        L.panel.hidden = false;
+        if (L.panel.getBoundingClientRect().right > document.documentElement.clientWidth - 8) L.raiz.classList.add('lista-derecha');
+        L.raiz.classList.add('is-abierta');
+        L.control.setAttribute('aria-expanded', 'true');
+        const actual = L.visibles.findIndex(function (it) { return it.valor === L.select.value; });
+        activar(L, actual >= 0 ? actual : 0);
+    }
+
+    function cerrarLista(L) {
+        if (!L.abierta) return;
+        L.abierta = false;
+        L.panel.hidden = true;
+        L.raiz.classList.remove('is-abierta');
+        L.control.setAttribute('aria-expanded', 'false');
+        L.control.removeAttribute('aria-activedescendant');
+        pintarControl(L);
+    }
+
+    function elegirOpcion(L, it) {
+        const cambio = L.select.value !== it.valor;
+        L.select.value = it.valor;
+        cerrarLista(L);
+        if (L.buscable) L.control.value = it.valor ? it.texto : '';
+        pintarControl(L);
+        if (cambio) L.select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    /** Al salir del campo buscable: si lo escrito es una opcion exacta se elige; si se borro, se quita el filtro. */
+    function resolverEscrito(L) {
+        const q = normalizar(L.control.value.trim());
+        if (!q) { elegirOpcion(L, { valor: '', texto: '' }); return; }
+        const exacta = L.items.find(function (it) { return normalizar(it.texto) === q || it.clave === q; });
+        if (exacta) elegirOpcion(L, exacta);
+        else cerrarLista(L);
+    }
+
+    function teclasLista(L, e) {
+        const k = e.key;
+        if (k === 'ArrowDown' || k === 'ArrowUp') {
+            e.preventDefault();
+            if (!L.abierta) { abrirLista(L); return; }
+            activar(L, L.activa + (k === 'ArrowDown' ? 1 : -1));
+        } else if ((k === 'Home' || k === 'End') && L.abierta && !L.buscable) {
+            e.preventDefault();
+            activar(L, k === 'Home' ? 0 : L.visibles.length - 1);
+        } else if (k === 'Enter' || (k === ' ' && !L.buscable)) {
+            if (L.abierta && L.visibles[L.activa]) { e.preventDefault(); elegirOpcion(L, L.visibles[L.activa]); }
+            else if (!L.buscable) { e.preventDefault(); abrirLista(L); }
+        } else if (k === 'Escape') {
+            if (L.abierta) { e.preventDefault(); e.stopPropagation(); cerrarLista(L); }
+            else if (L.buscable && L.select.value) { e.preventDefault(); elegirOpcion(L, { valor: '', texto: '' }); }
+        } else if (k === 'Tab' && L.abierta) {
+            if (L.buscable) resolverEscrito(L);
+            else cerrarLista(L);
+        } else if (!L.buscable && k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            // Escribir con la lista de botones salta a la opcion que empieza asi
+            clearTimeout(L.tecleo);
+            L.letras = (L.letras || '') + normalizar(k);
+            L.tecleo = setTimeout(function () { L.letras = ''; }, 600);
+            if (!L.abierta) abrirLista(L);
+            const n = L.visibles.findIndex(function (it) { return normalizar(it.texto).startsWith(L.letras); });
+            if (n >= 0) activar(L, n);
+        }
+    }
+
+    function crearLista(select) {
+        if (select.hasAttribute('data-lista-lista')) return;
+        select.setAttribute('data-lista-lista', '');
+        const n = ++listasCreadas;
+        const L = {
+            select: select,
+            buscable: select.getAttribute('data-lista') === 'buscable',
+            id: (select.id || 'lista' + n) + '-lista',
+            todas: select.getAttribute('data-todas') || '',
+            vacia: (select.options[0] && !select.options[0].value) ? select.options[0].textContent.trim() : 'Elegir',
+            items: leerOpciones(select),
+            visibles: [], activa: 0, abierta: false
+        };
+        const label = select.id ? document.querySelector('label[for="' + select.id + '"]') : null;
+        const nombre = label ? label.textContent.trim() : L.vacia;
+        const icono = select.getAttribute('data-icono');
+
+        L.raiz = document.createElement('div');
+        L.raiz.className = 'lista' + (L.buscable ? ' lista-buscable' : '');
+        L.raiz.innerHTML =
+            (L.buscable
+                ? '<div class="lista-campo">' + (icono ? svgIcon(icono, 'lista-campo-icono') : '') +
+                  '<input type="text" id="' + L.id + '" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="' + L.id + '-panel" autocomplete="off" spellcheck="false" placeholder="' + escaparHtml(select.getAttribute('data-placeholder') || L.vacia) + '">' +
+                  '<button type="button" class="lista-limpiar" aria-label="Quitar ' + escaparHtml(nombre.toLowerCase()) + '" hidden>' + svgIcon('close') + '</button>' +
+                  svgIcon('chevron', 'lista-flecha') + '</div>'
+                : '<button type="button" class="lista-boton" id="' + L.id + '" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="' + L.id + '-panel">' +
+                  (icono ? svgIcon(icono, 'lista-campo-icono') : '') + '<span class="lista-valor"></span>' + svgIcon('chevron', 'lista-flecha') + '</button>') +
+            '<ul class="lista-panel" id="' + L.id + '-panel" role="listbox" aria-label="' + escaparHtml(nombre) + '" hidden></ul>' +
+            (L.buscable ? '<span class="sr-only" role="status" aria-live="polite"></span>' : '');
+        select.after(L.raiz);
+        select.hidden = true;
+        select.tabIndex = -1;
+
+        L.control = L.raiz.querySelector('#' + CSS.escape(L.id));
+        L.panel = L.raiz.querySelector('.lista-panel');
+        L.valor = L.raiz.querySelector('.lista-valor');
+        L.limpiar = L.raiz.querySelector('.lista-limpiar');
+        L.estado = L.raiz.querySelector('[role="status"]');
+        // El <label for> del select ahora nombra al campo nuevo
+        if (label) label.htmlFor = L.id;
+        else L.control.setAttribute('aria-label', nombre);
+
+        L.control.addEventListener('keydown', function (e) { teclasLista(L, e); });
+        if (L.buscable) {
+            L.control.addEventListener('click', function () { abrirLista(L); });
+            L.control.addEventListener('focus', function () { L.control.select(); });
+            L.control.addEventListener('input', function () {
+                if (!L.abierta) abrirLista(L);
+                else pintarPanel(L);
+                activar(L, 0);
+            });
+            L.control.addEventListener('blur', function () {
+                // El clic en una opcion no quita el foco (mousedown cancelado)
+                setTimeout(function () { if (!L.raiz.contains(document.activeElement)) resolverEscrito(L); }, 0);
+            });
+            L.raiz.querySelector('.lista-campo').addEventListener('mousedown', function (e) { if (e.target !== L.control) e.preventDefault(); });
+            L.limpiar.addEventListener('click', function () {
+                elegirOpcion(L, { valor: '', texto: '' });
+                L.control.focus();
+            });
+            L.raiz.querySelector('.lista-flecha').addEventListener('click', function () {
+                if (L.abierta) cerrarLista(L); else { L.control.focus(); abrirLista(L); }
+            });
+        } else {
+            L.control.addEventListener('click', function () { if (L.abierta) cerrarLista(L); else abrirLista(L); });
+            L.control.addEventListener('blur', function () { setTimeout(function () { if (!L.raiz.contains(document.activeElement)) cerrarLista(L); }, 0); });
+        }
+        // Elegir con el mouse sin que el campo pierda el foco
+        L.panel.addEventListener('mousedown', function (e) { e.preventDefault(); });
+        L.panel.addEventListener('click', function (e) {
+            const li = e.target.closest('.lista-opcion');
+            if (!li) return;
+            elegirOpcion(L, L.visibles[Number(li.dataset.n)]);
+            if (L.buscable && window.matchMedia('(pointer: coarse)').matches) L.control.blur();
+        });
+        L.panel.addEventListener('pointermove', function (e) {
+            const li = e.target.closest('.lista-opcion');
+            if (li && e.pointerType === 'mouse' && Number(li.dataset.n) !== L.activa) activar(L, Number(li.dataset.n), false);
+        });
+        // Si otra parte del codigo cambia el select (valor u opciones), se repinta
+        select.addEventListener('change', function () { pintarControl(L); });
+        new MutationObserver(function () {
+            L.items = leerOpciones(select);
+            if (L.abierta) { pintarPanel(L); activar(L, L.activa, false); }
+            pintarControl(L);
+        }).observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-cuenta'] });
+
+        pintarControl(L);
+        LISTAS.push(L);
+    }
+
+    function listas(raiz) {
+        (raiz || document).querySelectorAll('select[data-lista]').forEach(crearLista);
+    }
+    UI.listas = listas;
+
+    // Un clic o toque fuera cierra la lista abierta
+    document.addEventListener('pointerdown', function (e) {
+        LISTAS.forEach(function (L) {
+            if (!L.abierta || L.raiz.contains(e.target)) return;
+            if (L.buscable) resolverEscrito(L); else cerrarLista(L);
+        });
+    });
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -1106,6 +1457,7 @@
         observadorNuevos.observe(document.body, { childList: true, subtree: true });
         modalesAccesibles();
         validacionVisible();
+        listas(document);
         anillos(document);
         setInterval(function () { anillos(document); }, 1200);
     }

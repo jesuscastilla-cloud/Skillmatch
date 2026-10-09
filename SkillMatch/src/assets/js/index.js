@@ -22,10 +22,27 @@ document.addEventListener('DOMContentLoaded', () => {
         filters.q = e.target.value;
     });
 
+    // Enter en el buscador busca, como en cualquier buscador (antes no hacia nada)
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchBtn.click();
+        }
+    });
+
+    // Si ya hay resultados en pantalla, cambiar un filtro los actualiza al instante
+    function actualizarSiHayResultados() {
+        const resultados = document.getElementById('results-container');
+        if (resultados && !resultados.classList.contains('hidden') && typeof performSearch === 'function') {
+            performSearch({ ...filters });
+        }
+    }
+
     // Cuando cambia la ubicación
     if (locationSelect) {
         locationSelect.addEventListener('change', (e) => {
             filters.location = e.target.value;
+            actualizarSiHayResultados();
         });
     }
 
@@ -33,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modalitySelect) {
         modalitySelect.addEventListener('change', (e) => {
             filters.modality = e.target.value;
+            actualizarSiHayResultados();
         });
     }
 
@@ -40,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (experienceSelect) {
         experienceSelect.addEventListener('change', (e) => {
             filters.experience = e.target.value;
+            actualizarSiHayResultados();
         });
     }
 
@@ -47,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (salarySelect) {
         salarySelect.addEventListener('change', (e) => {
             filters.salary = e.target.value;
+            actualizarSiHayResultados();
         });
     }
 
@@ -59,15 +79,13 @@ document.addEventListener('DOMContentLoaded', () => {
             experience: filters.experience,
             salary: filters.salary
         };
-        // Llamar a función del search-handler
+        // Llamar a función del search-handler (espera las vacantes si aun no llegan)
         if (typeof performSearch === 'function') {
-            performSearch(criteria);
-            // Scroll suave al contenedor de resultados
             const resultsContainer = document.getElementById('results-container');
-            if (resultsContainer) {
-                resultsContainer.scrollIntoView({ behavior: 'smooth' });
-            }
-        } else {
+            const bajar = () => { if (resultsContainer) resultsContainer.scrollIntoView({ behavior: 'smooth' }); };
+            const busqueda = performSearch(criteria);
+            bajar();
+            Promise.resolve(busqueda).then(bajar);
         }
     });
 });

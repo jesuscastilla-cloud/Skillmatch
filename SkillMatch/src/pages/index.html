@@ -130,84 +130,90 @@
             <div class="quick-filters">
                 <div class="filter-group">
                     <label for="location-select" class="sr-only">Lugar</label>
-                    <select id="location-select" class="filter-select">
+                    <select id="location-select" class="filter-select" data-lista="buscable" data-icono="pin"
+                            data-placeholder="Ciudad o municipio" data-todas="Todas las ciudades"
+                            data-destacar="Con vacantes ahora" data-vacio="Revisa cómo se escribe o prueba con otra ciudad.">
                         <option value="">Lugar (todas)</option>
-                        <optgroup label="Principales Ciudades">
-                            <option value="bogota">Bogotá D.C.</option>
-                            <option value="medellin">Medellín</option>
-                            <option value="cali">Cali</option>
-                            <option value="barranquilla">Barranquilla</option>
-                            <option value="cartagena">Cartagena de Indias</option>
-                            <option value="bucaramanga">Bucaramanga</option>
-                            <option value="pereira">Pereira</option>
-                            <option value="manizales">Manizales</option>
-                            <option value="armenia">Armenia</option>
-                            <option value="ibague">Ibagué</option>
-                            <option value="pasto">Pasto</option>
-                            <option value="cucuta">Cúcuta</option>
-                            <option value="villavicencio">Villavicencio</option>
-                            <option value="santa_marta">Santa Marta</option>
-                            <option value="valledupar">Valledupar</option>
-                            <option value="neiva">Neiva</option>
-                            <option value="popayan">Popayán</option>
-                            <option value="tunja">Tunja</option>
-                            <option value="riohacha">Riohacha</option>
-                        </optgroup>
-                        <optgroup label="Departamentos / Regiones">
-                            <option value="yopal">Yopal</option>
-                            <option value="florencia">Florencia</option>
-                            <option value="mocoa">Mocoa</option>
-                            <option value="quibdo">Quibdó</option>
-                        </optgroup>
-                        <optgroup label="Área Metropolitana y Municipios">
-                            <option value="soledad">Soledad (Atlántico)</option>
-                            <option value="envigado">Envigado (Antioquia)</option>
-                            <option value="bello">Bello (Antioquia)</option>
-                            <option value="itagui">Itagüí (Antioquia)</option>
-                            <option value="sabaneta">Sabaneta (Antioquia)</option>
-                            <option value="dosquebradas">Dosquebradas (Risaralda)</option>
-                            <option value="palmira">Palmira (Valle)</option>
-                            <option value="jamundi">Jamundí (Valle)</option>
+                        <optgroup label="Bolívar">
+                            <option value="cartagena">Cartagena de Indias (Bolívar)</option>
                             <option value="turbaco">Turbaco (Bolívar)</option>
-                            <option value="magangue">Magangué (Bolívar)</option>
                             <option value="arjona">Arjona (Bolívar)</option>
-                            <option value="funza">Funza (Cundinamarca)</option>
-                            <option value="mosquera">Mosquera (Cundinamarca)</option>
-                            <option value="chia">Chía (Cundinamarca)</option>
-                            <option value="zipaquira">Zipaquirá (Cundinamarca)</option>
-                            <option value="facatativa">Facatativá (Cundinamarca)</option>
-                            <option value="barichara">Barichara (Santander)</option>
+                            <option value="turbana">Turbaná (Bolívar)</option>
+                            <option value="clemencia">Clemencia (Bolívar)</option>
+                            <option value="santa_rosa">Santa Rosa (Bolívar)</option>
+                            <option value="el_carmen_de_bolivar">El Carmen de Bolívar</option>
+                            <option value="magangue">Magangué (Bolívar)</option>
+                            <option value="mompox">Mompox (Bolívar)</option>
                         </optgroup>
-                        <option value="otras">Otras ciudades / municipios</option>
+                        <optgroup label="Otras ciudades">
+                            <option value="armenia">Armenia (Quindío)</option>
+                            <option value="barichara">Barichara (Santander)</option>
+                            <option value="barranquilla">Barranquilla (Atlántico)</option>
+                            <option value="bello">Bello (Antioquia)</option>
+                            <option value="bogota">Bogotá D.C.</option>
+                            <option value="bucaramanga">Bucaramanga (Santander)</option>
+                            <option value="cali">Cali (Valle del Cauca)</option>
+                            <option value="chia">Chía (Cundinamarca)</option>
+                            <option value="cucuta">Cúcuta (Norte de Santander)</option>
+                            <option value="dosquebradas">Dosquebradas (Risaralda)</option>
+                            <option value="envigado">Envigado (Antioquia)</option>
+                            <option value="facatativa">Facatativá (Cundinamarca)</option>
+                            <option value="florencia">Florencia (Caquetá)</option>
+                            <option value="funza">Funza (Cundinamarca)</option>
+                            <option value="ibague">Ibagué (Tolima)</option>
+                            <option value="itagui">Itagüí (Antioquia)</option>
+                            <option value="jamundi">Jamundí (Valle del Cauca)</option>
+                            <option value="manizales">Manizales (Caldas)</option>
+                            <option value="medellin">Medellín (Antioquia)</option>
+                            <option value="mocoa">Mocoa (Putumayo)</option>
+                            <option value="monteria">Montería (Córdoba)</option>
+                            <option value="mosquera">Mosquera (Cundinamarca)</option>
+                            <option value="neiva">Neiva (Huila)</option>
+                            <option value="palmira">Palmira (Valle del Cauca)</option>
+                            <option value="pasto">Pasto (Nariño)</option>
+                            <option value="pereira">Pereira (Risaralda)</option>
+                            <option value="popayan">Popayán (Cauca)</option>
+                            <option value="quibdo">Quibdó (Chocó)</option>
+                            <option value="riohacha">Riohacha (La Guajira)</option>
+                            <option value="sabaneta">Sabaneta (Antioquia)</option>
+                            <option value="santa_marta">Santa Marta (Magdalena)</option>
+                            <option value="sincelejo">Sincelejo (Sucre)</option>
+                            <option value="soledad">Soledad (Atlántico)</option>
+                            <option value="tunja">Tunja (Boyacá)</option>
+                            <option value="valledupar">Valledupar (Cesar)</option>
+                            <option value="villavicencio">Villavicencio (Meta)</option>
+                            <option value="yopal">Yopal (Casanare)</option>
+                            <option value="zipaquira">Zipaquirá (Cundinamarca)</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="modality-select" class="sr-only">Modalidad</label>
-                    <select id="modality-select" class="filter-select">
+                    <select id="modality-select" class="filter-select" data-lista data-icono="desktop" data-todas="Cualquier modalidad">
                         <option value="">Modalidad</option>
-                        <option value="presencial">Presencial</option>
-                        <option value="virtual">Virtual</option>
-                        <option value="hibrida">Híbrida</option>
+                        <option value="presencial" data-icono="building">Presencial</option>
+                        <option value="virtual" data-icono="home">Virtual (desde casa)</option>
+                        <option value="hibrida" data-icono="refresh">Híbrida</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="experience-select" class="sr-only">Experiencia</label>
-                    <select id="experience-select" class="filter-select">
+                    <select id="experience-select" class="filter-select" data-lista data-icono="trending" data-todas="Cualquier experiencia">
                         <option value="">Experiencia</option>
-                        <option value="junior">Junior (0-1 año)</option>
-                        <option value="mid">Mid (1-3 años)</option>
-                        <option value="senior">Senior (3+ años)</option>
+                        <option value="junior" data-icono="sprout">Junior (0 a 1 año)</option>
+                        <option value="mid" data-icono="trending">Semi-senior (1 a 3 años)</option>
+                        <option value="senior" data-icono="star">Senior (más de 3 años)</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="salary-select" class="sr-only">Salario</label>
-                    <select id="salary-select" class="filter-select">
-                        <option value="">Rango</option>
-                        <option value="0-1000">Hasta $1.000.000</option>
-                        <option value="1000-2000">$1.000.000 - $2.000.000</option>
-                        <option value="2000-3000">$2.000.000 - $3.000.000</option>
-                        <option value="3000-5000">$3.000.000 - $5.000.000</option>
-                        <option value="5000+">Más de $5.000.000</option>
+                    <select id="salary-select" class="filter-select" data-lista data-icono="money" data-todas="Cualquier salario">
+                        <option value="">Salario</option>
+                        <option value="0-1000">Hasta $1 millón</option>
+                        <option value="1000-2000">De $1 a $2 millones</option>
+                        <option value="2000-3000">De $2 a $3 millones</option>
+                        <option value="3000-5000">De $3 a $5 millones</option>
+                        <option value="5000+">Más de $5 millones</option>
                     </select>
                 </div>
             </div>
