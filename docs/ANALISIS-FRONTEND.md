@@ -104,6 +104,13 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   `/jobs/filter`.
 - Restringir `connect-src` de la CSP a `'self'` cuando el frontend vaya dentro del jar.
 
+## Avance
+
+- **Punto 1 (hecho):** `api-config.js` solo acepta `?api=` en este equipo o en la red local
+  (localhost, 127.x, 10.x, 172.16-31.x, 192.168.x) y hacia un servidor también local; en el sitio
+  publicado lo ignora y borra lo que alguien haya dejado guardado. De paso, desde el celular en el wifi
+  ya no hace falta `?api=`: la página usa el puerto 8080 del mismo equipo.
+
 ## Orden propuesto (solo frontend)
 
 1. `?api=` solo en local (seguridad, 1 archivo).

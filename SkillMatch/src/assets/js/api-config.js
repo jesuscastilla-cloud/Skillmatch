@@ -4,9 +4,12 @@
  *  UNICO lugar que hay que tocar para cambiar a donde apunta el frontend.
  *
  *  Como decide la URL, en este orden:
- *   1. ?api=https://mi-backend.com/api  en la barra de direcciones (para probar)
+ *   1. ?api=http://192.168.0.12:8080/api en la barra de direcciones, para
+ *      probar contra otro backend. SOLO en tu PC o tu red local y hacia un
+ *      servidor local (ver esDireccionLocal).
  *   2. API_URL_PRODUCCION, si lo defines abajo
- *   3. http://localhost:8080/api cuando abres el sitio en tu maquina
+ *   3. En tu PC o tu red local: el backend en el puerto 8080 de ese equipo
+ *      (desde el celular en tu wifi funciona sin ?api=)
  *   4. El mismo dominio desde donde se sirve la pagina (/api)
  *
  *  Si el backend sirve tambien el frontend (opcion recomendada, un solo
@@ -18,23 +21,48 @@
 // const API_URL_PRODUCCION = 'https://skillmatchproject-production.up.railway.app/api';
 const API_URL_PRODUCCION = '';
 
+/** Este equipo o la red de la casa/oficina: localhost, 127.x, 10.x, 172.16-31.x y 192.168.x. */
+function esDireccionLocal(host) {
+    return host === '' || host === 'localhost' || host === '[::1]' || host === '::1' ||
+        /^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host) ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+}
+
+/** La URL de ?api= solo vale si es http(s) y apunta a un servidor local. */
+function apiDePrueba(url) {
+    try {
+        const destino = new URL(url);
+        if (/^https?:$/.test(destino.protocol) && esDireccionLocal(destino.hostname)) return url.replace(/\/$/, '');
+    } catch (e) { /* no es una URL */ }
+    return '';
+}
+
 function resolverBaseUrl() {
-    // 1. Override temporal por querystring, util para probar contra otro backend
-    const params = new URLSearchParams(window.location.search);
-    const desdeUrl = params.get('api');
-    if (desdeUrl) {
-        localStorage.setItem('skillmatch_api_url', desdeUrl.replace(/\/$/, ''));
+    const host = window.location.hostname;
+    const enLocal = esDireccionLocal(host);
+
+    // 1. ?api= para probar contra otro backend. En el sitio publicado se
+    //    ignora: un enlace con ?api=https://servidor-ajeno hacia que el login
+    //    mandara el correo y la contrasena a ese servidor (y quedaba guardado).
+    if (!enLocal) {
+        localStorage.removeItem('skillmatch_api_url'); // por si alguien ya lo dejo guardado
+    } else {
+        const desdeUrl = apiDePrueba(new URLSearchParams(window.location.search).get('api') || '');
+        if (desdeUrl) localStorage.setItem('skillmatch_api_url', desdeUrl);
+        const guardada = apiDePrueba(localStorage.getItem('skillmatch_api_url') || '');
+        if (guardada) return guardada;
+        localStorage.removeItem('skillmatch_api_url');
     }
-    const guardada = localStorage.getItem('skillmatch_api_url');
-    if (guardada) return guardada;
 
     // 2. URL fija de produccion, si se definio
     if (API_URL_PRODUCCION) return API_URL_PRODUCCION.replace(/\/$/, '');
 
-    // 3. Desarrollo local: el backend escucha en el 8080
-    const host = window.location.hostname;
-    const esLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
-    if (esLocal) return 'http://localhost:8080/api';
+    // 3. En este equipo o en la red local: el backend escucha en el 8080
+    //    (desde el celular, http://192.168.0.12:5500 -> http://192.168.0.12:8080/api)
+    if (enLocal) {
+        const equipo = (host === '' || host === '127.0.0.1' || host === '[::1]' || host === '::1') ? 'localhost' : host;
+        return 'http://' + equipo + ':8080/api';
+    }
 
     // 4. Mismo origen que la pagina
     return window.location.origin + '/api';
