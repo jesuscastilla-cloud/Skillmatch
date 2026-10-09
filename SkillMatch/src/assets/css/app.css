@@ -651,6 +651,9 @@ select, textarea {
 /* Edge dibuja su propio ojo dentro de las contrasenas: junto al boton de la
    pagina salian dos ojos (captura de Luis en login-usuario) */
 input::-ms-reveal, input::-ms-clear { display: none; }
+/* El selector de archivo nativo tiene un ancho minimo grande ("Elegir archivo
+   No se ha seleccionado...") y podia sacar un formulario de la pantalla */
+input[type="file"] { max-width: 100%; }
 
 input::placeholder, textarea::placeholder { color: #9FB2C7; }
 

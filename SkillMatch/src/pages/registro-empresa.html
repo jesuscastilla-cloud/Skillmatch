@@ -115,10 +115,9 @@
                             <label for="empresa-web">Sitio web (opcional)</label>
                             <input type="url" id="empresa-web" name="web" placeholder="https://">
                         </div>
-                        <div class="form-group">
-                            <label for="empresa-logo">Logo (opcional)</label>
-                            <input type="file" id="empresa-logo" name="logo" accept="image/png, image/jpeg">
-                        </div>
+                        <!-- Sin campo de logo: registro-empresa.js nunca lo enviaba y el
+                             backend no lo recibe (ni deja cambiarlo despues). Ademas su
+                             texto nativo sacaba el formulario de la pantalla en celular. -->
                         <div class="form-group span-full">
                             <label for="empresa-descripcion">Descripción</label>
                             <textarea id="empresa-descripcion" name="descripcion" rows="4" required></textarea>

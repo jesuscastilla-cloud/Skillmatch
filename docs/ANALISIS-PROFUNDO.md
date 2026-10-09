@@ -81,6 +81,9 @@ y lectura del código. El celular se auditó simulando pantalla táctil de verda
   que fingían guardar (portada, logo y datos solo se guardaban en el navegador: el backend solo deja
   a la empresa cambiar su descripción). De paso: notificaciones sin errores sin conexión y la
   búsqueda ya no pide guardados con sesión de empresa (403).
+- **Paso 2 — Registro de empresa (hecho):** fuera el campo "Logo (opcional)": el script nunca lo
+  enviaba y el backend no lo recibe; su texto nativo sacaba el formulario de la pantalla (402 px en
+  375). Regla general: ningún selector de archivo pasa del ancho de su caja.
 - Para Jesús: permitir que la empresa edite sus datos (hoy `PUT /companies/{id}` es solo de ADMIN),
   agregar portada a `Company` y guardar beneficios como lista.
 
