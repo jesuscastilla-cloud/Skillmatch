@@ -65,15 +65,15 @@
                         <!-- Header del chat -->
                         <div class="chat-header">
                             <div class="chat-user-info">
+                                <button class="btn-icon btn-volver-chat" id="backToListBtn" type="button" aria-label="Volver a las conversaciones"><i data-ico="arrow"></i></button>
                                 <div class="chat-avatar" id="chatAvatar"><i data-ico="user"></i></div>
                                 <div class="chat-user-details">
                                     <h3 id="chatUserName">Usuario</h3>
-                                    <span class="chat-user-status" id="chatUserStatus">En línea</span>
+                                    <span class="chat-user-status" id="chatUserStatus"></span>
                                 </div>
                             </div>
                             <div class="chat-actions">
-                                <button class="btn-icon" id="viewProfileBtn" title="Ver perfil"><i data-ico="user"></i></button>
-                                <button class="btn-icon" id="deleteConversationBtn" title="Eliminar conversación"><i data-ico="trash"></i></button>
+                                <button class="btn-icon" id="viewProfileBtn" type="button" title="Ver perfil"><i data-ico="user"></i></button>
                             </div>
                         </div>
 
@@ -84,14 +84,28 @@
 
                         <!-- Input de mensaje -->
                         <div class="chat-input">
-                            <input type="text" id="messageInput" placeholder="Escribe un mensaje..." />
-                            <button class="btn-send" id="sendMessageBtn">Enviar <i data-ico="arrow"></i></button>
+                            <input type="text" id="messageInput" placeholder="Escribe un mensaje..." aria-label="Escribe un mensaje" autocomplete="off" />
+                            <button class="btn-send" id="sendMessageBtn" type="button" aria-label="Enviar mensaje" title="Enviar"><i data-ico="send"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- Nuevo mensaje: elegir a quien escribirle entre tus conexiones -->
+    <div id="newMessageModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="newMessageTitle">
+        <div class="modal-content-small">
+            <div class="modal-header">
+                <h2 id="newMessageTitle"><i data-ico="chat"></i> Nuevo mensaje</h2>
+                <button type="button" class="btn-close-modal" data-cerrar-modal aria-label="Cerrar"><i data-ico="close"></i></button>
+            </div>
+            <div class="nuevo-mensaje-cuerpo">
+                <input type="search" id="buscarPersona" placeholder="Busca entre tus conexiones..." aria-label="Buscar entre tus conexiones" autocomplete="off">
+                <ul class="nuevo-mensaje-lista" id="listaPersonas"></ul>
+            </div>
+        </div>
+    </div>
 
     <footer>
         <div class="container">

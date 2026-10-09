@@ -17,7 +17,9 @@ function getUserData() {
     }
     
     // Si hay un ID en la URL, devolver un objeto con ese ID (cargar desde backend)
-    if (userIdFromUrl) {
+    let propio = null;
+    try { propio = JSON.parse(userData); } catch (e) { /* datos dañados */ }
+    if (userIdFromUrl && String(userIdFromUrl) !== String(propio && propio.id)) {
         return { id: userIdFromUrl, isOtherUser: true };
     }
     
@@ -60,8 +62,14 @@ async function loadUserProfile() {
             displayUserProfile(currentUserProfile);
             
             // Si estamos viendo el perfil de otro usuario, ocultar botones de edición
+            // y ofrecer escribirle
             if (user.isOtherUser) {
                 hideEditButtons();
+                const mensaje = document.getElementById('messageUserBtn');
+                if (mensaje) {
+                    mensaje.href = 'mensajes.html?userId=' + encodeURIComponent(user.id);
+                    mensaje.hidden = false;
+                }
             }
         } else {
             displayUserProfile(user);

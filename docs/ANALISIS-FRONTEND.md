@@ -110,6 +110,16 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   (localhost, 127.x, 10.x, 172.16-31.x, 192.168.x) y hacia un servidor también local; en el sitio
   publicado lo ignora y borra lo que alguien haya dejado guardado. De paso, desde el celular en el wifi
   ya no hace falta `?api=`: la página usa el puerto 8080 del mismo equipo.
+- **Punto 2 (hecho): Mensajes funciona de punta a punta.** Al probarlo salieron tres fallos más que ya
+  existían: la lista esperaba campos que el backend no manda (cada conversación salía como "Usuario",
+  sin texto, y no se abría), el panel del chat nunca se mostraba (la clase `.hidden` le ganaba a
+  `style.display`) y tus mensajes no salían a la derecha (el CSS usaba otra clase). Ahora: "Nuevo
+  mensaje" con tus conexiones y buscador; `mensajes.html?userId=` abre o empieza la conversación
+  (Conexiones, perfil ajeno con "Enviar mensaje", postulaciones y candidatos de la empresa,
+  notificaciones); no leídos reales; revisión cada 5 s sin parpadeo ni saltos y pausada con la pestaña
+  oculta; en celular, la lista o el chat con botón para volver; fuera "En línea" (inventado) y la
+  papelera sin acción. De paso: las fechas decían "Ayer" para todo lo de las últimas 24 h (`utils.js`) y
+  `[hidden]` ahora siempre oculta.
 
 ## Orden propuesto (solo frontend)
 

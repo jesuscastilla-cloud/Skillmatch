@@ -726,6 +726,10 @@ function createCandidateCard(application, offerId) {
                         style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:#1e3a5f;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
                     Ver perfil
                 </button>
+                <a href="mensajes.html?userId=${encodeURIComponent(application.userId)}"
+                   style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:#0B7E8C;color:white;border-radius:8px;font-size:0.85rem;font-weight:600;text-decoration:none;">
+                    <i data-ico="chat"></i> Mensaje
+                </a>
                 <!-- Nombre y correo en data-: dentro del onclick una comilla en el nombre ejecutaba codigo -->
                 <button data-email="${escaparHtml(application.userEmail)}" data-nombre="${escaparHtml(application.userName)}" onclick="contactCandidateByEmail(this.dataset.email, this.dataset.nombre)"
                         style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:white;color:#0369a1;border:1.5px solid #bfdbfe;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
@@ -951,6 +955,7 @@ function createApplicationCard(application, oculta) {
             ` : ''}
             <div class="application-actions">
                 <button class="btn btn-secondary btn-small" onclick="viewCandidateProfile('${application.userId}')">Ver perfil</button>
+                <a class="btn btn-secondary btn-small" href="mensajes.html?userId=${encodeURIComponent(application.userId)}"><i data-ico="chat"></i> Mensaje</a>
                 ${normalizedStatus === 'pending' || normalizedStatus === 'reviewed' ? `
                     <button class="btn btn-primary btn-small" onclick="updateApplicationStatus('${application.id}', 'aceptada')"><i data-ico="check"></i> Aceptar</button>
                     <button class="btn btn-secondary btn-small" onclick="updateApplicationStatus('${application.id}', 'rechazada')"><i data-ico="close"></i> Rechazar</button>

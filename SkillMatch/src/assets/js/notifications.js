@@ -209,9 +209,11 @@ async function handleNotificationClick(notificationId, actionUrl) {
         // Actualizar UI
         loadNotifications();
         
-        // Navegar si hay URL
+        // Navegar si hay URL. El backend manda "/pages/mensajes.html?...": todas
+        // las paginas estan en la misma carpeta, asi que se usa la ruta relativa
+        // (con "/pages/" fallaba en Live Server, donde la carpeta es otra)
         if (actionUrl && actionUrl !== 'null') {
-            window.location.href = actionUrl;
+            window.location.href = actionUrl.replace(/^\/?pages\//, '');
         }
     } catch (error) {
     }
