@@ -1089,7 +1089,6 @@
                     '<div class="pie-marca">' +
                         '<a href="index.html" class="pie-logo"><img src="../assets/img/logo-oscuro.png" alt="SkillMatch, ir al inicio" width="531" height="160" loading="lazy"></a>' +
                         '<p>La bolsa de empleo y networking de Cartagena: compara tus habilidades con cada vacante de la ciudad antes de postularte.</p>' +
-                        '<button type="button" class="pie-buscar"><i data-ico="search"></i>Buscar en SkillMatch<kbd>Ctrl K</kbd></button>' +
                     '</div>' +
                     '<nav class="pie-columnas" aria-label="Enlaces del pie de página">' +
                         PIE_COLUMNAS.map(function (col) {
@@ -1105,12 +1104,6 @@
                 '</div>' +
             '</div>' +
             '<div class="pie-gigante" aria-hidden="true"><span>Skill</span><span>Match</span></div>';
-
-        // En Mac el atajo es Cmd+K
-        if (/Mac|iPhone|iPad/.test(navigator.platform)) pie.querySelector('.pie-buscar kbd').textContent = '⌘ K';
-        pie.querySelector('.pie-buscar').addEventListener('click', function () {
-            if (UI.paleta) UI.paleta.abrir();
-        });
 
         // Volver arriba: sube (suave si se permite movimiento) y deja el foco
         // en el logo de la barra, para que con teclado se siga desde ahi

@@ -2348,7 +2348,8 @@ footer.pie > .container { position: relative; z-index: 1; }
 .pie-logo { display: inline-block; }
 .pie-logo img { display: block; width: auto; height: 44px; }
 .pie-marca p { max-width: 36ch; margin-top: var(--s4); line-height: 1.6; color: rgba(255,255,255,.72); }
-.pie-buscar {
+/* (El boton "Buscar en SkillMatch" del pie se quito a pedido de Luis) */
+.pie-buscar-quitado {
     display: inline-flex; align-items: center; gap: var(--s2);
     min-height: 44px;
     margin-top: var(--s5);
@@ -2540,6 +2541,21 @@ footer.pie > .container { position: relative; z-index: 1; }
    y las mueve con un motor de fisica (resortes y gravedad) que solo escribe
    transform y opacity. Aqui van los colores y el estado inicial. */
 .login-personajes { width: min(100%, 400px); margin: 0 auto var(--s6); }
+/* Pantallas bajas (portatil con zoom de Windows, ~730 px de alto): el login
+   no cabia y las cifras de la columna oscura quedaban cortadas abajo. Menos
+   margen y los personajes miden segun el alto (44vh de ancho = 34vh de alto).
+   En pantallas altas no cambia nada. */
+@media (min-width: 1081px) and (max-height: 860px) {
+    .auth-panel, .auth-aside { padding-block: var(--s6); }
+    .login-personajes { width: min(100%, 400px, 44vh); margin-bottom: var(--s4); }
+    .auth-aside h2 { font-size: clamp(1.9rem, 1rem + 2.6vh, 2.6rem); }
+}
+/* La columna oscura baja hasta el pie: sin la ola (pintaba una franja clara
+   entre los dos) y el pie empieza recto, como la llamada final de la portada */
+@media (min-width: 1081px) {
+    body:has(.auth-shell) footer.pie { padding-top: var(--s8); }
+    body:has(.auth-shell) .pie-ola { display: none; }
+}
 /* Con JavaScript se reserva el espacio antes de dibujar: nada salta al cargar */
 @media (scripting: enabled) { .login-personajes { aspect-ratio: 360 / 280; } }
 .lp { display: block; width: 100%; height: auto; overflow: visible; }
