@@ -168,11 +168,8 @@ function loadOffers() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
     if (!userData.companyId) {
-        const savedOffers = JSON.parse(localStorage.getItem('companyOffers') || '[]');
-        currentOffers = savedOffers;
-        if (savedOffers.length > 0) {
-            renderOffers(savedOffers);
-        }
+        const lista = document.getElementById('offersList');
+        if (lista) lista.innerHTML = '<p class="error-text">No encontramos tu empresa. Cierra sesión y vuelve a entrar.</p>';
         return;
     }
 
@@ -221,15 +218,9 @@ function loadOffers() {
         renderOffers(currentOffers);
     })
     .catch(error => {
-        // Fallback a localStorage
-        const savedOffers = JSON.parse(localStorage.getItem('companyOffers') || '[]');
-        currentOffers = savedOffers;
-        if (savedOffers.length > 0) {
-            renderOffers(savedOffers);
-        } else {
-            const lista = document.getElementById('offersList');
-            if (lista) lista.innerHTML = '<p class="error-text">No se pudieron cargar las ofertas.</p>';
-        }
+        // Sin las copias del navegador: antes se mostraban como si fueran reales
+        const lista = document.getElementById('offersList');
+        if (lista) lista.innerHTML = '<p class="error-text">No se pudieron cargar las ofertas. Intenta de nuevo en un momento.</p>';
     });
 }
 
@@ -252,7 +243,6 @@ function renderOffers(offers) {
                     <h3>${sanitize(offer.title)}</h3>
                     <span class="offer-type-badge ${offer.type}">${offer.typeLabel}</span>
                 </div>
-                <button class="offer-menu-btn" onclick="showOfferMenu('${offerId}')" title="Opciones">⋮</button>
             </div>
             <div class="offer-card-info">
                 <div class="offer-info-row">
@@ -310,34 +300,8 @@ function setupEventListeners() {
 // FUNCIONES DE OFERTAS
 // ========================================
 
-function showOfferMenu(offerId) {
-    if (confirm('¿Deseas eliminar esta oferta?')) {
-        deleteOffer(offerId);
-    }
-}
-
-function deleteOffer(offerId) {
-
-    // Eliminar en backend
-    fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}`, { method: 'DELETE' })
-    .then(response => {
-        if (!response.ok) throw new Error('Error al eliminar oferta');
-        return response.json();
-    })
-    .then(data => {
-        currentOffers = currentOffers.filter((offer, index) => (offer.id || index) !== offerId);
-        localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
-        renderOffers(currentOffers);
-        showNotification('Oferta eliminada correctamente');
-    })
-    .catch(error => {
-        // Fallback: eliminar solo de localStorage
-        currentOffers = currentOffers.filter((offer, index) => (offer.id || index) !== offerId);
-        localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
-        renderOffers(currentOffers);
-        showNotification('Oferta eliminada localmente');
-    });
-}
+// (El botón "⋮" solo ofrecía eliminar, y en el backend eliminar no borra: cierra la
+// oferta igual que "Archivar", que además se puede deshacer con "Reabrir".)
 
 function viewOfferCandidates(offerId) {
     const offer = currentOffers.find((o, i) => (o.id || i) === offerId);
@@ -371,7 +335,6 @@ function toggleOfferStatus(offerId) {
     })
     .then(() => {
         currentOffers[offerIndex].status = newLocalStatus;
-        localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
         renderOffers(currentOffers);
         showNotification(newLocalStatus === 'active' ? 'Oferta reabierta' : 'Oferta archivada');
     })
@@ -445,127 +408,261 @@ function openEditAboutModal() {
     });
 }
 
-function openNewOfferModal(existingOffer = null, offerId = null) {
-    const isEdit = existingOffer !== null;
-    
-    createModal(isEdit ? 'Editar oferta' : 'Nueva oferta', `
-        <div class="form-group">
-            <label for="offerTitle">Título de la oferta *</label>
-            <input type="text" id="offerTitle" placeholder="ej. Desarrollador Frontend Senior" value="${sanitize(existingOffer?.title)}" required>
-        </div>
-        <div class="form-group">
-            <label for="offerType">Tipo de oferta *</label>
-            <select id="offerType" required>
-                <option value="practice" ${existingOffer?.type === 'practice' ? 'selected' : ''}>Práctica</option>
-                <option value="employment" ${existingOffer?.type === 'employment' ? 'selected' : ''}>Empleo</option>
-                <option value="freelance" ${existingOffer?.type === 'freelance' ? 'selected' : ''}>Freelance</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="offerDescription">Descripción *</label>
-            <textarea id="offerDescription" rows="4" placeholder="Describe las responsabilidades y requisitos..." required>${sanitize(existingOffer?.description)}</textarea>
-        </div>
-        <div class="form-group">
-            <label for="offerSalary">Rango salarial (opcional)</label>
-            <input type="text" id="offerSalary" placeholder="ej. $2M - $3M / mes" value="${sanitize(existingOffer?.salary)}">
-        </div>
-        <div class="form-group">
-            <label for="offerLocation">Ubicación *</label>
-            <input type="text" id="offerLocation" placeholder="ej. Cartagena de Indias" value="${sanitize(existingOffer?.location || 'Cartagena de Indias')}" required>
-        </div>
-    `, () => {
-        const title = document.getElementById('offerTitle').value;
-        const type = document.getElementById('offerType').value;
-        const description = document.getElementById('offerDescription').value;
-        const salary = document.getElementById('offerSalary').value;
-        const location = document.getElementById('offerLocation').value;
-        
-        if (!title || !type || !description || !location) {
-            alert('Por favor completa todos los campos obligatorios (*)');
-            return;
-        }
-        
-        const typeLabels = { practice: 'práctica', employment: 'empleo', freelance: 'freelance' };
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        
-        // Preparar datos para el backend
-        
-        if (!userData.companyId) {
-            alert('No se encontró el identificador de la empresa.\n\nPor favor, cierra sesión e inicia sesión nuevamente para sincronizar tus datos.');
-            return;
-        }
+// ---- Nueva oferta / editar oferta ----
+// Antes la ventana no preguntaba modalidad, nivel ni habilidades: guardaba
+// siempre "híbrido" y "junior", sin habilidades no había % de compatibilidad
+// y el salario del ejemplo ("$2M - $3M") quedaba en 2 pesos. Al editar era
+// peor: el backend reemplaza la oferta completa y se borraban requisitos,
+// responsabilidades, beneficios, duración y fecha límite.
 
-        const backendData = {
-            companyId: userData.companyId,
-            title,
-            description,
-            type: typeLabels[type],
-            location,
-            modality: 'híbrido',
-            experienceLevel: 'junior' // Valor por defecto si no se especifica
-        };
-        
-        // Agregar salario si existe
-        if (salary) {
-            const salaryMatch = salary.match(/\$?([\d.,]+)\s*-?\s*\$?([\d.,]+)?/);
-            if (salaryMatch) {
-                backendData.salaryMin = parseFloat(salaryMatch[1].replace(/[.,]/g, '')) || 0;
-                backendData.salaryMax = salaryMatch[2] ? parseFloat(salaryMatch[2].replace(/[.,]/g, '')) : backendData.salaryMin;
-            }
+const HABILIDADES_SUGERIDAS = [
+    'Atención al cliente', 'Ventas', 'Excel', 'Inglés', 'Comunicación', 'Trabajo en equipo',
+    'Contabilidad', 'Marketing digital', 'Redes sociales', 'Diseño gráfico', 'Figma', 'Power BI',
+    'Logística', 'Turismo', 'Servicio al cliente', 'Gestión de proyectos', 'Scrum', 'Agile',
+    'Python', 'Java', 'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue.js', 'Node.js',
+    'Spring Boot', 'Django', 'Flask', 'PHP', 'Laravel', 'C#', '.NET', 'Kotlin', 'Swift', 'Flutter',
+    'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Git', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP',
+    'REST API', 'GraphQL', 'CI/CD', 'TDD'
+];
+const CIUDADES_OFERTA = ['Cartagena de Indias', 'Turbaco', 'Arjona', 'Magangué', 'Barranquilla',
+    'Santa Marta', 'Montería', 'Sincelejo', 'Bogotá D.C.', 'Medellín', 'Cali', 'Bucaramanga'];
+
+// Lo que devuelve la lista de habilidades de la ventana abierta
+let habilidadesDeOferta = () => [];
+
+function sinTildesOferta(texto) {
+    return String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+async function openNewOfferModal(existingOffer = null, offerId = null) {
+    const isEdit = existingOffer !== null;
+    let oferta = {};
+    if (isEdit) {
+        // La oferta completa: lo que el formulario no muestra también se reenvía
+        try {
+            const respuesta = await fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}`);
+            if (!respuesta.ok) throw new Error();
+            oferta = await respuesta.json();
+        } catch (error) {
+            alert('No pudimos cargar la oferta para editarla. Intenta de nuevo.');
+            return;
         }
-        
-        // Determinar endpoint y método
-        const url = isEdit ? `${API_BASE_URL}/jobs/${offerId}` : `${API_BASE_URL}/jobs`;
-        const method = isEdit ? 'PUT' : 'POST';
-        
-        
-        // Guardar en backend
-        fetchWithAuth(url, {
-            method: method,
-            body: JSON.stringify(backendData)
-        })
-        .then(async response => {
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
-                throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            
-            // Actualizar lista local
-            const offerData = {
-                id: data.id,
-                title: data.title,
-                type: data.type?.toLowerCase() || 'employment',
-                typeLabel: data.type || 'Empleo',
-                description: data.description,
-                salary: data.salaryRange,
-                location: data.location,
-                publishDate: new Date(data.createdAt).toLocaleDateString('es-ES'),
-                candidates: 0,
-                status: 'active'
-            };
-            
-            if (isEdit) {
-                const index = currentOffers.findIndex((o, i) => (o.id || i) === offerId);
-                if (index !== -1) {
-                    currentOffers[index] = offerData;
-                }
-            } else {
-                currentOffers.unshift(offerData);
-            }
-            
-            localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
-            renderOffers(currentOffers);
-            showNotification(isEdit ? 'Oferta actualizada en la base de datos' : 'Oferta publicada en la base de datos');
-            closeModal();
-        })
-        .catch(error => {
-            alert('Error al guardar la oferta:\n\n' + error.message + '\n\nRevisa la consola (F12) para más detalles.');
+    }
+
+    const opciones = (lista, actual, porDefecto) => lista.map(([valor, texto]) => {
+        const elegida = sinTildesOferta(actual || porDefecto) === sinTildesOferta(valor);
+        return `<option value="${valor}"${elegida ? ' selected' : ''}>${texto}</option>`;
+    }).join('');
+    const lineas = lista => sanitize((lista || []).join('\n'));
+    const hoy = new Date().toISOString().slice(0, 10);
+
+    createModal(isEdit ? 'Editar oferta' : 'Nueva oferta', `
+        <div class="form-grid oferta-form">
+            <div class="form-group span-full">
+                <label for="offerTitle">Título de la oferta *</label>
+                <input type="text" id="offerTitle" maxlength="200" placeholder="Ej.: Desarrollador frontend junior" value="${sanitize(oferta.title)}">
+            </div>
+            <div class="form-group">
+                <label for="offerType">Tipo *</label>
+                <select id="offerType">${opciones([['empleo', 'Empleo'], ['práctica', 'Práctica'], ['freelance', 'Freelance']], oferta.type, 'empleo')}</select>
+            </div>
+            <div class="form-group">
+                <label for="offerModality">Modalidad *</label>
+                <select id="offerModality">${opciones([['presencial', 'Presencial'], ['híbrido', 'Híbrida'], ['remoto', 'Remota']], oferta.modality, 'presencial')}</select>
+            </div>
+            <div class="form-group">
+                <label for="offerLevel">Experiencia *</label>
+                <select id="offerLevel">${opciones([['sin-experiencia', 'Sin experiencia'], ['junior', 'Junior (0 a 1 año)'], ['semi-senior', 'Semi-senior (1 a 3 años)'], ['senior', 'Senior (más de 3 años)']], oferta.experienceLevel, 'junior')}</select>
+            </div>
+            <div class="form-group">
+                <label for="offerLocation">Ciudad *</label>
+                <input type="text" id="offerLocation" maxlength="100" list="ciudadesOferta" value="${sanitize(oferta.location || 'Cartagena de Indias')}">
+                <datalist id="ciudadesOferta">${CIUDADES_OFERTA.map(ciudad => `<option value="${ciudad}">`).join('')}</datalist>
+            </div>
+            <div class="form-group">
+                <label for="offerSalaryMin">Salario mínimo (pesos al mes)</label>
+                <input type="number" id="offerSalaryMin" min="0" step="50000" inputmode="numeric" placeholder="Ej.: 1800000" value="${oferta.salaryMin ?? ''}">
+            </div>
+            <div class="form-group">
+                <label for="offerSalaryMax">Salario máximo (pesos al mes)</label>
+                <input type="number" id="offerSalaryMax" min="0" step="50000" inputmode="numeric" placeholder="Ej.: 2500000" value="${oferta.salaryMax ?? ''}">
+            </div>
+            <p class="field-help span-full oferta-salario-vista" id="offerSalaryPreview" aria-live="polite"></p>
+            <div class="form-group">
+                <label for="offerDuration">Duración (opcional)</label>
+                <input type="text" id="offerDuration" maxlength="100" placeholder="Ej.: 6 meses" value="${sanitize(oferta.duration)}">
+            </div>
+            <div class="form-group">
+                <label for="offerDeadline">Fecha límite para postularse (opcional)</label>
+                <input type="date" id="offerDeadline" min="${hoy}" value="${oferta.expirationDate ? String(oferta.expirationDate).slice(0, 10) : ''}">
+            </div>
+            <div class="form-group span-full">
+                <label for="offerSkillInput">Habilidades que pide *</label>
+                <div class="chips-campo" id="offerSkills">
+                    <input type="text" id="offerSkillInput" list="habilidadesSugeridas" maxlength="40" autocomplete="off" placeholder="Escribe una y pulsa Enter">
+                </div>
+                <datalist id="habilidadesSugeridas">${HABILIDADES_SUGERIDAS.map(h => `<option value="${h}">`).join('')}</datalist>
+                <p class="field-help">Se comparan con las habilidades de cada estudiante para calcular su compatibilidad.</p>
+            </div>
+            <div class="form-group span-full">
+                <label for="offerDescription">Descripción *</label>
+                <textarea id="offerDescription" rows="4" maxlength="5000" placeholder="Cuenta de qué se trata el cargo y el equipo">${sanitize(oferta.description)}</textarea>
+            </div>
+            <div class="form-group span-full">
+                <label for="offerRequirements">Requisitos (uno por línea)</label>
+                <textarea id="offerRequirements" rows="3" placeholder="Ej.: Estudiante de últimos semestres de Ingeniería de Sistemas">${lineas(oferta.requirements)}</textarea>
+            </div>
+            <div class="form-group span-full">
+                <label for="offerResponsibilities">Responsabilidades (una por línea)</label>
+                <textarea id="offerResponsibilities" rows="3" placeholder="Ej.: Mantener la página web de la empresa">${lineas(oferta.responsibilities)}</textarea>
+            </div>
+            <div class="form-group span-full">
+                <label for="offerBenefits">Beneficios (uno por línea)</label>
+                <textarea id="offerBenefits" rows="3" placeholder="Ej.: Horario flexible">${lineas(oferta.benefits)}</textarea>
+            </div>
+            <p class="error-text span-full" id="offerError" role="alert" hidden></p>
+        </div>
+    `, () => guardarOferta(isEdit, offerId), isEdit ? 'Guardar cambios' : 'Publicar oferta', { ancho: 760 });
+
+    iniciarHabilidadesOferta(oferta.skills || []);
+    const vista = () => {
+        const min = document.getElementById('offerSalaryMin').value;
+        const max = document.getElementById('offerSalaryMax').value;
+        const pesos = v => '$' + Number(v).toLocaleString('es-CO');
+        document.getElementById('offerSalaryPreview').textContent =
+            min && max ? `Se publicará como ${pesos(min)} - ${pesos(max)} al mes.`
+            : min ? `Se publicará como "desde ${pesos(min)}" al mes.`
+            : max ? `Se publicará como "hasta ${pesos(max)}" al mes.`
+            : 'Déjalo vacío si prefieres no publicar el salario.';
+    };
+    ['offerSalaryMin', 'offerSalaryMax'].forEach(id => document.getElementById(id).addEventListener('input', vista));
+    // El aviso de error se va en cuanto se corrige algo
+    document.querySelector('.oferta-form').addEventListener('input', () => { document.getElementById('offerError').hidden = true; });
+    vista();
+    document.getElementById('offerTitle').focus();
+}
+
+// Habilidades como etiquetas: Enter o coma agrega, la × o Retroceso quita
+function iniciarHabilidadesOferta(iniciales) {
+    const caja = document.getElementById('offerSkills');
+    const campo = document.getElementById('offerSkillInput');
+    let lista = [];
+
+    const pintar = () => {
+        caja.querySelectorAll('.chip').forEach(chip => chip.remove());
+        lista.forEach((habilidad, i) => {
+            const chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.innerHTML = `${escaparHtml(habilidad)}<button type="button" data-i="${i}" aria-label="Quitar ${escaparHtml(habilidad)}"><i data-ico="close"></i></button>`;
+            caja.insertBefore(chip, campo);
         });
+    };
+    const agregar = texto => {
+        String(texto).split(',').map(t => t.trim().slice(0, 40)).filter(Boolean).forEach(t => {
+            const repetida = lista.some(h => sinTildesOferta(h) === sinTildesOferta(t));
+            if (!repetida && lista.length < 15) lista.push(t);
+        });
+        campo.value = '';
+        pintar();
+    };
+
+    campo.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            agregar(campo.value);
+        } else if (e.key === 'Backspace' && !campo.value && lista.length) {
+            lista.pop();
+            pintar();
+        }
     });
+    // Elegir una sugerencia de la lista también la agrega
+    campo.addEventListener('input', () => {
+        if (HABILIDADES_SUGERIDAS.includes(campo.value)) agregar(campo.value);
+    });
+    caja.addEventListener('click', e => {
+        const quitar = e.target.closest('button[data-i]');
+        if (quitar) {
+            lista.splice(Number(quitar.dataset.i), 1);
+            pintar();
+        }
+        campo.focus();
+    });
+
+    agregar(iniciales.join(','));
+    habilidadesDeOferta = () => {
+        if (campo.value.trim()) agregar(campo.value);
+        return lista.slice();
+    };
+}
+
+async function guardarOferta(isEdit, offerId) {
+    const valor = id => document.getElementById(id).value.trim();
+    const aviso = document.getElementById('offerError');
+    const error = mensaje => {
+        aviso.textContent = mensaje;
+        aviso.hidden = false;
+        aviso.scrollIntoView({ block: 'nearest' });
+    };
+    aviso.hidden = true;
+
+    const title = valor('offerTitle');
+    const description = valor('offerDescription');
+    const location = valor('offerLocation');
+    const skills = habilidadesDeOferta();
+    const salaryMin = valor('offerSalaryMin') === '' ? null : Number(valor('offerSalaryMin'));
+    const salaryMax = valor('offerSalaryMax') === '' ? null : Number(valor('offerSalaryMax'));
+
+    if (!title || !location || !description) return error('Completa el título, la ciudad y la descripción.');
+    if (!skills.length) return error('Agrega al menos una habilidad: con ellas se calcula la compatibilidad de cada estudiante.');
+    if ([salaryMin, salaryMax].some(s => s !== null && (Number.isNaN(s) || s < 0))) return error('El salario debe ser un número en pesos.');
+    // Quien escribe "2" pensando en millones publicaría un salario de 2 pesos
+    if ([salaryMin, salaryMax].some(s => s !== null && s > 0 && s < 50000)) return error('Escribe el salario completo en pesos, por ejemplo 1800000.');
+    if (salaryMin !== null && salaryMax !== null && salaryMin > salaryMax) return error('El salario mínimo no puede ser mayor que el máximo.');
+
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    if (!userData.companyId) return error('No encontramos tu empresa. Cierra sesión y vuelve a entrar.');
+
+    const lista = id => valor(id).split('\n').map(l => l.replace(/^[-•*]\s*/, '').trim()).filter(Boolean);
+    const fecha = valor('offerDeadline');
+    const datos = {
+        companyId: userData.companyId,
+        title,
+        description,
+        type: valor('offerType'),
+        modality: valor('offerModality'),
+        experienceLevel: valor('offerLevel'),
+        location,
+        salaryMin,
+        salaryMax,
+        duration: valor('offerDuration') || null,
+        skills,
+        requirements: lista('offerRequirements'),
+        responsibilities: lista('offerResponsibilities'),
+        benefits: lista('offerBenefits'),
+        expirationDate: fecha ? fecha + 'T23:59:59' : null
+    };
+
+    const boton = document.getElementById('modalSaveBtn');
+    boton.disabled = true;
+    try {
+        const respuesta = await fetchWithAuth(isEdit ? `${API_BASE_URL}/jobs/${offerId}` : `${API_BASE_URL}/jobs`, {
+            method: isEdit ? 'PUT' : 'POST',
+            body: JSON.stringify(datos)
+        });
+        if (!respuesta.ok) {
+            const cuerpo = await respuesta.json().catch(() => ({}));
+            throw new Error(cuerpo.message || 'El servidor no aceptó la oferta.');
+        }
+        closeModal();
+        showNotification(isEdit ? 'Oferta actualizada' : 'Oferta publicada');
+        // La lista y las cifras se recargan del servidor (antes se armaba a mano
+        // y salían fechas "1969" y el tipo en minúscula)
+        loadOffers();
+        loadActivityStats();
+    } catch (e) {
+        error('No se pudo guardar la oferta: ' + e.message);
+        boton.disabled = false;
+    }
 }
 
 async function showCandidatesModal(offer) {
@@ -796,7 +893,7 @@ function contactCandidate(candidateId, candidateName) {
 // UTILIDADES
 // ========================================
 
-function createModal(title, content, onSave = null, saveButtonText = 'Guardar') {
+function createModal(title, content, onSave = null, saveButtonText = 'Guardar', opciones = {}) {
     const existingModal = document.getElementById('genericModal');
     if (existingModal) {
         existingModal.remove();
@@ -804,13 +901,12 @@ function createModal(title, content, onSave = null, saveButtonText = 'Guardar') 
     
     const modal = document.createElement('div');
     modal.id = 'genericModal';
-    modal.className = 'modal';
-    modal.style.display = 'flex';
+    modal.className = 'modal active'; // .active: ui.js la cierra con Escape
     modal.innerHTML = `
-        <div class="modal-content" style="max-width:600px;width:90%;">
+        <div class="modal-content" style="max-width:${opciones.ancho || 600}px;width:90%;">
             <div class="modal-header">
                 <h2>${title}</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button type="button" class="modal-close" onclick="closeModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
             </div>
             <div class="modal-body">
                 ${content}

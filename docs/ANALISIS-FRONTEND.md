@@ -102,6 +102,9 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
 - `/users/{id}/experiences` responde 400 ("experienceService is null").
 - Un endpoint con los conteos por ciudad, modalidad, experiencia y salario, o `keyword` en
   `/jobs/filter`.
+- `DELETE /jobs/{id}` no borra: cierra la oferta igual que "Archivar" (por eso se quitó "Eliminar" del
+  perfil de empresa). Si se quiere borrar de verdad, que marque un estado distinto de "cerrada".
+- `GET /users/{id}` devuelve el correo y el teléfono de cualquier usuario a quien haya iniciado sesión.
 - Restringir `connect-src` de la CSP a `'self'` cuando el frontend vaya dentro del jar.
 
 ## Avance
@@ -120,6 +123,13 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   oculta; en celular, la lista o el chat con botón para volver; fuera "En línea" (inventado) y la
   papelera sin acción. De paso: las fechas decían "Ayer" para todo lo de las últimas 24 h (`utils.js`) y
   `[hidden]` ahora siempre oculta.
+- **Punto 3 (hecho): la ventana de oferta pide todo lo que el backend guarda.** Tipo, modalidad, nivel,
+  ciudad (con sugerencias), salario mínimo y máximo en pesos con vista previa (avisa si se escribe "2"
+  pensando en millones), duración, fecha límite, habilidades como etiquetas (al menos una: con ellas se
+  calcula la compatibilidad), requisitos, responsabilidades y beneficios. Editar carga la oferta completa:
+  antes el backend la reemplazaba y se borraban requisitos, beneficios, habilidades y fecha. Tras guardar,
+  la lista y las cifras se recargan del servidor. Fuera las copias de ofertas en el navegador (se mostraban
+  como reales) y el botón "⋮": en el backend "eliminar" no borra, cierra igual que "Archivar".
 
 ## Orden propuesto (solo frontend)
 

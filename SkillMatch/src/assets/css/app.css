@@ -708,6 +708,34 @@ input.is-valid, select.is-valid, textarea.is-valid { border-color: var(--verde);
 }
 .span-full { grid-column: 1 / -1; }
 
+/* ---- Ventana de oferta (perfil de empresa) ----
+   Habilidades como etiquetas: se escriben y se agregan con Enter o coma */
+.chips-campo {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    min-height: 48px; padding: 6px 10px;
+    background: var(--surface);
+    border: 1.5px solid var(--hairline);
+    border-radius: var(--r-md);
+    cursor: text;
+    transition: border-color .16s var(--ease), box-shadow .16s var(--ease);
+}
+.chips-campo:focus-within { border-color: var(--sea); box-shadow: 0 0 0 4px var(--sea-light); }
+.chips-campo input { all: unset; flex: 1 1 140px; min-width: 120px; height: 34px; font-size: var(--t-base); color: var(--ink); }
+.chips-campo input::placeholder { color: var(--ink-3); }
+.chip {
+    display: inline-flex; align-items: center; gap: 2px;
+    padding: 3px 3px 3px 11px;
+    border-radius: var(--r-pill);
+    background: var(--sea-light); color: var(--sea-deep);
+    font-size: var(--t-sm); font-weight: 600;
+}
+.chip button { position: relative; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: inherit; }
+.chip button:hover { background: var(--surface); }
+.chip .ico { width: 14px; height: 14px; }
+@media (pointer: coarse) { .chip button::after { content: ""; position: absolute; inset: -10px; } }
+.oferta-salario-vista { margin: -6px 0 var(--s4); }
+@media (max-width: 600px) { .oferta-form { grid-template-columns: 1fr; } }
+
 .form-section {
     padding: var(--s6) 0;
     border-top: 1px solid var(--hairline-soft);
@@ -1093,6 +1121,9 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .status-badge.revisada,   .badge-info  { background: var(--sea-light);  color: var(--sea-deep); }
 .status-badge.activa                   { background: var(--verde-soft); color: var(--verde); }
 .status-badge.cerrada                  { background: var(--hairline-soft); color: var(--ink-muted); }
+/* Las ofertas del perfil de empresa usan .active/.inactive ("Activa" salía gris) */
+.status-badge.active   { background: var(--verde-soft); color: var(--verde-texto); }
+.status-badge.inactive { background: var(--hairline-soft); color: var(--ink-muted); }
 
 .role-tag { background: var(--sea-light); color: var(--sea-deep); }
 
