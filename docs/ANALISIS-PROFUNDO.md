@@ -84,6 +84,10 @@ y lectura del código. El celular se auditó simulando pantalla táctil de verda
 - **Paso 2 — Registro de empresa (hecho):** fuera el campo "Logo (opcional)": el script nunca lo
   enviaba y el backend no lo recibe; su texto nativo sacaba el formulario de la pantalla (402 px en
   375). Regla general: ningún selector de archivo pasa del ancho de su caja.
+- **Paso 3 — Mensajes (hecho):** título con su icono en una línea y "+ Nuevo" sin partirse; sin
+  conversaciones, la lista dice solo "Aún no tienes conversaciones" y el panel derecho invita a
+  empezar ("Nuevo mensaje" / "Buscar conexiones") en vez de repetir la ilustración y pedir
+  "Selecciona una conversación"; buscador con nombre para lectores de pantalla.
 - Para Jesús: permitir que la empresa edite sus datos (hoy `PUT /companies/{id}` es solo de ADMIN),
   agregar portada a `Company` y guardar beneficios como lista.
 

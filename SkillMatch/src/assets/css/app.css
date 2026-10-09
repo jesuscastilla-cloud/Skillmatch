@@ -4318,7 +4318,13 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 }
 /* El titulo "Mensajes" es el h1 de la pagina; conserva el tamano que
    tenia como h2 */
-.conversations-header h1 { font-size: clamp(1.6rem, 1.2rem + 1.8vw, var(--t-2xl)); }
+/* El icono va en la misma linea y el titulo cabe junto a "+ Nuevo" (antes
+   el icono quedaba arriba y el boton se partia en dos lineas) */
+.conversations-header h1 { display: flex; align-items: center; gap: var(--s2); font-size: var(--t-xl); }
+.conversations-header h1 .ico { width: 24px; height: 24px; color: var(--sea); }
+.btn-new-message { white-space: nowrap; }
+.conversations-vacio { padding: var(--s6) var(--s4); text-align: center; color: var(--ink-muted); font-size: var(--t-sm); }
+.empty-acciones { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s2); margin-top: var(--s3); }
 .conversations-header, .chat-header {
     display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
     padding: var(--s4) var(--s5);

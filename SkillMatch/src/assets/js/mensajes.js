@@ -99,12 +99,18 @@ function displayConversations(conversationsList) {
     const container = document.getElementById('conversationsList');
     
     if (conversationsList.length === 0) {
-        container.innerHTML = `
-            <div class="no-conversations">
-                <p>No tienes conversaciones aún</p>
-                <p>Conecta con otros usuarios para comenzar a chatear</p>
-            </div>
-        `;
+        // Lista vacia: un texto corto aqui y la invitacion grande a la derecha
+        // (antes la misma ilustracion salia en los dos paneles y la derecha decia
+        // "Selecciona una conversacion" sin haber ninguna)
+        container.innerHTML = '<p class="conversations-vacio">Aún no tienes conversaciones.</p>';
+        const invitacion = document.querySelector('#chatEmpty .empty-state');
+        if (invitacion) {
+            invitacion.innerHTML = '<h3>Empieza tu primera conversación</h3>' +
+                '<p>Escríbele a una de tus conexiones o a una empresa que te interese.</p>' +
+                '<div class="empty-acciones">' +
+                '<button type="button" class="btn btn-primary" onclick="document.getElementById(\'newMessageBtn\').click()"><i data-ico="plus"></i> Nuevo mensaje</button>' +
+                '<a href="conexiones.html" class="btn btn-secondary">Buscar conexiones</a></div>';
+        }
         return;
     }
 
