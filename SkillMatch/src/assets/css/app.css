@@ -2796,6 +2796,9 @@ footer.pie > .container { position: relative; z-index: 1; }
     font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.5rem);
     margin-bottom: var(--s6);
 }
+/* Debajo del titulo: cuanto toma y que se puede cambiar despues */
+.registro-intro { max-width: 60ch; margin: calc(-1 * var(--s3)) 0 var(--s5); color: var(--ink-3); }
+.registro-form .error-text { margin: 0 0 var(--s3); }
 .registro-section > .container > .registro-form {
     max-width: 760px;
     padding: var(--s7);

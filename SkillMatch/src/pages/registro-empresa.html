@@ -38,203 +38,57 @@
     <section class="registro-section">
         <div class="container">
             <h1>Registro de empresa</h1>
+            <p class="registro-intro">Crea la cuenta y publica tu primera vacante. Toma menos de 2 minutos.</p>
+            <!-- Antes se pedian NIT, sector, tamano, contacto, direccion, RUT en PDF...
+                 que nunca se guardaban: solo se pide lo que se guarda -->
             <form id="form-registro-empresa" class="registro-form" novalidate>
-                <div class="stepper" aria-label="Progreso de registro" role="tablist">
-                    <div class="step active" data-step="1" role="tab" id="stepper-tab-1" aria-controls="step-panel-1" aria-selected="true" tabindex="0"><span class="step-index">1</span><span class="step-label">Cuenta</span></div>
-                    <div class="step" data-step="2" role="tab" id="stepper-tab-2" aria-controls="step-panel-2" aria-selected="false" tabindex="-1"><span class="step-index">2</span><span class="step-label">Detalles</span></div>
-                    <div class="step" data-step="3" role="tab" id="stepper-tab-3" aria-controls="step-panel-3" aria-selected="false" tabindex="-1"><span class="step-index">3</span><span class="step-label">Confirmación</span></div>
+                <div class="stepper" aria-label="Progreso del registro">
+                    <div class="step active" data-step="1" aria-selected="true"><span class="step-index">1</span><span class="step-label">Tu cuenta</span></div>
+                    <div class="step" data-step="2" aria-selected="false"><span class="step-index">2</span><span class="step-label">Tu empresa</span></div>
                 </div>
 
-                <div class="form-step active" data-step="1" id="step-panel-1" role="tabpanel" aria-labelledby="stepper-tab-1" aria-hidden="false">
+                <div class="form-step active" data-step="1" aria-hidden="false">
                   <div class="form-section">
-                    <h2 class="section-title">Cuenta</h2>
+                    <h2 class="section-title">Tu cuenta</h2>
                     <div class="form-grid">
-                        <div class="form-group">
-                            <label for="empresa-email">Correo corporativo</label>
+                        <div class="form-group span-full">
+                            <label for="empresa-email">Correo electrónico de la empresa</label>
                             <input type="email" id="empresa-email" name="email" autocomplete="email" required>
+                            <small class="input-help">Con él vas a iniciar sesión.</small>
                         </div>
                         <div class="form-group">
                             <label for="empresa-pass">Contraseña</label>
-                            <input type="password" id="empresa-pass" name="pass" minlength="8" required>
+                            <input type="password" id="empresa-pass" name="pass" autocomplete="new-password" minlength="8" required>
                             <small class="input-help">Mínimo 8 caracteres.</small>
                         </div>
                         <div class="form-group">
                             <label for="empresa-pass2">Confirmar contraseña</label>
-                            <input type="password" id="empresa-pass2" name="pass2" minlength="8" required>
+                            <input type="password" id="empresa-pass2" name="pass2" autocomplete="new-password" minlength="8" required>
+                        </div>
+                    </div>
+                  </div>
+                  <p class="error-text" role="alert" hidden></p>
+                  <div class="step-actions">
+                      <button type="button" class="btn btn-primary" id="next-step-emp-1">Siguiente</button>
+                  </div>
+                </div>
+
+                <div class="form-step" data-step="2" aria-hidden="true">
+                  <div class="form-section">
+                    <h2 class="section-title">Tu empresa</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="empresa-nombre">Nombre de la empresa</label>
+                            <input type="text" id="empresa-nombre" name="nombre" autocomplete="organization" maxlength="100" required>
                         </div>
                         <div class="form-group">
                             <label for="empresa-telefono">Teléfono</label>
-                            <input type="tel" id="empresa-telefono" name="telefono" autocomplete="tel" required>
-                        </div>
-                    </div>
-                  </div>
-
-                  <div class="form-section">
-                    <h2 class="section-title">Datos de la empresa</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="empresa-nombre">Razón social</label>
-                            <input type="text" id="empresa-nombre" name="nombre" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="empresa-nit">NIT</label>
-                            <input type="text" id="empresa-nit" name="nit" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="empresa-sector">Sector</label>
-                            <select id="empresa-sector" name="sector" required>
-                                <option value="">Selecciona el sector</option>
-                                <option value="tecnologia">Tecnología</option>
-                                <option value="diseno_creativo">Diseño / Creativo</option>
-                                <option value="marketing_publicidad">Marketing / Publicidad</option>
-                                <option value="finanzas">Finanzas / Banca</option>
-                                <option value="contabilidad">Contabilidad</option>
-                                <option value="rrhh">Recursos humanos</option>
-                                <option value="logistica">Logística / Operaciones</option>
-                                <option value="turismo">Turismo / Hotelería</option>
-                                <option value="salud">Salud / Bienestar</option>
-                                <option value="educacion">Educación / Formación</option>
-                                <option value="legal">Legal / Compliance</option>
-                                <option value="comercio">Comercio / Retail</option>
-                                <option value="industria">Industria / Manufactura</option>
-                                <option value="servicios">Servicios profesionales</option>
-                                <option value="otro">Otro</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="empresa-tamano">Tamaño</label>
-                            <select id="empresa-tamano" name="tamano">
-                                <option value="">Selecciona el tamaño</option>
-                                <option value="micro">Micro (1-10)</option>
-                                <option value="pequena">Pequeña (11-50)</option>
-                                <option value="mediana">Mediana (51-250)</option>
-                                <option value="grande">Grande (250+)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="empresa-web">Sitio web (opcional)</label>
-                            <input type="url" id="empresa-web" name="web" placeholder="https://">
-                        </div>
-                        <!-- Sin campo de logo: registro-empresa.js nunca lo enviaba y el
-                             backend no lo recibe (ni deja cambiarlo despues). Ademas su
-                             texto nativo sacaba el formulario de la pantalla en celular. -->
-                        <div class="form-group span-full">
-                            <label for="empresa-descripcion">Descripción</label>
-                            <textarea id="empresa-descripcion" name="descripcion" rows="4" required></textarea>
-                        </div>
-                    </div>
-                  </div>
-                  <div class="step-actions">
-                    <button type="button" class="btn btn-primary" id="next-step-emp-1">Siguiente</button>
-                  </div>
-                </div>
-
-                <div class="form-step" data-step="2" id="step-panel-2" role="tabpanel" aria-labelledby="stepper-tab-2" aria-hidden="true">
-                                    <div class="form-section">
-                                        <h2 class="section-title">Contacto principal</h2>
-                                        <div class="form-grid">
-                        <div class="form-group">
-                            <label for="contacto-nombre">Nombre</label>
-                            <input type="text" id="contacto-nombre" name="contacto_nombre" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="contacto-cargo">Cargo</label>
-                            <input type="text" id="contacto-cargo" name="contacto_cargo" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="contacto-email">Correo</label>
-                            <input type="email" id="contacto-email" name="contacto_email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="contacto-telefono">Teléfono</label>
-                            <input type="tel" id="contacto-telefono" name="contacto_telefono" required>
-                        </div>
-                    </div>
-                  </div>
-
-                  <div class="form-section">
-                    <h2 class="section-title">Ubicación</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="empresa-ciudad">Ciudad</label>
-                            <input type="text" id="empresa-ciudad" name="ciudad" placeholder="Cartagena" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="empresa-departamento">Departamento</label>
-                            <input type="text" id="empresa-departamento" name="departamento" placeholder="Bolívar" required>
+                            <input type="tel" id="empresa-telefono" name="telefono" autocomplete="tel" inputmode="tel" maxlength="20" required>
                         </div>
                         <div class="form-group span-full">
-                            <label for="empresa-direccion">Dirección</label>
-                            <input type="text" id="empresa-direccion" name="direccion" required>
-                        </div>
-                    </div>
-                  </div>
-
-                  <div class="form-section">
-                    <h2 class="section-title">Preferencias de contratación</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="empresa-perfiles">Perfiles buscados</label>
-                            <input type="text" id="empresa-perfiles" name="perfiles" placeholder="Ej. Diseñador UX, Analista Financiero, Especialista Marketing" required>
-                        </div>
-                        <div class="form-group span-full">
-                            <label>Roles más demandados (selección rápida)</label>
-                            <div class="roles-input" id="roles-tags">
-                                <div class="role-tag" data-value="ventas" onclick="toggleRoleTag(this)">Ventas</div>
-                                <div class="role-tag" data-value="atencion_cliente" onclick="toggleRoleTag(this)">Atención al cliente</div>
-                                <div class="role-tag" data-value="hoteleria" onclick="toggleRoleTag(this)">Hotelería y turismo</div>
-                                <div class="role-tag" data-value="cocina" onclick="toggleRoleTag(this)">Cocina y restaurantes</div>
-                                <div class="role-tag" data-value="administracion" onclick="toggleRoleTag(this)">Administración</div>
-                                <div class="role-tag" data-value="contabilidad" onclick="toggleRoleTag(this)">Contabilidad</div>
-                                <div class="role-tag" data-value="logistica" onclick="toggleRoleTag(this)">Bodega y logística</div>
-                                <div class="role-tag" data-value="conduccion" onclick="toggleRoleTag(this)">Conductores</div>
-                                <div class="role-tag" data-value="construccion" onclick="toggleRoleTag(this)">Construcción y mantenimiento</div>
-                                <div class="role-tag" data-value="salud" onclick="toggleRoleTag(this)">Salud</div>
-                                <div class="role-tag" data-value="aseo" onclick="toggleRoleTag(this)">Aseo y servicios generales</div>
-                                <div class="role-tag" data-value="rrhh" onclick="toggleRoleTag(this)">Recursos humanos</div>
-                                <div class="role-tag" data-value="marketing_digital" onclick="toggleRoleTag(this)">Mercadeo y redes</div>
-                                <div class="role-tag" data-value="tecnologia" onclick="toggleRoleTag(this)">Tecnología</div>
-                            </div>
-                            <small class="input-help">Haz clic para añadir; se agregan a "Perfiles buscados".</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="empresa-modalidad">Modalidad</label>
-                            <select id="empresa-modalidad" name="modalidad">
-                                <option value="">Selecciona modalidad</option>
-                                <option value="presencial">Presencial</option>
-                                <option value="hibrido">Híbrido</option>
-                                <option value="remoto">Remoto</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="empresa-seniority">Experiencia que buscas</label>
-                            <select id="empresa-seniority" name="seniority">
-                                <option value="">Selecciona nivel</option>
-                                <option value="practicas">Prácticas</option>
-                                <option value="junior">Hasta 1 año</option>
-                                <option value="semi-senior">De 1 a 3 años</option>
-                                <option value="senior">Más de 3 años</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="empresa-rango">Rango salarial (opcional)</label>
-                            <input type="text" id="empresa-rango" name="rango" placeholder="$1.5M - $2M / mes">
-                        </div>
-                    </div>
-                  </div>
-                  <div class="step-actions">
-                    <button type="button" class="btn btn-return" id="prev-step-emp-2">Volver</button>
-                    <button type="button" class="btn btn-primary" id="next-step-emp-2">Siguiente</button>
-                  </div>
-                </div>
-
-                <div class="form-step" data-step="3" id="step-panel-3" role="tabpanel" aria-labelledby="stepper-tab-3" aria-hidden="true">
-                  <div class="form-section">
-                    <h2 class="section-title">Verificación (opcional)</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="empresa-rut">RUT / Cámara de comercio (PDF)</label>
-                            <input type="file" id="empresa-rut" name="rut" accept="application/pdf">
+                            <label for="empresa-descripcion">¿Qué hace tu empresa?</label>
+                            <textarea id="empresa-descripcion" name="descripcion" rows="4" maxlength="2000" required placeholder="Ej.: Somos un hotel en Bocagrande con 40 habitaciones. Buscamos personas amables para recepción, cocina y servicio a la habitación."></textarea>
+                            <small class="input-help">Aparece en el perfil de la empresa, en "Acerca de nosotros".</small>
                         </div>
                     </div>
                   </div>
@@ -242,13 +96,14 @@
                   <div class="form-section">
                     <label class="checkbox">
                         <input type="checkbox" id="empresa-terminos" required>
-                        <span>Acepto los <a href="#">Términos y condiciones</a> y el <a href="#">tratamiento de datos</a>.</span>
+                        <span>Autorizo a SkillMatch a tratar los datos de la empresa y de las personas que se postulen a nuestras vacantes.</span>
                     </label>
                   </div>
+                  <p class="error-text" role="alert" hidden></p>
 
                   <div class="step-actions">
-                    <button type="button" class="btn btn-return" id="prev-step-emp-3">Volver</button>
-                    <button type="submit" class="btn btn-primary">Crear cuenta</button>
+                      <button type="button" class="btn btn-return" id="prev-step-emp-2">Volver</button>
+                      <button type="submit" class="btn btn-primary">Crear la cuenta</button>
                   </div>
                 </div>
             </form>

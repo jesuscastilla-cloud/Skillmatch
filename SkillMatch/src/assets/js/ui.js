@@ -1,7 +1,7 @@
 /* =====================================================================
  *  SkillMatch — capa de interfaz
  *
- *  Se encarga de seis cosas, y de nada mas:
+ *  Se encarga de siete cosas, y de nada mas:
  *    1. Iconos SVG (reemplazan a los emojis, se ven igual en todos lados)
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
@@ -9,6 +9,7 @@
  *    5. Movimiento: aparicion al hacer scroll (las listas se reparten como
  *       una baraja) y onda al hacer clic
  *    6. Listas desplegables de la marca en lugar de las nativas (data-lista)
+ *    7. Campo de etiquetas para habilidades (SkillMatchUI.etiquetas)
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -1433,6 +1434,93 @@
             if (L.buscable) resolverEscrito(L); else cerrarLista(L);
         });
     });
+
+    /* ---------- 17. Etiquetas (habilidades) ---------- */
+
+    // Sugerencias para cualquier campo de habilidades: primero las de cualquier
+    // oficio y al final las de tecnología (docs/GUIA-DE-LENGUAJE.md)
+    UI.HABILIDADES_SUGERIDAS = [
+        'Atención al cliente', 'Ventas', 'Manejo de caja', 'Excel', 'Inglés', 'Comunicación', 'Trabajo en equipo',
+        'Servicio de mesa', 'Cocina', 'Manipulación de alimentos', 'Bartender', 'Recepción', 'Reservas',
+        'Aseo y limpieza', 'Conducción', 'Licencia de conducción C2', 'Bodega e inventarios', 'Montacargas',
+        'Electricidad', 'Soldadura', 'Construcción', 'Mantenimiento', 'Primeros auxilios', 'Enfermería',
+        'Facturación', 'Contabilidad', 'Archivo', 'Office', 'Guía turístico', 'Logística', 'Turismo',
+        'Marketing digital', 'Redes sociales', 'Diseño gráfico', 'Power BI', 'Gestión de proyectos',
+        'Python', 'Java', 'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue.js', 'Node.js',
+        'Spring Boot', 'Django', 'Flask', 'PHP', 'Laravel', 'C#', '.NET', 'Kotlin', 'Swift', 'Flutter',
+        'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Git', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP',
+        'REST API', 'GraphQL', 'CI/CD', 'TDD'
+    ];
+
+    /**
+     * Campo de etiquetas: se escribe y Enter o coma agrega; la × o Retroceso
+     * quita; elegir una sugerencia también agrega. "caja" es el contenedor con
+     * la clase .chips-campo y "campo" el <input> de adentro.
+     * Devuelve { obtener() } con la lista (agrega lo que quedó escrito).
+     */
+    UI.etiquetas = function (caja, campo, opciones) {
+        opciones = opciones || {};
+        const maximo = opciones.maximo || 15;
+        const sugeridas = opciones.sugeridas || UI.HABILIDADES_SUGERIDAS;
+        let lista = [];
+
+        // Sugerencias del navegador (datalist) con el id del campo
+        const idLista = campo.id + '-sugerencias';
+        if (!document.getElementById(idLista)) {
+            const datos = document.createElement('datalist');
+            datos.id = idLista;
+            datos.innerHTML = sugeridas.map(function (s) { return '<option value="' + escaparHtml(s) + '">'; }).join('');
+            caja.after(datos);
+        }
+        campo.setAttribute('list', idLista);
+
+        function pintar() {
+            caja.querySelectorAll('.chip').forEach(function (chip) { chip.remove(); });
+            lista.forEach(function (texto, i) {
+                const chip = document.createElement('span');
+                chip.className = 'chip';
+                chip.innerHTML = escaparHtml(texto) + '<button type="button" data-i="' + i + '" aria-label="Quitar ' + escaparHtml(texto) + '">' + svgIcon('close') + '</button>';
+                caja.insertBefore(chip, campo);
+            });
+        }
+        function agregar(texto) {
+            String(texto).split(',').map(function (t) { return t.trim().slice(0, 40); }).filter(Boolean).forEach(function (t) {
+                const repetida = lista.some(function (h) { return normalizar(h) === normalizar(t); });
+                if (!repetida && lista.length < maximo) lista.push(t);
+            });
+            campo.value = '';
+            pintar();
+        }
+
+        campo.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                agregar(campo.value);
+            } else if (e.key === 'Backspace' && !campo.value && lista.length) {
+                lista.pop();
+                pintar();
+            }
+        });
+        campo.addEventListener('input', function () {
+            if (sugeridas.indexOf(campo.value) >= 0) agregar(campo.value);
+        });
+        caja.addEventListener('click', function (e) {
+            const quitar = e.target.closest('button[data-i]');
+            if (quitar) {
+                lista.splice(Number(quitar.dataset.i), 1);
+                pintar();
+            }
+            campo.focus();
+        });
+
+        agregar((opciones.iniciales || []).join(','));
+        return {
+            obtener: function () {
+                if (campo.value.trim()) agregar(campo.value);
+                return lista.slice();
+            }
+        };
+    };
 
     /* ---------- 9. Arranque ---------- */
 

@@ -104,6 +104,9 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   `/jobs/filter`.
 - `DELETE /jobs/{id}` no borra: cierra la oferta igual que "Archivar" (por eso se quitó "Eliminar" del
   perfil de empresa). Si se quiere borrar de verdad, que marque un estado distinto de "cerrada".
+- Registro de empresa: permitir que la empresa edite sector, tamaño, ciudad y sitio web (hoy
+  `PUT /companies/{id}` es solo de ADMIN) para volver a pedirlos en el registro y en el perfil.
+- Guardar la hoja de vida en PDF (GridFS) si se quiere pedir al registrarse.
 - `GET /users/{id}` devuelve el correo y el teléfono de cualquier usuario a quien haya iniciado sesión.
 - Restringir `connect-src` de la CSP a `'self'` cuando el frontend vaya dentro del jar.
 
@@ -143,6 +146,16 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   algoritmo, badges...), ejemplos de muchos oficios (la demo de la portada es una recepcionista de hotel),
   "Busco trabajo" en vez de "Soy usuario", y fuera promesas que el sistema no cumple ("te avisa",
   "talento verificado", "tu perfil trabaja mientras no estás").
+- **Punto 5 (hecho): registros honestos.** El de personas pasó de 3 pasos con campos que se perdían
+  (área, estudios, aspiración, hoja de vida en PDF...) a 2 pasos con lo que sí se guarda: la cuenta y, en
+  el perfil recién creado, a qué se dedica, su ciudad, "sobre ti" y sus habilidades (con ellas la
+  compatibilidad funciona desde el primer día). El de empresa pasó de 3 pasos (NIT, sector, tamaño,
+  contacto, dirección, RUT...) a 2: cuenta, nombre, teléfono y la descripción, que ahora sí queda en
+  "Acerca de nosotros". De paso: la empresa recién registrada quedaba sin `userType` y el sitio la trataba
+  como persona hasta volver a entrar; el aviso de contraseña decía 6 caracteres (son 8); los errores se
+  muestran en el formulario en vez de ventanas; el campo de habilidades ahora es un componente de
+  `ui.js` (lo usan el registro y la ventana de oferta). Pendiente: no hay página de política de
+  tratamiento de datos (Ley 1581 de 2012); la casilla de autorización ya no enlaza a "#".
 
 ## Orden propuesto (solo frontend)
 

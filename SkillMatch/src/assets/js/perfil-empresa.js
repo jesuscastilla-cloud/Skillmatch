@@ -110,7 +110,8 @@ function pintarCabecera(company) {
     const meta = document.getElementById('companyMeta');
     if (!meta) return;
     const datos = [];
-    if (company.location) datos.push(['pin', company.location]);
+    // Una empresa nueva queda con "No especificada" (lo pone el backend): no se muestra
+    if (company.location && !/^no especificad/i.test(company.location)) datos.push(['pin', company.location]);
     if (company.size) datos.push(['users', TAMANOS_EMPRESA[String(company.size).toLowerCase()] || company.size]);
     if (company.foundedYear) datos.push(['calendar', 'Desde ' + company.foundedYear]);
     meta.replaceChildren(...datos.map(([ico, texto]) => {
@@ -415,19 +416,6 @@ function openEditAboutModal() {
 // peor: el backend reemplaza la oferta completa y se borraban requisitos,
 // responsabilidades, beneficios, duración y fecha límite.
 
-// Primero las de cualquier oficio; al final las de tecnología
-const HABILIDADES_SUGERIDAS = [
-    'Atención al cliente', 'Ventas', 'Manejo de caja', 'Excel', 'Inglés', 'Comunicación', 'Trabajo en equipo',
-    'Servicio de mesa', 'Cocina', 'Manipulación de alimentos', 'Bartender', 'Recepción', 'Reservas',
-    'Aseo y limpieza', 'Conducción', 'Licencia de conducción C2', 'Bodega e inventarios', 'Montacargas',
-    'Electricidad', 'Soldadura', 'Construcción', 'Mantenimiento', 'Primeros auxilios', 'Enfermería',
-    'Facturación', 'Contabilidad', 'Archivo', 'Office', 'Guía turístico', 'Logística', 'Turismo',
-    'Marketing digital', 'Redes sociales', 'Diseño gráfico', 'Power BI', 'Gestión de proyectos',
-    'Python', 'Java', 'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue.js', 'Node.js',
-    'Spring Boot', 'Django', 'Flask', 'PHP', 'Laravel', 'C#', '.NET', 'Kotlin', 'Swift', 'Flutter',
-    'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Git', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP',
-    'REST API', 'GraphQL', 'CI/CD', 'TDD'
-];
 const CIUDADES_OFERTA = ['Cartagena de Indias', 'Turbaco', 'Arjona', 'Magangué', 'Barranquilla',
     'Santa Marta', 'Montería', 'Sincelejo', 'Bogotá D.C.', 'Medellín', 'Cali', 'Bucaramanga'];
 
@@ -503,9 +491,8 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
             <div class="form-group span-full">
                 <label for="offerSkillInput">Habilidades que pide *</label>
                 <div class="chips-campo" id="offerSkills">
-                    <input type="text" id="offerSkillInput" list="habilidadesSugeridas" maxlength="40" autocomplete="off" placeholder="Escribe una y pulsa Enter">
+                    <input type="text" id="offerSkillInput" maxlength="40" autocomplete="off" placeholder="Escribe una y pulsa Enter">
                 </div>
-                <datalist id="habilidadesSugeridas">${HABILIDADES_SUGERIDAS.map(h => `<option value="${h}">`).join('')}</datalist>
                 <p class="field-help">Se comparan con las habilidades de cada persona para calcular su compatibilidad.</p>
             </div>
             <div class="form-group span-full">
@@ -528,7 +515,9 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
         </div>
     `, () => guardarOferta(isEdit, offerId), isEdit ? 'Guardar cambios' : 'Publicar oferta', { ancho: 760 });
 
-    iniciarHabilidadesOferta(oferta.skills || []);
+    // Habilidades como etiquetas (componente de ui.js, el mismo del registro)
+    const etiquetas = SkillMatchUI.etiquetas(document.getElementById('offerSkills'), document.getElementById('offerSkillInput'), { iniciales: oferta.skills || [] });
+    habilidadesDeOferta = etiquetas.obtener;
     const vista = () => {
         const min = document.getElementById('offerSalaryMin').value;
         const max = document.getElementById('offerSalaryMax').value;
@@ -544,59 +533,6 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
     document.querySelector('.oferta-form').addEventListener('input', () => { document.getElementById('offerError').hidden = true; });
     vista();
     document.getElementById('offerTitle').focus();
-}
-
-// Habilidades como etiquetas: Enter o coma agrega, la × o Retroceso quita
-function iniciarHabilidadesOferta(iniciales) {
-    const caja = document.getElementById('offerSkills');
-    const campo = document.getElementById('offerSkillInput');
-    let lista = [];
-
-    const pintar = () => {
-        caja.querySelectorAll('.chip').forEach(chip => chip.remove());
-        lista.forEach((habilidad, i) => {
-            const chip = document.createElement('span');
-            chip.className = 'chip';
-            chip.innerHTML = `${escaparHtml(habilidad)}<button type="button" data-i="${i}" aria-label="Quitar ${escaparHtml(habilidad)}"><i data-ico="close"></i></button>`;
-            caja.insertBefore(chip, campo);
-        });
-    };
-    const agregar = texto => {
-        String(texto).split(',').map(t => t.trim().slice(0, 40)).filter(Boolean).forEach(t => {
-            const repetida = lista.some(h => sinTildesOferta(h) === sinTildesOferta(t));
-            if (!repetida && lista.length < 15) lista.push(t);
-        });
-        campo.value = '';
-        pintar();
-    };
-
-    campo.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            agregar(campo.value);
-        } else if (e.key === 'Backspace' && !campo.value && lista.length) {
-            lista.pop();
-            pintar();
-        }
-    });
-    // Elegir una sugerencia de la lista también la agrega
-    campo.addEventListener('input', () => {
-        if (HABILIDADES_SUGERIDAS.includes(campo.value)) agregar(campo.value);
-    });
-    caja.addEventListener('click', e => {
-        const quitar = e.target.closest('button[data-i]');
-        if (quitar) {
-            lista.splice(Number(quitar.dataset.i), 1);
-            pintar();
-        }
-        campo.focus();
-    });
-
-    agregar(iniciales.join(','));
-    habilidadesDeOferta = () => {
-        if (campo.value.trim()) agregar(campo.value);
-        return lista.slice();
-    };
 }
 
 async function guardarOferta(isEdit, offerId) {
