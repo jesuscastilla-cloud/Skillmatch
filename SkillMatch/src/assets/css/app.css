@@ -4102,6 +4102,55 @@ kbd {
     align-items: start;
     padding-bottom: var(--s9);
 }
+
+/* ---- Perfil de empresa con datos reales ----
+   Dos columnas: la derecha tenia "Recursos utiles" (enlaces vacios) y un
+   "Plan Professional" de pago que no existe; se quitaron. */
+.company-grid-layout { grid-template-columns: 280px minmax(0, 1fr); }
+/* Cabecera como la del perfil de usuario: portada de la marca (la empresa aun
+   no puede cambiarla), logo cuadrado con su centro en el borde de la portada
+   y los datos a la derecha */
+.company-header-card .company-cover-img {
+    display: block;
+    width: 100%; height: 200px;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.company-header-content {
+    display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--s5);
+    padding-inline: var(--s4);
+}
+.company-header-content .company-logo-wrapper { margin-top: -56px; align-self: flex-start; }
+.company-header-content .company-info-wrapper { flex: 1 1 320px; min-width: 0; padding-top: var(--s4); }
+/* Logo con las iniciales de la empresa (antes un servicio externo con "ST" fijo) */
+.company-logo-iniciales {
+    display: grid; place-items: center;
+    overflow: hidden;
+    background: linear-gradient(140deg, var(--sea), var(--surface-inverse));
+    color: #fff;
+    font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; letter-spacing: .02em;
+}
+.company-logo-iniciales img { width: 100%; height: 100%; object-fit: cover; }
+a.meta-tag { transition: background-color .15s var(--ease), color .15s var(--ease); }
+a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
+.meta-tag.es-verificada { background: var(--verde-soft); color: var(--verde-texto); }
+/* Titulos de las secciones al tamano de los del perfil de usuario */
+.company-main-area .section-card-header h2 { font-size: var(--t-lg); }
+.btn-new-offer { white-space: nowrap; }
+/* Postulaciones: resumen de cuatro estados y "Ver todas" */
+.apps-summary-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: var(--s4); }
+.application-card[hidden] { display: none; }
+/* Tarjeta de postulacion: no tenia relleno y el nombre tocaba el borde */
+.application-card { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s4) var(--s5); }
+.application-card .application-header { align-items: flex-start; }
+.application-card h4 { font-size: var(--t-md); }
+.application-date { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm); color: var(--ink-muted); }
+.application-actions { margin-top: var(--s1); }
+.application-job { font-size: var(--t-sm); color: var(--ink-muted); }
+.btn-ver-todas { width: 100%; margin-top: var(--s4); }
+@media (max-width: 760px) {
+    .company-header-content .company-logo-wrapper { margin-top: -42px; }
+    .company-logo-iniciales { font-size: 1.8rem; }
+}
 /* Las barras cortas acompanan el scroll. La izquierda del perfil de usuario
    no: es mas alta que la pantalla y su parte de abajo nunca se veia. */
 .profile-right-sidebar, .company-sidebar-left, .company-sidebar-right {

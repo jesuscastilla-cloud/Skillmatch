@@ -126,7 +126,8 @@ async function loadNotifications() {
             displayNotifications(notifications);
         }
     } catch (error) {
-        if (error.name !== 'AbortError') throw error;
+        // Sin conexion: se intenta otra vez en el proximo ciclo (antes el error
+        // quedaba sin atrapar y llenaba la consola cada 30 segundos)
     }
 }
 

@@ -22,7 +22,20 @@ document.addEventListener('DOMContentLoaded', function() {
     loadActivityStats();
 });
 
-// Cargar datos de la empresa desde localStorage y backend
+// Tamano de la empresa tal como lo guarda el registro
+const TAMANOS_EMPRESA = {
+    micro: '1 a 10 personas', small: '11 a 50 personas', pequena: '11 a 50 personas',
+    medium: '51 a 200 personas', mediana: '51 a 200 personas',
+    large: 'Más de 200 personas', grande: 'Más de 200 personas'
+};
+
+// Iniciales de la empresa (antes salia "ST" para todas: un servicio externo
+// con el nombre fijo "Soluciones Tech")
+function companyInitials(nombre) {
+    return String(nombre || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+}
+
+// Cargar datos de la empresa: todo sale del backend; lo que no existe no se muestra
 function loadCompanyData() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
@@ -31,102 +44,124 @@ function loadCompanyData() {
         window.location.href = 'login-empresa.html';
         return;
     }
-    
+
     // Validar que exista companyId
     if (!userData.companyId) {
-        alert('<i data-ico="alert"></i> Tu cuenta no tiene una empresa asociada.\n\nPor favor contacta al administrador o cierra sesión e inicia sesión nuevamente.');
+        alert('Tu cuenta no tiene una empresa asociada.\n\nPor favor contacta al administrador o cierra sesión e inicia sesión nuevamente.');
         return;
     }
-    
+
     currentCompanyData = userData;
-    
-    // Actualizar nombre de la empresa
-    if (userData.firstName) {
-        const companyNameElement = document.getElementById('companyName');
-        if (companyNameElement) {
-            companyNameElement.textContent = userData.firstName;
+    pintarCabecera({ name: userData.firstName });
+
+    fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}`)
+    .then(response => {
+        if (!response.ok) throw new Error('Empresa no encontrada');
+        return response.json();
+    })
+    .then(company => {
+        currentCompanyData = { ...userData, ...company };
+        pintarCabecera(company);
+
+        // "Acerca de"
+        const aboutElement = document.getElementById('companyAbout');
+        if (aboutElement) {
+            const p = document.createElement('p');
+            p.textContent = company.description ||
+                'Aún no has agregado una descripción. Usa el lápiz para contar qué hace tu empresa.';
+            if (!company.description) p.className = 'empty-text';
+            aboutElement.replaceChildren(p);
+        }
+
+        // Beneficios: solo si la empresa los guardo (texto separado por comas o lineas)
+        const lista = String(company.benefits || '').split(/[\n,;]+/).map(b => b.trim()).filter(Boolean);
+        const tarjeta = document.getElementById('companyBenefitsCard');
+        if (tarjeta && lista.length) {
+            const ul = document.getElementById('companyBenefits');
+            ul.replaceChildren(...lista.map(b => { const li = document.createElement('li'); li.textContent = b; return li; }));
+            tarjeta.hidden = false;
+        }
+    })
+    .catch(() => {
+        const aboutElement = document.getElementById('companyAbout');
+        if (aboutElement) aboutElement.innerHTML = '<p class="error-text">No se pudo cargar la información de la empresa.</p>';
+    });
+}
+
+// Nombre, logo, sector y datos de la cabecera
+function pintarCabecera(company) {
+    const nombre = company.name || 'Mi empresa';
+    document.getElementById('companyName').textContent = nombre;
+    document.title = nombre + ' - SkillMatch Cartagena';
+
+    const logo = document.getElementById('companyLogo');
+    if (logo) {
+        if (company.logo) {
+            const img = document.createElement('img');
+            img.src = company.logo;
+            img.alt = '';
+            logo.replaceChildren(img);
+        } else {
+            logo.textContent = companyInitials(nombre);
         }
     }
-    
-    
-    // Cargar información completa de la empresa desde el backend
-    if (userData.companyId) {
-        fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Empresa no encontrada');
-            return response.json();
-        })
-        .then(company => {
-            
-            // Actualizar descripción "Acerca de"
-            const aboutElement = document.getElementById('companyAbout');
-            if (aboutElement && company.description) {
-                const p = document.createElement('p');
-                p.textContent = company.description;
-                aboutElement.replaceChildren(p);
-            } else if (aboutElement) {
-                aboutElement.innerHTML = `<p>Esta empresa aún no ha agregado una descripción. Haz clic en el botón de editar para agregar información sobre tu empresa.</p>`;
-            }
-            
-            // Actualizar otros datos si existen
-            if (company.industry) {
-                const industryElement = document.getElementById('companyIndustry');
-                if (industryElement) industryElement.textContent = company.industry;
-            }
-            
-            // Guardar datos completos
-            currentCompanyData = { ...userData, ...company };
-        })
-        .catch(error => {
-            const aboutElement = document.getElementById('companyAbout');
-            if (aboutElement) {
-                aboutElement.innerHTML = `<p>Esta empresa aún no ha agregado una descripción. Haz clic en el botón de editar para agregar información sobre tu empresa.</p>`;
-            }
-        });
+
+    const industria = document.getElementById('companyIndustry');
+    if (industria) industria.textContent = company.industry || '';
+
+    const meta = document.getElementById('companyMeta');
+    if (!meta) return;
+    const datos = [];
+    if (company.location) datos.push(['pin', company.location]);
+    if (company.size) datos.push(['users', TAMANOS_EMPRESA[String(company.size).toLowerCase()] || company.size]);
+    if (company.foundedYear) datos.push(['calendar', 'Desde ' + company.foundedYear]);
+    meta.replaceChildren(...datos.map(([ico, texto]) => {
+        const span = document.createElement('span');
+        span.className = 'meta-tag';
+        span.innerHTML = `<i data-ico="${ico}"></i> `;
+        span.append(texto);
+        return span;
+    }));
+    if (company.website) {
+        const a = document.createElement('a');
+        a.className = 'meta-tag';
+        a.href = /^https?:\/\//.test(company.website) ? company.website : 'https://' + company.website;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.innerHTML = '<i data-ico="globe"></i> ';
+        a.append(company.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''));
+        meta.append(a);
+    }
+    if (company.isVerified) {
+        const v = document.createElement('span');
+        v.className = 'meta-tag es-verificada';
+        v.innerHTML = '<i data-ico="check"></i> Empresa verificada';
+        meta.append(v);
     }
 }
 
-// Cargar estadísticas de actividad desde backend
+// Resumen de actividad con las cifras reales del backend. Antes:
+// "Contrataciones exitosas" mostraba las ofertas activas y "Miembros del
+// equipo" las postulaciones pendientes.
 function loadActivityStats() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    if (!userData.companyId) return;
 
-    if (!userData.companyId) {
-        return;
-    }
-
-    // Cargar estadísticas reales desde el endpoint de backend
+    const poner = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
     fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}/statistics`)
     .then(response => {
         if (!response.ok) throw new Error('Error al cargar estadísticas');
         return response.json();
     })
     .then(stats => {
-        
-        // Actualizar estadísticas REALES en el DOM
-        const statOfertasPublicadas = document.getElementById('statOfertasPublicadas');
-        const statCandidatosContactados = document.getElementById('statCandidatosContactados');
-        const statContratacionesExitosas = document.getElementById('statContratacionesExitosas');
-        const statMiembrosEquipo = document.getElementById('statMiembrosEquipo');
-        
-        if (statOfertasPublicadas) statOfertasPublicadas.textContent = stats.totalJobs || 0;
-        if (statCandidatosContactados) statCandidatosContactados.textContent = stats.totalApplications || 0;
-        if (statContratacionesExitosas) statContratacionesExitosas.textContent = stats.activeJobs || 0;
-        if (statMiembrosEquipo) statMiembrosEquipo.textContent = stats.pendingApplications || 0;
-        
-        // Agregar más estadísticas si hay elementos en el HTML
-        const profileViews = document.getElementById('profile-views');
-        const responseRate = document.getElementById('response-rate');
-        
-        if (profileViews) profileViews.textContent = stats.profileViews || 0;
-        if (responseRate) responseRate.textContent = `${(stats.responseRate || 0).toFixed(1)}%`;
-        
+        poner('statOfertasActivas', stats.activeJobs || 0);
+        poner('statPostulaciones', stats.totalApplications || 0);
+        poner('statPorRevisar', stats.pendingApplications || 0);
+        // Postulaciones que ya tienen respuesta (aceptadas, revisadas o rechazadas)
+        poner('statRespuesta', stats.totalApplications ? Math.round(stats.responseRate || 0) + ' %' : '–');
     })
-    .catch(error => {
-        // Valores por defecto en caso de error
-        document.getElementById('statOfertasPublicadas').textContent = '0';
-        document.getElementById('statCandidatosContactados').textContent = '0';
-        document.getElementById('statContratacionesExitosas').textContent = '0';
-        document.getElementById('statMiembrosEquipo').textContent = '0';
+    .catch(() => {
+        ['statOfertasActivas', 'statPostulaciones', 'statPorRevisar', 'statRespuesta'].forEach(id => poner(id, '–'));
     });
 }
 
@@ -163,15 +198,22 @@ function loadOffers() {
             } catch (error) {
             }
             
+            // Tipo: el backend lo manda en minuscula y a veces con tilde ("práctica");
+            // la clase pinta el color de la etiqueta
+            const tipo = String(job.type || 'empleo').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            const TIPOS = { empleo: ['employment', 'Empleo'], practica: ['practice', 'Práctica'], freelance: ['freelance', 'Freelance'] };
+            const [claseTipo, nombreTipo] = TIPOS[tipo] || ['employment', job.type || 'Empleo'];
+            // La fecha esta en postedDate; createdAt llega vacio y salia "31/12/1969"
+            const fecha = job.postedDate || job.createdAt;
             return {
                 id: job.id,
                 title: job.title,
-                type: job.type?.toLowerCase() || 'employment',
-                typeLabel: job.type || 'Empleo',
+                type: claseTipo,
+                typeLabel: nombreTipo,
                 description: job.description,
                 salary: job.salaryRange,
                 location: job.location,
-                publishDate: new Date(job.createdAt).toLocaleDateString('es-ES'),
+                publishDate: fecha ? new Date(fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
                 candidates: candidateCount,
                 status: (job.status?.toLowerCase() === 'abierta' || job.active) ? 'active' : 'archived'
             };
@@ -186,6 +228,9 @@ function loadOffers() {
         currentOffers = savedOffers;
         if (savedOffers.length > 0) {
             renderOffers(savedOffers);
+        } else {
+            const lista = document.getElementById('offersList');
+            if (lista) lista.innerHTML = '<p class="error-text">No se pudieron cargar las ofertas.</p>';
         }
     });
 }
@@ -196,7 +241,7 @@ function renderOffers(offers) {
     if (!offersList) return;
     
     if (offers.length === 0) {
-        offersList.innerHTML = '<p style="text-align:center;color:#65676b;padding:2rem;">No hay ofertas publicadas. ¡Crea tu primera oferta!</p>';
+        offersList.innerHTML = '<div class="empty-state"><p>Aún no has publicado ofertas.</p><button type="button" class="btn btn-primary" onclick="openNewOfferModal()"><i data-ico="plus"></i> Publicar mi primera oferta</button></div>';
         return;
     }
     
@@ -226,7 +271,7 @@ function renderOffers(offers) {
                 </div>
             </div>
             <div class="offer-card-actions">
-                <button class="btn-offer-action primary" onclick="viewOfferCandidates('${offerId}')">Ver Candidatos</button>
+                <button class="btn-offer-action primary" onclick="viewOfferCandidates('${offerId}')">Ver candidatos</button>
                 <button class="btn-offer-action" onclick="editOffer('${offerId}')">Editar</button>
                 <button class="btn-offer-action ${offer.status === 'active' ? '' : 'success'}" onclick="toggleOfferStatus('${offerId}')">
                     ${offer.status === 'active' ? 'Archivar' : 'Reabrir'}
@@ -246,24 +291,10 @@ function setupEventListeners() {
     // "Cerrar sesión" (#btnCerrarSesion) lo maneja ui.js en todas las páginas
     // (data-cerrar-sesion): avisa al backend y borra todo lo guardado
 
-    // Botón Editar Portada
-    const btnEditCover = document.getElementById('btnEditCover');
-    if (btnEditCover) {
-        btnEditCover.addEventListener('click', openChangeCoverModal);
-    }
-    
-    // Botón Editar Logo
-    const btnEditLogo = document.getElementById('btnEditLogo');
-    if (btnEditLogo) {
-        btnEditLogo.addEventListener('click', openChangeLogoModal);
-    }
-    
-    // Botón Editar Perfil
-    const btnEditProfile = document.getElementById('btnEditProfile');
-    if (btnEditProfile) {
-        btnEditProfile.addEventListener('click', openEditProfileModal);
-    }
-    
+    // (Portada, logo y datos de la empresa ya no se editan aqui: el backend solo
+    // deja a la empresa cambiar su descripcion y esos botones guardaban en el
+    // navegador, sin llegar al servidor)
+
     // Botón Editar "Acerca de"
     const btnEditAbout = document.getElementById('btnEditAbout');
     if (btnEditAbout) {
@@ -275,13 +306,6 @@ function setupEventListeners() {
     if (btnNewOffer) {
         btnNewOffer.addEventListener('click', () => openNewOfferModal());
     }
-    
-    // Botón Upgrade Plan
-    const btnUpgradePlan = document.querySelector('.btn-upgrade-plan');
-    if (btnUpgradePlan) {
-        btnUpgradePlan.addEventListener('click', openUpgradePlanModal);
-    }
-    
 }
 
 // ========================================
@@ -361,91 +385,6 @@ function toggleOfferStatus(offerId) {
 // ========================================
 // MODALES
 // ========================================
-
-function openChangeCoverModal() {
-    const currentCover = document.getElementById('companyCover')?.src || '';
-    createModal('Cambiar Portada', `
-        <div class="form-group">
-            <label for="newCoverUrl">URL de la imagen de portada</label>
-            <input type="url" id="newCoverUrl" placeholder="https://ejemplo.com/imagen.jpg" value="${currentCover}">
-            <small>Recomendado: 1200x300px</small>
-        </div>
-    `, () => {
-        const newUrl = document.getElementById('newCoverUrl').value;
-        if (newUrl) {
-            document.getElementById('companyCover').src = newUrl;
-            currentCompanyData.coverUrl = newUrl;
-            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
-            localStorage.setItem('userData', JSON.stringify({...existing, ...currentCompanyData}));
-            showNotification('Portada actualizada correctamente');
-            closeModal();
-        }
-    });
-}
-
-function openChangeLogoModal() {
-    const currentLogo = document.getElementById('companyLogo')?.src || '';
-    createModal('Cambiar Logo', `
-        <div class="form-group">
-            <label for="newLogoUrl">URL del logo</label>
-            <input type="url" id="newLogoUrl" placeholder="https://ejemplo.com/logo.png" value="${currentLogo}">
-            <small>Recomendado: 120x120px</small>
-        </div>
-    `, () => {
-        const newUrl = document.getElementById('newLogoUrl').value;
-        if (newUrl) {
-            document.getElementById('companyLogo').src = newUrl;
-            currentCompanyData.logoUrl = newUrl;
-            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
-            localStorage.setItem('userData', JSON.stringify({...existing, ...currentCompanyData}));
-            showNotification('Logo actualizado correctamente');
-            closeModal();
-        }
-    });
-}
-
-function openEditProfileModal() {
-    const companyIndustry = document.getElementById('companyIndustry')?.textContent || '';
-    createModal('Editar Perfil de Empresa', `
-        <div class="form-group">
-            <label for="editCompanyName">Nombre de la Empresa</label>
-            <input type="text" id="editCompanyName" value="${currentCompanyData.firstName || ''}">
-        </div>
-        <div class="form-group">
-            <label for="editCompanyIndustry">Sector / Industria</label>
-            <input type="text" id="editCompanyIndustry" value="${companyIndustry}">
-        </div>
-        <div class="form-group">
-            <label for="editCompanyEmail">Email</label>
-            <input type="email" id="editCompanyEmail" value="${currentCompanyData.email || ''}">
-        </div>
-        <div class="form-group">
-            <label for="editCompanyPhone">Teléfono</label>
-            <input type="tel" id="editCompanyPhone" value="${currentCompanyData.phone || ''}">
-        </div>
-    `, () => {
-        const newName = document.getElementById('editCompanyName').value;
-        const newIndustry = document.getElementById('editCompanyIndustry').value;
-        const newEmail = document.getElementById('editCompanyEmail').value;
-        const newPhone = document.getElementById('editCompanyPhone').value;
-        
-        if (newName) {
-            const nameElement = document.getElementById('companyName');
-            const industryElement = document.getElementById('companyIndustry');
-            if (nameElement) nameElement.textContent = newName;
-            if (industryElement) industryElement.textContent = newIndustry;
-            
-            currentCompanyData.firstName = newName;
-            currentCompanyData.email = newEmail;
-            currentCompanyData.phone = newPhone;
-
-            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
-            localStorage.setItem('userData', JSON.stringify({...existing, ...currentCompanyData}));
-            showNotification('Perfil actualizado correctamente');
-            closeModal();
-        }
-    });
-}
 
 function openEditAboutModal() {
     const aboutElement = document.getElementById('companyAbout');
@@ -554,7 +493,7 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
         // Preparar datos para el backend
         
         if (!userData.companyId) {
-            alert('<i data-ico="alert"></i> No se encontró el identificador de la empresa.\n\nPor favor, cierra sesión e inicia sesión nuevamente para sincronizar tus datos.');
+            alert('No se encontró el identificador de la empresa.\n\nPor favor, cierra sesión e inicia sesión nuevamente para sincronizar tus datos.');
             return;
         }
 
@@ -839,25 +778,6 @@ async function updateCandidateStatus(applicationId, newStatus, offerId) {
     }
 }
 
-function openUpgradePlanModal() {
-    createModal('Upgrade a Plan Premium', `
-        <div style="text-align:center;padding:1rem;">
-            <h3 style="color:#1ba3a3;margin-bottom:1rem;">Plan Premium</h3>
-            <p style="font-size:2rem;font-weight:700;color:#0f2f53;margin:1rem 0;">$99.000/mes</p>
-            <ul style="text-align:left;max-width:300px;margin:1.5rem auto;list-style:none;padding:0;">
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Ofertas ilimitadas</li>
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Mensajería directa con candidatos</li>
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Analytics avanzado</li>
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Destacar ofertas</li>
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Soporte prioritario 24/7</li>
-            </ul>
-        </div>
-    `, () => {
-        showNotification('Redirigiendo a la pasarela de pago...');
-        closeModal();
-    }, 'Actualizar Plan');
-}
-
 function viewCandidateProfile(candidateId) {
     showNotification('Abriendo perfil del candidato...');
     setTimeout(() => {
@@ -921,35 +841,11 @@ function closeModal() {
     }
 }
 
-function showNotification(message) {
-    const notification = document.createElement('div');
-    notification.className = 'custom-notification';
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #1ba3a3, #0f7e7e);
-        color: white;
-        padding: 16px 24px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        font-weight: 500;
-        animation: slideInRight 0.3s ease;
-        max-width: 400px;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                document.body.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
+// Avisos de ui.js, los mismos del resto del sitio (antes uno propio con
+// estilos en linea, arriba a la derecha)
+function showNotification(message, tipo) {
+    if (window.SkillMatchUI) SkillMatchUI.aviso(message, tipo);
+    else alert(message);
 }
 
 // Cargar aplicaciones recibidas por la empresa
@@ -969,11 +865,11 @@ async function loadApplications() {
             const applications = Array.isArray(data) ? data : (data.content || []);
             displayApplications(applications);
         } else {
-            const err = await response.json().catch(() => ({}));
-            console.error('Error al cargar aplicaciones:', response.status, err.message);
+            throw new Error('Error ' + response.status);
         }
     } catch (error) {
-        console.error('Error al cargar aplicaciones:', error);
+        const lista = document.getElementById('applications-list');
+        if (lista) lista.innerHTML = '<p class="error-text">No se pudieron cargar las postulaciones.</p>';
     }
 }
 
@@ -988,124 +884,77 @@ function normalizeStatus(status) {
     return statusMap[status.toLowerCase()] || status.toLowerCase();
 }
 
-// Mostrar aplicaciones en la interfaz
+// Mostrar las postulaciones en la seccion "Postulaciones recibidas". Antes el
+// codigo buscaba un contenedor (.company-profile-content) que no existe y no
+// mostraba nada: en su lugar se veian candidatos inventados.
+const POSTULACIONES_VISIBLES = 5;
 function displayApplications(applications) {
-    // Buscar o crear sección de aplicaciones
-    let applicationsSection = document.getElementById('applications-section');
-    
-    if (!applicationsSection) {
-        // Crear sección si no existe
-        const profileContent = document.querySelector('.company-profile-content');
-        if (!profileContent) return;
-        
-        applicationsSection = document.createElement('section');
-        applicationsSection.id = 'applications-section';
-        applicationsSection.className = 'info-section';
-        applicationsSection.innerHTML = `
-            <div class="section-header">
-                <h2><span class="section-icon"><i data-ico="inbox"></i></span> Aplicaciones Recibidas</h2>
-            </div>
-            <div id="applications-list" class="applications-container"></div>
-        `;
-        
-        // Insertar después de la sección de ofertas
-        const offersSection = document.getElementById('ofertas-section');
-        if (offersSection) {
-            offersSection.parentNode.insertBefore(applicationsSection, offersSection.nextSibling);
-        } else {
-            profileContent.appendChild(applicationsSection);
-        }
-    }
-    
     const applicationsList = document.getElementById('applications-list');
-    
+    if (!applicationsList) return;
+
     if (applications.length === 0) {
-        applicationsList.innerHTML = `
-            <div class="empty-state">
-                <p><i data-ico="inbox"></i> No has recibido aplicaciones todavía</p>
-            </div>
-        `;
+        applicationsList.innerHTML = '<div class="empty-state"><p>Aún no has recibido postulaciones. Cuando alguien se postule a tus ofertas, aparecerá aquí.</p></div>';
         return;
     }
-    
-    // Normalizar estados y agrupar
-    const grouped = {
-        pending: applications.filter(app => normalizeStatus(app.status) === 'pending'),
-        reviewed: applications.filter(app => normalizeStatus(app.status) === 'reviewed'),
-        accepted: applications.filter(app => normalizeStatus(app.status) === 'accepted'),
-        rejected: applications.filter(app => normalizeStatus(app.status) === 'rejected')
-    };
-    
+
+    // Las mas recientes primero
+    const ordenadas = [...applications].sort((a, b) => new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0));
+    const cuenta = estado => applications.filter(app => normalizeStatus(app.status) === estado).length;
+
     applicationsList.innerHTML = `
-        <div class="applications-stats">
-            <div class="stat-card">
-                <span class="stat-number">${grouped.pending.length}</span>
-                <span class="stat-label">Pendientes</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">${grouped.reviewed.length}</span>
-                <span class="stat-label">Revisadas</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">${grouped.accepted.length}</span>
-                <span class="stat-label">Aceptadas</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">${grouped.rejected.length}</span>
-                <span class="stat-label">Rechazadas</span>
-            </div>
+        <div class="apps-summary apps-summary-4">
+            <div><strong>${cuenta('pending')}</strong><span>Pendientes</span></div>
+            <div><strong>${cuenta('reviewed')}</strong><span>Revisadas</span></div>
+            <div><strong>${cuenta('accepted')}</strong><span>Aceptadas</span></div>
+            <div><strong>${cuenta('rejected')}</strong><span>Rechazadas</span></div>
         </div>
-        
         <div class="applications-list">
-            ${applications.map(app => createApplicationCard(app)).join('')}
+            ${ordenadas.map((app, i) => createApplicationCard(app, i >= POSTULACIONES_VISIBLES)).join('')}
         </div>
+        ${ordenadas.length > POSTULACIONES_VISIBLES ? `<button type="button" class="btn btn-secondary btn-ver-todas" onclick="showAllApplications(this)">Ver todas (${ordenadas.length})</button>` : ''}
     `;
 }
 
+function showAllApplications(boton) {
+    document.querySelectorAll('#applications-list .application-card[hidden]').forEach(card => { card.hidden = false; });
+    boton.remove();
+}
+
 // Crear tarjeta de aplicación
-function createApplicationCard(application) {
+function createApplicationCard(application, oculta) {
     const normalizedStatus = normalizeStatus(application.status);
-    
-    const statusColors = {
-        pending: '#FFA500',
-        reviewed: '#1ba3a3',
-        accepted: '#28a745',
-        rejected: '#dc3545'
+
+    // Mismas etiquetas de estado que el resto del sitio (antes colores en linea)
+    const estados = {
+        pending:  ['pendiente', 'Pendiente', 'clock'],
+        reviewed: ['revisada', 'Revisada', 'eye'],
+        accepted: ['aceptada', 'Aceptada', 'check'],
+        rejected: ['rechazada', 'Rechazada', 'close']
     };
-    
-    const statusLabels = {
-        pending: 'Pendiente',
-        reviewed: 'Revisada',
-        accepted: 'Aceptada',
-        rejected: 'Rechazada'
-    };
-    
-    const appliedDate = new Date(application.appliedDate).toLocaleDateString('es-ES', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
-    
+    const [claseEstado, textoEstado, icono] = estados[normalizedStatus] || estados.pending;
+
+    const appliedDate = application.appliedDate
+        ? new Date(application.appliedDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+        : 'fecha desconocida';
+
     return `
-        <div class="application-card" data-application-id="${application.id}">
+        <div class="application-card" data-application-id="${application.id}"${oculta ? ' hidden' : ''}>
             <div class="application-header">
                 <div class="candidate-info">
-                    <h4>${application.userName || 'Candidato'}</h4>
-                    <p class="job-title">${application.jobTitle || 'Sin título'}</p>
+                    <h4>${sanitize(application.userName || 'Candidato')}</h4>
+                    <p class="application-job">${sanitize(application.jobTitle || 'Oferta sin título')}${application.userHeadline ? ' · ' + sanitize(application.userHeadline) : ''}</p>
                 </div>
-                <span class="application-status" style="background-color: ${statusColors[normalizedStatus]}">
-                    ${statusLabels[normalizedStatus]}
-                </span>
+                <span class="status-badge ${claseEstado}"><i data-ico="${icono}"></i> ${textoEstado}</span>
             </div>
-            <p class="application-date"><i data-ico="calendar"></i> Aplicó el ${appliedDate}</p>
+            <p class="application-date"><i data-ico="calendar"></i> Se postuló el ${appliedDate}</p>
             ${application.coverLetter ? `
-                <p class="cover-letter-preview">${application.coverLetter.substring(0, 150)}${application.coverLetter.length > 150 ? '...' : ''}</p>
+                <p class="cover-letter-preview">${sanitize(application.coverLetter.substring(0, 150))}${application.coverLetter.length > 150 ? '...' : ''}</p>
             ` : ''}
             <div class="application-actions">
-                <button class="btn-view-profile" onclick="viewCandidateProfile('${application.userId}')">Ver perfil</button>
-                ${normalizedStatus === 'pending' ? `
-                    <button class="btn-accept" onclick="updateApplicationStatus('${application.id}', 'aceptada')"><i data-ico="check"></i> Aceptar</button>
-                    <button class="btn-reject" onclick="updateApplicationStatus('${application.id}', 'rechazada')"><i data-ico="close"></i> Rechazar</button>
+                <button class="btn btn-secondary btn-small" onclick="viewCandidateProfile('${application.userId}')">Ver perfil</button>
+                ${normalizedStatus === 'pending' || normalizedStatus === 'reviewed' ? `
+                    <button class="btn btn-primary btn-small" onclick="updateApplicationStatus('${application.id}', 'aceptada')"><i data-ico="check"></i> Aceptar</button>
+                    <button class="btn btn-secondary btn-small" onclick="updateApplicationStatus('${application.id}', 'rechazada')"><i data-ico="close"></i> Rechazar</button>
                 ` : ''}
             </div>
         </div>
@@ -1122,8 +971,10 @@ async function updateApplicationStatus(applicationId, newStatus) {
         );
 
         if (response.ok) {
-            showNotification(`Aplicación ${newStatus === 'aceptada' ? 'aceptada' : 'rechazada'} exitosamente`);
+            showNotification(`Postulación ${newStatus === 'aceptada' ? 'aceptada' : 'rechazada'}`);
             loadApplications();
+            // Las cifras del resumen cambian (por revisar, respondidas)
+            loadActivityStats();
         } else {
             const err = await response.json().catch(() => ({}));
             throw new Error(err.message || `Error ${response.status}`);
@@ -1142,8 +993,7 @@ function viewCandidateProfile(userId) {
 // Cargar aplicaciones al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     // Dar tiempo para que se carguen los datos de la empresa
-    setTimeout(() => {
-        loadApplications();
-    }, 1000);
+    // Sin esperar: la seccion ya existe en el HTML
+    if (typeof isAuthenticated === 'function' && isAuthenticated()) loadApplications();
 });
 

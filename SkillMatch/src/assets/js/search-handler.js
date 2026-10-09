@@ -7,6 +7,8 @@ let savedOpportunityIds = new Set();
 
 async function loadSavedOpportunities() {
     if (!localStorage.getItem('userData')) return;
+    // Las empresas no guardan vacantes (el backend responde 403)
+    try { if (JSON.parse(localStorage.getItem('userData')).userType === 'empresa') return; } catch (e) { return; }
 
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job-ids`);
