@@ -129,6 +129,8 @@ img, svg, video { display: block; max-width: 100%; }
 img { height: auto; }
 
 button, input, select, textarea { font: inherit; color: inherit; }
+/* hidden siempre oculta: si no, una clase con display (.btn, .lista-limpiar...) le gana */
+[hidden] { display: none !important; }
 button { background: none; border: 0; cursor: pointer; }
 
 a { color: var(--sea-deep); text-decoration: none; }
