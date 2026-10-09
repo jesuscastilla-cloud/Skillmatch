@@ -158,7 +158,7 @@
         const actual = paginaActual();
         document.querySelectorAll('header .nav-links a').forEach(function (a) {
             const destino = (a.getAttribute('href') || '').split('/').pop();
-            if (destino && destino === actual && !a.classList.contains('btn-login')) {
+            if (destino && destino === actual && !a.classList.contains('btn-login') && !a.classList.contains('btn-register')) {
                 a.classList.add('active-nav');
                 a.setAttribute('aria-current', 'page');
             }

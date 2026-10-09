@@ -88,6 +88,12 @@ y lectura del código. El celular se auditó simulando pantalla táctil de verda
   conversaciones, la lista dice solo "Aún no tienes conversaciones" y el panel derecho invita a
   empezar ("Nuevo mensaje" / "Buscar conexiones") en vez de repetir la ilustración y pedir
   "Selecciona una conversación"; buscador con nombre para lectores de pantalla.
+- **Paso 4 — Elegir cuenta y logins (hecho):** frases de las tarjetas en texto normal, puntos con
+  palomita y solo lo que existe (fuera "portafolio" e "IA para priorizar candidatos"), botones de
+  registro en turquesa, "Unirse ahora" sin la línea de página actual; login general con botón de
+  ancho completo y enlace para crear cuenta; mayúsculas corregidas. **Fuera "¿Olvidaste tu
+  contraseña?"** en los tres logins: no hay recuperación en el backend y el flujo de login.html
+  terminaba diciendo "Tu contraseña ha sido restablecida" sin cambiar nada.
 - Para Jesús: permitir que la empresa edite sus datos (hoy `PUT /companies/{id}` es solo de ADMIN),
   agregar portada a `Company` y guardar beneficios como lista.
 

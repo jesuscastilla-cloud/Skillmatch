@@ -4023,6 +4023,11 @@ kbd {
 .choice-header { display: flex; align-items: center; gap: var(--s3); }
 .choice-title { font-family: var(--font-display); font-size: var(--t-lg); color: var(--ink); font-weight: 700; }
 .choice-cta { margin-top: auto; padding-top: var(--s5); }
+/* La frase bajo "Soy usuario / Soy empresa" heredaba la negrita grande del titulo */
+.choice-title h2 { font-size: var(--t-xl); }
+.choice-title p { margin-top: 4px; font-family: var(--font-text); font-size: var(--t-base); font-weight: 400; color: var(--ink-muted); }
+.choice-header { align-items: flex-start; }
+.choice-split { margin-top: var(--s6); }
 /* La segunda tarjeta usa el acento para diferenciar el camino de empresa */
 .choice-panel:last-child .choice-icon { background: var(--naranja-soft); color: var(--naranja-deep); }
 

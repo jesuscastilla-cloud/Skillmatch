@@ -51,16 +51,17 @@
 
                     <form>
                         <div class="form-group">
-                            <label for="email">Correo Electrónico</label>
+                            <label for="email">Correo electrónico</label>
                             <input type="email" id="email" required>
                         </div>
                         <div class="form-group">
                             <label for="password">Contraseña</label>
                             <input type="password" id="password" required>
                         </div>
-                        <button type="submit" class="btn btn-primary">Iniciar sesión</button>
+                        <button type="submit" class="btn btn-primary btn-full">Iniciar sesión</button>
                     </form>
-                    <span class="toggle-form" onclick="showRecovery()">¿Olvidaste tu contraseña?</span>
+                    <p class="auth-switch">¿Aún no tienes cuenta? <a href="seleccionar-registro.html">Crear una cuenta</a></p>
+                    <!-- Sin "¿Olvidaste tu contraseña?" hasta que el backend tenga recuperación (ver docs/ANALISIS-PROFUNDO.md) -->
                 </div>
 
                 <div class="login-form" id="recoveryFlow">

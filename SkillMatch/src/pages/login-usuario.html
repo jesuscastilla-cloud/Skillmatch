@@ -53,18 +53,18 @@
 
                     <form id="usuario-login-form" method="post" novalidate>
                         <div class="form-group">
-                            <label for="email">Correo Electrónico</label>
+                            <label for="email">Correo electrónico</label>
                             <input type="email" id="email" name="email" autocomplete="email" required>
                         </div>
                         <div class="form-group">
                             <label for="password">Contraseña</label>
                             <input type="password" id="password" name="password" autocomplete="current-password" required>
-                            <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                            <!-- Sin "¿Olvidaste tu contraseña?" hasta que el backend tenga recuperación (ver docs/ANALISIS-PROFUNDO.md) -->
                         </div>
                         <button type="submit" class="btn btn-primary btn-full" id="login-btn">Iniciar sesión</button>
                     </form>
                     <div class="divider">o</div>
-                    <a href="registro-usuario.html" class="btn btn-secondary btn-full">Crear cuenta de Usuario</a>
+                    <a href="registro-usuario.html" class="btn btn-secondary btn-full">Crear cuenta de usuario</a>
                     <p class="auth-switch">¿Representas a una empresa? <a href="login-empresa.html">Accede como empresa</a></p>
                 </div>
             </div>
@@ -75,7 +75,7 @@
             <div class="login-personajes" aria-hidden="true"></div>
             <h2>Tu perfil trabaja mientras tú no estás</h2>
             <ul class="auth-points">
-                <li><i data-ico="check"></i> Perfil y portafolio con logros y proyectos</li>
+                <li><i data-ico="check"></i> Perfil con tus habilidades y experiencia</li>
                 <li><i data-ico="check"></i> Recomendaciones según tu perfil y habilidades</li>
                 <li><i data-ico="check"></i> Seguimiento de candidaturas y feedback</li>
             </ul>
