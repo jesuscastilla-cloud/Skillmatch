@@ -384,7 +384,6 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .btn-login:hover {
     border-color: var(--ink-3);
     background: var(--surface) !important;
-    transform: translateY(-1px);
 }
 
 .nav-toggle {
@@ -481,7 +480,6 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .btn-primary-modal:hover {
     background: var(--sea-deep);
     color: #fff;
-    transform: translateY(-1.5px);
     box-shadow: 0 2px 4px rgba(8,32,60,.12), 0 12px 24px -10px var(--sea-glow);
 }
 
@@ -499,7 +497,6 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .btn-apply-compact:hover {
     background: var(--naranja-hover);
     color: var(--surface-inverse);
-    transform: translateY(-1.5px);
     box-shadow: 0 2px 6px rgba(8,32,60,.14), 0 14px 28px -10px rgba(255,118,24,.42);
 }
 
@@ -516,7 +513,6 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .btn-return:hover {
     border-color: var(--ink-3);
     color: var(--ink);
-    transform: translateY(-1.5px);
     box-shadow: var(--sh-2);
 }
 
@@ -798,7 +794,7 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     font-weight: 600;
     transition: background-color .18s var(--ease), transform .16s var(--ease);
 }
-.btn-search-main:hover { background: var(--sea-deep); transform: translateX(1px); }
+.btn-search-main:hover { background: var(--sea-deep); }
 
 /* ---------- 10. Superficies y tarjetas ---------- */
 
@@ -3259,7 +3255,7 @@ footer.pie > .container { position: relative; z-index: 1; }
 /* ---------- 25b. Movimiento global (Fase 1, seccion 3 del plan) ----------
    Reglas: solo se anima transform y opacity; todo lo que sigue al mouse
    se apaga en pantallas tactiles y con prefers-reduced-motion.
-   ui.js agrega la clase .magnetic: el HTML no cambia. (El foco de luz que
+   (Los botones magneticos se quitaron; ver "destello" en la seccion 25d.) (El foco de luz que
    seguia al cursor en las tarjetas se quito a pedido de Luis.) */
 
 :root {
@@ -3307,14 +3303,6 @@ html.tema-cambiando .tabbar { view-transition-name: none; }
 @keyframes ripple { to { transform: scale(1); opacity: 0; } }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-    /* Botones magneticos: se acercan unos pixeles al cursor. Se usa la
-       propiedad translate para no pisar el transform del hover. */
-    .magnetic {
-        translate: var(--tx, 0px) var(--ty, 0px);
-        transition: translate .3s var(--ease-out), transform .16s var(--ease),
-                    box-shadow .22s var(--ease), background-color .18s var(--ease),
-                    border-color .18s var(--ease), color .18s var(--ease);
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3465,6 +3453,53 @@ html.tema-cambiando .tabbar { view-transition-name: none; }
     20% { rotate: -14deg; translate: -1px 0; }
     45% { rotate: 6deg; translate: 1px 0; }
     70% { rotate: -6deg; translate: 0 0; }
+}
+
+/* ---------- 25e. Destello en los botones ----------
+   Reemplaza el efecto magnetico (el boton seguia al cursor) y el saltito
+   hacia arriba, que a Luis no le gustaban: el boton se queda quieto, cambia
+   de color y lo cruza una vez un reflejo de luz diagonal. Solo transform;
+   sin mouse fino o con movimiento reducido no aparece. */
+.btn-primary, .btn-accent, .btn-apply, .btn-apply-compact, .btn-register,
+.btn-search-main, .search-btn, .btn-primary-modal {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+.btn-primary::before, .btn-accent::before, .btn-apply::before, .btn-apply-compact::before, .btn-register::before,
+.btn-search-main::before, .search-btn::before, .btn-primary-modal::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, .34) 50%, transparent 68%);
+    transform: translateX(-115%);
+    pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    :is(.btn-primary, .btn-accent, .btn-apply, .btn-apply-compact, .btn-register,
+        .btn-search-main, .search-btn, .btn-primary-modal):hover::before {
+        transform: translateX(115%);
+        transition: transform .8s cubic-bezier(.25, .8, .25, 1);
+    }
+    /* La flecha de un boton avanza y se queda mientras el mouse esta encima */
+    :is(a, button).btn .ico-arrow { transition: translate .3s var(--ease-out); }
+    :is(a, button).btn:hover .ico-arrow { animation: none; translate: 4px 0; }
+    /* La lupa recorre un circulo pequeno, como si buscara */
+    .ico-search { --ico-anim: ico-lupa; }
+    /* Tarjetas de elegir camino: su icono hace su gesto y las palomitas
+       aparecen una tras otra al pasar el mouse por la tarjeta */
+    :is(.choice-card, .pathway-card):hover :is(.choice-icon, .pathway-icon) .ico { animation: var(--ico-anim) .7s var(--ease-out); }
+    :is(.choice-card, .pathway-card):hover :is(.choice-points, .pathway-features) li .ico { animation: ico-golpe .45s var(--ease-out) both; }
+    :is(.choice-card, .pathway-card):hover :is(.choice-points, .pathway-features) li:nth-child(2) .ico { animation-delay: 70ms; }
+    :is(.choice-card, .pathway-card):hover :is(.choice-points, .pathway-features) li:nth-child(3) .ico { animation-delay: 140ms; }
+    :is(.choice-card, .pathway-card):hover :is(.choice-points, .pathway-features) li:nth-child(4) .ico { animation-delay: 210ms; }
+}
+@keyframes ico-lupa {
+    20% { translate: 2px -2px; rotate: -8deg; }
+    40% { translate: 2px 2px; }
+    60% { translate: -2px 2px; rotate: 8deg; }
+    80% { translate: -2px -2px; }
 }
 
 /* ---------- 25c. Paleta de comandos (Ctrl+K) ---------- */
@@ -3890,7 +3925,7 @@ kbd {
     border-radius: var(--r-pill) !important;
     background: var(--surface-inverse); color: #fff !important; font-weight: 600 !important;
 }
-.btn-register:hover { background: var(--sea-deep); color: #fff !important; transform: translateY(-1px); }
+.btn-register:hover { background: var(--sea-deep); color: #fff !important; }
 /* En celular la ventana pequena tambien es una hoja a todo lo ancho */
 @media (width > 760px) { .modal-content-small { max-width: 420px; } }
 
@@ -3925,7 +3960,7 @@ kbd {
     background: var(--surface-inverse); color: #fff; font-weight: 600;
     transition: background-color .18s var(--ease), transform .16s var(--ease);
 }
-.search-btn:hover { background: var(--sea-deep); transform: translateY(-1px); }
+.search-btn:hover { background: var(--sea-deep); }
 
 .quick-filters {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -4044,6 +4079,7 @@ kbd {
 .choice-title p { margin-top: 4px; font-family: var(--font-text); font-size: var(--t-base); font-weight: 400; color: var(--ink-muted); }
 .choice-header { align-items: flex-start; }
 .choice-split { margin-top: var(--s6); }
+.choice-cta .signup-hint { margin-top: var(--s2); text-align: center; }
 /* La segunda tarjeta usa el acento para diferenciar el camino de empresa */
 .choice-panel:last-child .choice-icon { background: var(--naranja-soft); color: var(--naranja-deep); }
 

@@ -7,7 +7,7 @@
  *    3. Estados de carga: esqueletos y botones ocupados
  *    4. Avisos al usuario (toast) y modales accesibles
  *    5. Movimiento: aparicion al hacer scroll (las listas se reparten como
- *       una baraja), botones magneticos y onda al hacer clic
+ *       una baraja) y onda al hacer clic
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -553,45 +553,12 @@
 
     /* ---------- 10. Movimiento con el mouse y al hacer clic ---------- */
 
-    // Lo que sigue al cursor solo existe con mouse y sin movimiento reducido.
-    const conMouse = !reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-
     // (El foco de luz que seguia al cursor dentro de las tarjetas se quito a
     // pedido de Luis: las tarjetas solo suben un poco al pasar el mouse.)
-    const MAGNETICO = '.btn-accent, .hero .btn, .cta-final .btn, .pathway-card .btn, .choice-card .btn, .btn-search-main, .search-btn';
     const ONDA      = '.btn, .btn-save, .btn-apply, .btn-search-main, .search-btn, .btn-login, .btn-register';
 
-    /** Marca con la clase .magnetic los botones que se acercan al cursor. */
-    function marcarEfectos(raiz) {
-        if (!conMouse || !raiz.querySelectorAll) return;
-        if (raiz.matches && raiz.matches(MAGNETICO)) raiz.classList.add('magnetic');
-        raiz.querySelectorAll(MAGNETICO).forEach(function (el) { el.classList.add('magnetic'); });
-    }
-
-    let magnetActual = null;
-
-    function soltarMagnet() {
-        if (!magnetActual) return;
-        magnetActual.style.setProperty('--tx', '0px');
-        magnetActual.style.setProperty('--ty', '0px');
-        magnetActual = null;
-    }
-
-    function moverConMouse(e) {
-        const objetivo = e.target instanceof Element ? e.target : null;
-
-        // Boton magnetico: se acerca hasta 6px al cursor
-        const magnet = objetivo && objetivo.closest('.magnetic');
-        if (magnet !== magnetActual) soltarMagnet();
-        if (magnet) {
-            const r = magnet.getBoundingClientRect();
-            const dx = Math.max(-6, Math.min(6, (e.clientX - (r.left + r.width / 2)) * .25));
-            const dy = Math.max(-6, Math.min(6, (e.clientY - (r.top + r.height / 2)) * .35));
-            magnet.style.setProperty('--tx', dx.toFixed(1) + 'px');
-            magnet.style.setProperty('--ty', dy.toFixed(1) + 'px');
-            magnetActual = magnet;
-        }
-    }
+    // (Los botones magneticos, que se acercaban al cursor, se quitaron a
+    // pedido de Luis: ahora un destello los cruza al pasar el mouse, en app.css)
 
     /** Onda desde el punto exacto del clic (tambien en tactil). */
     function ondaAlPulsar(e) {
@@ -613,16 +580,6 @@
 
     function movimientoConMouse() {
         document.addEventListener('pointerdown', ondaAlPulsar, { passive: true });
-        if (!conMouse) return;
-        marcarEfectos(document.body);
-        // Un solo cuadro por fotograma, aunque el mouse mande mas eventos
-        let pendiente = 0, ultimo = null;
-        document.addEventListener('pointermove', function (e) {
-            ultimo = e;
-            if (pendiente) return;
-            pendiente = requestAnimationFrame(function () { pendiente = 0; moverConMouse(ultimo); });
-        }, { passive: true });
-        document.documentElement.addEventListener('mouseleave', soltarMagnet);
     }
 
     // Tarjetas que llegan despues (vacantes de la API): aparecen y se mueven igual
@@ -631,7 +588,6 @@
             for (const node of m.addedNodes) {
                 if (node.nodeType !== 1 || node.classList.contains('ripple')) continue;
                 revelar(node);
-                marcarEfectos(node);
                 hidratarLottie(node);
             }
         }
