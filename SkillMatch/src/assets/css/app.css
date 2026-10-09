@@ -245,7 +245,10 @@ main { display: block; }
 
 /* ---------- 6. Barra de navegacion ---------- */
 
-header {
+/* body > header: la barra de la pagina. Con un simple "header" tambien se
+   pintaban las cabeceras de las tarjetas de "Únete" (<header class="choice-header">):
+   fondo de barra en modo oscuro, pegajosas al hacer scroll y ocultas al imprimir. */
+body > header {
     position: sticky;
     top: 0;
     z-index: 100;
@@ -3215,7 +3218,7 @@ footer.pie > .container { position: relative; z-index: 1; }
 
 /* Una sola secuencia orquestada al cargar: la barra baja, el contenido
    principal aparece. Nada mas se mueve por su cuenta. */
-.page-enter header { animation: bar-drop .45s var(--ease-out) both; }
+.page-enter > header { animation: bar-drop .45s var(--ease-out) both; }
 .page-enter main, .page-enter > section:not(.hero) { animation: none; }
 
 @keyframes bar-drop {
@@ -3269,14 +3272,14 @@ footer.pie > .container { position: relative; z-index: 1; }
    la inferior se quedan quietas; el contenido sale y entra con un fundido.
    En navegadores sin soporte simplemente se navega normal. */
 @view-transition { navigation: auto; }
-header  { view-transition-name: barra-superior; }
+body > header { view-transition-name: barra-superior; } /* el nombre debe ser unico en la pagina */
 .tabbar { view-transition-name: barra-inferior; }
 ::view-transition-old(root) { animation: vt-salida var(--dur-2) var(--ease-in-out) both; }
 ::view-transition-new(root) { animation: vt-entrada var(--dur-3) var(--ease-out) both; }
 @keyframes vt-salida  { to   { opacity: 0; transform: translateY(-8px); } }
 @keyframes vt-entrada { from { opacity: 0; transform: translateY(12px); } }
 /* Con transiciones entre paginas, la barra ya no "cae" en cada visita */
-@supports (view-transition-name: none) { .page-enter header { animation: none; } }
+@supports (view-transition-name: none) { .page-enter > header { animation: none; } }
 
 /* Cambio de tema (ui.js): la foto nueva se revela en circulo desde el boton
    sobre la vieja. Sin el fundido de las paginas, sin mezclar colores y con
@@ -3286,7 +3289,7 @@ header  { view-transition-name: barra-superior; }
    (Las esporas que acompanaban el circulo se quitaron a pedido de Luis.) */
 html.tema-cambiando::view-transition-old(root),
 html.tema-cambiando::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
-html.tema-cambiando header,
+html.tema-cambiando body > header,
 html.tema-cambiando .tabbar { view-transition-name: none; }
 
 /* Onda al hacer clic, desde el punto exacto (Material) */
@@ -3808,7 +3811,7 @@ kbd {
     --sh-4: 0 28px 60px -20px rgba(0, 0, 0, .65);
 }
 
-[data-theme="dark"] header { background: rgba(8, 18, 30, .82); }
+[data-theme="dark"] body > header { background: rgba(8, 18, 30, .82); }
 /* La barra inferior del celular tambien se oscurece (se quedaba blanca) */
 [data-theme="dark"] .tabbar { background: rgba(8, 18, 30, .9); }
 [data-theme="dark"] header.is-scrolled { box-shadow: 0 1px 16px -4px rgba(0, 0, 0, .45); }
@@ -3864,7 +3867,7 @@ kbd {
 }
 
 @media print {
-    header, .tabbar, .toast-stack, .btn, .filter-card { display: none !important; }
+    body > header, .tabbar, .toast-stack, .btn, .filter-card { display: none !important; }
     body { background: #fff; }
     .card, .profile-card { box-shadow: none; border-color: #ccc; }
 }
