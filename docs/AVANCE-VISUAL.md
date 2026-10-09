@@ -152,6 +152,11 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 - **Accesibilidad y mayúsculas (paso 6 del análisis):** buscadores con nombre, títulos sin saltos
   en todas las páginas, unas 50 mayúsculas corregidas, "Unirse ahora" y "Buscar" visibles en modo
   oscuro y fuera "Ver roadmap completo" (llevaba a "#"). Detalle en `docs/ANALISIS-PROFUNDO.md`.
+- **Seguridad (XSS):** Mensajes, Conexiones, Vacantes, notificaciones y los perfiles insertaban el
+  texto del servidor sin escapar: un mensaje con código se ejecutaba en la sesión de quien lo leía
+  (probado). Ahora todo pasa por `escaparHtml()` (en `api-config.js`, que se carga primero en todas
+  las páginas), los adjuntos solo aceptan enlaces http(s) (`urlSegura()`), `sanitize()` del perfil de
+  empresa también escapa comillas y "Contactar" lleva nombre y correo en atributos `data-`.
 
 ## Pendiente
 

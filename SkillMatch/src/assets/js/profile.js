@@ -278,7 +278,7 @@ function displaySkills(skills) {
 
     skillsContainer.innerHTML = skills.map(skill => 
         `<span class="skill-tag">
-            ${skill.name} 
+            ${escaparHtml(skill.name)} 
             <span class="skill-level">${formatSkillLevel(skill.level)}</span>
             <button class="btn-remove-skill" onclick="deleteSkill('${skill.id}')" title="Eliminar"><i data-ico="close"></i></button>
         </span>`
@@ -412,12 +412,12 @@ function displayExperiences(experiences) {
                 <div class="experience-badge"><i data-ico="briefcase"></i></div>
                 <div class="experience-content">
                     <div class="experience-header">
-                        <h3>${exp.position}</h3>
+                        <h3>${escaparHtml(exp.position)}</h3>
                         <button class="btn-delete-item" onclick="deleteExperience('${exp.id}')" title="Eliminar"><i data-ico="trash"></i></button>
                     </div>
-                    <p class="company">${exp.company}</p>
-                    <p class="timeline">${startDate} - ${endDate}${exp.location ? ' | ' + exp.location : ''}</p>
-                    ${exp.description ? `<p class="description">${exp.description}</p>` : ''}
+                    <p class="company">${escaparHtml(exp.company)}</p>
+                    <p class="timeline">${startDate} - ${endDate}${exp.location ? ' | ' + escaparHtml(exp.location) : ''}</p>
+                    ${exp.description ? `<p class="description">${escaparHtml(exp.description)}</p>` : ''}
                 </div>
             </div>
         `;
@@ -544,12 +544,12 @@ function displayEducations(educations) {
                 <div class="education-badge"><i data-ico="cap"></i></div>
                 <div class="education-content">
                     <div class="education-header">
-                        <h3>${edu.degree}</h3>
+                        <h3>${escaparHtml(edu.degree)}</h3>
                         <button class="btn-delete-item" onclick="deleteEducation('${edu.id}')" title="Eliminar"><i data-ico="trash"></i></button>
                     </div>
-                    <p class="school">${edu.school}</p>
-                    <p class="timeline">${startDate} - ${endDate}${edu.fieldOfStudy ? ' | ' + edu.fieldOfStudy : ''}</p>
-                    ${edu.description ? `<p class="description">${edu.description}</p>` : ''}
+                    <p class="school">${escaparHtml(edu.school)}</p>
+                    <p class="timeline">${startDate} - ${endDate}${edu.fieldOfStudy ? ' | ' + escaparHtml(edu.fieldOfStudy) : ''}</p>
+                    ${edu.description ? `<p class="description">${escaparHtml(edu.description)}</p>` : ''}
                 </div>
             </div>
         `;
@@ -707,11 +707,11 @@ function displayRecommendedJobs() {
         return `
         <div class="opportunity-item-compact">
             <div class="opportunity-header-compact">
-                <h3>${job.title}</h3>
+                <h3>${escaparHtml(job.title)}</h3>
                 ${etiqueta}
             </div>
-            <p class="opportunity-company-compact">${job.company?.name || job.companyName || ''}</p>
-            <p class="opportunity-location-compact"><i data-ico="pin"></i> ${job.location}</p>
+            <p class="opportunity-company-compact">${escaparHtml(job.company?.name || job.companyName)}</p>
+            <p class="opportunity-location-compact"><i data-ico="pin"></i> ${escaparHtml(job.location)}</p>
             <button class="btn-apply-compact" onclick="applyToJob('${job.id}')">Aplicar ahora</button>
         </div>`;
     }).join('');
@@ -813,10 +813,10 @@ async function loadInterestedCompanies() {
 
                 return `
                     <div class="company-item-compact">
-                        <div class="company-logo-compact">${(company.name || '?').charAt(0)}</div>
+                        <div class="company-logo-compact">${escaparHtml((company.name || '?').charAt(0))}</div>
                         <div class="company-info-compact">
-                            <h3>${company.job || company.name}</h3>
-                            <p>${company.job ? company.name + ' · ' : ''}${cuando}</p>
+                            <h3>${escaparHtml(company.job || company.name)}</h3>
+                            <p>${company.job ? escaparHtml(company.name) + ' · ' : ''}${cuando}</p>
                             <p class="status-badge ${clave.toLowerCase()}"><i data-ico="${estado.ico}"></i> ${estado.texto}</p>
                         </div>
                     </div>

@@ -96,6 +96,23 @@ function isAuthenticated() {
     }
 }
 
+/**
+ * Texto del servidor dentro de HTML. Lo que escribe una persona (un mensaje,
+ * su nombre, el titulo de una vacante) puede traer "<script>" o un <img onerror>:
+ * sin escapar, ese codigo se ejecutaria en la sesion de quien lo ve.
+ * Este archivo se carga primero en todas las paginas, por eso vive aqui.
+ */
+function escaparHtml(texto) {
+    if (texto === null || texto === undefined) return '';
+    return String(texto).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/** Solo enlaces http(s) o relativos: un "javascript:..." en un adjunto ejecutaria codigo. */
+function urlSegura(url) {
+    const u = String(url || '').trim();
+    return /^(https?:\/\/|\/|\.{1,2}\/)/i.test(u) ? escaparHtml(u) : '#';
+}
+
 function limpiarSesion() {
     localStorage.removeItem('token');
     localStorage.removeItem('userData');

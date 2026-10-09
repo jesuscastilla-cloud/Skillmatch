@@ -55,7 +55,7 @@ async function loadJobs() {
         container.innerHTML = `
             <div class="error-message">
                 <h3>Error al cargar oportunidades</h3>
-                <p>${error.message || 'Por favor, intenta de nuevo más tarde'}</p>
+                <p>${escaparHtml(error.message || 'Por favor, intenta de nuevo más tarde')}</p>
                 <button onclick="loadJobs()" class="btn btn-primary">Reintentar</button>
             </div>
         `;
@@ -163,8 +163,8 @@ function createJobCard(job) {
     const orden = [...tuyas, ...[...pedidas.keys()].filter(k => !tuyas.includes(k))];
     const skills = orden.length > 0
         ? orden.slice(0, 4).map(k => tuyas.includes(k)
-            ? `<span class="skill is-common"><i data-ico="check"></i>${pedidas.get(k)}</span>`
-            : `<span class="skill">${pedidas.get(k)}</span>`).join('')
+            ? `<span class="skill is-common"><i data-ico="check"></i>${escaparHtml(pedidas.get(k))}</span>`
+            : `<span class="skill">${escaparHtml(pedidas.get(k))}</span>`).join('')
         : '<span class="skill">Sin especificar</span>';
 
     // Sin habilidades tuyas o de la vacante no hay con que comparar: sin anillo
@@ -182,22 +182,22 @@ function createJobCard(job) {
     return `
         <div class="opportunity-card" data-job-id="${job.id}">
             <div class="card-header-opp">
-                <div class="company-logo-opp">${job.companyName ? job.companyName.charAt(0) : '<i data-ico="building"></i>'}</div>
+                <div class="company-logo-opp">${job.companyName ? escaparHtml(job.companyName.charAt(0)) : '<i data-ico="building"></i>'}</div>
                 <div class="card-info">
-                    <h3 class="job-title">${job.title}</h3>
-                    <p class="company-name">${job.companyName || 'Empresa confidencial'}</p>
+                    <h3 class="job-title">${escaparHtml(job.title)}</h3>
+                    <p class="company-name">${escaparHtml(job.companyName || 'Empresa confidencial')}</p>
                 </div>
                 ${anillo}
             </div>
             
             <div class="card-meta">
-                <span class="meta-item"><i data-ico="pin"></i> ${job.location || 'Remoto'}</span>
+                <span class="meta-item"><i data-ico="pin"></i> ${escaparHtml(job.location || 'Remoto')}</span>
                 <span class="meta-item"><i data-ico="briefcase"></i> ${translateJobType(job.type)}</span>
                 <span class="meta-item"><i data-ico="cap"></i> ${translateExperienceLevel(job.experienceLevel)}</span>
                 <span class="meta-item"><i data-ico="money"></i> ${salary}</span>
             </div>
             
-            <p class="card-description">${truncateText(job.description, 150)}</p>
+            <p class="card-description">${escaparHtml(truncateText(job.description, 150))}</p>
             
             <div class="card-skills">
                 ${skills}

@@ -5,10 +5,8 @@ let currentOffers = [];
 let currentCompanyData = {};
 
 function sanitize(text) {
-    if (text == null) return '';
-    const div = document.createElement('div');
-    div.textContent = String(text);
-    return div.innerHTML;
+    // Tambien escapa comillas (sirve dentro de atributos); ver api-config.js
+    return escaparHtml(text);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -251,7 +249,7 @@ function renderOffers(offers) {
         <div class="offer-card" data-offer-id="${offerId}">
             <div class="offer-card-header">
                 <div class="offer-title-section">
-                    <h3>${offer.title}</h3>
+                    <h3>${sanitize(offer.title)}</h3>
                     <span class="offer-type-badge ${offer.type}">${offer.typeLabel}</span>
                 </div>
                 <button class="offer-menu-btn" onclick="showOfferMenu('${offerId}')" title="Opciones">⋮</button>
@@ -453,7 +451,7 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
     createModal(isEdit ? 'Editar oferta' : 'Nueva oferta', `
         <div class="form-group">
             <label for="offerTitle">Título de la oferta *</label>
-            <input type="text" id="offerTitle" placeholder="ej. Desarrollador Frontend Senior" value="${existingOffer?.title || ''}" required>
+            <input type="text" id="offerTitle" placeholder="ej. Desarrollador Frontend Senior" value="${sanitize(existingOffer?.title)}" required>
         </div>
         <div class="form-group">
             <label for="offerType">Tipo de oferta *</label>
@@ -465,15 +463,15 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
         </div>
         <div class="form-group">
             <label for="offerDescription">Descripción *</label>
-            <textarea id="offerDescription" rows="4" placeholder="Describe las responsabilidades y requisitos..." required>${existingOffer?.description || ''}</textarea>
+            <textarea id="offerDescription" rows="4" placeholder="Describe las responsabilidades y requisitos..." required>${sanitize(existingOffer?.description)}</textarea>
         </div>
         <div class="form-group">
             <label for="offerSalary">Rango salarial (opcional)</label>
-            <input type="text" id="offerSalary" placeholder="ej. $2M - $3M / mes" value="${existingOffer?.salary || ''}">
+            <input type="text" id="offerSalary" placeholder="ej. $2M - $3M / mes" value="${sanitize(existingOffer?.salary)}">
         </div>
         <div class="form-group">
             <label for="offerLocation">Ubicación *</label>
-            <input type="text" id="offerLocation" placeholder="ej. Cartagena de Indias" value="${existingOffer?.location || 'Cartagena de Indias'}" required>
+            <input type="text" id="offerLocation" placeholder="ej. Cartagena de Indias" value="${sanitize(existingOffer?.location || 'Cartagena de Indias')}" required>
         </div>
     `, () => {
         const title = document.getElementById('offerTitle').value;
@@ -573,7 +571,7 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
 async function showCandidatesModal(offer) {
 
     // Mostrar modal con loading
-    const modal = createModal(`Candidatos para: ${offer.title}`, `
+    const modal = createModal(`Candidatos para: ${sanitize(offer.title)}`, `
         <div style="text-align:center;padding:2rem;">
             <p>Cargando candidatos...</p>
         </div>
@@ -728,7 +726,8 @@ function createCandidateCard(application, offerId) {
                         style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:#1e3a5f;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
                     Ver perfil
                 </button>
-                <button onclick="contactCandidateByEmail('${application.userEmail}', '${application.userName}')"
+                <!-- Nombre y correo en data-: dentro del onclick una comilla en el nombre ejecutaba codigo -->
+                <button data-email="${escaparHtml(application.userEmail)}" data-nombre="${escaparHtml(application.userName)}" onclick="contactCandidateByEmail(this.dataset.email, this.dataset.nombre)"
                         style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:white;color:#0369a1;border:1.5px solid #bfdbfe;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
                     Contactar
                 </button>

@@ -64,7 +64,7 @@ function showToast(message, type = 'success') {
 
 function avatarCircle(name) {
     const initial = name ? name.charAt(0).toUpperCase() : '?';
-    return `<div class="connection-avatar-circle">${initial}</div>`;
+    return `<div class="connection-avatar-circle">${escaparHtml(initial)}</div>`;
 }
 
 // ─── Mis conexiones ───────────────────────────────────────────────────────────
@@ -110,8 +110,8 @@ function displayConnections(connections) {
                 <div class="connection-header">
                     ${avatarCircle(name)}
                     <div class="connection-info">
-                        <h3>${name || 'Usuario'}</h3>
-                        <p class="connection-type">${headline || ''}</p>
+                        <h3>${escaparHtml(name || 'Usuario')}</h3>
+                        <p class="connection-type">${escaparHtml(headline)}</p>
                         <p class="connection-time">${since ? 'Desde ' + since : 'Conectado'}</p>
                     </div>
                     <div class="connection-actions">
@@ -119,7 +119,7 @@ function displayConnections(connections) {
                         <button class="btn btn-secondary btn-small" onclick="viewProfile('${otherId}')">Ver perfil</button>
                     </div>
                 </div>
-                ${conn.message ? `<div class="connection-body"><p class="connection-note">${conn.message}</p></div>` : ''}
+                ${conn.message ? `<div class="connection-body"><p class="connection-note">${escaparHtml(conn.message)}</p></div>` : ''}
             </div>`;
     }).join('');
 }
@@ -162,8 +162,8 @@ function displayRequests(requests) {
                 <div class="connection-header">
                     ${avatarCircle(req.userName)}
                     <div class="connection-info">
-                        <h3>${req.userName || 'Usuario'}</h3>
-                        <p class="connection-type">${req.userHeadline || ''}</p>
+                        <h3>${escaparHtml(req.userName || 'Usuario')}</h3>
+                        <p class="connection-type">${escaparHtml(req.userHeadline)}</p>
                         <p class="connection-time">${date}</p>
                     </div>
                     <div class="connection-actions">
@@ -171,7 +171,7 @@ function displayRequests(requests) {
                         <button class="btn btn-secondary btn-small" onclick="rejectConnection('${req.id}')"><i data-ico="close"></i> Rechazar</button>
                     </div>
                 </div>
-                ${req.message ? `<div class="connection-body"><p class="connection-note">"${req.message}"</p></div>` : ''}
+                ${req.message ? `<div class="connection-body"><p class="connection-note">"${escaparHtml(req.message)}"</p></div>` : ''}
             </div>`;
     }).join('');
 }
@@ -249,7 +249,7 @@ function displaySuggestions(suggestions, yo = { ciudad: '', habilidades: new Set
         // Por que se sugiere: misma ciudad y habilidades en comun
         const motivos = [];
         if (yo.ciudad && normalizar(user.location) === normalizar(yo.ciudad)) {
-            motivos.push(`<span><i data-ico="pin"></i> También en ${user.location}</span>`);
+            motivos.push(`<span><i data-ico="pin"></i> También en ${escaparHtml(user.location)}</span>`);
         }
         if (comunes.length) {
             motivos.push(`<span><i data-ico="target"></i> ${comunes.length} ${comunes.length === 1 ? 'habilidad' : 'habilidades'} en común</span>`);
@@ -258,7 +258,7 @@ function displaySuggestions(suggestions, yo = { ciudad: '', habilidades: new Set
         // Las comunes primero y marcadas; maximo 4 para que la tarjeta no crezca
         const enComun = new Set(comunes);
         const chips = [...comunes, ...habilidades.filter(h => !enComun.has(h))].slice(0, 4)
-            .map(h => `<span class="skill${enComun.has(h) ? ' is-common' : ''}">${enComun.has(h) ? '<i data-ico="check"></i>' : ''}${h}</span>`)
+            .map(h => `<span class="skill${enComun.has(h) ? ' is-common' : ''}">${enComun.has(h) ? '<i data-ico="check"></i>' : ''}${escaparHtml(h)}</span>`)
             .join('');
 
         const enviada = sentRequestIds.has(String(user.id));
@@ -271,8 +271,8 @@ function displaySuggestions(suggestions, yo = { ciudad: '', habilidades: new Set
                 <div class="suggestion-header">
                     ${avatarCircle(user.firstName)}
                     <div class="suggestion-info">
-                        <h3>${name || 'Usuario'}</h3>
-                        ${user.headline ? `<p class="suggestion-headline">${user.headline}</p>` : ''}
+                        <h3>${escaparHtml(name || 'Usuario')}</h3>
+                        ${user.headline ? `<p class="suggestion-headline">${escaparHtml(user.headline)}</p>` : ''}
                     </div>
                 </div>
                 ${motivos.length ? `<p class="suggestion-reason">${motivos.join('')}</p>` : ''}

@@ -121,13 +121,13 @@ function displayConversations(conversationsList) {
         
         return `
             <div class="conversation-item ${unreadClass}" data-user-id="${conv.otherUserId}" onclick="openConversation('${conv.otherUserId}')">
-                <div class="conversation-avatar">${conv.otherUserName ? conv.otherUserName.charAt(0) : '<i data-ico="user"></i>'}</div>
+                <div class="conversation-avatar">${conv.otherUserName ? escaparHtml(conv.otherUserName.charAt(0)) : '<i data-ico="user"></i>'}</div>
                 <div class="conversation-info">
                     <div class="conversation-header">
-                        <h2>${conv.otherUserName || 'Usuario'}</h2>
+                        <h2>${escaparHtml(conv.otherUserName || 'Usuario')}</h2>
                         <span class="conversation-time">${formatDate(conv.lastMessageDate, true)}</span>
                     </div>
-                    <p class="conversation-preview">${truncateText(conv.lastMessageContent, 50)}</p>
+                    <p class="conversation-preview">${escaparHtml(truncateText(conv.lastMessageContent, 50))}</p>
                 </div>
                 ${unreadBadge}
             </div>
@@ -208,8 +208,8 @@ function displayMessages(messages) {
         return `
             <div class="message ${messageClass}">
                 <div class="message-content">
-                    <p>${msg.content}</p>
-                    ${msg.attachmentUrl ? `<a href="${msg.attachmentUrl}" target="_blank" class="message-attachment"><i data-ico="clip"></i> Adjunto</a>` : ''}
+                    <p>${escaparHtml(msg.content)}</p>
+                    ${msg.attachmentUrl ? `<a href="${urlSegura(msg.attachmentUrl)}" target="_blank" rel="noopener" class="message-attachment"><i data-ico="clip"></i> Adjunto</a>` : ''}
                 </div>
                 <div class="message-info">
                     <span class="message-time">${formatDate(msg.sentAt, true)}</span>
