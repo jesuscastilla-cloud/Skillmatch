@@ -130,6 +130,19 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   antes el backend la reemplazaba y se borraban requisitos, beneficios, habilidades y fecha. Tras guardar,
   la lista y las cifras se recargan del servidor. Fuera las copias de ofertas en el navegador (se mostraban
   como reales) y el botón "⋮": en el backend "eliminar" no borra, cierra igual que "Archivar".
+- **Punto 4 (hecho): Vacantes completa.** Detalle de cada vacante (descripción completa, requisitos,
+  responsabilidades, beneficios, modalidad, duración, fecha límite y tus habilidades marcadas), también
+  desde `?jobId=` (notificaciones y perfil); "Ya te postulaste" en las vacantes donde ya enviaste tu
+  postulación; la postulación lleva el mensaje que escribe la persona (opcional, 2.000 caracteres) en
+  una ventana de la marca, en vez del `confirm()` con la carta inventada; "Cargar más" de 20 en 20
+  (antes solo se veían 20 de 1.608) y los filtros sobre los resultados de la búsqueda. Las empresas ven
+  el detalle sin botones de postularse. En el perfil, "Aplicar ahora" (que también mandaba una carta
+  inventada) ahora es "Ver y postularme".
+- **Lenguaje para todo público (hecho):** reglas y glosario en `docs/GUIA-DE-LENGUAJE.md`. Fuera la
+  jerga de sistemas y el inglés (match, feedback, networking, freelance, junior/senior, seniority,
+  algoritmo, badges...), ejemplos de muchos oficios (la demo de la portada es una recepcionista de hotel),
+  "Busco trabajo" en vez de "Soy usuario", y fuera promesas que el sistema no cumple ("te avisa",
+  "talento verificado", "tu perfil trabaja mientras no estás").
 
 ## Orden propuesto (solo frontend)
 

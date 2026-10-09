@@ -198,15 +198,15 @@ function capitalize(value) {
 // Mapeo de modalidades
 const modalityMap = {
     'presencial': 'Presencial',
-    'virtual': 'Virtual',
-    'hibrida': 'Híbrida'
+    'virtual': 'Remoto',
+    'hibrida': 'Híbrido'
 };
 
 // Mapeo de experiencia
 const experienceMap = {
-    'junior': 'Junior (0 a 1 año)',
-    'mid': 'Semi-senior (1 a 3 años)',
-    'senior': 'Senior (más de 3 años)'
+    'junior': 'Hasta 1 año de experiencia',
+    'mid': '1 a 3 años de experiencia',
+    'senior': 'Más de 3 años de experiencia'
 };
 
 // Los valores de la lista vienen en miles de pesos: "1000-2000" es de

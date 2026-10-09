@@ -415,10 +415,14 @@ function openEditAboutModal() {
 // peor: el backend reemplaza la oferta completa y se borraban requisitos,
 // responsabilidades, beneficios, duración y fecha límite.
 
+// Primero las de cualquier oficio; al final las de tecnología
 const HABILIDADES_SUGERIDAS = [
-    'Atención al cliente', 'Ventas', 'Excel', 'Inglés', 'Comunicación', 'Trabajo en equipo',
-    'Contabilidad', 'Marketing digital', 'Redes sociales', 'Diseño gráfico', 'Figma', 'Power BI',
-    'Logística', 'Turismo', 'Servicio al cliente', 'Gestión de proyectos', 'Scrum', 'Agile',
+    'Atención al cliente', 'Ventas', 'Manejo de caja', 'Excel', 'Inglés', 'Comunicación', 'Trabajo en equipo',
+    'Servicio de mesa', 'Cocina', 'Manipulación de alimentos', 'Bartender', 'Recepción', 'Reservas',
+    'Aseo y limpieza', 'Conducción', 'Licencia de conducción C2', 'Bodega e inventarios', 'Montacargas',
+    'Electricidad', 'Soldadura', 'Construcción', 'Mantenimiento', 'Primeros auxilios', 'Enfermería',
+    'Facturación', 'Contabilidad', 'Archivo', 'Office', 'Guía turístico', 'Logística', 'Turismo',
+    'Marketing digital', 'Redes sociales', 'Diseño gráfico', 'Power BI', 'Gestión de proyectos',
     'Python', 'Java', 'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue.js', 'Node.js',
     'Spring Boot', 'Django', 'Flask', 'PHP', 'Laravel', 'C#', '.NET', 'Kotlin', 'Swift', 'Flutter',
     'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Git', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP',
@@ -460,19 +464,19 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
         <div class="form-grid oferta-form">
             <div class="form-group span-full">
                 <label for="offerTitle">Título de la oferta *</label>
-                <input type="text" id="offerTitle" maxlength="200" placeholder="Ej.: Desarrollador frontend junior" value="${sanitize(oferta.title)}">
+                <input type="text" id="offerTitle" maxlength="200" placeholder="Ej.: Auxiliar de bodega" value="${sanitize(oferta.title)}">
             </div>
             <div class="form-group">
                 <label for="offerType">Tipo *</label>
-                <select id="offerType">${opciones([['empleo', 'Empleo'], ['práctica', 'Práctica'], ['freelance', 'Freelance']], oferta.type, 'empleo')}</select>
+                <select id="offerType">${opciones([['empleo', 'Empleo'], ['práctica', 'Práctica'], ['freelance', 'Independiente o por proyecto']], oferta.type, 'empleo')}</select>
             </div>
             <div class="form-group">
                 <label for="offerModality">Modalidad *</label>
-                <select id="offerModality">${opciones([['presencial', 'Presencial'], ['híbrido', 'Híbrida'], ['remoto', 'Remota']], oferta.modality, 'presencial')}</select>
+                <select id="offerModality">${opciones([['presencial', 'Presencial'], ['híbrido', 'Híbrida'], ['remoto', 'Remota (desde casa)']], oferta.modality, 'presencial')}</select>
             </div>
             <div class="form-group">
                 <label for="offerLevel">Experiencia *</label>
-                <select id="offerLevel">${opciones([['sin-experiencia', 'Sin experiencia'], ['junior', 'Junior (0 a 1 año)'], ['semi-senior', 'Semi-senior (1 a 3 años)'], ['senior', 'Senior (más de 3 años)']], oferta.experienceLevel, 'junior')}</select>
+                <select id="offerLevel">${opciones([['sin-experiencia', 'Sin experiencia'], ['junior', 'Hasta 1 año'], ['semi-senior', 'De 1 a 3 años'], ['senior', 'Más de 3 años']], oferta.experienceLevel, 'junior')}</select>
             </div>
             <div class="form-group">
                 <label for="offerLocation">Ciudad *</label>
@@ -502,7 +506,7 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
                     <input type="text" id="offerSkillInput" list="habilidadesSugeridas" maxlength="40" autocomplete="off" placeholder="Escribe una y pulsa Enter">
                 </div>
                 <datalist id="habilidadesSugeridas">${HABILIDADES_SUGERIDAS.map(h => `<option value="${h}">`).join('')}</datalist>
-                <p class="field-help">Se comparan con las habilidades de cada estudiante para calcular su compatibilidad.</p>
+                <p class="field-help">Se comparan con las habilidades de cada persona para calcular su compatibilidad.</p>
             </div>
             <div class="form-group span-full">
                 <label for="offerDescription">Descripción *</label>
@@ -510,15 +514,15 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
             </div>
             <div class="form-group span-full">
                 <label for="offerRequirements">Requisitos (uno por línea)</label>
-                <textarea id="offerRequirements" rows="3" placeholder="Ej.: Estudiante de últimos semestres de Ingeniería de Sistemas">${lineas(oferta.requirements)}</textarea>
+                <textarea id="offerRequirements" rows="3" placeholder="Ej.: Bachiller con curso de manipulación de alimentos">${lineas(oferta.requirements)}</textarea>
             </div>
             <div class="form-group span-full">
                 <label for="offerResponsibilities">Responsabilidades (una por línea)</label>
-                <textarea id="offerResponsibilities" rows="3" placeholder="Ej.: Mantener la página web de la empresa">${lineas(oferta.responsibilities)}</textarea>
+                <textarea id="offerResponsibilities" rows="3" placeholder="Ej.: Atender a los clientes en el punto de venta">${lineas(oferta.responsibilities)}</textarea>
             </div>
             <div class="form-group span-full">
                 <label for="offerBenefits">Beneficios (uno por línea)</label>
-                <textarea id="offerBenefits" rows="3" placeholder="Ej.: Horario flexible">${lineas(oferta.benefits)}</textarea>
+                <textarea id="offerBenefits" rows="3" placeholder="Ej.: Alimentación incluida">${lineas(oferta.benefits)}</textarea>
             </div>
             <p class="error-text span-full" id="offerError" role="alert" hidden></p>
         </div>
@@ -613,7 +617,7 @@ async function guardarOferta(isEdit, offerId) {
     const salaryMax = valor('offerSalaryMax') === '' ? null : Number(valor('offerSalaryMax'));
 
     if (!title || !location || !description) return error('Completa el título, la ciudad y la descripción.');
-    if (!skills.length) return error('Agrega al menos una habilidad: con ellas se calcula la compatibilidad de cada estudiante.');
+    if (!skills.length) return error('Agrega al menos una habilidad: con ellas se calcula la compatibilidad de cada persona.');
     if ([salaryMin, salaryMax].some(s => s !== null && (Number.isNaN(s) || s < 0))) return error('El salario debe ser un número en pesos.');
     // Quien escribe "2" pensando en millones publicaría un salario de 2 pesos
     if ([salaryMin, salaryMax].some(s => s !== null && s > 0 && s < 50000)) return error('Escribe el salario completo en pesos, por ejemplo 1800000.');
@@ -1080,7 +1084,7 @@ async function updateApplicationStatus(applicationId, newStatus) {
             throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        alert('Error al actualizar el estado de la aplicación: ' + error.message);
+        alert('Error al actualizar el estado de la postulación: ' + error.message);
     }
 }
 

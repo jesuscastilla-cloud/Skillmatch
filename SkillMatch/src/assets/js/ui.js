@@ -756,7 +756,7 @@
         const lista = paleta.querySelector('.cmdk-lista');
         lista.innerHTML = '';
         if (!opciones.length) {
-            lista.innerHTML = '<li class="cmdk-vacio" role="presentation">Sin resultados. Prueba con un cargo, como "desarrollador".</li>';
+            lista.innerHTML = '<li class="cmdk-vacio" role="presentation">Sin resultados. Prueba con un cargo, como "mesero" o "contador".</li>';
             return;
         }
         let grupoActual = '';
@@ -1019,7 +1019,7 @@
     // que trae cada HTML (si el JS fallara, queda el texto corto de siempre).
     // Solo enlaces reales; nada de redes ni datos de contacto inventados.
     const PIE_COLUMNAS = [
-        { titulo: 'Estudiantes', enlaces: [
+        { titulo: 'Busco trabajo', enlaces: [
             ['seleccionar-registro.html', 'Crear mi perfil'],
             ['oportunidades.html', 'Ver vacantes'],
             ['login-usuario.html', 'Iniciar sesión']
@@ -1032,7 +1032,7 @@
             ['index.html#como-funciona', 'Cómo funciona'],
             ['index.html#mapa-cartagena', 'Cartagena por zonas'],
             ['dashboard.html', 'Indicadores del mercado'],
-            ['index.html#innovacion', 'Innovación']
+            ['index.html#innovacion', 'Lo que viene']
         ] }
     ];
 
@@ -1046,7 +1046,7 @@
                 '<div class="pie-grid">' +
                     '<div class="pie-marca">' +
                         '<a href="index.html" class="pie-logo"><img src="../assets/img/logo-oscuro.png" alt="SkillMatch, ir al inicio" width="531" height="160" loading="lazy"></a>' +
-                        '<p>La bolsa de empleo y networking de Cartagena: compara tus habilidades con cada vacante de la ciudad antes de postularte.</p>' +
+                        '<p>La bolsa de empleo de Cartagena para todos los sectores: compara tus habilidades con cada vacante de la ciudad antes de postularte.</p>' +
                     '</div>' +
                     '<nav class="pie-columnas" aria-label="Enlaces del pie de página">' +
                         PIE_COLUMNAS.map(function (col) {
@@ -1057,7 +1057,7 @@
                     '</nav>' +
                 '</div>' +
                 '<div class="pie-base">' +
-                    '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias para conectar el talento local.</p>' +
+                    '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias para conectar a las personas y las empresas de la ciudad.</p>' +
                     '<button type="button" class="pie-arriba"><i data-ico="arrow"></i>Volver arriba</button>' +
                 '</div>' +
             '</div>' +

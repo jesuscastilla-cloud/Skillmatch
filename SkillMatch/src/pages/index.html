@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkillMatch Cartagena</title>
-    <meta name="description" content="Conecta usuarios de Cartagena con oportunidades laborales locales. Perfiles profesionales, oportunidades personalizadas y networking con empresas.">
-    <meta name="keywords" content="empleo, prácticas, usuarios, Cartagena, empresas, oportunidades, networking, tecnología, diseño, marketing, finanzas, recursos humanos, logística, salud, legal">
+    <meta name="description" content="Bolsa de empleo de Cartagena: vacantes de empleo, prácticas y trabajo independiente en todos los sectores. Compara tus habilidades con cada vacante antes de postularte.">
+    <meta name="keywords" content="empleo Cartagena, vacantes, trabajo, prácticas, hoja de vida, turismo, hotelería, comercio, logística, salud, construcción, administración, tecnología">
     <meta property="og:title" content="SkillMatch Cartagena">
-    <meta property="og:description" content="Conectando talento local con empresas de Cartagena">
+    <meta property="og:description" content="Vacantes de empleo y prácticas en Cartagena, para todos los sectores">
     <meta property="og:type" content="website">
     <meta property="og:image" content="../assets/img/logo.png">
     <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
@@ -75,7 +75,7 @@
                         </div>
                         <div>
                             <span class="stat-number" data-stat="companies">—</span>
-                            <span class="stat-label">empresas publicando</span>
+                            <span class="stat-label">empresas registradas</span>
                         </div>
                         <div>
                             <span class="stat-number" data-stat="users">—</span>
@@ -84,34 +84,35 @@
                     </div>
                 </div>
 
-                <!-- Demo del match en vivo (Fase 2 del plan): vacante de ejemplo; el
-                     visitante marca sus habilidades y el anillo se recalcula (index.js) -->
+                <!-- Demo de la compatibilidad (Fase 2 del plan): vacante de ejemplo de un
+                     sector cualquiera; el visitante marca sus habilidades y el anillo se
+                     recalcula (index.js) -->
                 <div class="hero-card match-demo" role="group" aria-labelledby="demo-titulo">
                     <div class="result-header">
                         <div class="hero-card-empresa">
-                            <div class="result-logo">TS</div>
+                            <div class="result-logo">HB</div>
                             <div class="hero-card-texto">
-                                <p class="job-title" id="demo-titulo">Desarrollador Backend Java</p>
-                                <p class="company-name">TechSolutions · Cartagena</p>
+                                <p class="job-title" id="demo-titulo">Recepcionista bilingüe</p>
+                                <p class="company-name">Hotel en Bocagrande · Cartagena</p>
                             </div>
                         </div>
-                        <div class="match-ring" data-pct="92" role="img" aria-label="92 por ciento de coincidencia con esta vacante"></div>
+                        <div class="match-ring" data-pct="80" role="img" aria-label="80 por ciento de coincidencia con esta vacante"></div>
                     </div>
                     <div class="card-meta">
-                        <span class="meta-item"><i data-ico="pin" class="ico-sm"></i> Híbrido</span>
+                        <span class="meta-item"><i data-ico="pin" class="ico-sm"></i> Presencial</span>
                         <span class="meta-item"><i data-ico="briefcase" class="ico-sm"></i> Tiempo completo</span>
-                        <span class="meta-item result-salary"><i data-ico="money" class="ico-sm"></i> $4.5M – $6M</span>
+                        <span class="meta-item result-salary"><i data-ico="money" class="ico-sm"></i> $1.8M – $2.4M</span>
                     </div>
                     <p class="demo-instruccion"><i data-ico="sparkle" class="ico-sm"></i> Pruébalo: marca las habilidades que tienes</p>
                     <div class="demo-habilidades" role="group" aria-label="Habilidades que pide la vacante">
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="30"><i data-ico="check" class="ico-sm"></i>Java</button>
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="25"><i data-ico="check" class="ico-sm"></i>Spring Boot</button>
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>MongoDB</button>
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="17"><i data-ico="check" class="ico-sm"></i>Docker</button>
-                        <button type="button" class="demo-skill" aria-pressed="false" data-peso="8"><i data-ico="check" class="ico-sm"></i>Kubernetes</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="25"><i data-ico="check" class="ico-sm"></i>Atención al cliente</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Manejo de caja</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Reservas</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="15"><i data-ico="check" class="ico-sm"></i>Excel</button>
+                        <button type="button" class="demo-skill" aria-pressed="false" data-peso="20"><i data-ico="check" class="ico-sm"></i>Inglés</button>
                     </div>
                     <p class="suggestion-reason demo-razon" aria-live="polite">
-                        Coincides en 4 de 5 requisitos. Te falta Kubernetes.
+                        Coincides en 4 de 5 requisitos. Te falta Inglés.
                     </p>
                 </div>
             </div>
@@ -192,7 +193,7 @@
                     <select id="modality-select" class="filter-select" data-lista data-icono="desktop" data-todas="Cualquier modalidad">
                         <option value="">Modalidad</option>
                         <option value="presencial" data-icono="building">Presencial</option>
-                        <option value="virtual" data-icono="home">Virtual (desde casa)</option>
+                        <option value="virtual" data-icono="home">Remoto (desde casa)</option>
                         <option value="hibrida" data-icono="refresh">Híbrida</option>
                     </select>
                 </div>
@@ -200,9 +201,9 @@
                     <label for="experience-select" class="sr-only">Experiencia</label>
                     <select id="experience-select" class="filter-select" data-lista data-icono="trending" data-todas="Cualquier experiencia">
                         <option value="">Experiencia</option>
-                        <option value="junior" data-icono="sprout">Junior (0 a 1 año)</option>
-                        <option value="mid" data-icono="trending">Semi-senior (1 a 3 años)</option>
-                        <option value="senior" data-icono="star">Senior (más de 3 años)</option>
+                        <option value="junior" data-icono="sprout">Hasta 1 año</option>
+                        <option value="mid" data-icono="trending">De 1 a 3 años</option>
+                        <option value="senior" data-icono="star">Más de 3 años</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -232,15 +233,15 @@
         <div class="container">
             <div class="stat-box">
                 <div class="stat-value" id="stat-users">—</div>
-                <div class="stat-label">Usuarios activos</div>
+                <div class="stat-label">Personas registradas</div>
             </div>
             <div class="stat-box">
                 <div class="stat-value" id="stat-companies">—</div>
-                <div class="stat-label">Empresas aliadas</div>
+                <div class="stat-label">Empresas registradas</div>
             </div>
             <div class="stat-box">
                 <div class="stat-value" id="stat-jobs">—</div>
-                <div class="stat-label">Oportunidades publicadas</div>
+                <div class="stat-label">Vacantes publicadas</div>
             </div>
             <div class="stat-box">
                 <div class="stat-value" id="stat-applications">—</div>
@@ -267,30 +268,30 @@
                                 <div class="cf-avatar">TÚ</div>
                                 <div class="cf-lineas"><span></span><span></span></div>
                             </div>
-                            <div class="cf-chips"><span>Java</span><span>React</span><span>Inglés B2</span><span>Trabajo en equipo</span></div>
+                            <div class="cf-chips"><span>Atención al cliente</span><span>Inglés B1</span><span>Excel</span><span>Trabajo en equipo</span></div>
                         </div>
                         <!-- 2. Te comparamos -->
                         <div class="cf-escena" data-escena="2">
-                            <div class="cf-comparacion"><span class="cf-etiqueta">Desarrollador Backend</span><span class="cf-barra" style="--v:.92"></span></div>
-                            <div class="cf-comparacion"><span class="cf-etiqueta">Práctica en análisis de datos</span><span class="cf-barra" style="--v:.74"></span></div>
-                            <div class="cf-comparacion"><span class="cf-etiqueta">Soporte técnico</span><span class="cf-barra" style="--v:.51"></span></div>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Recepcionista bilingüe</span><span class="cf-barra" style="--v:.92"></span></div>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Práctica en contabilidad</span><span class="cf-barra" style="--v:.74"></span></div>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Auxiliar de bodega</span><span class="cf-barra" style="--v:.51"></span></div>
                         </div>
-                        <!-- 3. Recibes el match -->
+                        <!-- 3. Ves tu compatibilidad -->
                         <div class="cf-escena" data-escena="3">
                             <div class="cf-match">
-                                <div class="match-ring cf-anillo" data-pct="92"></div>
+                                <div class="match-ring cf-anillo" data-pct="80"></div>
                                 <div>
-                                    <strong>Desarrollador Backend Java</strong>
-                                    <p>Coincides en 4 de 5 requisitos. Te falta Kubernetes.</p>
+                                    <strong>Recepcionista bilingüe</strong>
+                                    <p>Coincides en 4 de 5 requisitos. Te falta Inglés.</p>
                                 </div>
                             </div>
                         </div>
-                        <!-- 4. Te contratan -->
+                        <!-- 4. Te contactan -->
                         <div class="cf-escena" data-escena="4">
                             <div class="cf-aviso">
                                 <div class="cf-aviso-icono"><i data-ico="calendar"></i></div>
                                 <div>
-                                    <strong>TechSolutions quiere entrevistarte</strong>
+                                    <strong>El hotel quiere entrevistarte</strong>
                                     <p>Jueves, 10:00 a. m. · Cartagena</p>
                                 </div>
                             </div>
@@ -302,22 +303,22 @@
                     <li class="cf-paso" data-paso="1">
                         <span class="cf-num">01</span>
                         <h3>Creas tu perfil</h3>
-                        <p>Registra tus habilidades, proyectos y experiencia. Nuestro algoritmo creará tu perfil profesional único.</p>
+                        <p>Registra tu experiencia, tus estudios y lo que sabes hacer: atender clientes, manejar caja, cocinar, llevar la contabilidad, conducir o programar.</p>
                     </li>
                     <li class="cf-paso" data-paso="2">
                         <span class="cf-num">02</span>
                         <h3>Te comparamos</h3>
-                        <p>Empresas locales publican prácticas, freelance y empleos junior en tecnología, diseño, marketing, finanzas, logística, recursos humanos y más áreas profesionales. Cada una se compara con tu perfil.</p>
+                        <p>Empresas de Cartagena publican empleos, prácticas y trabajos independientes en turismo, comercio, logística, salud, construcción, tecnología y más. Cada vacante se compara con tu perfil.</p>
                     </li>
                     <li class="cf-paso" data-paso="3">
                         <span class="cf-num">03</span>
-                        <h3>Recibes el match</h3>
-                        <p>El match inteligente analiza la compatibilidad y recomienda las mejores oportunidades para ti, con lo que te falta para llegar.</p>
+                        <h3>Ves tu compatibilidad</h3>
+                        <p>Cada vacante te dice qué parte de lo que pide ya tienes y qué te falta para llegar.</p>
                     </li>
                     <li class="cf-paso" data-paso="4">
                         <span class="cf-num">04</span>
-                        <h3>Te contratan</h3>
-                        <p>Te postulas a las vacantes que más te convienen y la empresa ve tu perfil completo: habilidades, proyectos y logros.</p>
+                        <h3>Te contactan</h3>
+                        <p>Te postulas a las que más te convienen, con un mensaje para la empresa. Ella ve tu perfil completo y, si le interesas, te escribe por SkillMatch.</p>
                     </li>
                 </ol>
             </div>
@@ -328,24 +329,24 @@
         <div class="container">
             <div class="why-header">
                 <h2>¿Por qué SkillMatch?</h2>
-                <p>Una plataforma enfocada en resultados: talento local, oportunidades reales y procesos simples.</p>
+                <p>Una bolsa de empleo hecha para la ciudad: vacantes reales, personas de aquí y procesos simples.</p>
             </div>
             <div class="why-grid">
                 <div class="benefit-item">
                     <div class="benefit-badge"><i data-ico="target"></i></div>
-                    <h3>Matching con precisión</h3>
+                    <h3>Compatibilidad clara</h3>
                     <ul>
-                        <li>Alineación de habilidades y objetivos</li>
-                        <li>Algoritmo con señales relevantes</li>
-                        <li>Mejor fit por vacante</li>
+                        <li>Ves qué tanto encajas en cada vacante</li>
+                        <li>Sabes qué habilidades te faltan</li>
+                        <li>Vacantes ordenadas para ti</li>
                     </ul>
                 </div>
                 <div class="benefit-item">
                     <div class="benefit-badge"><i data-ico="globe"></i></div>
-                    <h3>Foco en lo local</h3>
+                    <h3>Hecho para Cartagena</h3>
                     <ul>
-                        <li>Conecta con empresas cercanas</li>
-                        <li>Impulso al ecosistema regional</li>
+                        <li>Empresas de tu ciudad y la región</li>
+                        <li>Todos los sectores y oficios</li>
                         <li>Más visibilidad para tu perfil</li>
                     </ul>
                 </div>
@@ -353,9 +354,9 @@
                     <div class="benefit-badge"><i data-ico="settings"></i></div>
                     <h3>Proceso simple</h3>
                     <ul>
-                        <li>Publicación y gestión ágil</li>
-                        <li>Seguimiento claro de candidaturas</li>
-                        <li>Feedback y métricas útiles</li>
+                        <li>Postularte toma un minuto</li>
+                        <li>Sigues el estado de cada postulación</li>
+                        <li>Hablas con las empresas por mensajes</li>
                     </ul>
                 </div>
             </div>
@@ -368,7 +369,7 @@
         <div class="container">
             <div class="section-header-center">
                 <h2>Cartagena es el punto de partida</h2>
-                <p>SkillMatch nace aquí: conectamos el talento y las empresas de la ciudad que ya conoces.</p>
+                <p>SkillMatch nace aquí: conectamos a las personas y a las empresas de la ciudad que ya conoces.</p>
             </div>
             <div class="cartagena-gallery">
                 <figure class="cartagena-photo reveal">
@@ -381,7 +382,7 @@
                 </figure>
                 <figure class="cartagena-photo reveal">
                     <img src="../assets/img/cartagena-estudiantes.webp" alt="Grupo de estudiantes trabajando juntos frente a una laptop" loading="lazy" width="1000" height="562">
-                    <figcaption>El talento local</figcaption>
+                    <figcaption>La gente de aquí</figcaption>
                 </figure>
             </div>
         </div>
@@ -489,16 +490,16 @@
         <div class="container">
             <div class="section-header-center">
                 <h2>Elige cómo quieres usar SkillMatch</h2>
-                <p>Como usuario, construyes tu perfil profesional. Como empresa, encuentras talento listo para aportar.</p>
+                <p>Si buscas trabajo, armas tu perfil y te postulas. Si eres empresa, publicas vacantes y encuentras a quién contratar.</p>
             </div>
 
             <div class="pathways">
                 <div class="pathway-card usuario">
                     <div class="pathway-header">
-                        <div class="pathway-icon"><i data-ico="cap"></i></div>
+                        <div class="pathway-icon"><i data-ico="user"></i></div>
                         <div>
-                            <h3>Para usuarios</h3>
-                            <p>Construye tu perfil profesional y conecta con oportunidades reales.</p>
+                            <h3>Si buscas trabajo</h3>
+                            <p>Arma tu perfil con lo que sabes hacer y postúlate a vacantes reales.</p>
                         </div>
                     </div>
                     <ul class="pathway-features">
@@ -506,23 +507,23 @@
                         <li><i data-ico="check"></i> Vacantes ordenadas según tus habilidades</li>
                         <li><i data-ico="check"></i> Seguimiento de tus postulaciones</li>
                     </ul>
-                    <a href="login-usuario.html" class="btn btn-primary">Comienza tu camino <i data-ico="arrow"></i></a>
+                    <a href="registro-usuario.html" class="btn btn-primary">Crear mi perfil <i data-ico="arrow"></i></a>
                 </div>
 
                 <div class="pathway-card empresa">
                     <div class="pathway-header">
                         <div class="pathway-icon"><i data-ico="building"></i></div>
                         <div>
-                            <h3>Para empresas</h3>
-                            <p>Encuentra talento joven local y acelera tus procesos.</p>
+                            <h3>Si eres empresa</h3>
+                            <p>Publica tus vacantes y recibe postulaciones de personas de la región.</p>
                         </div>
                     </div>
                     <ul class="pathway-features">
-                        <li><i data-ico="check"></i> Talento local de Cartagena</li>
+                        <li><i data-ico="check"></i> Personas de Cartagena y la región</li>
                         <li><i data-ico="check"></i> Postulaciones con el perfil de cada candidato</li>
                         <li><i data-ico="check"></i> Gestión simple de ofertas y candidatos</li>
                     </ul>
-                    <a href="login-empresa.html" class="btn btn-primary">Encuentra talento <i data-ico="arrow"></i></a>
+                    <a href="login-empresa.html" class="btn btn-primary">Publicar mis vacantes <i data-ico="arrow"></i></a>
                 </div>
             </div>
         </div>
@@ -531,8 +532,8 @@
     <section class="innovation-section" id="innovacion">
         <div class="container">
             <div class="innovation-header">
-                <h2>Innovación futura</h2>
-                <p>Hoja de ruta de funciones enfocadas en impacto y resultados.</p>
+                <h2>Lo que viene</h2>
+                <p>Ideas en las que estamos trabajando para ayudarte más.</p>
             </div>
 
             <div class="roadmap-grid">
@@ -540,15 +541,15 @@
                     <div class="roadmap-header">
                         <div class="roadmap-icon"><i data-ico="chat"></i></div>
                         <div class="roadmap-title">
-                            <h3>Simulador de entrevistas con IA</h3>
+                            <h3>Práctica de entrevistas</h3>
                             <span class="status-badge status-building">En desarrollo</span>
                         </div>
                     </div>
-                    <p>Practica entrevistas con IA y recibe feedback accionable.</p>
+                    <p>Ensaya entrevistas y recibe recomendaciones para mejorar.</p>
                     <ul class="roadmap-points">
-                        <li>Rúbricas por rol y seniority</li>
-                        <li>Métricas y seguimiento de progreso</li>
-                        <li>Informe exportable</li>
+                        <li>Preguntas según el cargo y tu experiencia</li>
+                        <li>Seguimiento de tu progreso</li>
+                        <li>Informe para descargar</li>
                     </ul>
                 </article>
 
@@ -556,15 +557,15 @@
                     <div class="roadmap-header">
                         <div class="roadmap-icon"><i data-ico="chart"></i></div>
                         <div class="roadmap-title">
-                            <h3>Predictor de demanda laboral</h3>
+                            <h3>Lo que pide la ciudad</h3>
                             <span class="status-badge status-planned">Próximo</span>
                         </div>
                     </div>
-                    <p>Recomendaciones de habilidades según la demanda local.</p>
+                    <p>Te dice qué habilidades buscan más las empresas de Cartagena.</p>
                     <ul class="roadmap-points">
-                        <li>Señales del mercado regional</li>
-                        <li>Trayectorias de aprendizaje sugeridas</li>
-                        <li>Alertas de tendencia</li>
+                        <li>Oficios y cargos más pedidos</li>
+                        <li>Cursos sugeridos para aprenderlas</li>
+                        <li>Avisos cuando algo cambie</li>
                     </ul>
                 </article>
 
@@ -572,15 +573,15 @@
                     <div class="roadmap-header">
                         <div class="roadmap-icon"><i data-ico="trophy"></i></div>
                         <div class="roadmap-title">
-                            <h3>Sistema de reputación</h3>
+                            <h3>Referencias verificadas</h3>
                             <span class="status-badge status-idea">Idea</span>
                         </div>
                     </div>
-                    <p>Reconoce el desempeño con señales verificables.</p>
+                    <p>Recomendaciones de jefes y clientes anteriores en tu perfil.</p>
                     <ul class="roadmap-points">
-                        <li>Badges por proyectos y feedback</li>
-                        <li>Ranking transparente y justo</li>
-                        <li>Verificación de logros</li>
+                        <li>Insignias por trabajos bien hechos</li>
+                        <li>Calificaciones claras y justas</li>
+                        <li>Logros comprobados</li>
                     </ul>
                 </article>
 
@@ -588,15 +589,15 @@
                     <div class="roadmap-header">
                         <div class="roadmap-icon"><i data-ico="handshake"></i></div>
                         <div class="roadmap-title">
-                            <h3>Red de mentorías</h3>
+                            <h3>Acompañamiento</h3>
                             <span class="status-badge status-planned">Próximo</span>
                         </div>
                     </div>
-                    <p>Mentoría con profesionales locales de alto impacto.</p>
+                    <p>Personas con experiencia en tu oficio te orientan.</p>
                     <ul class="roadmap-points">
-                        <li>Match mentor-mentee por objetivos</li>
-                        <li>Sesiones con agenda y materiales</li>
-                        <li>Seguimiento y retroalimentación</li>
+                        <li>Te unimos con alguien de tu área</li>
+                        <li>Encuentros con temas y materiales</li>
+                        <li>Seguimiento de tus avances</li>
                     </ul>
                 </article>
             </div>
@@ -617,8 +618,8 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
-            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+            <p>Una bolsa de empleo para todos los sectores de Cartagena de Indias.</p>
         </div>
     </footer>
 
