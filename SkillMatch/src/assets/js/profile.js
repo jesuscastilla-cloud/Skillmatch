@@ -707,7 +707,7 @@ function displayRecommendedJobs() {
         return `
         <div class="opportunity-item-compact">
             <div class="opportunity-header-compact">
-                <h4>${job.title}</h4>
+                <h3>${job.title}</h3>
                 ${etiqueta}
             </div>
             <p class="opportunity-company-compact">${job.company?.name || job.companyName || ''}</p>
@@ -815,7 +815,7 @@ async function loadInterestedCompanies() {
                     <div class="company-item-compact">
                         <div class="company-logo-compact">${(company.name || '?').charAt(0)}</div>
                         <div class="company-info-compact">
-                            <h4>${company.job || company.name}</h4>
+                            <h3>${company.job || company.name}</h3>
                             <p>${company.job ? company.name + ' · ' : ''}${cuando}</p>
                             <p class="status-badge ${clave.toLowerCase()}"><i data-ico="${estado.ico}"></i> ${estado.texto}</p>
                         </div>

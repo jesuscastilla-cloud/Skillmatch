@@ -102,6 +102,14 @@ y lectura del código. El celular se auditó simulando pantalla táctil de verda
   vacantes reales (la API es paginada y el código esperaba una lista, así que caía siempre a
   10 vacantes de ejemplo). Ahora usa las reales, con filtros que sí filtran, listas nuevas con
   conteos y el texto de cada vacante escapado. Detalle en `docs/AVANCE-VISUAL.md`.
+- **Paso 6 — Accesibilidad y mayúsculas (hecho):** buscadores de la portada y Vacantes con nombre para
+  lectores de pantalla (punto 12); sin saltos de títulos en ninguna página (punto 13: tarjetas, filtros,
+  registros, perfiles y Mensajes pasan a h2/h3 con el mismo tamaño; la tarjeta de la demo de la portada es
+  un párrafo); mayúsculas en español en títulos, etiquetas, botones y ventanas (punto 15; quedan con
+  mayúscula los nombres propios, los cargos que escriben las empresas y las categorías con barra);
+  "Unirse ahora" y "Buscar" en turquesa en modo oscuro (punto 17); fuera "Ver roadmap completo" (punto 10).
+  Puntos 14 y 16 ya estaban cumplidos: el logo del pie tiene nombre ("SkillMatch, ir al inicio") y el
+  botón "×" de habilidad tiene una zona táctil invisible de 56 × 46 px (la auditoría medía solo el dibujo).
 
 ## Propuesta de orden para corregir (solo frontend)
 1. Perfil de empresa: fechas, etiquetas cambiadas, cifras reales o fuera, quitar lo inventado

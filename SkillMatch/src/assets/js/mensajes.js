@@ -105,7 +105,7 @@ function displayConversations(conversationsList) {
         container.innerHTML = '<p class="conversations-vacio">Aún no tienes conversaciones.</p>';
         const invitacion = document.querySelector('#chatEmpty .empty-state');
         if (invitacion) {
-            invitacion.innerHTML = '<h3>Empieza tu primera conversación</h3>' +
+            invitacion.innerHTML = '<h2>Empieza tu primera conversación</h2>' +
                 '<p>Escríbele a una de tus conexiones o a una empresa que te interese.</p>' +
                 '<div class="empty-acciones">' +
                 '<button type="button" class="btn btn-primary" onclick="document.getElementById(\'newMessageBtn\').click()"><i data-ico="plus"></i> Nuevo mensaje</button>' +
@@ -124,7 +124,7 @@ function displayConversations(conversationsList) {
                 <div class="conversation-avatar">${conv.otherUserName ? conv.otherUserName.charAt(0) : '<i data-ico="user"></i>'}</div>
                 <div class="conversation-info">
                     <div class="conversation-header">
-                        <h4>${conv.otherUserName || 'Usuario'}</h4>
+                        <h2>${conv.otherUserName || 'Usuario'}</h2>
                         <span class="conversation-time">${formatDate(conv.lastMessageDate, true)}</span>
                     </div>
                     <p class="conversation-preview">${truncateText(conv.lastMessageContent, 50)}</p>

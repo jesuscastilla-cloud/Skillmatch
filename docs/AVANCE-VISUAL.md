@@ -149,6 +149,9 @@ y las reglas de `CLAUDE.md`. Sirve para retomar en otra sesión y para escribir 
 - **Reglas de la barra en `body > header`:** con `header` a secas también se pintaban las
   cabeceras de las tarjetas de "Únete" (cuadro oscuro en modo oscuro, pegajosas, nombre de
   transición repetido y ocultas al imprimir).
+- **Accesibilidad y mayúsculas (paso 6 del análisis):** buscadores con nombre, títulos sin saltos
+  en todas las páginas, unas 50 mayúsculas corregidas, "Unirse ahora" y "Buscar" visibles en modo
+  oscuro y fuera "Ver roadmap completo" (llevaba a "#"). Detalle en `docs/ANALISIS-PROFUNDO.md`.
 
 ## Pendiente
 

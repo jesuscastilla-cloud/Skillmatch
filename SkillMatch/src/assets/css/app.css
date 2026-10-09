@@ -934,6 +934,7 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     align-items: flex-start;
 }
 
+p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo */
 .job-title, .result-title, .offer-title-section h3, .offer-title-section h4 {
     font-family: var(--font-display);
     font-size: var(--t-md);
@@ -1283,7 +1284,8 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     text-align: center;
     color: var(--ink-muted);
 }
-.empty-state h3, .no-results h3, .empty h3 {
+.empty-state h3, .no-results h3, .empty h3,
+.empty-state h2, .no-results h2, .empty h2 {
     font-size: var(--t-md);
     color: var(--ink);
 }
@@ -2828,7 +2830,7 @@ footer.pie > .container { position: relative; z-index: 1; }
 
 .filter-card { padding: var(--s5); }
 .filter-header { padding-bottom: var(--s4); border-bottom: 1px solid var(--hairline-soft); margin-bottom: var(--s2); }
-.filter-header h3 { font-size: var(--t-md); }
+.filter-header h3, .filter-header h2 { font-size: var(--t-md); }
 .btn-clear-filters::after { content: ""; position: absolute; inset: -12px -8px; } /* zona tactil 44px */
 .btn-clear-filters {
     position: relative;
@@ -3130,7 +3132,11 @@ footer.pie > .container { position: relative; z-index: 1; }
    en fila se salia de la pantalla del celular */
 .opportunity-item-compact { flex-direction: column; align-items: stretch; gap: 4px; }
 .opportunity-header-compact { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
-.opportunity-header-compact h4 { min-width: 0; overflow-wrap: anywhere; }
+/* Eran h4: bajo los titulos h2 de cada tarjeta ahora son h3 (sin saltos), con el mismo tamano */
+.opportunity-header-compact h3, .company-info-compact h3 { font-size: var(--t-md); letter-spacing: -0.01em; }
+.opportunity-header-compact h3 { min-width: 0; overflow-wrap: anywhere; }
+/* Nombre de cada conversacion: h2 bajo el h1 "Mensajes", del tamano que tenia como h4 */
+.conversation-header h2 { font-size: var(--t-md); letter-spacing: -0.01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .opportunity-item-compact .btn-apply-compact { align-self: flex-start; margin-top: var(--s2); }
 /* Porcentaje de match: el naranja se reserva para los matches altos */
 .match-badge-small {
@@ -3831,7 +3837,11 @@ kbd {
 [data-theme="dark"] .btn-search-main:hover,
 [data-theme="dark"] .search-btn:hover,
 [data-theme="dark"] .btn-send:hover { color: var(--surface-inverse); }
-[data-theme="dark"] .btn-register:hover { color: var(--surface-inverse) !important; }
+[data-theme="dark"] .btn-register { background: var(--sea); color: var(--surface-inverse) !important; }
+/* Igual con "Buscar" (portada y Vacantes): azul marino sobre la superficie oscura */
+[data-theme="dark"] .search-btn, [data-theme="dark"] .btn-search-main { background: var(--sea); color: var(--surface-inverse); }
+[data-theme="dark"] .search-btn:hover, [data-theme="dark"] .btn-search-main:hover { background: var(--sea-luz); }
+[data-theme="dark"] .btn-register:hover { background: var(--sea-luz); color: var(--surface-inverse) !important; }
 /* Iniciales y etiquetas sobre fondo turquesa suave: --sea-deep no se lee en oscuro (3.3:1) */
 [data-theme="dark"] .company-logo-opp, [data-theme="dark"] .result-logo,
 [data-theme="dark"] .company-logo-compact, [data-theme="dark"] .connection-avatar-circle,
@@ -4338,7 +4348,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 /* Tarjeta de postulacion: no tenia relleno y el nombre tocaba el borde */
 .application-card { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s4) var(--s5); }
 .application-card .application-header { align-items: flex-start; }
-.application-card h4 { font-size: var(--t-md); }
+.application-card h4, .application-card h3 { font-size: var(--t-md); }
 .application-date { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm); color: var(--ink-muted); }
 .application-actions { margin-top: var(--s1); }
 .application-job { font-size: var(--t-sm); color: var(--ink-muted); }

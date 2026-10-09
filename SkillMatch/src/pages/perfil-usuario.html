@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi perfil (Usuario) - SkillMatch Cartagena</title>
+    <title>Mi perfil - SkillMatch Cartagena</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
@@ -80,7 +80,7 @@
                 <aside class="profile-sidebar">
                     <!-- Primero lo que le dice a la persona que le falta: cada pendiente abre su formulario -->
                     <div class="profile-card">
-                        <h3 class="card-title"><i data-ico="trending"></i> Progreso del Perfil</h3>
+                        <h2 class="card-title"><i data-ico="trending"></i> Progreso del perfil</h2>
                         <div class="profile-progress">
                             <div class="progress-bar">
                                 <div class="progress-fill" id="profileProgress"></div>
@@ -94,7 +94,7 @@
 
                     <div class="profile-card">
                         <div class="card-header-flex">
-                            <h3 class="card-title"><i data-ico="target"></i> Habilidades</h3>
+                            <h2 class="card-title"><i data-ico="target"></i> Habilidades</h2>
                             <button type="button" class="btn-add-skill" id="addSkillBtn">+ Agregar</button>
                         </div>
                         <div class="skills-list-new" id="userSkills">
@@ -132,7 +132,7 @@
                 <aside class="profile-right-sidebar">
                     <div class="sidebar-card">
                         <div class="card-header-flex">
-                            <h3 class="card-title"><i data-ico="briefcase"></i> Oportunidades Recomendadas</h3>
+                            <h2 class="card-title"><i data-ico="briefcase"></i> Oportunidades recomendadas</h2>
                         </div>
                         <div id="recommendedJobs">
                             <p class="loading-text">Cargando oportunidades...</p>
@@ -141,7 +141,7 @@
                     </div>
 
                     <div class="sidebar-card" id="applicationsCard">
-                        <h3 class="card-title"><i data-ico="send"></i> Tus postulaciones</h3>
+                        <h2 class="card-title"><i data-ico="send"></i> Tus postulaciones</h2>
                         <div id="interestedCompanies">
                             <p class="loading-text">Cargando empresas...</p>
                         </div>
@@ -155,7 +155,7 @@
     <div id="editProfileModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="pencil"></i> Editar Perfil</h2>
+                <h2><i data-ico="pencil"></i> Editar perfil</h2>
                 <button type="button" class="btn-close-modal" onclick="closeEditModal()"><i data-ico="close"></i></button>
             </div>
             <form id="editProfileForm">
@@ -191,7 +191,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeEditModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Guardar Cambios</button>
+                    <button type="submit" class="btn-primary-modal">Guardar cambios</button>
                 </div>
             </form>
         </div>
@@ -243,16 +243,16 @@
     <div id="addSkillModal" class="modal">
         <div class="modal-content-small">
             <div class="modal-header">
-                <h2><i data-ico="target"></i> Agregar Habilidad</h2>
+                <h2><i data-ico="target"></i> Agregar habilidad</h2>
                 <button type="button" class="btn-close-modal" onclick="closeAddSkillModal()"><i data-ico="close"></i></button>
             </div>
             <form id="addSkillForm">
                 <div class="form-group">
-                    <label for="skillName">Nombre de la Habilidad *</label>
+                    <label for="skillName">Nombre de la habilidad *</label>
                     <input type="text" id="skillName" placeholder="Ej: JavaScript, React, Python" required>
                 </div>
                 <div class="form-group">
-                    <label for="skillLevel">Nivel de Dominio *</label>
+                    <label for="skillLevel">Nivel de dominio *</label>
                     <select id="skillLevel" required>
                         <option value="">Selecciona un nivel</option>
                         <option value="BASICO">Básico</option>
@@ -263,7 +263,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeAddSkillModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Agregar Habilidad</button>
+                    <button type="submit" class="btn-primary-modal">Agregar habilidad</button>
                 </div>
             </form>
         </div>
@@ -273,7 +273,7 @@
     <div id="addExperienceModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="briefcase"></i> Agregar Experiencia</h2>
+                <h2><i data-ico="briefcase"></i> Agregar experiencia</h2>
                 <button type="button" class="btn-close-modal" onclick="closeAddExperienceModal()"><i data-ico="close"></i></button>
             </div>
             <form id="addExperienceForm">
@@ -287,11 +287,11 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="expStartDate">Fecha de Inicio *</label>
+                        <label for="expStartDate">Fecha de inicio *</label>
                         <input type="date" id="expStartDate" required>
                     </div>
                     <div class="form-group">
-                        <label for="expEndDate">Fecha de Fin</label>
+                        <label for="expEndDate">Fecha de fin</label>
                         <input type="date" id="expEndDate">
                     </div>
                 </div>
@@ -311,7 +311,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeAddExperienceModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Agregar Experiencia</button>
+                    <button type="submit" class="btn-primary-modal">Agregar experiencia</button>
                 </div>
             </form>
         </div>
@@ -321,7 +321,7 @@
     <div id="addEducationModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="cap"></i> Agregar Educación</h2>
+                <h2><i data-ico="cap"></i> Agregar educación</h2>
                 <button type="button" class="btn-close-modal" onclick="closeAddEducationModal()"><i data-ico="close"></i></button>
             </div>
             <form id="addEducationForm">
@@ -334,16 +334,16 @@
                     <input type="text" id="eduDegree" placeholder="Ej: Ingeniería de Sistemas" required>
                 </div>
                 <div class="form-group">
-                    <label for="eduFieldOfStudy">Campo de Estudio</label>
+                    <label for="eduFieldOfStudy">Campo de estudio</label>
                     <input type="text" id="eduFieldOfStudy" placeholder="Ej: Desarrollo de Software">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="eduStartDate">Fecha de Inicio *</label>
+                        <label for="eduStartDate">Fecha de inicio *</label>
                         <input type="date" id="eduStartDate" required>
                     </div>
                     <div class="form-group">
-                        <label for="eduEndDate">Fecha de Fin</label>
+                        <label for="eduEndDate">Fecha de fin</label>
                         <input type="date" id="eduEndDate">
                     </div>
                 </div>
@@ -359,7 +359,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeAddEducationModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Agregar Educación</button>
+                    <button type="submit" class="btn-primary-modal">Agregar educación</button>
                 </div>
             </form>
         </div>

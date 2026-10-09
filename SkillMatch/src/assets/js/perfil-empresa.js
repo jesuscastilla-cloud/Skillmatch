@@ -390,7 +390,7 @@ function openEditAboutModal() {
     const aboutElement = document.getElementById('companyAbout');
     const aboutText = aboutElement?.querySelector('p')?.textContent || '';
     
-    createModal('Editar Acerca de Nosotros', `
+    createModal('Editar "Acerca de nosotros"', `
         <div class="form-group">
             <label for="editAboutText">Descripción de la empresa</label>
             <textarea id="editAboutText" rows="6" style="width:100%;padding:0.8rem;border:1px solid #e4e6e9;border-radius:8px;font-family:inherit;">${aboutText}</textarea>
@@ -450,7 +450,7 @@ function openEditAboutModal() {
 function openNewOfferModal(existingOffer = null, offerId = null) {
     const isEdit = existingOffer !== null;
     
-    createModal(isEdit ? 'Editar Oferta' : 'Nueva Oferta de Empleo', `
+    createModal(isEdit ? 'Editar oferta' : 'Nueva oferta', `
         <div class="form-group">
             <label for="offerTitle">Título de la oferta *</label>
             <input type="text" id="offerTitle" placeholder="ej. Desarrollador Frontend Senior" value="${existingOffer?.title || ''}" required>
@@ -468,7 +468,7 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
             <textarea id="offerDescription" rows="4" placeholder="Describe las responsabilidades y requisitos..." required>${existingOffer?.description || ''}</textarea>
         </div>
         <div class="form-group">
-            <label for="offerSalary">Rango Salarial (opcional)</label>
+            <label for="offerSalary">Rango salarial (opcional)</label>
             <input type="text" id="offerSalary" placeholder="ej. $2M - $3M / mes" value="${existingOffer?.salary || ''}">
         </div>
         <div class="form-group">
@@ -941,7 +941,7 @@ function createApplicationCard(application, oculta) {
         <div class="application-card" data-application-id="${application.id}"${oculta ? ' hidden' : ''}>
             <div class="application-header">
                 <div class="candidate-info">
-                    <h4>${sanitize(application.userName || 'Candidato')}</h4>
+                    <h3>${sanitize(application.userName || 'Candidato')}</h3>
                     <p class="application-job">${sanitize(application.jobTitle || 'Oferta sin título')}${application.userHeadline ? ' · ' + sanitize(application.userHeadline) : ''}</p>
                 </div>
                 <span class="status-badge ${claseEstado}"><i data-ico="${icono}"></i> ${textoEstado}</span>

@@ -185,7 +185,7 @@ function createJobCard(job) {
                 <div class="company-logo-opp">${job.companyName ? job.companyName.charAt(0) : '<i data-ico="building"></i>'}</div>
                 <div class="card-info">
                     <h3 class="job-title">${job.title}</h3>
-                    <p class="company-name">${job.companyName || 'Empresa Confidencial'}</p>
+                    <p class="company-name">${job.companyName || 'Empresa confidencial'}</p>
                 </div>
                 ${anillo}
             </div>
@@ -312,7 +312,7 @@ async function applyToJob(jobId) {
         return;
     }
 
-    const confirmMessage = `¿Deseas aplicar a esta posición?\n\n<i data-ico="list"></i> Puesto: ${job.title}\n<i data-ico="building"></i> Empresa: ${job.companyName || 'Empresa Confidencial'}\n<i data-ico="pin"></i> Ubicación: ${job.location || 'No especificada'}`;
+    const confirmMessage = `¿Deseas aplicar a esta posición?\n\n<i data-ico="list"></i> Puesto: ${job.title}\n<i data-ico="building"></i> Empresa: ${job.companyName || 'Empresa confidencial'}\n<i data-ico="pin"></i> Ubicación: ${job.location || 'No especificada'}`;
     
     if (confirm(confirmMessage)) {
         try {
@@ -327,7 +327,7 @@ async function applyToJob(jobId) {
             
             if (response.ok) {
                 const result = await response.json();
-                alert(`<i data-ico="check"></i> ¡Aplicación enviada exitosamente!\n\n<i data-ico="list"></i> Puesto: ${job.title}\n<i data-ico="building"></i> Empresa: ${job.companyName || 'Empresa Confidencial'}\n\nLa empresa revisará tu perfil pronto.`);
+                alert(`<i data-ico="check"></i> ¡Aplicación enviada exitosamente!\n\n<i data-ico="list"></i> Puesto: ${job.title}\n<i data-ico="building"></i> Empresa: ${job.companyName || 'Empresa confidencial'}\n\nLa empresa revisará tu perfil pronto.`);
                 
                 // Deshabilitar el botón para evitar aplicaciones duplicadas
                 const btn = document.querySelector(`.btn-apply[data-job-id="${jobId}"]`);
@@ -490,7 +490,7 @@ function updateResultsCount(count) {
 
 function translateJobType(type) {
     const types = {
-        'empleo': 'Tiempo Completo',
+        'empleo': 'Tiempo completo',
         'practica': 'Práctica',
         'freelance': 'Freelance'
     };
@@ -500,7 +500,7 @@ function translateJobType(type) {
 
 function translateExperienceLevel(level) {
     const levels = {
-        'sin-experiencia': 'Sin Experiencia',
+        'sin-experiencia': 'Sin experiencia',
         'junior': 'Junior',
         'semi-senior': 'Semi-Senior',
         'senior': 'Senior'
