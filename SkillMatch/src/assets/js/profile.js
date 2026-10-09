@@ -134,7 +134,7 @@ function setProfileAvatar(profileImageUrl, fullName) {
 function displayUserProfile(user) {
     const fullName = `${user.firstName} ${user.lastName}`;
     document.getElementById('userName').textContent = fullName;
-    document.getElementById('userHeadline').textContent = user.headline || 'Usuario de SkillMatch';
+    document.getElementById('userHeadline').textContent = user.headline || 'Perfil en SkillMatch';
     // El icono va como HTML y la ciudad como texto (con textContent el icono
     // salia escrito tal cual; con append la ciudad nunca se lee como codigo)
     const ubicacion = document.getElementById('userLocation');
@@ -720,41 +720,13 @@ function displayRecommendedJobs() {
             </div>
             <p class="opportunity-company-compact">${escaparHtml(job.company?.name || job.companyName)}</p>
             <p class="opportunity-location-compact"><i data-ico="pin"></i> ${escaparHtml(job.location)}</p>
-            <button class="btn-apply-compact" onclick="applyToJob('${job.id}')">Aplicar ahora</button>
+            <a class="btn-apply-compact" href="oportunidades.html?jobId=${encodeURIComponent(job.id)}">Ver y postularme</a>
         </div>`;
     }).join('');
 }
 
-// Aplicar a oportunidad
-async function applyToJob(jobId) {
-    const user = getUserData();
-    if (!user) return;
-
-    if (!confirm('¿Deseas aplicar a esta oportunidad?')) {
-        return;
-    }
-
-    try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/applications`, {
-            method: 'POST',
-            body: JSON.stringify({
-                jobId: jobId,
-                coverLetter: 'Aplicación desde el perfil de usuario'
-            })
-        });
-
-        if (response.ok) {
-            alert('¡Aplicación enviada exitosamente! La empresa revisará tu perfil pronto.');
-            // Recargar las postulaciones para que aparezca la nueva
-            loadInterestedCompanies();
-        } else {
-            const error = await response.json();
-            alert(error.message || 'Ya has aplicado a esta oferta o ocurrió un error');
-        }
-    } catch (error) {
-        alert('Error al enviar la aplicación. Intenta nuevamente.');
-    }
-}
+// (Postularse se hace en Vacantes, con el mensaje que escribe la persona: antes
+// aquí se mandaba la carta "Aplicación desde el perfil de usuario" sin preguntar.)
 
 // Cargar empresas con las que el usuario ha interactuado
 async function loadInterestedCompanies() {

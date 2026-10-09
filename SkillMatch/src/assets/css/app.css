@@ -924,6 +924,47 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     background: var(--verde-soft); color: var(--verde-texto);
     box-shadow: none; transform: none; pointer-events: none;
 }
+
+/* ---- Vacantes: detalle, postulacion y "cargar mas" ---- */
+.job-title-link { all: unset; cursor: pointer; }
+.job-title-link:hover { color: var(--sea-deep); text-decoration: underline; text-underline-offset: 3px; }
+.job-title-link:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; border-radius: 4px; }
+.btn-ver-detalle {
+    display: inline-flex; align-items: center; min-height: 36px;
+    padding: 7px var(--s3);
+    border-radius: var(--r-pill);
+    font-size: var(--t-sm); font-weight: 600;
+    color: var(--sea-deep);
+    transition: background-color .18s var(--ease);
+}
+.btn-ver-detalle:hover { background: var(--sea-light); }
+.skill-mas { background: transparent !important; color: var(--ink-muted) !important; }
+.cargar-mas { display: flex; flex-direction: column; align-items: center; gap: var(--s2); margin: var(--s6) 0 var(--s2); }
+.cargar-mas p { margin: 0; font-size: var(--t-sm); color: var(--ink-muted); }
+.modal-detalle .modal-content { max-width: 760px; }
+.detalle-titulo { min-width: 0; }
+.detalle-titulo .company-name { margin: 4px 0 0; color: var(--ink-muted); font-size: var(--t-sm); }
+.detalle-datos { list-style: none; display: flex; flex-wrap: wrap; gap: var(--s2); margin: 0 0 var(--s4); padding: 0; }
+.detalle-datos li {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px var(--s3);
+    border-radius: var(--r-pill);
+    background: var(--surface-sunk);
+    border: 1px solid var(--hairline-soft);
+    font-size: var(--t-sm); color: var(--ink-2);
+}
+.detalle-datos .ico { width: 16px; height: 16px; color: var(--sea-deep); }
+.detalle-match { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s4); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--sea-light); }
+.detalle-match p { margin: 0; color: var(--ink-2); }
+#jobDetailBody h3 { margin: var(--s5) 0 var(--s2); font-size: var(--t-md); }
+.detalle-texto { max-width: none; white-space: pre-line; line-height: 1.65; color: var(--ink-2); }
+.detalle-lista { margin: 0; padding-left: 1.2em; list-style: disc; color: var(--ink-2); line-height: 1.6; }
+.detalle-lista li { margin: 4px 0; }
+.detalle-lista li::marker { color: var(--sea); }
+.postulacion-a { max-width: none; margin: 0 0 var(--s4); color: var(--ink-2); line-height: 1.6; }
+.btn-save, .btn-apply { white-space: nowrap; }
+/* En celular la × de arriba basta: "Cerrar" no cabe junto a Guardar y Postularme */
+@media (max-width: 600px) { .modal-detalle .modal-actions .btn-secondary-modal { display: none; } }
 /* En pantallas tactiles, los botones pequenos crecen hasta 44px y los
    enlaces/iconos diminutos reciben una zona tactil invisible */
 @media (pointer: coarse) {
