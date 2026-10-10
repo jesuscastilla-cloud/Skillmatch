@@ -102,6 +102,18 @@ function hideEditButtons() {
     // Las postulaciones son las de quien inicio sesion, no las de este perfil
     const applicationsCard = document.getElementById('applicationsCard');
     if (applicationsCard) applicationsCard.style.display = 'none';
+
+    // "Vacantes para ti" se calculaba con las habilidades de la otra persona
+    const recomendadas = document.getElementById('recommendedJobs');
+    if (recomendadas) recomendadas.closest('.sidebar-card').style.display = 'none';
+}
+
+/** true cuando se ve el perfil de otra persona: sin botones para borrar
+ *  lo suyo (antes salian la X de las habilidades y las papeleras) */
+function esPerfilAjeno() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (!id) return false;
+    try { return String(id) !== String(JSON.parse(localStorage.getItem('userData')).id); } catch (e) { return true; }
 }
 
 const AVATAR_COLORS = ['#0369a1','#0891b2','#0d9488','#059669','#7c3aed','#9333ea','#c026d3','#e11d48','#b45309'];
@@ -278,17 +290,18 @@ function displaySkills(skills) {
     // Las recomendaciones de la derecha se comparan con estas habilidades
     setUserSkillNames((skills || []).map(skill => skill.name));
 
+    const ajeno = esPerfilAjeno();
     if (!skills || skills.length === 0) {
-        skillsContainer.innerHTML = '<p class="empty-text">Aún no has agregado habilidades</p>';
+        skillsContainer.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado habilidades' : 'Aún no has agregado habilidades'}</p>`;
         updateProfileChecklist('skills', false);
         return;
     }
 
-    skillsContainer.innerHTML = skills.map(skill => 
+    skillsContainer.innerHTML = skills.map(skill =>
         `<span class="skill-tag">
-            ${escaparHtml(skill.name)} 
+            ${escaparHtml(skill.name)}
             <span class="skill-level">${formatSkillLevel(skill.level)}</span>
-            <button class="btn-remove-skill" onclick="deleteSkill('${skill.id}')" title="Eliminar"><i data-ico="close"></i></button>
+            ${ajeno ? '' : `<button class="btn-remove-skill" onclick="deleteSkill('${escaparHtml(skill.id)}')" title="Eliminar"><i data-ico="close"></i></button>`}
         </span>`
     ).join('');
     
@@ -405,8 +418,9 @@ async function loadUserExperiences() {
 function displayExperiences(experiences) {
     const container = document.getElementById('experienceContainer');
     
+    const ajeno = esPerfilAjeno();
     if (!experiences || experiences.length === 0) {
-        container.innerHTML = '<p class="empty-text">Aún no has agregado experiencia laboral</p>';
+        container.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado experiencia laboral' : 'Aún no has agregado experiencia laboral'}</p>`;
         updateProfileChecklist('experience', false);
         return;
     }
@@ -421,7 +435,7 @@ function displayExperiences(experiences) {
                 <div class="experience-content">
                     <div class="experience-header">
                         <h3>${escaparHtml(exp.position)}</h3>
-                        <button class="btn-delete-item" onclick="deleteExperience('${exp.id}')" title="Eliminar"><i data-ico="trash"></i></button>
+                        ${ajeno ? '' : `<button class="btn-delete-item" onclick="deleteExperience('${escaparHtml(exp.id)}')" title="Eliminar"><i data-ico="trash"></i></button>`}
                     </div>
                     <p class="company">${escaparHtml(exp.company)}</p>
                     <p class="timeline">${startDate} - ${endDate}${exp.location ? ' | ' + escaparHtml(exp.location) : ''}</p>
@@ -537,8 +551,9 @@ async function loadUserEducations() {
 function displayEducations(educations) {
     const container = document.getElementById('educationContainer');
     
+    const ajeno = esPerfilAjeno();
     if (!educations || educations.length === 0) {
-        container.innerHTML = '<p class="empty-text">Aún no has agregado información educativa</p>';
+        container.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado estudios' : 'Aún no has agregado información educativa'}</p>`;
         updateProfileChecklist('education', false);
         return;
     }
@@ -553,7 +568,7 @@ function displayEducations(educations) {
                 <div class="education-content">
                     <div class="education-header">
                         <h3>${escaparHtml(edu.degree)}</h3>
-                        <button class="btn-delete-item" onclick="deleteEducation('${edu.id}')" title="Eliminar"><i data-ico="trash"></i></button>
+                        ${ajeno ? '' : `<button class="btn-delete-item" onclick="deleteEducation('${escaparHtml(edu.id)}')" title="Eliminar"><i data-ico="trash"></i></button>`}
                     </div>
                     <p class="school">${escaparHtml(edu.school)}</p>
                     <p class="timeline">${startDate} - ${endDate}${edu.fieldOfStudy ? ' | ' + escaparHtml(edu.fieldOfStudy) : ''}</p>
