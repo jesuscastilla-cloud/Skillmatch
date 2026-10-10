@@ -49,6 +49,12 @@
 
     <section class="opportunities-container">
         <div class="container">
+            <!-- Solo para personas con sesión: ver todas o solo las que guardaron.
+                 Va encima de filtros y lista: en el celular los filtros van primero -->
+            <div class="tab-list vista-vacantes" id="vistaVacantes" role="group" aria-label="Qué vacantes ver" hidden>
+                <button type="button" class="tab-btn active" data-vista="todas" aria-pressed="true">Todas las vacantes</button>
+                <button type="button" class="tab-btn" data-vista="guardadas" aria-pressed="false"><i data-ico="heart"></i> Guardadas <span class="vista-cuenta" id="savedCount"></span></button>
+            </div>
             <div class="opportunities-layout">
                 <!-- Sidebar de Filtros -->
                 <aside class="opportunities-sidebar">

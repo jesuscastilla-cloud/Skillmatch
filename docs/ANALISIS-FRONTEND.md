@@ -46,7 +46,7 @@ y el escape del texto del servidor (XSS).
 
 | Función | Endpoint que ya existe | Estado en el frontend |
 |---|---|---|
-| Ver mis vacantes guardadas | `GET /saved-jobs/my-saved-jobs` | El corazón guarda, pero no hay dónde verlas |
+| Ver mis vacantes guardadas | `GET /saved-jobs/my-saved-jobs` | Hecho: pestaña "Guardadas" en Vacantes y tarjeta en Mi perfil |
 | Cambiar contraseña | `PUT /users/{id}/password` | No existe |
 | Mensajes sin leer en la barra | `GET /messages/unread-count` | No existe |
 | Retirar una postulación | `DELETE /applications/{id}` | No existe |
@@ -57,8 +57,8 @@ y el escape del texto del servidor (XSS).
 | Certificaciones reales | `/users/{id}/certifications` | Se quitaron las inventadas; no hay reales |
 | Directorio de empresas | `GET /companies/search` | "Empresas" en la barra lleva a una sección de la portada |
 
-Perfil de otra persona (`perfil-usuario.html?id=…`): siguen saliendo "Oportunidades recomendadas"
-con botones "Aplicar" y no hay botones para conectar ni para escribirle.
+Perfil de otra persona (`perfil-usuario.html?id=…`): ya tiene "Enviar mensaje" y no muestra "Vacantes para ti"
+ni botones para borrar lo suyo (arreglado el 9 de octubre). Falta un botón para conectar.
 
 ## Mejoras de calidad
 
@@ -109,6 +109,8 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
 - Guardar la hoja de vida en PDF (GridFS) si se quiere pedir al registrarse.
 - `GET /users/{id}` devuelve el correo y el teléfono de cualquier usuario a quien haya iniciado sesión.
 - Restringir `connect-src` de la CSP a `'self'` cuando el frontend vaya dentro del jar.
+- `GET /saved-jobs/my-saved-jobs`: agregar el estado de la vacante (para marcar las que cerraron en el
+  perfil) y mandar el `jobId` aunque la vacante se haya borrado (sin él no se puede quitar de guardadas).
 
 ## Avance
 
@@ -156,6 +158,16 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   muestran en el formulario en vez de ventanas; el campo de habilidades ahora es un componente de
   `ui.js` (lo usan el registro y la ventana de oferta). Pendiente: no hay página de política de
   tratamiento de datos (Ley 1581 de 2012); la casilla de autorización ya no enlaza a "#".
+- **Revisión de todas las vistas (hecho):** capturas de las 47 vistas (PDF aparte, fuera del repositorio).
+  Al revisarlas se arreglaron: la barra de Vacantes (a un visitante le decía "Cerrar sesión" y a una
+  empresa le mostraba la barra de persona), notificaciones sin texto, el perfil de otra persona con botones
+  para borrar sus habilidades, el registro descuadrado, "Freelance" y la portada del perfil clara en modo
+  oscuro.
+- **Punto 6, vacantes guardadas (hecho):** "Guardar" funcionaba pero no había dónde verlas. Ahora
+  Vacantes tiene las pestañas "Todas las vacantes | Guardadas (n)" (solo para personas con sesión, con
+  los mismos filtros y orden, y también con `?guardadas=1`), y Mi perfil tiene la tarjeta "Vacantes
+  guardadas" con las 3 últimas, "Quitar" y el enlace a todas. Una guardada que ya cerró dice "Ya no
+  recibe postulaciones" en vez de "Postularme". Al guardar, un aviso dice dónde encontrarla.
 
 ## Orden propuesto (solo frontend)
 

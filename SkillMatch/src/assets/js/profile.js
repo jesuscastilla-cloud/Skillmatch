@@ -1033,6 +1033,78 @@ async function updateCoverImage(imageUrl) {
     return false;
 }
 
+// Vacantes guardadas: antes se guardaban con "Guardar" pero no había dónde verlas
+async function loadSavedJobsCard() {
+    const tarjeta = document.getElementById('savedJobsCard');
+    const lista = document.getElementById('savedJobsList');
+    if (!tarjeta || !lista) return;
+    // Son las de quien inició sesión, no las de la persona que se está viendo
+    if (esPerfilAjeno()) { tarjeta.style.display = 'none'; return; }
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/my-saved-jobs`);
+        if (!response.ok) throw new Error(`El servidor respondió ${response.status}`);
+        pintarGuardadas(await response.json());
+    } catch (error) {
+        lista.innerHTML = '<p class="empty-text">No se pudieron cargar tus vacantes guardadas</p>';
+    }
+}
+
+function pintarGuardadas(guardadas) {
+    const lista = document.getElementById('savedJobsList');
+    const cuenta = document.getElementById('savedJobsCount');
+    if (cuenta) cuenta.textContent = guardadas.length ? `(${guardadas.length})` : '';
+
+    if (!guardadas.length) {
+        lista.innerHTML = '<p class="empty-text">Aún no has guardado vacantes. Pulsa "Guardar" en las que te interesen y aquí las tienes a mano.</p>' +
+            '<a href="oportunidades.html" class="btn-view-all">Buscar vacantes <i data-ico="arrow"></i></a>';
+        return;
+    }
+
+    // Días de calendario: "hoy" es desde la medianoche, no las últimas 24 horas
+    const dia = fecha => { const d = new Date(fecha); d.setHours(0, 0, 0, 0); return d; };
+    const cuando = fecha => {
+        if (!fecha) return '';
+        const dias = Math.round((dia(new Date()) - dia(fecha)) / 86400000);
+        return dias <= 0 ? 'Guardada hoy' : dias === 1 ? 'Guardada ayer' : `Guardada hace ${dias} días`;
+    };
+
+    // Sin el círculo con la inicial (como "Vacantes para ti"): la columna es
+    // angosta y el título se partía letra por letra
+    lista.innerHTML = guardadas.slice(0, 3).map(g => {
+        // Si la vacante se borró, el backend no manda su id ni su título
+        if (!g.jobId) {
+            return `<div class="company-item-compact guardada-item">
+                <div class="company-info-compact"><h3>Vacante que ya no está publicada</h3><p>${cuando(g.savedAt)}</p></div>
+            </div>`;
+        }
+        const titulo = escaparHtml(g.jobTitle || 'Vacante');
+        return `<div class="company-item-compact guardada-item">
+            <div class="company-info-compact">
+                <h3><a href="oportunidades.html?jobId=${encodeURIComponent(g.jobId)}">${titulo}</a></h3>
+                <p>${escaparHtml(g.companyName || 'Empresa confidencial')}${g.location ? ' · ' + escaparHtml(g.location) : ''}</p>
+                <p>${cuando(g.savedAt)}</p>
+            </div>
+            <button type="button" class="btn-quitar-guardada" data-job-id="${escaparHtml(g.jobId)}" aria-label="Quitar ${titulo} de tus guardadas" title="Quitar de guardadas"><i data-ico="close"></i></button>
+        </div>`;
+    }).join('') +
+        `<a href="oportunidades.html?guardadas=1" class="btn-view-all">${guardadas.length > 3 ? `Ver las ${guardadas.length}` : 'Verlas en Vacantes'} <i data-ico="arrow"></i></a>`;
+}
+
+// "Quitar" de cada guardada (un solo escuchador para toda la lista)
+async function quitarGuardada(boton) {
+    boton.disabled = true;
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job/${encodeURIComponent(boton.dataset.jobId)}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error();
+        if (window.SkillMatchUI) SkillMatchUI.aviso('Vacante quitada de tus guardadas.', 'ok');
+        loadSavedJobsCard();
+    } catch (error) {
+        boton.disabled = false;
+        if (window.SkillMatchUI) SkillMatchUI.aviso('No se pudo quitar la vacante. Intenta de nuevo.', 'error');
+    }
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -1048,6 +1120,14 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUserEducations();
     loadRecommendedJobs();
     loadInterestedCompanies();
+    loadSavedJobsCard();
+    const guardadas = document.getElementById('savedJobsList');
+    if (guardadas) {
+        guardadas.addEventListener('click', e => {
+            const boton = e.target.closest('.btn-quitar-guardada');
+            if (boton) quitarGuardada(boton);
+        });
+    }
 
     // "Cerrar sesión" lo maneja ui.js en todas las páginas (data-cerrar-sesion)
 

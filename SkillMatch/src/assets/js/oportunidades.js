@@ -6,6 +6,8 @@
 //   resultado de una búsqueda (antes la búsqueda y los filtros no se juntaban).
 // - Cada vacante tiene su detalle completo y la postulación lleva la carta
 //   que escribe la persona (antes se mandaba una carta inventada).
+// - "Guardadas" muestra las vacantes que la persona guardó (antes se
+//   guardaban pero no había dónde verlas). También con ?guardadas=1.
 
 const TAM_PAGINA = 20;
 
@@ -49,6 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Las habilidades y las postulaciones se piden a la vez que las vacantes;
     // la lista se pinta una sola vez, ya con el % y "Ya te postulaste"
     userSkillsReady = Promise.all([loadUserSkills(), loadAppliedJobs(), loadSavedJobs()]);
+    // Desde "Vacantes guardadas" del perfil se llega con ?guardadas=1
+    if (new URLSearchParams(window.location.search).get('guardadas') === '1' && sesion() && !esEmpresa()) {
+        paginacion.modo = 'guardadas';
+        marcarVista('guardadas');
+    }
     loadJobs();
     setupEventListeners();
     updateFilterBadges();
@@ -76,14 +83,29 @@ async function cargarPagina(numero) {
 
     if (searchAbortController) searchAbortController.abort();
     searchAbortController = new AbortController();
+    const senal = searchAbortController.signal;
     const url = paginacion.modo === 'busqueda'
         ? `${API_BASE_URL}/jobs/search?keyword=${encodeURIComponent(paginacion.query)}&page=${numero}&size=${TAM_PAGINA}`
         : `${API_BASE_URL}/jobs?page=${numero}&size=${TAM_PAGINA}`;
 
     try {
-        const response = await fetchWithAuth(url, { signal: searchAbortController.signal });
-        if (!response.ok) throw new Error(`El servidor respondió ${response.status}`);
-        const data = await response.json();
+        let data;
+        if (paginacion.modo === 'guardadas') {
+            // Las guardadas no vienen por páginas: se trae cada vacante por su id
+            // (/saved-jobs/my-saved-jobs no trae habilidades ni descripción, y
+            // sin ellas la tarjeta no podría mostrar el % ni el detalle)
+            await userSkillsReady;
+            const vacantes = await Promise.all([...savedJobIds].map(id =>
+                fetchWithAuth(`${API_BASE_URL}/jobs/${encodeURIComponent(id)}`, { signal: senal })
+                    .then(r => r.ok ? r.json() : null)
+                    .catch(() => null)));
+            if (senal.aborted) { paginacion.cargando = false; return; }
+            data = vacantes.filter(Boolean);
+        } else {
+            const response = await fetchWithAuth(url, { signal: senal });
+            if (!response.ok) throw new Error(`El servidor respondió ${response.status}`);
+            data = await response.json();
+        }
         const lista = Array.isArray(data) ? data : (data.content || []);
         paginacion.pagina = numero;
         paginacion.ultima = Array.isArray(data) ? true : data.last !== false;
@@ -204,6 +226,16 @@ function displayJobs(jobs) {
     if (!jobs || jobs.length === 0) {
         shownJobs = [];
         const porFiltros = allJobs.length > 0;
+        if (paginacion.modo === 'guardadas' && !porFiltros) {
+            container.innerHTML = `
+                <div class="no-results-message">
+                    <h3>Aún no has guardado vacantes</h3>
+                    <p>Pulsa "Guardar" en las vacantes que te interesen y aquí las tienes a mano para postularte cuando quieras.</p>
+                    <button type="button" class="btn btn-primary" onclick="cambiarVista('todas')">Ver todas las vacantes</button>
+                </div>`;
+            updateResultsCount(0);
+            return;
+        }
         container.innerHTML = `
             <div class="no-results-message">
                 <h3>${porFiltros ? 'Ninguna vacante cumple los filtros' : (paginacion.modo === 'busqueda' ? 'No encontramos vacantes con esa búsqueda' : 'Aún no hay vacantes publicadas')}</h3>
@@ -257,10 +289,16 @@ function botonesVacante(job) {
     const id = escaparHtml(job.id);
     const guardada = savedJobIds.has(job.id);
     const guardar = `<button type="button" class="btn-save${guardada ? ' saved' : ''}" data-job-id="${id}" onclick="toggleSaveJob(this.dataset.jobId, this)">${guardada ? '<i data-ico="heart"></i> Guardada' : '<i data-ico="save"></i> Guardar'}</button>`;
+    // Una guardada puede haber cerrado después (en la lista general no salen)
+    if (vacanteCerrada(job)) return guardar + '<span class="vacante-cerrada"><i data-ico="clock"></i> Ya no recibe postulaciones</span>';
     const postular = appliedJobIds.has(String(job.id))
         ? '<button type="button" class="btn-apply applied" disabled><i data-ico="check"></i> Ya te postulaste</button>'
         : `<button type="button" class="btn-apply" data-job-id="${id}" onclick="postularme(this.dataset.jobId)">Postularme</button>`;
     return guardar + postular;
+}
+
+function vacanteCerrada(job) {
+    return job.active === false || normalizeStr(job.status) === 'cerrada';
 }
 
 // Crear tarjeta de trabajo
@@ -369,7 +407,9 @@ function cerrarVentana(id) {
 
 // Repinta tarjetas y detalle después de postularse o guardar
 function repintar() {
-    displayJobs(shownJobs.length ? shownJobs : allJobs);
+    // Con los filtros puestos (antes, si no quedaba ninguna visible, volvía a
+    // mostrar todas las cargadas aunque no cumplieran los filtros)
+    applyFilters();
     const detalle = document.getElementById('jobDetailModal');
     if (vacanteAbierta && detalle.classList.contains('active')) {
         document.getElementById('jobDetailActions').innerHTML =
@@ -469,6 +509,9 @@ function setupEventListeners() {
         });
     }
 
+    document.querySelectorAll('#vistaVacantes [data-vista]').forEach(b =>
+        b.addEventListener('click', () => cambiarVista(b.dataset.vista)));
+
     const clearFilterBtn = document.querySelector('.btn-clear-filters');
     if (clearFilterBtn) {
         clearFilterBtn.addEventListener('click', clearFilters);
@@ -518,8 +561,37 @@ function performSearch() {
     const query = document.getElementById('searchInput').value.trim();
     const modo = query ? 'busqueda' : 'todas';
     if (modo === paginacion.modo && query === paginacion.query) return;
+    // Buscar es sobre todas las vacantes: se sale de "Guardadas"
+    if (paginacion.modo === 'guardadas') marcarVista('todas');
     paginacion = { modo, query, pagina: 0, ultima: true, total: 0, cargando: false };
     loadJobs();
+}
+
+// "Todas las vacantes" o "Guardadas"
+function cambiarVista(vista) {
+    const query = document.getElementById('searchInput')?.value.trim() || '';
+    const modo = vista === 'guardadas' ? 'guardadas' : (query ? 'busqueda' : 'todas');
+    marcarVista(vista);
+    if (modo === paginacion.modo) return;
+    paginacion = { modo, query: modo === 'busqueda' ? query : '', pagina: 0, ultima: true, total: 0, cargando: false };
+    // La dirección recuerda la vista: al recargar o volver se queda en Guardadas
+    const direccion = new URL(window.location.href);
+    if (vista === 'guardadas') direccion.searchParams.set('guardadas', '1'); else direccion.searchParams.delete('guardadas');
+    history.replaceState(null, '', direccion);
+    loadJobs();
+}
+
+function marcarVista(vista) {
+    document.querySelectorAll('#vistaVacantes [data-vista]').forEach(b => {
+        const activa = b.dataset.vista === vista;
+        b.classList.toggle('active', activa);
+        b.setAttribute('aria-pressed', String(activa));
+    });
+}
+
+function actualizarContadorGuardadas() {
+    const cuenta = document.getElementById('savedCount');
+    if (cuenta) cuenta.textContent = savedJobIds.size ? `(${savedJobIds.size.toLocaleString('es-CO')})` : '';
 }
 
 function normalizeStr(str) {
@@ -598,8 +670,11 @@ function updateResultsCount(count) {
     if (!resultsCount) return;
     const n = v => v.toLocaleString('es-CO');
     const plural = (v, una, varias) => n(v) + ' ' + (v === 1 ? una : varias);
+    const guardadas = paginacion.modo === 'guardadas';
     if (hayFiltros()) {
-        resultsCount.textContent = `${plural(count, 'vacante cumple', 'vacantes cumplen')} los filtros (de ${n(allJobs.length)} cargadas)`;
+        resultsCount.textContent = `${plural(count, 'vacante cumple', 'vacantes cumplen')} los filtros (de ${n(allJobs.length)} ${guardadas ? 'guardadas' : 'cargadas'})`;
+    } else if (guardadas) {
+        resultsCount.textContent = plural(allJobs.length, 'vacante guardada', 'vacantes guardadas');
     } else if (paginacion.modo === 'busqueda') {
         resultsCount.textContent = `${plural(paginacion.total, 'resultado', 'resultados')} para «${paginacion.query}»`;
     } else {
@@ -642,6 +717,9 @@ async function loadSavedJobs() {
         const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job-ids`);
         if (response.ok) {
             savedJobIds = new Set(await response.json());
+            const vista = document.getElementById('vistaVacantes');
+            if (vista) vista.hidden = false;
+            actualizarContadorGuardadas();
         }
     } catch (error) {
     }
@@ -664,6 +742,12 @@ async function toggleSaveJob(jobId, buttonElement) {
             : await fetchWithAuth(`${API_BASE_URL}/saved-jobs`, { method: 'POST', body: JSON.stringify({ jobId: jobId }) });
         if (!response.ok) throw new Error();
         if (isSaved) savedJobIds.delete(jobId); else savedJobIds.add(jobId);
+        actualizarContadorGuardadas();
+        // En "Guardadas" la que se quita sale de la lista
+        if (isSaved && paginacion.modo === 'guardadas') allJobs = allJobs.filter(j => j.id !== jobId);
+        if (!isSaved && document.getElementById('vistaVacantes')) {
+            avisar('Vacante guardada. La encuentras en "Guardadas", arriba de la lista.', 'ok');
+        }
         repintar();
     } catch (error) {
         avisar('No se pudo actualizar la vacante guardada. Intenta de nuevo.', 'error');
