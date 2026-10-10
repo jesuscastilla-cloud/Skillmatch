@@ -1636,7 +1636,7 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
         var(--grain),
         radial-gradient(circle at 85% 0%, rgba(11,126,140,.45), transparent 60%),
         radial-gradient(circle at 0% 110%, rgba(255,118,24,.35), transparent 62%),
-        linear-gradient(120deg, var(--ink), var(--sea-deep));
+        linear-gradient(120deg, #08203C, #096670); /* colores fijos: con var(--ink) y var(--sea-deep) en modo oscuro salia clara */
     background-blend-mode: overlay, normal, normal, normal;
     background-size: 220px 220px, auto, auto, auto;
 }
@@ -2797,8 +2797,11 @@ footer.pie > .container { position: relative; z-index: 1; }
     margin-bottom: var(--s6);
 }
 /* Debajo del titulo: cuanto toma y que se puede cambiar despues */
-.registro-intro { max-width: 60ch; margin: calc(-1 * var(--s3)) 0 var(--s5); color: var(--ink-3); }
+.registro-intro { max-width: 60ch; margin: calc(-1 * var(--s3)) auto var(--s5); color: var(--ink-3); text-align: center; }
 .registro-form .error-text { margin: 0 0 var(--s3); }
+/* La seccion ya deja su espacio abajo: sumado al de los botones quedaba un
+   hueco grande sobre "Siguiente" */
+.registro-form .step-actions { margin-top: 0; }
 .registro-section > .container > .registro-form {
     max-width: 760px;
     padding: var(--s7);
@@ -3091,7 +3094,7 @@ footer.pie > .container { position: relative; z-index: 1; }
         var(--grain),
         radial-gradient(circle at 85% 0%, rgba(11,126,140,.45), transparent 60%),
         radial-gradient(circle at 0% 110%, rgba(255,118,24,.35), transparent 62%),
-        linear-gradient(120deg, var(--ink), var(--sea-deep));
+        linear-gradient(120deg, #08203C, #096670); /* colores fijos: con var(--ink) y var(--sea-deep) en modo oscuro salia clara */
     background-blend-mode: overlay, normal, normal, normal;
     background-size: 220px 220px, auto, auto, auto;
 }
@@ -3103,7 +3106,7 @@ footer.pie > .container { position: relative; z-index: 1; }
         var(--grain),
         radial-gradient(circle at 85% 0%, rgba(11,126,140,.45), transparent 60%),
         radial-gradient(circle at 0% 110%, rgba(255,118,24,.35), transparent 62%),
-        linear-gradient(120deg, var(--ink), var(--sea-deep));
+        linear-gradient(120deg, #08203C, #096670); /* colores fijos: con var(--ink) y var(--sea-deep) en modo oscuro salia clara */
     background-blend-mode: overlay, normal, normal, normal;
     background-size: 220px 220px, auto, auto, auto;
 }

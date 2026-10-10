@@ -317,7 +317,7 @@ function formatTipo(tipo) {
         return 'Práctica profesional';
     }
     if (normalized === 'freelance' || normalized === 'independiente') {
-        return 'Freelance';
+        return 'Independiente';
     }
     // corregir posibles valores como "empleotime" a un texto limpio
     return 'Empleo tiempo completo';

@@ -197,7 +197,7 @@ function loadOffers() {
             // Tipo: el backend lo manda en minuscula y a veces con tilde ("práctica");
             // la clase pinta el color de la etiqueta
             const tipo = String(job.type || 'empleo').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-            const TIPOS = { empleo: ['employment', 'Empleo'], practica: ['practice', 'Práctica'], freelance: ['freelance', 'Freelance'] };
+            const TIPOS = { empleo: ['employment', 'Empleo'], practica: ['practice', 'Práctica'], freelance: ['freelance', 'Independiente'] };
             const [claseTipo, nombreTipo] = TIPOS[tipo] || ['employment', job.type || 'Empleo'];
             // La fecha esta en postedDate; createdAt llega vacio y salia "31/12/1969"
             const fecha = job.postedDate || job.createdAt;

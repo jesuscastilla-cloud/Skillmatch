@@ -162,7 +162,7 @@ function displayNotifications(notifications) {
             <div class="notification-item ${notif.isRead ? 'read' : 'unread'}" data-id="${notif.id}" onclick="handleNotificationClick('${notif.id}', '${notif.actionUrl || ''}')">
                 <div class="notification-icon">${icon}</div>
                 <div class="notification-content">
-                    <p class="notification-message">${escaparHtml(notif.message)}</p>
+                    <p class="notification-message">${escaparHtml(notif.content || notif.message || '')}</p>
                     <span class="notification-time">${time}</span>
                 </div>
             </div>
