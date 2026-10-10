@@ -195,7 +195,37 @@
         try {
             datos = localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
         } catch (err) { datos = null; }
+
+        // Barra escrita para una persona con sesion (Vacantes, Conexiones,
+        // Mensajes y Mi perfil): se ajusta si quien la ve no es una persona
+        const principales = document.querySelector('header .nav-principales');
+        const conexiones = principales && principales.querySelector('a[href="conexiones.html"]');
+        const miPerfil = document.querySelector('header .nav-links a[href="perfil-usuario.html"]');
+        if (conexiones && !datos) {
+            // Vacantes es publica: a un visitante se le mostraban "Mi perfil" y
+            // "Cerrar sesion". Recibe la misma barra que la portada.
+            const cambiar = function (a, href, texto, clase) {
+                if (!a) return;
+                a.setAttribute('href', href);
+                a.textContent = texto;
+                a.className = clase || '';
+                a.removeAttribute('data-cerrar-sesion');
+            };
+            cambiar(conexiones, 'index.html#como-funciona', 'Cómo funciona');
+            cambiar(principales.querySelector('a[href="mensajes.html"]'), 'index.html#usuarios-empresas', 'Empresas');
+            cambiar(miPerfil, 'login.html', 'Iniciar sesión', 'btn-login');
+            cambiar(document.querySelector('header .nav-links a[data-cerrar-sesion]'), 'seleccionar-registro.html', 'Unirse ahora', 'btn-register');
+            return;
+        }
         if (!datos) return;
+        if (conexiones && datos.userType === 'empresa') {
+            // Las empresas no usan Conexiones y su perfil es el de la empresa
+            conexiones.parentElement.remove();
+            if (miPerfil) {
+                miPerfil.textContent = 'Mi empresa';
+                miPerfil.setAttribute('href', 'perfil-empresa.html');
+            }
+        }
         const entrar = document.querySelector('header .nav-links a.btn-login:not([data-cerrar-sesion])');
         const unirse = document.querySelector('header .nav-links a.btn-register');
         if (!entrar) return;
