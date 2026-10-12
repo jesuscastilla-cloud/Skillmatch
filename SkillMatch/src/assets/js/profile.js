@@ -90,7 +90,7 @@ function hideEditButtons() {
     
     // Ocultar botón de editar perfil, la portada, la foto y los "+ Agregar"
     // (no tienen onclick y el selector de arriba no los encontraba)
-    ['editProfileBtn', 'editCoverBtn', 'editAvatarBtn', 'addSkillBtn', 'addExperienceBtn', 'addEducationBtn'].forEach(id => {
+    ['editProfileBtn', 'changePasswordBtn', 'editCoverBtn', 'editAvatarBtn', 'addSkillBtn', 'addExperienceBtn', 'addEducationBtn'].forEach(id => {
         const boton = document.getElementById(id);
         if (boton) boton.style.display = 'none';
     });
@@ -763,6 +763,8 @@ async function loadInterestedCompanies() {
                 if (app.companyName && app.jobId) {
                     if (!companiesMap.has(app.jobId)) {
                         companiesMap.set(app.jobId, {
+                            id: app.id,
+                            jobId: app.jobId,
                             name: app.companyName,
                             job: app.jobTitle,
                             appliedDate: new Date(app.appliedDate),
@@ -774,6 +776,7 @@ async function loadInterestedCompanies() {
 
             const companies = Array.from(companiesMap.values())
                 .sort((a, b) => b.appliedDate - a.appliedDate);
+            misPostulaciones = companies;
 
             if (companies.length === 0) {
                 companiesContainer.innerHTML = '<p class="empty-text">Aún no te has postulado a ninguna vacante.</p>' +
@@ -781,15 +784,7 @@ async function loadInterestedCompanies() {
                 return;
             }
 
-            // El backend manda el estado en minusculas ("revisada") y aqui se
-            // comparaba con "ACEPTADA": todas salian "En revision"
-            const ESTADOS = {
-                PENDIENTE: { texto: 'Enviada',   ico: 'clock' },
-                REVISADA:  { texto: 'Revisada',  ico: 'eye' },
-                ACEPTADA:  { texto: 'Aceptada',  ico: 'check' },
-                RECHAZADA: { texto: 'Rechazada', ico: 'close' }
-            };
-            const estadoDe = c => String(c.status || 'PENDIENTE').toUpperCase();
+            const estadoDe = estadoPostulacion;
             const cuenta = (...estados) => companies.filter(c => estados.includes(estadoDe(c))).length;
 
             // Resumen arriba (reemplaza las estadisticas inventadas de la izquierda)
@@ -804,7 +799,7 @@ async function loadInterestedCompanies() {
                 const daysAgo = Math.floor((new Date() - company.appliedDate) / (1000 * 60 * 60 * 24));
                 const cuando = daysAgo <= 0 ? 'Hoy' : `Hace ${daysAgo} ${daysAgo === 1 ? 'día' : 'días'}`;
                 const clave = estadoDe(company);
-                const estado = ESTADOS[clave] || ESTADOS.PENDIENTE;
+                const estado = ESTADOS_POSTULACION[clave] || ESTADOS_POSTULACION.PENDIENTE;
 
                 return `
                     <div class="company-item-compact">
@@ -816,7 +811,9 @@ async function loadInterestedCompanies() {
                         </div>
                     </div>
                 `;
-            }).join('');
+            }).join('') +
+                // Todas, con la opcion de retirar (antes solo se veian 4 y no habia como retirar)
+                `<button type="button" class="btn-view-all" onclick="verPostulaciones()">${companies.length > 4 ? `Ver las ${companies.length}` : 'Ver todas'} <i data-ico="arrow"></i></button>`;
         } else {
             companiesContainer.innerHTML = '<p class="empty-text">No se pudieron cargar tus postulaciones</p>';
         }
@@ -826,6 +823,100 @@ async function loadInterestedCompanies() {
 }
 
 
+
+// ---- Mis postulaciones: todas, y retirar las que siguen en proceso ----
+
+// El backend manda el estado en minusculas ("revisada") y aqui se comparaba
+// con "ACEPTADA": todas salian "En revision"
+const ESTADOS_POSTULACION = {
+    PENDIENTE: { texto: 'Enviada',   ico: 'clock' },
+    REVISADA:  { texto: 'Revisada',  ico: 'eye' },
+    ACEPTADA:  { texto: 'Aceptada',  ico: 'check' },
+    RECHAZADA: { texto: 'Rechazada', ico: 'close' }
+};
+const estadoPostulacion = c => String(c.status || 'PENDIENTE').toUpperCase();
+// Se puede retirar mientras la empresa no haya decidido
+const SE_PUEDE_RETIRAR = ['PENDIENTE', 'REVISADA'];
+let misPostulaciones = [];
+let ventanaPostulaciones = null;
+
+// "Te postulaste hoy / ayer / hace 5 días" por días de calendario
+function cuandoTePostulaste(fecha) {
+    const dia = f => { const d = new Date(f); d.setHours(0, 0, 0, 0); return d; };
+    const dias = Math.round((dia(new Date()) - dia(fecha)) / 86400000);
+    if (dias <= 0) return 'Te postulaste hoy';
+    if (dias === 1) return 'Te postulaste ayer';
+    if (dias <= 30) return `Te postulaste hace ${dias} días`;
+    return 'Te postulaste el ' + new Date(fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function filaPostulacion(c) {
+    const clave = estadoPostulacion(c);
+    const estado = ESTADOS_POSTULACION[clave] || ESTADOS_POSTULACION.PENDIENTE;
+    const titulo = escaparHtml(c.job || 'Vacante');
+    const enlace = c.jobId ? `<a href="oportunidades.html?jobId=${encodeURIComponent(c.jobId)}">${titulo}</a>` : titulo;
+    const accion = SE_PUEDE_RETIRAR.includes(clave) && c.id
+        ? `<button type="button" class="btn-retirar" data-retirar="${escaparHtml(c.id)}">Retirar</button>`
+        : '';
+    return `
+        <li class="postulacion-fila" data-id="${escaparHtml(c.id || '')}">
+            <div class="postulacion-datos">
+                <h3>${enlace}</h3>
+                <p>${escaparHtml(c.name || 'Empresa confidencial')} · ${cuandoTePostulaste(c.appliedDate)}</p>
+            </div>
+            <p class="status-badge ${clave.toLowerCase()}"><i data-ico="${estado.ico}"></i> ${estado.texto}</p>
+            <div class="postulacion-accion">${accion}</div>
+        </li>`;
+}
+
+function verPostulaciones() {
+    if (!misPostulaciones.length) return;
+    ventanaPostulaciones = SkillMatchUI.ventana({
+        id: 'ventanaPostulaciones',
+        titulo: 'Mis postulaciones',
+        icono: 'send',
+        ancha: true,
+        cuerpo: `<p class="postulaciones-ayuda">Puedes retirar una postulación mientras la empresa no la haya aceptado ni rechazado. Al retirarla, la empresa deja de verla.</p>
+            <ul class="postulaciones-lista">${misPostulaciones.map(filaPostulacion).join('')}</ul>`
+    });
+    ventanaPostulaciones.cuerpo.addEventListener('click', e => {
+        const boton = e.target.closest('button');
+        if (!boton) return;
+        const accion = boton.closest('.postulacion-accion');
+        if (boton.dataset.retirar) {
+            // Se confirma ahi mismo, sin ventanas del navegador
+            accion.innerHTML = `<span class="retiro-pregunta">¿Retirarla?</span>
+                <button type="button" class="btn-retirar confirmar" data-confirmar="${escaparHtml(boton.dataset.retirar)}">Sí, retirar</button>
+                <button type="button" class="btn-retiro-no" data-no="${escaparHtml(boton.dataset.retirar)}">No</button>`;
+            accion.querySelector('[data-confirmar]').focus();
+        } else if (boton.dataset.no) {
+            accion.innerHTML = `<button type="button" class="btn-retirar" data-retirar="${escaparHtml(boton.dataset.no)}">Retirar</button>`;
+            accion.querySelector('button').focus();
+        } else if (boton.dataset.confirmar) {
+            retirarPostulacion(boton.dataset.confirmar, boton);
+        }
+    });
+}
+
+async function retirarPostulacion(id, boton) {
+    boton.disabled = true;
+    boton.textContent = 'Retirando…';
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error(`El servidor respondió ${response.status}`);
+        const retirada = misPostulaciones.find(c => c.id === id);
+        misPostulaciones = misPostulaciones.filter(c => c.id !== id);
+        const fila = boton.closest('.postulacion-fila');
+        if (fila) fila.remove();
+        SkillMatchUI.aviso(`Retiraste tu postulación${retirada && retirada.job ? ' a ' + escaparHtml(retirada.job) : ''}.`, 'ok');
+        if (!misPostulaciones.length && ventanaPostulaciones) ventanaPostulaciones.cerrar();
+        loadInterestedCompanies();
+    } catch (error) {
+        boton.disabled = false;
+        boton.textContent = 'Sí, retirar';
+        SkillMatchUI.aviso('No se pudo retirar la postulación. Intenta de nuevo.', 'error');
+    }
+}
 
 // Funciones para modales
 function openEditModal() {
@@ -1130,6 +1221,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // "Cerrar sesión" lo maneja ui.js en todas las páginas (data-cerrar-sesion)
+
+    // Cambiar contraseña: la ventana es de ui.js (la misma en el perfil de empresa)
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => SkillMatchUI.cambiarContrasena());
 
     // Botón editar perfil
     const editProfileBtn = document.getElementById('editProfileBtn');

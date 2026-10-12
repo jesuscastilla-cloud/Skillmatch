@@ -284,6 +284,10 @@ function setupEventListeners() {
     // deja a la empresa cambiar su descripcion y esos botones guardaban en el
     // navegador, sin llegar al servidor)
 
+    // Cambiar contraseña: la ventana es de ui.js (la misma del perfil de persona)
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => SkillMatchUI.cambiarContrasena());
+
     // Botón Editar "Acerca de"
     const btnEditAbout = document.getElementById('btnEditAbout');
     if (btnEditAbout) {

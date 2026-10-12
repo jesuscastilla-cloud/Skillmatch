@@ -47,10 +47,10 @@ y el escape del texto del servidor (XSS).
 | Función | Endpoint que ya existe | Estado en el frontend |
 |---|---|---|
 | Ver mis vacantes guardadas | `GET /saved-jobs/my-saved-jobs` | Hecho: pestaña "Guardadas" en Vacantes y tarjeta en Mi perfil |
-| Cambiar contraseña | `PUT /users/{id}/password` | No existe |
-| Mensajes sin leer en la barra | `GET /messages/unread-count` | No existe |
-| Retirar una postulación | `DELETE /applications/{id}` | No existe |
-| Ver todas mis postulaciones | `GET /applications/my-applications` | El perfil muestra 4, sin "ver todas" |
+| Cambiar contraseña | `PUT /users/{id}/password` | Hecho: botón en el perfil de persona y en el de empresa |
+| Mensajes sin leer en la barra | `GET /messages/unread-count` | Hecho: número junto a "Mensajes" arriba y en la barra del celular |
+| Retirar una postulación | `DELETE /applications/{id}` | Hecho: en "Mis postulaciones", mientras siga Enviada o Revisada |
+| Ver todas mis postulaciones | `GET /applications/my-applications` | Hecho: "Ver todas" abre "Mis postulaciones" |
 | Saber si ya me postulé | `GET /applications/check` | No se usa (ver crítico 4) |
 | Vacantes paginadas y filtradas en el servidor | `GET /jobs?page=`, `GET /jobs/filter` | Solo 20 vacantes (crítico 5) |
 | Enlaces de las notificaciones | `?tab=pending`, `?userId=`, `?jobId=`, `?tab=applicants` | Ninguna página los lee |
@@ -111,6 +111,11 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
 - Restringir `connect-src` de la CSP a `'self'` cuando el frontend vaya dentro del jar.
 - `GET /saved-jobs/my-saved-jobs`: agregar el estado de la vacante (para marcar las que cerraron en el
   perfil) y mandar el `jobId` aunque la vacante se haya borrado (sin él no se puede quitar de guardadas).
+- `DELETE /applications/{id}` borra la postulación y la empresa pierde el registro: mejor marcarla
+  "RETIRADA" para que la empresa vea que la persona se retiró. El frontend solo deja retirar las que
+  siguen Enviadas o Revisadas.
+- `PUT /users/{id}/password` acepta contraseñas desde 6 caracteres; el registro y el frontend piden 8.
+  Conviene subir el mínimo a 8 en `UpdatePasswordRequest` y en el registro.
 
 ## Avance
 
@@ -178,6 +183,13 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   que no llega); ahora se calcula con las habilidades de la persona, igual que en Vacantes. "Postularme"
   (y las vacantes de la paleta Ctrl+K) llevaban a Vacantes buscando por el título y salían todas las que se
   llamaran igual; ahora abren esa vacante.
+- **Punto 6 completo (hecho):** "Cambiar contraseña" en el perfil de persona y en el de empresa (ventana de
+  `ui.js`: pide la actual y la nueva dos veces, mínimo 8 caracteres, y avisa si la actual no es correcta);
+  número de mensajes sin leer junto a "Mensajes" en la barra de arriba y en la del celular (se revisa al abrir
+  la página, cada minuto con la pestaña a la vista y al leer una conversación); "Ver todas" en "Tus
+  postulaciones" abre "Mis postulaciones" con todas y deja retirar las que siguen en proceso, con la
+  confirmación en la misma ventana (sin `confirm()` del navegador). `SkillMatchUI.ventana()` crea ventanas
+  de la marca desde JS para lo que venga.
 
 ## Orden propuesto (solo frontend)
 

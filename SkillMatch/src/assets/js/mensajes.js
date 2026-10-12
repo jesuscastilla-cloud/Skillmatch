@@ -374,6 +374,9 @@ async function markConversationAsRead(otherUserId) {
             method: 'PATCH'
         });
 
+        // El número junto a "Mensajes" en la barra también baja
+        if (window.SkillMatchUI && SkillMatchUI.actualizarNoLeidos) SkillMatchUI.actualizarNoLeidos();
+
         // Actualizar contador de no leídos
         const conversation = conversations.find(c => String(c.otherUserId) === String(otherUserId));
         if (conversation) {

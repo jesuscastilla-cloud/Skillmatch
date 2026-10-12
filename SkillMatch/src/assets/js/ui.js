@@ -1,7 +1,7 @@
 /* =====================================================================
  *  SkillMatch — capa de interfaz
  *
- *  Se encarga de ocho cosas, y de nada mas:
+ *  Se encarga de nueve cosas, y de nada mas:
  *    1. Iconos SVG (reemplazan a los emojis, se ven igual en todos lados)
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
@@ -11,6 +11,7 @@
  *    6. Listas desplegables de la marca en lugar de las nativas (data-lista)
  *    7. Campo de etiquetas para habilidades (SkillMatchUI.etiquetas)
  *    8. Carrusel de vacantes de la portada (SkillMatchUI.carrusel)
+ *    9. Cuenta: ventanas desde JS, cambiar contrasena y mensajes sin leer
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -79,6 +80,7 @@
         plus:      '<path d="M12 5v14M5 12h14"/>',
         minus:     '<path d="M5 12h14"/>',
         chevron:   '<path d="m6 9 6 6 6-6"/>',
+        lock:      '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
         upload:    '<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/>',
         desktop:   '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/>',
         sun:       '<circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.2M12 18.8V21M4.2 12H2M22 12h-2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>',
@@ -1988,6 +1990,146 @@
         };
     };
 
+    /* ---------- 19. Cuenta: ventanas, contrasena y mensajes sin leer ---------- */
+
+    /** Ventana de la marca creada desde JS. Se cierra con la X, con Escape o
+     *  con un clic afuera (seccion 6), y al cerrarse se quita de la pagina y el
+     *  foco vuelve a donde estaba. Devuelve { raiz, cuerpo, cerrar }. */
+    UI.ventana = function (opciones) {
+        const previa = document.getElementById(opciones.id);
+        if (previa) previa.remove();
+        const raiz = document.createElement('div');
+        raiz.id = opciones.id;
+        raiz.className = 'modal active' + (opciones.ancha ? ' modal-lg' : '');
+        raiz.setAttribute('role', 'dialog');
+        raiz.setAttribute('aria-modal', 'true');
+        raiz.setAttribute('aria-labelledby', opciones.id + '-titulo');
+        raiz.innerHTML =
+            '<div class="modal-content">' +
+              '<div class="modal-header">' +
+                '<h2 id="' + opciones.id + '-titulo">' + (opciones.icono ? svgIcon(opciones.icono) + ' ' : '') + escaparHtml(opciones.titulo) + '</h2>' +
+                '<button type="button" class="btn-close-modal" aria-label="Cerrar">' + svgIcon('close') + '</button>' +
+              '</div>' +
+              '<div class="modal-body">' + opciones.cuerpo + '</div>' +
+            '</div>';
+        const volverA = document.activeElement;
+        function cerrar() { raiz.classList.remove('active', 'is-open'); }
+        raiz.querySelector('.btn-close-modal').addEventListener('click', cerrar);
+        new MutationObserver(function (cambios, observador) {
+            if (raiz.classList.contains('active')) return;
+            observador.disconnect();
+            raiz.remove();
+            if (volverA && volverA.focus) volverA.focus();
+        }).observe(raiz, { attributes: true, attributeFilter: ['class'] });
+        document.body.appendChild(raiz);
+        const primero = raiz.querySelector('.modal-body input, .modal-body textarea, .modal-body select');
+        if (primero) primero.focus();
+        return { raiz: raiz, cuerpo: raiz.querySelector('.modal-body'), cerrar: cerrar };
+    };
+
+    function datosSesion() {
+        try { return localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null; } catch (e) { return null; }
+    }
+
+    /** Cambiar la contrasena (personas y empresas). Antes no habia como:
+     *  la unica salida era pedirle a alguien que la cambiara en la base. */
+    UI.cambiarContrasena = function () {
+        const datos = datosSesion();
+        if (!datos || !datos.id || typeof fetchWithAuth !== 'function') return;
+        const v = UI.ventana({
+            id: 'ventanaContrasena',
+            titulo: 'Cambiar contraseña',
+            icono: 'lock',
+            cuerpo:
+                '<form class="form-contrasena" novalidate>' +
+                  '<div class="form-group"><label for="claveActual">Contraseña actual</label>' +
+                    '<input type="password" id="claveActual" autocomplete="current-password" required></div>' +
+                  '<div class="form-group"><label for="claveNueva">Contraseña nueva</label>' +
+                    '<input type="password" id="claveNueva" autocomplete="new-password" minlength="8" required>' +
+                    '<small class="input-help">Mínimo 8 caracteres.</small></div>' +
+                  '<div class="form-group"><label for="claveNueva2">Repite la contraseña nueva</label>' +
+                    '<input type="password" id="claveNueva2" autocomplete="new-password" minlength="8" required></div>' +
+                  '<p class="error-text" role="alert" hidden></p>' +
+                  '<div class="modal-actions">' +
+                    '<button type="button" class="btn-secondary-modal" data-cancelar>Cancelar</button>' +
+                    '<button type="submit" class="btn-primary-modal">Cambiar contraseña</button>' +
+                  '</div>' +
+                '</form>'
+        });
+        const form = v.cuerpo.querySelector('form');
+        const error = form.querySelector('.error-text');
+        const boton = form.querySelector('[type="submit"]');
+        function problema(texto) { error.textContent = texto || ''; error.hidden = !texto; }
+        function listo() { boton.disabled = false; boton.textContent = 'Cambiar contraseña'; }
+        form.querySelector('[data-cancelar]').addEventListener('click', v.cerrar);
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const actual = form.querySelector('#claveActual').value;
+            const nueva = form.querySelector('#claveNueva').value;
+            if (!actual) return problema('Escribe tu contraseña actual.');
+            if (nueva.length < 8) return problema('La contraseña nueva debe tener al menos 8 caracteres.');
+            if (nueva !== form.querySelector('#claveNueva2').value) return problema('Las contraseñas nuevas no coinciden.');
+            if (nueva === actual) return problema('La contraseña nueva debe ser distinta de la actual.');
+            problema('');
+            boton.disabled = true;
+            boton.textContent = 'Guardando…';
+            fetchWithAuth('/users/' + encodeURIComponent(datos.id) + '/password', {
+                method: 'PUT',
+                body: JSON.stringify({ currentPassword: actual, newPassword: nueva })
+            }).then(function (r) {
+                if (r.ok) {
+                    v.cerrar();
+                    UI.aviso('Listo: tu contraseña quedó cambiada.', 'ok');
+                    return;
+                }
+                return r.json().catch(function () { return {}; }).then(function (cuerpo) {
+                    problema(/actual es incorrecta/i.test(cuerpo.message || '')
+                        ? 'La contraseña actual no es correcta.'
+                        : (cuerpo.message || 'No se pudo cambiar la contraseña. Intenta de nuevo.'));
+                    listo();
+                });
+            }).catch(function () {
+                problema('No pudimos conectar con SkillMatch. Revisa tu conexión e intenta de nuevo.');
+                listo();
+            });
+        });
+    };
+
+    /** Mensajes sin leer: un numero junto a "Mensajes" en la barra de arriba y
+     *  en la de abajo del celular. Se revisa al abrir la pagina, cada minuto
+     *  con la pestana a la vista y cuando mensajes.js lee una conversacion. */
+    let noLeidosEspera = 0;
+    function actualizarNoLeidos() {
+        clearTimeout(noLeidosEspera);
+        if (!datosSesion() || typeof fetchWithAuth !== 'function') return;
+        fetchWithAuth('/messages/unread-count')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { if (d) pintarNoLeidos(Number(d.count) || 0); })
+            .catch(function () { /* sin conexion: se queda como estaba */ });
+        noLeidosEspera = setTimeout(function () { if (!document.hidden) actualizarNoLeidos(); }, 60000);
+    }
+
+    function pintarNoLeidos(n) {
+        document.querySelectorAll('header a[href="mensajes.html"], .tabbar a[href="mensajes.html"]').forEach(function (a) {
+            let globo = a.querySelector('.nav-no-leidos');
+            if (!n) {
+                if (globo) globo.remove();
+                a.removeAttribute('aria-label');
+                return;
+            }
+            if (!globo) {
+                globo = document.createElement('span');
+                globo.className = 'nav-no-leidos';
+                globo.setAttribute('aria-hidden', 'true');
+                a.appendChild(globo);
+            }
+            globo.textContent = n > 99 ? '99+' : String(n);
+            a.setAttribute('aria-label', 'Mensajes, ' + n + ' sin leer');
+        });
+    }
+
+    UI.actualizarNoLeidos = actualizarNoLeidos;
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -1997,6 +2139,8 @@
         marcarNavegacionActiva();
         sesionEnBarra();
         construirTabbar();
+        actualizarNoLeidos();
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) actualizarNoLeidos(); });
         construirInterruptorTema();
         paletaDeComandos();
         tooltips();

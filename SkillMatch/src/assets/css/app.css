@@ -3418,6 +3418,63 @@ footer.pie > .container { position: relative; z-index: 1; }
 
 .welcome-text { font-size: var(--t-md); color: var(--ink-3); }
 
+/* ---------- 22b. Cuenta: contrasena, mensajes sin leer y mis postulaciones ---------- */
+
+/* Botones del encabezado del perfil (persona y empresa) uno al lado del otro */
+.perfil-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
+.company-info-wrapper .perfil-acciones { margin-left: auto; align-self: center; }
+
+/* Mensajes sin leer junto a "Mensajes" (ui.js, seccion 19) */
+.nav-no-leidos {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 19px; height: 19px;
+    padding: 0 5px;
+    border-radius: var(--r-pill);
+    background: var(--naranja); color: #fff;
+    font-size: 11px; font-weight: 700; line-height: 1;
+    font-variant-numeric: tabular-nums;
+    animation: badge-in .3s var(--ease-out) both;
+}
+/* En la barra de abajo del celular va sobre el icono */
+.tabbar a { position: relative; }
+.tabbar .nav-no-leidos {
+    position: absolute; top: 2px; left: calc(50% + 4px);
+    border: 2px solid var(--surface);
+}
+
+/* Ventana "Mis postulaciones" */
+.postulaciones-ayuda { margin-bottom: var(--s4); font-size: var(--t-sm); color: var(--ink-3); }
+.postulaciones-lista { list-style: none; margin: 0; padding: 0; }
+.postulacion-fila {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: var(--s3);
+    padding: var(--s3) 0;
+    border-top: 1px solid var(--hairline-soft);
+}
+.postulacion-fila:first-child { border-top: 0; }
+.postulacion-datos h3 { font-size: var(--t-md); overflow-wrap: break-word; }
+.postulacion-datos h3 a { color: inherit; text-decoration: none; }
+.postulacion-datos h3 a:hover { color: var(--sea-deep); text-decoration: underline; }
+.postulacion-datos p { margin-top: 2px; font-size: var(--t-sm); color: var(--ink-muted); }
+.postulacion-accion { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--s2); }
+.btn-retirar, .btn-retiro-no {
+    display: inline-flex; align-items: center; min-height: 36px;
+    padding: 6px var(--s4);
+    border-radius: var(--r-pill);
+    border: 1px solid var(--hairline);
+    background: var(--surface); color: var(--ink-2);
+    font-size: var(--t-sm); font-weight: 600;
+}
+.btn-retirar:hover { border-color: var(--rojo); color: var(--rojo); }
+.btn-retirar.confirmar { border-color: transparent; background: var(--rojo); color: #fff; }
+.btn-retirar:disabled { opacity: .6; }
+.btn-retiro-no:hover { border-color: var(--sea); color: var(--sea-deep); }
+.retiro-pregunta { font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); }
+@media (max-width: 600px) {
+    .postulacion-fila { grid-template-columns: minmax(0, 1fr) auto; }
+    .postulacion-accion { grid-column: 1 / -1; justify-content: flex-start; }
+}
+@media (pointer: coarse) { .btn-retirar, .btn-retiro-no { min-height: 44px; } }
+
 /* ---------- 23. Mensajes y conexiones ---------- */
 
 .messages-layout, .conexiones-layout {
