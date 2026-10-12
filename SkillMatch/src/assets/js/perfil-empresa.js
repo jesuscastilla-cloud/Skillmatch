@@ -430,6 +430,89 @@ function sinTildesOferta(texto) {
     return String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+// ---- Reglas de publicación de una vacante ----
+// Lo que pide la ley colombiana a una vacante y lo que no deja pedir. Ver
+// docs/REGISTRO-Y-MARCO-LEGAL.md.
+
+// Resolución 2605 de 2014: una vacante puede estar publicada máximo 6 meses
+const MESES_MAXIMOS_VACANTE = 6;
+
+// Fecha AAAA-MM-DD en la hora de Colombia (con toISOString salía la fecha de
+// mañana después de las 7 de la noche)
+function fechaLocal(fecha) {
+    const d = new Date(fecha);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function fechaDentroDe(dias, meses) {
+    const d = new Date();
+    if (meses) d.setMonth(d.getMonth() + meses);
+    if (dias) d.setDate(d.getDate() + dias);
+    return fechaLocal(d);
+}
+const fechaLegible = iso => new Date(iso + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+
+// Ley 931 de 2004 y artículo 13 de la Constitución: una vacante no puede pedir
+// una edad, un sexo, un estado civil ni una foto; los requisitos son la
+// experiencia, los estudios y lo que se sabe hacer. Cada regla dice qué
+// encontró, para que la empresa sepa qué corregir. Cuidado con lo legítimo:
+// "3 años de experiencia" no es una edad, "mayor de edad" sí se puede pedir y
+// "experiencia en fotografía" no es pedir una foto.
+const NO_ES_EXPERIENCIA = '(?!\\s+de\\s+(?:experiencia|trabajo|labor|contrato))';
+const EDAD = '(?:1[5-9]|[2-6]\\d)';
+const REGLAS_NO_DISCRIMINACION = [
+    { motivo: 'pide una edad', patrones: [
+        // La edad que se le pide a la persona ("Edad: 25", "edad entre...", "edad
+        // máxima", "rango de edad"); "clientes de todas las edades" no lo es
+        /\b(?:rango|límite|limite|requisito)\s+de\s+edad\b/iu,
+        /\bedad\s*(?::|entre\b|máxima|maxima|mínima|minima|requerida|ideal|de\s+\d|\d)/iu,
+        new RegExp(`\\b${EDAD}\\s*(?:y|a|-|hasta)\\s*${EDAD}\\s*años\\b${NO_ES_EXPERIENCIA}`, 'iu'),
+        new RegExp(`\\b(?:menor(?:es)?|máximo|maximo|no\\s+mayor(?:es)?)\\s+(?:de\\s+)?${EDAD}\\s*años\\b${NO_ES_EXPERIENCIA}`, 'iu'),
+        // "mayor de 18 años" es lo mismo que "mayor de edad": se permite
+        new RegExp(`\\bmayor(?:es)?\\s+de\\s+(?:19|[2-6]\\d)\\s*años\\b${NO_ES_EXPERIENCIA}`, 'iu')
+    ] },
+    { motivo: 'pide un sexo o un género', patrones: [
+        /\b(?:solo|sólo|únicamente|unicamente|exclusivamente|preferiblemente)\s+(?:hombres?|mujeres?|varones?|damas?|caballeros?|señoritas?|señoras?)\b/iu,
+        /\b(?:sexo|género|genero)\s*[:-]?\s*(?:masculino|femenino|hombre|mujer)\b/iu,
+        /\bseñoritas?\b/iu
+    ] },
+    { motivo: 'pide un estado civil o no tener hijos', patrones: [
+        /\bestado\s+civil\b/iu,
+        /\b(?:solter[oa]s?|casad[oa]s?)\b/iu,
+        /\bsin\s+hijos\b/iu
+    ] },
+    { motivo: 'pide una foto o un aspecto físico', patrones: [
+        /\b(?:con|enviar|envía|envia|adjuntar|adjunta|anexar|anexa|incluir|incluye)\s+(?:una\s+|su\s+|tu\s+)?(?:foto|fotografía|fotografia)\b/iu,
+        /\bfoto\s+(?:reciente|tipo\s+documento|de\s+cuerpo\s+entero)\b/iu,
+        /\bbuena\s+presencia\b/iu
+    ] }
+];
+// Sin datos de contacto: las personas se postulan y escriben por SkillMatch
+// (así su información queda protegida y se evitan estafas)
+const REGLAS_CONTACTO = [
+    /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/u,
+    /(?:\+?57[\s.-]?)?\b3\d{2}[\s.-]?\d{3}[\s.-]?\d{4}\b/u,
+    /\b60\d[\s.-]?\d{3}[\s.-]?\d{4}\b/u,
+    /\bwhats?\s?app\b|\bwsp\b/iu
+];
+
+// Revisa los textos de la vacante: devuelve lo que no se puede publicar
+function revisarVacante(textos) {
+    const todo = textos.filter(Boolean).join('\n');
+    const discriminacion = [];
+    REGLAS_NO_DISCRIMINACION.forEach(regla => {
+        for (const patron of regla.patrones) {
+            const hallado = todo.match(patron);
+            if (hallado) { discriminacion.push(`«${hallado[0].trim()}» (${regla.motivo})`); break; }
+        }
+    });
+    const contacto = [];
+    REGLAS_CONTACTO.forEach(patron => {
+        const hallado = todo.match(patron);
+        if (hallado) contacto.push(`«${hallado[0].trim()}»`);
+    });
+    return { discriminacion, contacto };
+}
+
 async function openNewOfferModal(existingOffer = null, offerId = null) {
     const isEdit = existingOffer !== null;
     let oferta = {};
@@ -450,7 +533,11 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
         return `<option value="${valor}"${elegida ? ' selected' : ''}>${texto}</option>`;
     }).join('');
     const lineas = lista => sanitize((lista || []).join('\n'));
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = fechaLocal(new Date());
+    const tope = fechaDentroDe(0, MESES_MAXIMOS_VACANTE);
+    // Al editar se conserva la fecha si sigue valiendo; si no, 30 días desde hoy
+    const guardada = oferta.expirationDate ? String(oferta.expirationDate).slice(0, 10) : '';
+    const fechaInicial = guardada && guardada >= hoy && guardada <= tope ? guardada : fechaDentroDe(30);
 
     createModal(isEdit ? 'Editar oferta' : 'Nueva oferta', `
         <div class="form-grid oferta-form">
@@ -489,8 +576,9 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
                 <input type="text" id="offerDuration" maxlength="100" placeholder="Ej.: 6 meses" value="${sanitize(oferta.duration)}">
             </div>
             <div class="form-group">
-                <label for="offerDeadline">Fecha límite para postularse (opcional)</label>
-                <input type="date" id="offerDeadline" min="${hoy}" value="${oferta.expirationDate ? String(oferta.expirationDate).slice(0, 10) : ''}">
+                <label for="offerDeadline">Recibir postulaciones hasta *</label>
+                <input type="date" id="offerDeadline" min="${hoy}" max="${tope}" value="${fechaInicial}" required>
+                <p class="field-help">Máximo 6 meses desde hoy: por ley una vacante no puede estar publicada más tiempo.</p>
             </div>
             <div class="form-group span-full">
                 <label for="offerSkillInput">Habilidades que pide *</label>
@@ -502,6 +590,7 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
             <div class="form-group span-full">
                 <label for="offerDescription">Descripción *</label>
                 <textarea id="offerDescription" rows="4" maxlength="5000" placeholder="Cuenta de qué se trata el cargo y el equipo">${sanitize(oferta.description)}</textarea>
+                <p class="field-help">No pidas edad, sexo, estado civil ni foto, ni pongas teléfonos o correos: la vacante no se publica con esos datos.</p>
             </div>
             <div class="form-group span-full">
                 <label for="offerRequirements">Requisitos (uno por línea)</label>
@@ -563,11 +652,29 @@ async function guardarOferta(isEdit, offerId) {
     if ([salaryMin, salaryMax].some(s => s !== null && s > 0 && s < 50000)) return error('Escribe el salario completo en pesos, por ejemplo 1800000.');
     if (salaryMin !== null && salaryMax !== null && salaryMin > salaryMax) return error('El salario mínimo no puede ser mayor que el máximo.');
 
+    const fecha = valor('offerDeadline');
+    const tope = fechaDentroDe(0, MESES_MAXIMOS_VACANTE);
+    if (!fecha) return error('Elige hasta qué fecha recibes postulaciones.');
+    if (fecha < fechaLocal(new Date())) return error('La fecha límite no puede ser anterior a hoy.');
+    if (fecha > tope) return error(`La fecha límite puede ser como máximo el ${fechaLegible(tope)}: por ley una vacante no puede estar publicada más de 6 meses.`);
+
+    const revision = revisarVacante([title, description, valor('offerRequirements'), valor('offerResponsibilities'),
+        valor('offerBenefits'), valor('offerDuration'), skills.join('\n')]);
+    const problemas = [];
+    if (revision.discriminacion.length) {
+        problemas.push('Por ley una vacante no puede pedir edad, sexo, estado civil ni foto (Ley 931 de 2004). Cambia ' +
+            revision.discriminacion.join('; ') + ' por lo que se necesita para el trabajo, como la experiencia o los estudios.');
+    }
+    if (revision.contacto.length) {
+        problemas.push('Quita los datos de contacto: ' + revision.contacto.join(', ') +
+            '. Las personas se postulan y te escriben por SkillMatch; así su información queda protegida y se evitan estafas.');
+    }
+    if (problemas.length) return error(problemas.join(' '));
+
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
     if (!userData.companyId) return error('No encontramos tu empresa. Cierra sesión y vuelve a entrar.');
 
     const lista = id => valor(id).split('\n').map(l => l.replace(/^[-•*]\s*/, '').trim()).filter(Boolean);
-    const fecha = valor('offerDeadline');
     const datos = {
         companyId: userData.companyId,
         title,
@@ -583,7 +690,7 @@ async function guardarOferta(isEdit, offerId) {
         requirements: lista('offerRequirements'),
         responsibilities: lista('offerResponsibilities'),
         benefits: lista('offerBenefits'),
-        expirationDate: fecha ? fecha + 'T23:59:59' : null
+        expirationDate: fecha + 'T23:59:59'
     };
 
     const boton = document.getElementById('modalSaveBtn');
