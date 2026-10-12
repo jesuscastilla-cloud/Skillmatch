@@ -5112,6 +5112,12 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    filas en tableta; esta regla iba despues y le ganaba a la de tableta) */
 .nav-principales { flex-wrap: nowrap; }
 .checkbox { display: inline-flex; align-items: center; gap: var(--s2); }
+/* Casillas del registro (mayoria de edad y autorizacion de datos): una debajo de
+   otra, con la casilla arriba si el texto ocupa varias lineas */
+.registro-form .checkbox { display: flex; align-items: flex-start; }
+.registro-form .checkbox input { margin-top: 3px; flex: 0 0 auto; }
+.registro-form .checkbox + .checkbox { margin-top: var(--s3); }
+.checkbox a { color: var(--sea-deep); font-weight: 600; text-decoration: underline; }
 .roles-input { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .btn-view-profile {
     display: inline-flex; align-items: center; gap: 6px;

@@ -117,9 +117,15 @@
                     </div>
 
                     <div class="form-section">
+                        <!-- La ley pide 15 años para trabajar y permiso del inspector de
+                             trabajo hasta los 17: lo practico es pedir mayoria de edad -->
+                        <label class="checkbox">
+                            <input type="checkbox" id="usuario-mayor" required>
+                            <span>Tengo 18 años o más.</span>
+                        </label>
                         <label class="checkbox">
                             <input type="checkbox" id="usuario-terminos" required>
-                            <span>Autorizo a SkillMatch a tratar mis datos personales para mostrar mi perfil a las empresas a las que me postule.</span>
+                            <span>Leí la <a href="politica-datos.html" target="_blank" rel="noopener">política de tratamiento de datos<span class="sr-only"> (se abre en otra pestaña)</span></a> y autorizo a SkillMatch a usar mis datos para crear mi perfil, mostrarlo a las personas y empresas registradas y enviar mis postulaciones.</span>
                         </label>
                     </div>
                     <p class="error-text" role="alert" hidden></p>

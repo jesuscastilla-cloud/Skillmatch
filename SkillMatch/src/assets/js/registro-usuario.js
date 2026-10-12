@@ -67,8 +67,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const problema = validarCuenta();
         if (problema) { mostrar(0); error(0, problema); return; }
+        if (!document.getElementById('usuario-mayor').checked) {
+            error(1, 'Para registrarte en SkillMatch debes tener 18 años o más.');
+            return;
+        }
         if (!document.getElementById('usuario-terminos').checked) {
-            error(1, 'Para crear tu perfil debes autorizar el tratamiento de tus datos.');
+            error(1, 'Para crear tu perfil debes aceptar la política de tratamiento de datos.');
             return;
         }
         error(1, '');
