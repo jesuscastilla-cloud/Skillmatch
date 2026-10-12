@@ -2882,6 +2882,59 @@ footer.pie > .container { position: relative; z-index: 1; }
     border-top: 1px solid var(--hairline-soft);
 }
 
+/* ---------- 20b. Politica de tratamiento de datos ---------- */
+
+.politica { padding: var(--s7) 0 var(--s9); }
+.politica-texto { max-width: 760px; margin: 0 auto; }
+.politica-version { font-size: var(--t-sm); font-weight: 600; color: var(--ink-muted); }
+.politica-texto h1 { margin-top: var(--s2); font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.6rem); }
+.politica-entrada { margin-top: var(--s3); font-size: var(--t-md); line-height: 1.6; color: var(--ink-3); }
+.politica-texto section { margin-top: var(--s7); scroll-margin-top: 96px; }
+.politica-texto h2 { font-size: var(--t-xl); }
+.politica-texto h3 { margin-top: var(--s5); font-size: var(--t-md); }
+.politica-texto p, .politica-texto li { line-height: 1.65; color: var(--ink-2); }
+.politica-texto section p { margin-top: var(--s3); }
+.politica-texto section ul { margin-top: var(--s3); padding-left: var(--s5); }
+.politica-texto section li + li { margin-top: var(--s2); }
+/* Aviso de borrador: faltan los datos del responsable */
+.politica-borrador {
+    display: flex; gap: var(--s3); align-items: flex-start;
+    margin-top: var(--s5);
+    padding: var(--s4) var(--s5);
+    border-radius: var(--r-md);
+    background: var(--sol-soft); color: var(--ink);
+}
+.politica-borrador .ico { flex: 0 0 auto; margin-top: 2px; color: var(--sol-deep); }
+.politica-borrador p { color: var(--ink); line-height: 1.55; }
+.por-completar { padding: 1px 6px; border-radius: 6px; background: var(--sol-soft); color: var(--sol-deep); font-weight: 700; white-space: nowrap; }
+/* Indice */
+.politica-indice {
+    margin-top: var(--s6);
+    padding: var(--s5);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+}
+.politica-indice h2 { font-size: var(--t-md); }
+.politica-indice ol { margin-top: var(--s3); padding-left: var(--s5); columns: 2; column-gap: var(--s6); }
+.politica-indice li { break-inside: avoid; padding: 3px 0; }
+.politica-indice a, .politica-texto section a { color: var(--sea-deep); }
+/* Ficha del responsable */
+.politica-ficha {
+    display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: var(--s3) var(--s5);
+    margin-top: var(--s4);
+    padding: var(--s5);
+    border-radius: var(--r-lg);
+    background: var(--surface-sunk);
+}
+.politica-ficha dt { font-weight: 600; color: var(--ink); }
+.politica-ficha dd { margin: 0; color: var(--ink-2); }
+@media (max-width: 600px) {
+    .politica-indice ol { columns: 1; }
+    .politica-ficha { grid-template-columns: 1fr; gap: var(--s1); }
+    .politica-ficha dd + dt { margin-top: var(--s3); }
+}
+
 /* ---------- 21. Oportunidades ---------- */
 
 .opportunities-header {

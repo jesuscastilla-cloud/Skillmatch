@@ -141,6 +141,27 @@ piramidales y sin exigir fotos.
    ustedes; sin ellos la página no debe publicarse como definitiva.
 5. **Avisos de moderación** en la ventana de oferta: sin datos de contacto en la descripción.
 
+### Avance (2026-10-12): las 5 están hechas
+
+1. **Fecha límite obligatoria:** "Recibir postulaciones hasta", 30 días por defecto y como máximo 6 meses
+   desde hoy; no deja publicar sin fecha ni con una más lejana. La fecha se calcula con la hora de Colombia.
+2. **No discriminación:** al publicar o editar, si el título, la descripción, los requisitos, las
+   responsabilidades, los beneficios, la duración o las habilidades piden una edad, un sexo, un estado civil,
+   no tener hijos, una foto o "buena presencia", la vacante no se publica y se dice qué frase cambiar. Lo
+   legítimo pasa: "3 años de experiencia", "mayor de edad", "experiencia en fotografía", "clientes de todas
+   las edades" (32 frases de prueba, ninguna falla).
+3. **"Tengo 18 años o más"** en el registro de personas, obligatoria.
+4. **Política de tratamiento de datos** en `politica-datos.html` (responsable, datos, finalidades, quién los
+   ve, datos sensibles y menores, derechos, cómo ejercerlos con los plazos de ley, dónde se guardan,
+   cuánto tiempo, cambios). Enlazada desde las dos casillas de autorización (se abre en otra pestaña para no
+   perder el formulario) y desde el pie de todas las páginas. **Queda en borrador:** faltan los datos del
+   responsable (razón social, NIT, dirección, correo y teléfono) y la revisión de un abogado.
+5. **Sin datos de contacto en la vacante:** correos, celulares, teléfonos fijos y WhatsApp bloquean la
+   publicación, con el porqué (las personas se postulan y escriben por SkillMatch).
+
+Lo que el frontend no puede garantizar (se puede saltar llamando a la API directamente) y debe repetir
+el backend: fecha límite con tope de 6 meses y las reglas de no discriminación y de contacto.
+
 ## Qué necesita el backend (Jesús)
 
 - **Persona:** `tipoDocumento`, `numeroDocumento` (único), `fechaNacimiento`, `sexo`, lugar de
@@ -153,6 +174,11 @@ piramidales y sin exigir fotos.
   (RUES o manual) antes de dejar publicar.
 - **Vacante:** `cargo` (ocupación), `cantidadVacantes`, `nivelEstudios`, `profesion`, `departamento`,
   experiencia en meses y `expirationDate` obligatoria con tope de 6 meses en el servidor.
+- **Para que se cumpla la política de datos:** `GET /users/{id}` entrega el correo y el teléfono de
+  cualquier persona a quien haya iniciado sesión, y la política dice que solo los ve la empresa a la que
+  te postulas (**urgente**). Falta borrar la cuenta (no hay `DELETE /users/{id}`): hoy la supresión solo
+  se puede pedir por correo. Guardar la prueba de cada autorización (fecha, versión de la política y la
+  casilla de mayoría de edad).
 - **Legal y operación:** decidir la figura (agencia privada lucrativa o sin ánimo de lucro) y tramitar
   la **autorización ante la Unidad del SPE** antes de operar con usuarios reales; reglamento de
   prestación de servicios público; política de tratamiento de datos; guardar la prueba de cada

@@ -1047,7 +1047,9 @@
             ['index.html#como-funciona', 'Cómo funciona'],
             ['index.html#mapa-cartagena', 'Cartagena por zonas'],
             ['dashboard.html', 'Indicadores del mercado'],
-            ['index.html#innovacion', 'Lo que viene']
+            ['index.html#innovacion', 'Lo que viene'],
+            // La Ley 1581 pide que la politica de datos este siempre a la mano
+            ['politica-datos.html', 'Política de datos']
         ] }
     ];
 

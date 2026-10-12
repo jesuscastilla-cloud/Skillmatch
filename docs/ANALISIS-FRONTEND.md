@@ -190,6 +190,10 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   postulaciones" abre "Mis postulaciones" con todas y deja retirar las que siguen en proceso, con la
   confirmación en la misma ventana (sin `confirm()` del navegador). `SkillMatchUI.ventana()` crea ventanas
   de la marca desde JS para lo que venga.
+- **Mejoras legales (hecho):** fecha límite obligatoria de máximo 6 meses en la vacante, vacantes sin
+  edad, sexo, estado civil ni foto, sin datos de contacto, casilla "Tengo 18 años o más" y página de
+  política de tratamiento de datos (borrador, enlazada desde los registros y el pie). Detalle en
+  `docs/REGISTRO-Y-MARCO-LEGAL.md`.
 
 ## Orden propuesto (solo frontend)
 
