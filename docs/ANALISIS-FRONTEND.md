@@ -168,6 +168,16 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   los mismos filtros y orden, y también con `?guardadas=1`), y Mi perfil tiene la tarjeta "Vacantes
   guardadas" con las 3 últimas, "Quitar" y el enlace a todas. Una guardada que ya cerró dice "Ya no
   recibe postulaciones" en vez de "Postularme". Al guardar, un aviso dice dónde encontrarla.
+- **Resultados de la portada en carrusel (hecho, idea de Luis):** al buscar en la portada salen las 10
+  vacantes que más encajan con la persona: la del centro de frente y completa, las de los lados inclinadas
+  como vista previa. Se mueve con flechas, puntos, teclado, arrastrando, deslizando el dedo, con el touchpad
+  y tocando la de al lado; en el celular también es 3D. El movimiento lo dibuja el navegador en su propio hilo
+  (Web Animations), así se ve fluido en el celular. Debajo, "Ver todas en Vacantes" lleva la búsqueda
+  (`oportunidades.html?q=`, que Vacantes ahora busca desde la primera carga). El carrusel es `SkillMatchUI.carrusel` (ui.js, sección 18)
+  y sus estilos la sección 21b de app.css. De paso: la portada nunca mostraba el % (esperaba uno del backend
+  que no llega); ahora se calcula con las habilidades de la persona, igual que en Vacantes. "Postularme"
+  (y las vacantes de la paleta Ctrl+K) llevaban a Vacantes buscando por el título y salían todas las que se
+  llamaran igual; ahora abren esa vacante.
 
 ## Orden propuesto (solo frontend)
 

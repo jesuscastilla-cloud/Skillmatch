@@ -51,10 +51,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Las habilidades y las postulaciones se piden a la vez que las vacantes;
     // la lista se pinta una sola vez, ya con el % y "Ya te postulaste"
     userSkillsReady = Promise.all([loadUserSkills(), loadAppliedJobs(), loadSavedJobs()]);
+    const parametros = new URLSearchParams(window.location.search);
     // Desde "Vacantes guardadas" del perfil se llega con ?guardadas=1
-    if (new URLSearchParams(window.location.search).get('guardadas') === '1' && sesion() && !esEmpresa()) {
+    if (parametros.get('guardadas') === '1' && sesion() && !esEmpresa()) {
         paginacion.modo = 'guardadas';
         marcarVista('guardadas');
+    } else if ((parametros.get('q') || '').trim()) {
+        // Desde la portada ("Ver todas en Vacantes") y la paleta de comandos
+        // llega la búsqueda con ?q=. Se busca desde la primera carga (antes
+        // ui.js esperaba a que cargara la lista completa y luego buscaba: dos
+        // consultas y la lista parpadeaba)
+        const buscada = parametros.get('q').trim();
+        const campo = document.getElementById('searchInput');
+        if (campo) campo.value = buscada;
+        paginacion.modo = 'busqueda';
+        paginacion.query = buscada;
     }
     loadJobs();
     setupEventListeners();

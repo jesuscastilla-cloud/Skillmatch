@@ -1,7 +1,7 @@
 /* =====================================================================
  *  SkillMatch — capa de interfaz
  *
- *  Se encarga de siete cosas, y de nada mas:
+ *  Se encarga de ocho cosas, y de nada mas:
  *    1. Iconos SVG (reemplazan a los emojis, se ven igual en todos lados)
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
@@ -10,6 +10,7 @@
  *       una baraja) y onda al hacer clic
  *    6. Listas desplegables de la marca en lugar de las nativas (data-lista)
  *    7. Campo de etiquetas para habilidades (SkillMatchUI.etiquetas)
+ *    8. Carrusel de vacantes de la portada (SkillMatchUI.carrusel)
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -776,7 +777,7 @@
             opciones.push({
                 grupo: 'Vacantes', ico: 'briefcase', titulo: v.title,
                 detalle: [v.companyName || (v.company && v.company.name), v.location].filter(Boolean).join(' · '),
-                href: 'oportunidades.html?q=' + encodeURIComponent(v.title)
+                href: 'oportunidades.html?jobId=' + encodeURIComponent(v.id)
             });
         });
         accionesFijas().forEach(function (a) {
@@ -900,25 +901,6 @@
         const li = document.createElement('li');
         li.appendChild(boton);
         toggle.parentElement.parentElement.insertBefore(li, toggle.parentElement);
-    }
-
-    /** oportunidades.html?q=texto: llena el buscador y lanza la busqueda. */
-    function busquedaDesdeUrl() {
-        const q = new URLSearchParams(location.search).get('q');
-        const campo = document.getElementById('searchInput');
-        if (!q || !campo) return;
-        campo.value = q;
-        // Se espera a que oportunidades.js pinte la lista inicial; si se busca
-        // antes, esa lista llega despues y tapa el resultado de la busqueda.
-        const inicio = Date.now();
-        const espera = setInterval(function () {
-            const listo = document.querySelector('.opportunity-card, .no-results, .empty-state, .error-message');
-            if (listo || Date.now() - inicio > 6000) {
-                clearInterval(espera);
-                campo.value = q;
-                campo.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        }, 150);
     }
 
     /* ---------- 13. Tooltips animados ---------- */
@@ -1552,6 +1534,460 @@
         };
     };
 
+    /* ---------- 18. Carrusel de vacantes ---------- */
+
+    // Resultados de la busqueda de la portada. La tarjeta del centro va de
+    // frente y completa, para que se pueda leer; las de los lados se inclinan,
+    // se alejan y se oscurecen como vista previa. Se mueve con las flechas, los
+    // puntos, el teclado (izquierda, derecha, Inicio, Fin), arrastrando con el
+    // mouse, deslizando el dedo, con el gesto horizontal del touchpad y al tocar
+    // una tarjeta de los lados.
+    //
+    // La posicion es un numero continuo (2,4 = entre la tercera y la cuarta).
+    // Al tocar o soltar, el recorrido de cada tarjeta se le entrega al navegador
+    // de una vez (Web Animations) y el lo dibuja en su propio hilo: sigue suave
+    // aunque el celular este ocupado. Mientras se arrastra, la tarjeta sigue al
+    // dedo directamente. Solo se animan transform y opacity.
+
+    const CARRUSEL_CELULAR = window.matchMedia('(max-width: 700px)');
+    const CARRUSEL_ANIMA = typeof Element.prototype.animate === 'function';
+    // Curva de frenado: arranca con decision y frena suave. La misma en CSS
+    // (para el navegador) y en JS (para saber donde va el carrusel si llega
+    // otro toque a mitad de camino)
+    const CARRUSEL_CURVA = 'cubic-bezier(.25, 1, .5, 1)';
+    const carruselFrenado = curvaBezier(0.25, 1, 0.5, 1);
+
+    /** Valor de una curva cubic-bezier de CSS para un tiempo x (0 a 1). */
+    function curvaBezier(x1, y1, x2, y2) {
+        const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+        const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+        function X(t) { return ((ax * t + bx) * t + cx) * t; }
+        function Y(t) { return ((ay * t + by) * t + cy) * t; }
+        function dX(t) { return (3 * ax * t + 2 * bx) * t + cx; }
+        return function (x) {
+            if (x <= 0) return 0;
+            if (x >= 1) return 1;
+            let t = x;
+            for (let k = 0; k < 8; k++) {
+                const error = X(t) - x;
+                if (Math.abs(error) < 1e-5) break;
+                const pendiente = dX(t);
+                if (Math.abs(pendiente) < 1e-6) break;
+                t = Math.min(1, Math.max(0, t - error / pendiente));
+            }
+            return Y(t);
+        };
+    }
+
+    function dosCifras(n) { return String(n).padStart(2, '0'); }
+
+    /** Marco del carrusel: escena, contador, puntos y flechas alrededor de las
+     *  tarjetas (cada una un .carrusel-tarjeta). */
+    UI.carruselMarco = function (tarjetasHtml, total, etiqueta) {
+        const tactil = window.matchMedia('(hover: none)').matches;
+        return '<div class="carrusel" role="region" aria-roledescription="carrusel" aria-label="' + escaparHtml(etiqueta) + '">' +
+                 '<div class="carrusel-escena"><div class="carrusel-pista">' + tarjetasHtml + '</div></div>' +
+                 '<div class="container"><div class="carrusel-barra">' +
+                   '<p class="carrusel-cuenta" aria-hidden="true"><strong>01</strong><span>/ ' + dosCifras(total) + '</span></p>' +
+                   '<div class="carrusel-centro">' +
+                     '<p class="carrusel-ayuda">' + (tactil ? 'Desliza para ver más' : 'Arrastra · Flechas · Teclado') + '</p>' +
+                     '<div class="carrusel-puntos" role="group" aria-label="Elegir vacante"></div>' +
+                   '</div>' +
+                   '<div class="carrusel-flechas">' +
+                     '<button type="button" class="carrusel-flecha" data-carrusel="anterior" aria-label="Vacante anterior">' + svgIcon('chevron') + '</button>' +
+                     '<button type="button" class="carrusel-flecha siguiente" data-carrusel="siguiente" aria-label="Vacante siguiente">' + svgIcon('chevron') + '</button>' +
+                   '</div>' +
+                 '</div></div>' +
+                 '<p class="sr-only" data-carrusel="anuncio" aria-live="polite"></p>' +
+               '</div>';
+    };
+
+    /** Da vida a un .carrusel (hecho con UI.carruselMarco).
+     *  Devuelve { ir(indice), actual(), destruir() }. */
+    UI.carrusel = function (raiz, opciones) {
+        opciones = opciones || {};
+        const pista = raiz.querySelector('.carrusel-pista');
+        const tarjetas = Array.from(pista.querySelectorAll('.carrusel-tarjeta'));
+        const total = tarjetas.length;
+        const anterior = raiz.querySelector('[data-carrusel="anterior"]');
+        const siguiente = raiz.querySelector('[data-carrusel="siguiente"]');
+        const puntos = raiz.querySelector('.carrusel-puntos');
+        const cuenta = raiz.querySelector('.carrusel-cuenta strong');
+        const anuncio = raiz.querySelector('[data-carrusel="anuncio"]');
+        if (!total) return null;
+
+        let pos = 0;          // posicion continua cuando no hay animacion
+        let destino = 0;      // a que tarjeta se va
+        let activa = -1;      // la que cuenta como actual (contador, puntos, foco)
+        let viaje = null;     // la animacion en curso
+        let pintarPendiente = false;
+        let arrastre = null;  // { x0, y0, dx, id, decidido, inicio, paso, muestras }
+        let ignorarClic = false;
+        let ruedaAcumulada = 0;
+        let ruedaBloqueada = 0;
+
+        // Velo de cada tarjeta: las de los lados se oscurecen con la distancia
+        const velos = tarjetas.map(function (t) {
+            const v = document.createElement('span');
+            v.className = 'carrusel-velo';
+            v.setAttribute('aria-hidden', 'true');
+            t.appendChild(v);
+            return v;
+        });
+
+        puntos.innerHTML = tarjetas.map(function (t, i) {
+            return '<button type="button" class="carrusel-punto" data-indice="' + i + '" aria-label="Ir a la vacante ' + (i + 1) + ' de ' + total + '"></button>';
+        }).join('');
+        // Guardados una vez: buscarlos en cada cambio le costaba al celular
+        const listaPuntos = Array.from(puntos.children);
+        const botones = tarjetas.map(function (t) { return Array.from(t.querySelectorAll('a, button')); });
+        // Lo ultimo que se escribio en cada tarjeta: solo se escribe lo que cambia
+        const escrito = tarjetas.map(function () { return {}; });
+        raiz.classList.toggle('carrusel-una', total === 1);
+
+        function limitar(i) { return Math.max(0, Math.min(total - 1, i)); }
+        // Mas alla de esta distancia la tarjeta no se ve. En el celular solo se
+        // ven la del centro y las dos vecinas
+        function lejos() { return CARRUSEL_CELULAR.matches ? 1.6 : 3.2; }
+
+        /** Lugar de una tarjeta segun su distancia al centro (con decimales). */
+        function estilo(d) {
+            const ad = Math.min(Math.abs(d), 3);
+            const lado = Math.sign(d);
+            let x, giro, z, escala, opacidad, velo;
+            if (CARRUSEL_CELULAR.matches) {
+                // En el celular solo se asoman las vecinas, mas inclinadas
+                x = lado * (Math.min(ad, 1) * 54 + Math.max(ad - 1, 0) * 20);
+                giro = -lado * Math.min(ad, 1) * 42;
+                z = -ad * 110;
+                escala = 1 - Math.min(ad, 2) * 0.07;
+                opacidad = ad <= 1.1 ? 1 : Math.max(0, (1.6 - ad) / 0.5);
+                velo = Math.min(ad, 1.5) * 0.3;
+            } else {
+                x = lado * (Math.min(ad, 1) * 58 + Math.max(ad - 1, 0) * 34);
+                giro = -lado * (Math.min(ad, 1) * 32 + Math.max(Math.min(ad, 2) - 1, 0) * 8);
+                z = -ad * 150;
+                escala = 1 - ad * 0.06;
+                opacidad = ad <= 2 ? 1 : Math.max(0, 3 - ad);
+                velo = Math.min(ad, 2) * 0.24;
+            }
+            return {
+                transform: 'translateX(' + x.toFixed(2) + '%) translateZ(' + z.toFixed(1) + 'px) rotateY(' + giro.toFixed(2) + 'deg) scale(' + escala.toFixed(4) + ')',
+                opacity: opacidad,
+                velo: velo
+            };
+        }
+
+        function poner(i, clave, elemento, propiedad, valor) {
+            if (escrito[i][clave] === valor) return;
+            escrito[i][clave] = valor;
+            elemento.style[propiedad] = valor;
+        }
+
+        // El orden cambia a mitad de camino y solo entonces (cambiarlo en cada
+        // cuadro obligaba al celular a reordenar las capas)
+        function ordenar(p) {
+            tarjetas.forEach(function (t, i) {
+                poner(i, 'z', t, 'zIndex', String(100 - Math.round(Math.abs(i - p)) * 10));
+            });
+        }
+
+        /** Escribe en cada tarjeta su lugar para la posicion p. */
+        function pintar(p) {
+            const limite = lejos();
+            tarjetas.forEach(function (t, i) {
+                const d = i - p;
+                const visible = Math.abs(d) <= limite;
+                poner(i, 'vis', t, 'visibility', visible ? '' : 'hidden');
+                if (!visible) return;
+                const e = estilo(d);
+                poner(i, 'transform', t, 'transform', e.transform);
+                poner(i, 'opacidad', t, 'opacity', e.opacity.toFixed(2));
+                poner(i, 'velo', velos[i], 'opacity', e.velo.toFixed(2));
+            });
+            ordenar(p);
+        }
+
+        // Un solo pintado por cuadro aunque lleguen varios movimientos del dedo
+        function pedirPintado() {
+            if (pintarPendiente) return;
+            pintarPendiente = true;
+            requestAnimationFrame(function () { pintarPendiente = false; pintar(pos); });
+        }
+
+        /** Donde va el carrusel ahora mismo, haya o no animacion. */
+        function posicionActual() {
+            if (!viaje) return pos;
+            const t = Math.min(1, Math.max(0, (performance.now() - viaje.inicio) / viaje.duracion));
+            return viaje.desde + (viaje.hasta - viaje.desde) * carruselFrenado(t);
+        }
+
+        /** Para la animacion donde va (sin saltos) y deja las tarjetas ahi. */
+        function detener() {
+            if (!viaje) return;
+            pos = posicionActual();
+            const parado = viaje;
+            viaje = null;
+            cancelAnimationFrame(parado.cuadro);
+            // Primero se escribe donde va y luego se quita la animacion: no salta
+            pintar(pos);
+            parado.animaciones.forEach(function (a) { a.cancel(); });
+        }
+
+        /** Lleva el carrusel a `hacia`. `duracion` (ms) es opcional: al soltar
+         *  un deslizamiento se calcula con la velocidad del dedo. */
+        function viajar(hacia, duracion) {
+            const desde = posicionActual();
+            detener();
+            pos = desde;
+            const distancia = Math.abs(hacia - desde);
+            if (reduceMotion || !CARRUSEL_ANIMA || distancia < 0.001) {
+                // Sin deslizar: cambia de lugar al instante
+                pos = hacia;
+                pintar(pos);
+                return;
+            }
+            duracion = duracion || Math.min(950, 320 + 200 * Math.sqrt(distancia));
+
+            // Entre dos medias tarjetas cada parte del movimiento (desplazamiento,
+            // profundidad, giro, tamano) avanza en linea recta: basta con darle
+            // al navegador esos puntos y la curva de frenado
+            const sentido = Math.sign(hacia - desde);
+            const marcas = [desde];
+            let m = sentido > 0 ? Math.floor(desde * 2 + 1) / 2 : Math.ceil(desde * 2 - 1) / 2;
+            while ((hacia - m) * sentido > 1e-6) { marcas.push(m); m += sentido * 0.5; }
+            marcas.push(hacia);
+            const limite = lejos();
+            const animaciones = [];
+            const tiempo = { duration: duracion, easing: CARRUSEL_CURVA, fill: 'both' };
+            tarjetas.forEach(function (t, i) {
+                if (!marcas.some(function (q) { return Math.abs(i - q) <= limite; })) return;
+                const recorrido = marcas.map(function (q) { return { offset: (q - desde) / (hacia - desde), e: estilo(i - q) }; });
+                poner(i, 'vis', t, 'visibility', '');
+                animaciones.push(t.animate(recorrido.map(function (r) {
+                    return { offset: r.offset, transform: r.e.transform, opacity: r.e.opacity.toFixed(3) };
+                }), tiempo));
+                animaciones.push(velos[i].animate(recorrido.map(function (r) {
+                    return { offset: r.offset, opacity: r.e.velo.toFixed(3) };
+                }), tiempo));
+            });
+
+            const este = { desde: desde, hasta: hacia, inicio: performance.now(), duracion: duracion, animaciones: animaciones, cuadro: 0 };
+            viaje = este;
+            // Lo unico que se hace en cada cuadro: reordenar a mitad de camino
+            (function seguirOrden() {
+                if (viaje !== este) return;
+                ordenar(posicionActual());
+                if (performance.now() - este.inicio < este.duracion) este.cuadro = requestAnimationFrame(seguirOrden);
+            })();
+            // Al terminar, la posicion final queda escrita en las tarjetas
+            Promise.all(animaciones.map(function (a) { return a.finished; })).then(function () {
+                if (viaje !== este) return;
+                viaje = null;
+                pos = hacia;
+                pintar(pos);
+                animaciones.forEach(function (a) { a.cancel(); });
+            }).catch(function () { /* se cancelo porque llego otro movimiento */ });
+        }
+
+        /** El numero del contador entra desde abajo. */
+        function reanimar(el, texto) {
+            if (!el || el.textContent === texto) return;
+            el.textContent = texto;
+            if (reduceMotion || !CARRUSEL_ANIMA) return;
+            el.animate([{ opacity: 0, transform: 'translateY(40%)' }, { opacity: 1, transform: 'none' }],
+                { duration: 420, easing: 'cubic-bezier(.2, .8, .2, 1)' });
+        }
+
+        function estadoTarjeta(i, es) {
+            if (i < 0 || i >= total) return;
+            tarjetas[i].classList.toggle('es-activa', es);
+            tarjetas[i].setAttribute('aria-hidden', String(!es));
+            botones[i].forEach(function (el) { el.tabIndex = es ? 0 : -1; });
+            listaPuntos[i].classList.toggle('activo', es);
+            listaPuntos[i].setAttribute('aria-current', es ? 'true' : 'false');
+        }
+
+        function marcarActiva(indice, anunciar) {
+            if (indice === activa && !anunciar) return;
+            const antes = activa;
+            activa = indice;
+            // Solo cambian dos tarjetas: la que se va y la que llega
+            estadoTarjeta(antes, false);
+            estadoTarjeta(activa, true);
+            // Si el foco estaba dentro de la tarjeta que se fue, pasa a la nueva
+            if (antes >= 0 && antes !== activa && tarjetas[antes].contains(document.activeElement) && botones[activa][0]) {
+                botones[activa][0].focus({ preventScroll: true });
+            }
+            anterior.disabled = activa === 0;
+            siguiente.disabled = activa === total - 1;
+            reanimar(cuenta, dosCifras(activa + 1));
+            if (anunciar && anuncio) {
+                anuncio.textContent = 'Vacante ' + (activa + 1) + ' de ' + total + ': ' + (tarjetas[activa].dataset.resumen || '');
+            }
+            if (opciones.alCambiar) opciones.alCambiar(activa, tarjetas[activa]);
+        }
+
+        function ir(indice) {
+            destino = limitar(indice);
+            if (destino !== activa) marcarActiva(destino, true);
+            viajar(destino);
+        }
+
+        // Todas las tarjetas del alto de la mas alta: la pista no salta
+        function medir() {
+            let alto = 0;
+            tarjetas.forEach(function (t) { t.style.height = 'auto'; alto = Math.max(alto, t.offsetHeight); });
+            tarjetas.forEach(function (t) { t.style.height = ''; });
+            pista.style.setProperty('--alto', alto + 'px');
+        }
+
+        // ---- Controles ----
+        // Clics seguidos: cada uno suma desde el destino, no desde donde va
+        anterior.addEventListener('click', function () { ir(destino - 1); });
+        siguiente.addEventListener('click', function () { ir(destino + 1); });
+        puntos.addEventListener('click', function (e) {
+            const punto = e.target.closest('.carrusel-punto');
+            if (punto) ir(Number(punto.dataset.indice));
+        });
+
+        raiz.addEventListener('keydown', function (e) {
+            if (e.target.matches('input, textarea, select')) return;
+            const objetivo = { ArrowLeft: destino - 1, ArrowRight: destino + 1, Home: 0, End: total - 1 }[e.key];
+            if (objetivo === undefined) return;
+            e.preventDefault();
+            ir(objetivo);
+        });
+
+        // Tocar o hacer clic en una tarjeta de los lados la trae al centro (sin
+        // abrir sus enlaces)
+        pista.addEventListener('click', function (e) {
+            if (ignorarClic) { e.preventDefault(); e.stopPropagation(); return; }
+            const t = e.target.closest('.carrusel-tarjeta');
+            if (t && !t.classList.contains('es-activa')) {
+                e.preventDefault();
+                e.stopPropagation();
+                ir(tarjetas.indexOf(t));
+            }
+        }, true);
+
+        // ---- Arrastrar con el mouse o deslizar con el dedo ----
+        // Cuantos pixeles equivalen a pasar una tarjeta
+        function paso() { return tarjetas[0].offsetWidth * (CARRUSEL_CELULAR.matches ? 0.54 : 0.58); }
+        // Movimientos mas cortos que esto son un toque, no un arrastre: al
+        // tocar, el dedo casi siempre se corre unos pixeles
+        const UMBRAL = 10;
+
+        pista.addEventListener('dragstart', function (e) { e.preventDefault(); });
+        pista.addEventListener('pointerdown', function (e) {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            arrastre = { x0: e.clientX, y0: e.clientY, dx: 0, id: e.pointerId, decidido: false, inicio: 0, paso: 1, muestras: [] };
+        });
+        pista.addEventListener('pointermove', function (e) {
+            if (!arrastre || e.pointerId !== arrastre.id) return;
+            if (!arrastre.decidido) {
+                const dx = e.clientX - arrastre.x0;
+                const dy = e.clientY - arrastre.y0;
+                if (Math.abs(dx) < UMBRAL && Math.abs(dy) < UMBRAL) return;
+                // Si el gesto es vertical, es para mover la pagina
+                if (Math.abs(dy) > Math.abs(dx)) { arrastre = null; return; }
+                arrastre.decidido = true;
+                // Si iba en movimiento, lo agarra donde va
+                detener();
+                arrastre.inicio = pos;
+                arrastre.x0 = e.clientX;
+                // Medido una vez: leerlo en cada movimiento forzaba a recalcular la pagina
+                arrastre.paso = paso();
+                // Sigue recibiendo el movimiento aunque el puntero salga de la pista
+                try { pista.setPointerCapture(e.pointerId); } catch (err) { /* el puntero ya se solto */ }
+                raiz.classList.add('arrastrando');
+            }
+            arrastre.dx = e.clientX - arrastre.x0;
+            let nueva = arrastre.inicio - arrastre.dx / arrastre.paso;
+            // En la primera y la ultima cuesta mas, como un resorte
+            if (nueva < 0) nueva *= 0.35;
+            if (nueva > total - 1) nueva = total - 1 + (nueva - (total - 1)) * 0.35;
+            pos = nueva;
+            // Para medir la velocidad al soltar
+            const ahora = performance.now();
+            arrastre.muestras.push({ t: ahora, pos: pos });
+            while (arrastre.muestras.length > 2 && ahora - arrastre.muestras[0].t > 100) arrastre.muestras.shift();
+            // El contador sigue a la tarjeta que va quedando al centro
+            marcarActiva(limitar(Math.round(pos)), false);
+            pedirPintado();
+        });
+        function soltar(e) {
+            if (!arrastre || e.pointerId !== arrastre.id) return;
+            const fin = arrastre;
+            arrastre = null;
+            if (!fin.decidido) return; // fue un toque: el clic hace lo suyo
+            raiz.classList.remove('arrastrando');
+            ignorarClic = true;
+            setTimeout(function () { ignorarClic = false; }, 0);
+
+            // Velocidad de los ultimos 100 ms, en tarjetas por segundo
+            const primera = fin.muestras[0];
+            const ultima = fin.muestras[fin.muestras.length - 1];
+            const segundos = primera && ultima ? (ultima.t - primera.t) / 1000 : 0;
+            const vel = segundos > 0 ? (ultima.pos - primera.pos) / segundos : 0;
+            // Con impulso llega mas lejos, como al lanzar una tarjeta
+            let elegido = limitar(Math.round(pos + vel * 0.18));
+            // Un gesto corto pero claro tambien cambia de tarjeta
+            if (elegido === Math.round(fin.inicio) && Math.abs(fin.dx) > 30) elegido = limitar(Math.round(fin.inicio) + (fin.dx < 0 ? 1 : -1));
+            destino = elegido;
+            marcarActiva(destino, true);
+            // La animacion arranca a la velocidad que traia el dedo (la curva
+            // empieza 4 veces mas rapido que su promedio)
+            const falta = destino - pos;
+            let duracion;
+            if (Math.abs(vel) > 0.5 && Math.sign(vel) === Math.sign(falta)) {
+                duracion = Math.min(800, Math.max(260, 4 * Math.abs(falta) / Math.abs(vel) * 1000));
+            }
+            viajar(destino, duracion);
+        }
+        pista.addEventListener('pointerup', soltar);
+        pista.addEventListener('pointercancel', soltar);
+
+        // Gesto horizontal de dos dedos en el touchpad (el vertical mueve la pagina)
+        pista.addEventListener('wheel', function (e) {
+            if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+            e.preventDefault();
+            const ahora = performance.now();
+            if (ahora < ruedaBloqueada) return;
+            ruedaAcumulada += e.deltaX;
+            if (Math.abs(ruedaAcumulada) > 50) {
+                ir(destino + Math.sign(ruedaAcumulada));
+                ruedaAcumulada = 0;
+                ruedaBloqueada = ahora + 380;
+            }
+        }, { passive: false });
+
+        // ---- Tamano ----
+        let espera = 0;
+        function reacomodar() { detener(); pos = destino; medir(); pintar(pos); }
+        function alCambiarTamano() { clearTimeout(espera); espera = setTimeout(reacomodar, 120); }
+        window.addEventListener('resize', alCambiarTamano);
+        CARRUSEL_CELULAR.addEventListener('change', reacomodar);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(medir);
+
+        medir();
+        pintar(pos);
+        tarjetas.forEach(function (t, i) { estadoTarjeta(i, false); });
+        marcarActiva(0, false);
+
+        return {
+            ir: ir,
+            actual: function () { return activa; },
+            // Al volver a pintar los resultados: suelta lo que quedo escuchando
+            destruir: function () {
+                detener();
+                clearTimeout(espera);
+                window.removeEventListener('resize', alCambiarTamano);
+                CARRUSEL_CELULAR.removeEventListener('change', reacomodar);
+            }
+        };
+    };
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -1563,7 +1999,6 @@
         construirTabbar();
         construirInterruptorTema();
         paletaDeComandos();
-        busquedaDesdeUrl();
         tooltips();
         avisosPendientes();
         logoSegunTema(document.documentElement.getAttribute('data-theme'));

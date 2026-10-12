@@ -9,6 +9,10 @@ let datosReales = false;
 let totalVacantes = 0;      // las que hay publicadas (totalElements)
 let errorDeCarga = false;
 let cargaVacantes = null;   // la promesa de la carga, para pedirla una sola vez
+// Habilidades de la persona con sesion (nombres sin tildes ni mayusculas).
+// null = no se sabe (visitante, empresa o fallo la carga): entonces no hay %
+let habilidadesPersona = null;
+let carruselActual = null;  // el carrusel de resultados que se ve ahora
 
 async function loadSavedOpportunities() {
     if (!localStorage.getItem('userData')) return;
@@ -25,6 +29,19 @@ async function loadSavedOpportunities() {
     }
 }
 
+// Habilidades de la persona con sesion: con ellas se calcula que tanto encaja
+// cada vacante y el carrusel muestra primero las que mas encajan. (Antes la
+// portada esperaba un % del backend, que no lo manda: nunca habia % y "las
+// que mas encajan" eran simplemente las mas recientes.)
+async function cargarHabilidadesPersona() {
+    const datos = sesionActual();
+    if (!datos || !datos.id || datos.userType === 'empresa' || !localStorage.getItem('token')) return;
+    try {
+        const respuesta = await fetchWithAuth(`${API_BASE_URL}/users/${encodeURIComponent(datos.id)}/skills`);
+        if (respuesta.ok) habilidadesPersona = new Set((await respuesta.json()).map(h => sinTildes(h.name)));
+    } catch (e) { /* sin habilidades no hay %: salen las mas recientes */ }
+}
+
 // La API entrega paginas de maximo 50 vacantes ({ content: [...] }). Antes se
 // trataba la respuesta como una lista, fallaba sin avisar y la portada
 // mostraba 10 vacantes inventadas (oportunidades-mock.json, ya borrado).
@@ -38,7 +55,7 @@ function loadOportunidades() {
 }
 
 async function cargarVacantes() {
-    await loadSavedOpportunities();
+    await Promise.all([loadSavedOpportunities(), cargarHabilidadesPersona()]);
     const pagina = n => fetch(`${API_URL}?size=50&page=${n}`, { headers: { 'Accept': 'application/json' } })
         .then(r => { if (!r.ok) throw new Error(`API respondió ${r.status}`); return r.json(); });
     try {
@@ -78,10 +95,10 @@ function normalizeOportunidadFromApi(apiOpp) {
     const experience = resolveExperience(apiOpp.experienceLevel);
     const salaryValue = resolveSalaryValue(apiOpp.salaryMax, apiOpp.salaryMin);
     const salaryText = formatSalaryRange(apiOpp.salaryMin, apiOpp.salaryMax);
-    const durationText = apiOpp.duration || 'Duración no especificada';
-    const descriptionText = apiOpp.description || 'Esta oferta aún no tiene descripción detallada.';
+    const descriptionText = apiOpp.description || 'Esta vacante aún no tiene descripción detallada.';
     const skills = Array.isArray(apiOpp.skills) ? apiOpp.skills : [];
-    const matchScore = resolveMatchScore(apiOpp);
+    const coincidencia = calcularCoincidencia(skills);
+    const matchScore = resolveMatchScore(apiOpp) ?? (coincidencia ? coincidencia.pct : null);
 
     return {
         id: apiOpp.id,
@@ -96,12 +113,26 @@ function normalizeOportunidadFromApi(apiOpp) {
         salarioMin: typeof apiOpp.salaryMin === 'number' ? apiOpp.salaryMin : null,
         salarioMax: typeof apiOpp.salaryMax === 'number' ? apiOpp.salaryMax : null,
         salarioTexto: salaryText,
-        duracion: durationText,
         descripcion: descriptionText,
         habilidades: skills,
-        logo: '<i data-ico="building"></i>',
-        match: matchScore
+        match: matchScore,
+        coincidencia,
+        vacante: apiOpp
     };
+}
+
+// Que parte de las habilidades que pide la vacante tiene la persona (igual
+// que en Vacantes)
+function calcularCoincidencia(skills) {
+    if (!habilidadesPersona || !habilidadesPersona.size) return null;
+    const pedidas = [...new Set(skills.map(sinTildes).filter(Boolean))];
+    if (!pedidas.length) return null;
+    const tiene = pedidas.filter(h => habilidadesPersona.has(h)).length;
+    return { pct: Math.round(tiene / pedidas.length * 100), tiene, pedidas: pedidas.length };
+}
+
+function sinTildes(texto) {
+    return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
 // Clave de una ciudad para comparar sin importar como se escriba:
@@ -159,7 +190,7 @@ function formatSalaryRange(minValue, maxValue) {
     const max = typeof maxValue === 'number' ? maxValue : null;
 
     if (min === null && max === null) {
-        return 'Salario sin especificar';
+        return 'Salario a convenir';
     }
 
     if (min !== null && max !== null) {
@@ -189,25 +220,12 @@ function normalizeText(value) {
         .replace(/^_|_$/g, '');
 }
 
+// Primera letra en mayuscula (nombres de ciudad en la lista "Lugar")
 function capitalize(value) {
     if (!value) return '';
     const text = value.toString();
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
-
-// Mapeo de modalidades
-const modalityMap = {
-    'presencial': 'Presencial',
-    'virtual': 'Remoto',
-    'hibrida': 'Híbrido'
-};
-
-// Mapeo de experiencia
-const experienceMap = {
-    'junior': 'Hasta 1 año de experiencia',
-    'mid': '1 a 3 años de experiencia',
-    'senior': 'Más de 3 años de experiencia'
-};
 
 // Los valores de la lista vienen en miles de pesos: "1000-2000" es de
 // $1.000.000 a $2.000.000 y "5000+" es mas de $5.000.000. (Antes se
@@ -309,20 +327,6 @@ function contarEnListas() {
     });
 }
 
-// Normalizar tipo de oportunidad para mostrar textos homogéneos
-function formatTipo(tipo) {
-    if (!tipo) return 'Empleo';
-    const normalized = normalizeText(tipo);
-    if (normalized === 'practicante' || normalized === 'practica' || normalized === 'internship') {
-        return 'Práctica profesional';
-    }
-    if (normalized === 'freelance' || normalized === 'independiente') {
-        return 'Independiente';
-    }
-    // corregir posibles valores como "empleotime" a un texto limpio
-    return 'Empleo tiempo completo';
-}
-
 // Texto de la API dentro del HTML: una empresa no debe poder meter codigo
 // en la portada con el titulo o la descripcion de su vacante
 function escapar(texto) {
@@ -333,63 +337,81 @@ function sesionActual() {
     try { return JSON.parse(localStorage.getItem('userData') || 'null'); } catch (e) { return null; }
 }
 
-// Renderizar tarjeta de oportunidad
-function renderOportunidadCard(opp) {
-    const isSaved = savedOpportunityIds.has(opp.id);
-    const saveLabel = isSaved ? '<i data-ico="heart"></i> Guardado' : 'Guardar';
-    const saveClass = isSaved ? 'btn-save saved' : 'btn-save';
+// ---- Resultados en carrusel ----
+// Las 10 que mas encajan, una al frente y las demas como vista previa
+// (SkillMatchUI.carrusel, en ui.js). Debajo, "Ver todas en Vacantes" para
+// compararlas y filtrarlas. Los textos son los mismos de la pagina de Vacantes.
+const MAXIMO_CARRUSEL = 10;
+const TIPOS_VACANTE = { empleo: 'Empleo', practica: 'Práctica', freelance: 'Independiente' };
+const MODALIDADES_VACANTE = { presencial: 'Presencial', remoto: 'Remoto', hibrido: 'Híbrido' };
+const EXPERIENCIA_VACANTE = { 'sin-experiencia': 'Sin experiencia', junior: 'Hasta 1 año', 'semi-senior': '1 a 3 años', senior: 'Más de 3 años' };
+
+// Habilidades que pide: primero las que la persona ya tiene, marcadas
+function etiquetasCarrusel(opp) {
+    const vistas = new Map();
+    opp.habilidades.forEach(h => { const clave = sinTildes(h); if (clave && !vistas.has(clave)) vistas.set(clave, String(h).trim()); });
+    const lista = [...vistas.entries()];
+    if (habilidadesPersona) lista.sort((a, b) => habilidadesPersona.has(b[0]) - habilidadesPersona.has(a[0]));
+    const visibles = lista.slice(0, 4).map(([clave, nombre]) => {
+        const tiene = habilidadesPersona && habilidadesPersona.has(clave);
+        return `<span class="cv-habilidad${tiene ? ' tiene' : ''}">${tiene ? '<i data-ico="check" class="ico-sm"></i>' : ''}${escapar(nombre)}</span>`;
+    });
+    if (lista.length > 4) visibles.push(`<span class="cv-habilidad">+${lista.length - 4}</span>`);
+    return visibles.join('');
+}
+
+function tarjetaCarrusel(opp, indice, total) {
+    const v = opp.vacante;
+    const m = opp.coincidencia;
     const esEmpresa = (sesionActual() || {}).userType === 'empresa';
-
-    const modalityLabel = modalityMap[opp.modalidad] || capitalize(opp.modalidad) || 'Modalidad no especificada';
-    const experienceLabel = experienceMap[opp.experiencia] || capitalize(opp.experiencia) || 'Experiencia no especificada';
-    const skills = Array.isArray(opp.habilidades) ? opp.habilidades : [];
-    const anillo = typeof opp.match === 'number'
-        ? `<div class="result-match">
-                    <div class="match-ring" data-pct="${opp.match}" role="img"
-                         aria-label="${opp.match} por ciento de coincidencia con tu perfil"></div>
-                </div>`
+    const guardada = savedOpportunityIds.has(opp.id);
+    const anillo = m
+        ? `<div class="match-ring" data-pct="${m.pct}" role="img" title="Tienes ${m.tiene} de ${m.pedidas} habilidades que pide"
+                aria-label="${m.pct} por ciento: tienes ${m.tiene} de ${m.pedidas} habilidades que pide"></div>`
         : '';
-
+    const resumen = `${opp.titulo}, ${opp.empresa}${m ? `, ${m.pct} % de coincidencia` : ''}`;
+    // Abre esa vacante en Vacantes (antes "Postularme" buscaba por el titulo
+    // y salian todas las que se llamaran igual, no la elegida)
+    const ver = `<a class="btn-apply" href="oportunidades.html?jobId=${encodeURIComponent(opp.id)}">${esEmpresa ? 'Ver vacante' : 'Ver y postularme'}</a>`;
+    const guardar = esEmpresa ? ''
+        : `<button type="button" class="btn-save${guardada ? ' saved' : ''}" data-id="${escapar(opp.id)}">${guardada ? '<i data-ico="heart"></i> Guardada' : '<i data-ico="save"></i> Guardar'}</button>`;
     return `
-        <div class="result-card">
-            <div class="result-header">
-                <div class="result-company-info">
-                    <span class="result-logo"><i data-ico="building"></i></span>
-                    <div>
-                        <h3 class="result-title">${escapar(opp.titulo)}</h3>
-                        <p class="result-company">${escapar(opp.empresa)}</p>
+        <article class="carrusel-tarjeta" role="group" aria-roledescription="vacante" aria-label="${indice + 1} de ${total}" data-resumen="${escapar(resumen)}">
+            <div class="cv-tarjeta">
+                <div class="cv-cabeza">
+                    <span class="cv-logo" aria-hidden="true">${escapar(opp.empresa.charAt(0))}</span>
+                    <div class="cv-titulos">
+                        <h3>${escapar(opp.titulo)}</h3>
+                        <p>${escapar(opp.empresa)}</p>
                     </div>
+                    ${anillo}
                 </div>
-                ${anillo}
+                ${indice === 0 && m && m.pct > 0 ? '<span class="cv-insignia"><i data-ico="star" class="ico-sm"></i> La que más encaja contigo</span>' : ''}
+                <div class="cv-meta">
+                    <span><i data-ico="pin"></i> ${escapar(opp.locationLabel)}</span>
+                    <span><i data-ico="briefcase"></i> ${TIPOS_VACANTE[sinTildes(v.type)] || 'Empleo'}</span>
+                    <span><i data-ico="desktop"></i> ${MODALIDADES_VACANTE[sinTildes(v.modality)] || 'Modalidad a convenir'}</span>
+                    <span><i data-ico="cap"></i> ${EXPERIENCIA_VACANTE[v.experienceLevel] || 'Experiencia a convenir'}</span>
+                </div>
+                <p class="cv-salario"><i data-ico="money"></i> ${escapar(opp.salarioTexto)}${opp.salarioMin || opp.salarioMax ? ' <small>al mes</small>' : ''}</p>
+                <p class="cv-descripcion">${escapar(opp.descripcion)}</p>
+                <div class="cv-habilidades">${etiquetasCarrusel(opp)}</div>
+                <div class="cv-pie">
+                    <span class="cv-fecha">${v.postedDate ? 'Publicada: ' + escapar(formatDate(v.postedDate)) : ''}</span>
+                    <div class="cv-acciones">${guardar}${ver}</div>
+                </div>
             </div>
+        </article>`;
+}
 
-            <p class="result-description">${escapar(opp.descripcion)}</p>
-
-            <div class="result-meta">
-                <span class="meta-item"><i data-ico="pin"></i> ${escapar(opp.locationLabel || 'Ubicación no especificada')}</span>
-                <span class="meta-item"><i data-ico="briefcase"></i> ${formatTipo(opp.tipo)}</span>
-                <span class="meta-item"><i data-ico="desktop"></i> ${escapar(modalityLabel)}</span>
-                <span class="meta-item"><i data-ico="trending"></i> ${escapar(experienceLabel)}</span>
-                <span class="meta-item"><i data-ico="clock"></i> ${escapar(opp.duracion)}</span>
-            </div>
-
-            <div class="result-salary">
-                <strong><i data-ico="money"></i> ${escapar(opp.salarioTexto)}</strong>
-            </div>
-
-            <div class="result-skills">
-                ${skills.length > 0 ? skills.map(skill => `<span class="skill-tag">${escapar(skill)}</span>`).join('') : '<span class="skill-tag empty">Habilidades no especificadas</span>'}
-            </div>
-
-            <div class="result-actions">
-                <button class="btn-apply" data-titulo="${escapar(opp.titulo)}">Postularme</button>
-                ${esEmpresa ? '' : `<button class="${saveClass}" data-id="${escapar(opp.id)}">${saveLabel}</button>`}
-            </div>
-        </div>
-    `;
+// El carrusel anterior deja de escuchar antes de pintar otra cosa
+function soltarCarrusel() {
+    if (carruselActual) carruselActual.destruir();
+    carruselActual = null;
 }
 
 function mostrarResultados(container, html) {
+    soltarCarrusel();
     container.innerHTML = '<div class="container">' + html + '</div>';
     container.style.display = 'block';
     container.classList.remove('hidden');
@@ -412,7 +434,7 @@ function renderResults(oportunidades, criteria) {
     if (oportunidades.length === 0) {
         mostrarResultados(container, `
             <div class="no-results">
-                <h3>No se encontraron oportunidades</h3>
+                <h3>No encontramos vacantes con esa búsqueda</h3>
                 <p>Prueba con menos filtros o con otra palabra. Los números de cada lista te dicen cuántas vacantes hay con cada opción.</p>
             </div>`);
         return;
@@ -420,28 +442,34 @@ function renderResults(oportunidades, criteria) {
 
     const opcionLugar = criteria.location && document.querySelector('#location-select option[value="' + CSS.escape(criteria.location) + '"]');
     const locationName = opcionLugar ? opcionLugar.textContent.replace(/\s*\(.*\)$/, '') : 'todas las ciudades';
-    mostrarResultados(container, `
-        <div class="results-header">
-            <h2>Oportunidades para ti</h2>
-            <p class="results-summary">
-                Se encontraron <strong>${oportunidades.length}</strong> oportunidad${oportunidades.length !== 1 ? 'es' : ''}
-                ${criteria.q ? ` con "${escapar(criteria.q)}"` : ''}
-                en ${escapar(locationName)}${hayMasVacantes() ? `, entre las ${allOportunidades.length} más recientes` : ''}
-            </p>
-        </div>
-        <div class="results-grid">
-            ${oportunidades.map(opp => renderOportunidadCard(opp)).join('')}
-        </div>`);
+    const top = oportunidades.slice(0, MAXIMO_CARRUSEL);
+    const n = oportunidades.length;
+    const sesion = sesionActual();
+    const cuales = top.length === 1 ? 'Esta es' : `Aquí van las ${top.length}`;
+    let orden;
+    if (habilidadesPersona && habilidadesPersona.size) {
+        orden = top.length === 1 ? 'Esta es la que encontramos.' : `${cuales} que más encajan con tus habilidades, de la mejor a la que menos.`;
+    } else if (sesion && sesion.userType !== 'empresa') {
+        orden = `${cuales} más recientes. Agrega tus habilidades en tu perfil y te las mostramos ordenadas por lo que sabes hacer.`;
+    } else if (!sesion) {
+        orden = `${cuales} más recientes. Inicia sesión para verlas ordenadas por lo que sabes hacer.`;
+    } else {
+        orden = `${cuales} más recientes.`;
+    }
+    const resumen = `${n.toLocaleString('es-CO')} vacante${n !== 1 ? 's' : ''}${criteria.q ? ` con «${criteria.q}»` : ''} en ${locationName}` +
+        `${hayMasVacantes() ? `, entre las ${allOportunidades.length} más recientes` : ''}. ${orden}`;
 
-    // Postularme: con sesion, la vacante en la pagina de Vacantes (busca por
-    // su titulo en el servidor); sin sesion, primero iniciar sesion
-    container.querySelectorAll('.btn-apply').forEach(btn => {
-        btn.addEventListener('click', function() {
-            window.location.href = localStorage.getItem('token')
-                ? 'oportunidades.html?q=' + encodeURIComponent(this.dataset.titulo)
-                : 'login-usuario.html';
-        });
-    });
+    soltarCarrusel();
+    container.innerHTML =
+        `<div class="container"><div class="results-header"><h2>Vacantes para ti</h2><p class="results-summary">${escapar(resumen)}</p></div></div>` +
+        SkillMatchUI.carruselMarco(top.map((opp, i) => tarjetaCarrusel(opp, i, top.length)).join(''), top.length, 'Las vacantes que más encajan con tu búsqueda') +
+        `<div class="container carrusel-ver-todas">
+            <a class="btn btn-primary" href="oportunidades.html${criteria.q ? '?q=' + encodeURIComponent(criteria.q) : ''}">Ver todas en Vacantes</a>
+            <p>Allí puedes compararlas, filtrarlas y verlas todas.</p>
+        </div>`;
+    container.style.display = 'block';
+    container.classList.remove('hidden');
+    carruselActual = SkillMatchUI.carrusel(container.querySelector('.carrusel'));
 
     container.querySelectorAll('.btn-save').forEach(btn => {
         btn.addEventListener('click', async function() {
@@ -454,14 +482,14 @@ function renderResults(oportunidades, criteria) {
             }
 
             const isSaved = savedOpportunityIds.has(id);
-
+            this.disabled = true;
             try {
                 if (isSaved) {
-                    const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job/${id}`, { method: 'DELETE' });
+                    const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job/${encodeURIComponent(id)}`, { method: 'DELETE' });
                     if (response.ok) {
                         savedOpportunityIds.delete(id);
                         this.classList.remove('saved');
-                        this.textContent = 'Guardar';
+                        this.innerHTML = '<i data-ico="save"></i> Guardar';
                     }
                 } else {
                     const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs`, {
@@ -471,12 +499,14 @@ function renderResults(oportunidades, criteria) {
                     if (response.ok) {
                         savedOpportunityIds.add(id);
                         this.classList.add('saved');
-                        // innerHTML: con textContent se veia la etiqueta <i> escrita
-                        this.innerHTML = '<i data-ico="heart"></i> Guardado';
+                        this.innerHTML = '<i data-ico="heart"></i> Guardada';
+                        SkillMatchUI.aviso('Vacante guardada. La encuentras en Vacantes, en "Guardadas".', 'ok');
                     }
                 }
             } catch (e) {
+                SkillMatchUI.aviso('No se pudo guardar la vacante. Intenta de nuevo.', 'error');
             }
+            this.disabled = false;
         });
     });
 }
@@ -487,6 +517,7 @@ async function performSearch(criteria) {
     const container = document.getElementById('results-container');
 
     if (noCriteria) {
+        soltarCarrusel();
         if (container) {
             container.innerHTML = '';
             container.style.display = 'none';
