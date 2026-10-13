@@ -369,9 +369,9 @@ async function deleteSkill(skillId) {
     const user = getUserData();
     if (!user) return;
     
-    if (!confirm('¿Estás seguro de eliminar esta habilidad?')) {
-        return;
-    }
+    // Pregunta de la marca (antes confirm() del navegador)
+    const quitar = await SkillMatchUI.confirmar({ titulo: 'Quitar habilidad', texto: '¿Quieres quitar esta habilidad de tu perfil?', aceptar: 'Quitar', peligro: true });
+    if (!quitar) return;
     
 
     try {
@@ -503,9 +503,8 @@ async function deleteExperience(expId) {
     const user = getUserData();
     if (!user) return;
     
-    if (!confirm('¿Estás seguro de eliminar esta experiencia?')) {
-        return;
-    }
+    const quitar = await SkillMatchUI.confirmar({ titulo: 'Quitar experiencia', texto: '¿Quieres quitar esta experiencia de tu perfil?', aceptar: 'Quitar', peligro: true });
+    if (!quitar) return;
     
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/experiences/${expId}`, {
@@ -636,9 +635,8 @@ async function deleteEducation(eduId) {
     const user = getUserData();
     if (!user) return;
     
-    if (!confirm('¿Estás seguro de eliminar esta educación?')) {
-        return;
-    }
+    const quitar = await SkillMatchUI.confirmar({ titulo: 'Quitar estudio', texto: '¿Quieres quitar este estudio de tu perfil?', aceptar: 'Quitar', peligro: true });
+    if (!quitar) return;
     
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/educations/${eduId}`, {

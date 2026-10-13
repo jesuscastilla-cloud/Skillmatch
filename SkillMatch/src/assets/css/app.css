@@ -487,6 +487,12 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
     color: #fff;
     box-shadow: 0 2px 4px rgba(8,32,60,.12), 0 12px 24px -10px var(--sea-glow);
 }
+/* Botón de una acción que borra (SkillMatchUI.confirmar con peligro) */
+.btn-primary-modal.btn-peligro,
+.btn-primary-modal.btn-peligro:hover { background: var(--rojo); box-shadow: none; }
+.btn-primary-modal.btn-peligro:hover { filter: none; opacity: .92; }
+[data-theme="dark"] .btn-primary-modal.btn-peligro { color: var(--surface-inverse); }
+.confirmar-texto { margin-bottom: var(--s5); color: var(--ink-2); line-height: 1.6; }
 
 /* El naranja se reserva para la accion decisiva de cada pantalla.
    Texto en azul marino: el blanco sobre este naranja no se lee bien (2.7:1). */

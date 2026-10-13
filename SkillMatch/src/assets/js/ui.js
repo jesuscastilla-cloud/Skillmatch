@@ -2022,11 +2022,36 @@
             observador.disconnect();
             raiz.remove();
             if (volverA && volverA.focus) volverA.focus();
+            if (opciones.alCerrar) opciones.alCerrar();
         }).observe(raiz, { attributes: true, attributeFilter: ['class'] });
         document.body.appendChild(raiz);
         const primero = raiz.querySelector('.modal-body input, .modal-body textarea, .modal-body select');
         if (primero) primero.focus();
         return { raiz: raiz, cuerpo: raiz.querySelector('.modal-body'), cerrar: cerrar };
+    };
+
+    /** Pregunta de la marca en lugar de confirm() del navegador. Devuelve una
+     *  promesa: true si la persona acepta. Escape o un clic afuera cuentan como
+     *  "no", y en lo que borra el foco empieza en "Cancelar" (lo seguro). */
+    UI.confirmar = function (opciones) {
+        return new Promise(function (resolver) {
+            let respuesta = false;
+            const v = UI.ventana({
+                id: 'ventanaConfirmar',
+                titulo: opciones.titulo,
+                icono: opciones.peligro ? 'trash' : 'alert',
+                alCerrar: function () { resolver(respuesta); },
+                cuerpo:
+                    '<p class="confirmar-texto">' + escaparHtml(opciones.texto) + '</p>' +
+                    '<div class="modal-actions">' +
+                      '<button type="button" class="btn-secondary-modal" data-no>' + escaparHtml(opciones.cancelar || 'Cancelar') + '</button>' +
+                      '<button type="button" class="btn-primary-modal' + (opciones.peligro ? ' btn-peligro' : '') + '" data-si>' + escaparHtml(opciones.aceptar || 'Aceptar') + '</button>' +
+                    '</div>'
+            });
+            v.cuerpo.querySelector('[data-si]').addEventListener('click', function () { respuesta = true; v.cerrar(); });
+            v.cuerpo.querySelector('[data-no]').addEventListener('click', function () { v.cerrar(); });
+            v.cuerpo.querySelector(opciones.peligro ? '[data-no]' : '[data-si]').focus();
+        });
     };
 
     function datosSesion() {
