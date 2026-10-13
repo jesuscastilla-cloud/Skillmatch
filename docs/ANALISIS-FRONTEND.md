@@ -76,7 +76,7 @@ enviada", "Aceptar solicitud" o "En tus conexiones"), y no muestra "Vacantes par
   primera copia de `viewCandidateProfile`, `apiDisponible` y el CSS que solo usaban.
 - **Mensajes (hecho desde el punto 2):** solo consulta el servidor con la pestaña a la vista.
 - **Lottie:** siguen faltando los JSON de Lottieflow.
-- **Indicadores:** pendiente de decidir (el Power BI pide iniciar sesión).
+- **Indicadores (hecho):** página propia con los datos del sitio, visible para todos (ver Avance).
 
 ## Resultado de la auditoría automática
 
@@ -109,6 +109,8 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
 - Guardar la hoja de vida en PDF (GridFS) si se quiere pedir al registrarse.
 - `GET /users/{id}` devuelve el correo y el teléfono de cualquier usuario a quien haya iniciado sesión.
 - Restringir `connect-src` de la CSP a `'self'` cuando el frontend vaya dentro del jar.
+- `frame-src https://app.powerbi.com` ya no hace falta en la CSP: Indicadores no inserta el Power BI (queda un
+  enlace para abrirlo aparte).
 - `GET /saved-jobs/my-saved-jobs`: agregar el estado de la vacante (para marcar las que cerraron en el
   perfil) y mandar el `jobId` aunque la vacante se haya borrado (sin él no se puede quitar de guardadas).
 - `DELETE /applications/{id}` borra la postulación y la empresa pierde el registro: mejor marcarla
@@ -213,6 +215,16 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
 - **"Conectar" en el perfil de otra persona (hecho):** dice en qué va la conexión y deja aceptar ahí mismo una
   solicitud recibida. De paso: ese perfil decía "0 conexiones" aunque la persona tuviera varias (ahora se oculta)
   y "Conectar" en las sugerencias mandaba "¡Me gustaría conectar contigo!" sin que la persona lo escribiera.
+- **Indicadores del mercado (hecho, decisión de Luis):** antes la página mostraba un informe de Power BI que pedía
+  iniciar sesión con una cuenta de la organización, así que un visitante no veía nada. Ahora son indicadores propios
+  con los datos del sitio, visibles para todos: las 4 cifras generales (`/public/stats`), tipo de trabajo, dónde se
+  trabaja, experiencia, salario que ofrecen, ciudades con más vacantes (Cartagena en naranja) y habilidades más
+  pedidas (cada una lleva a Vacantes buscándola). Las cifras son exactas sobre todas las vacantes abiertas: se le
+  pide a `/jobs/filter` una sola vacante y se usa su `totalElements` (31 consultas pequeñas en vez de bajar las 1.608
+  en 33 páginas de 50). El salario sale de conteos acumulados con `maxSalary`; las ciudades y las habilidades, de las
+  200 vacantes más recientes (no hay filtro por habilidad). Barras propias que solo animan `transform`. El Power BI
+  queda como enlace para el equipo. Código en `assets/js/indicadores.js` y la sección 24 de `app.css`. Para Jesús:
+  el endpoint de conteos (ya pedido arriba) lo reduciría a una sola consulta.
 
 ## Orden propuesto (solo frontend)
 

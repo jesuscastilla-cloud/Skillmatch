@@ -3748,26 +3748,115 @@ a.meta-tag { position: relative; }
     line-height: 1.6;
 }
 
-/* ---------- 24. Panel de indicadores ---------- */
+/* ---------- 24. Indicadores del mercado ---------- */
+/* Antes: el marco de un informe de Power BI que pedia iniciar sesion. Ahora
+   cifras y barras propias (indicadores.js); las barras solo animan transform. */
 
-.dashboard-container {
-    padding: var(--s6) var(--s5) var(--s7);
-    max-width: var(--shell);
-    margin-inline: auto;
-}
-.dashboard-frame {
-    position: relative;
-    border-radius: var(--r-lg);
-    overflow: hidden;
-    border: 1px solid var(--hairline);
-    box-shadow: var(--sh-3);
+.indicadores-cabecera {
+    padding: var(--s7) 0 var(--s6);
     background: var(--surface);
+    border-bottom: 1px solid var(--hairline);
 }
-.dashboard-container iframe {
-    width: 100%;
-    height: min(78vh, 760px);
-    border: 0;
-    display: block;
+.indicadores-cabecera h1 { font-size: clamp(1.9rem, 1.3rem + 2.4vw, 2.75rem); }
+.indicadores-cabecera p { max-width: 70ch; margin-top: var(--s2); color: var(--ink-3); font-size: var(--t-md); }
+
+.indicadores { padding: var(--s6) 0 var(--s9); }
+.indicadores-error {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3);
+    margin-bottom: var(--s5);
+    padding: var(--s4) var(--s5);
+    border: 1px solid var(--rojo);
+    border-radius: var(--r-md);
+    background: var(--rojo-soft);
+    color: var(--ink);
+}
+
+/* Las cuatro cifras grandes */
+.indicadores-cifras {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s4);
+}
+.indicadores-cifras li,
+.indicador {
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow: var(--sh-1);
+}
+.indicadores-cifras li { display: flex; flex-direction: column; gap: 2px; padding: var(--s4) var(--s5); }
+.ic-valor {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+.ic-nombre { font-size: var(--t-sm); color: var(--ink-3); }
+.indicadores-promedio { margin-top: var(--s3); font-size: var(--t-sm); color: var(--ink-3); }
+.indicadores-promedio:empty { display: none; }
+
+/* Tarjetas con barras */
+.indicadores-grid {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5);
+    margin-top: var(--s6);
+}
+.indicador { padding: var(--s5) var(--s6) var(--s6); }
+.indicador h2 { font-size: var(--t-lg); }
+.indicador-nota { margin-top: 4px; font-size: var(--t-sm); color: var(--ink-3); }
+
+.ib-lista { list-style: none; margin: var(--s5) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s4); }
+.ib-fila,
+.ib-cargando { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 6px var(--s3); }
+.ib-cargando .skeleton-line:last-child { grid-column: 1 / -1; height: 8px; }
+.ib-nombre { font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); overflow-wrap: anywhere; }
+.ib-nombre a { color: inherit; text-decoration: underline; text-decoration-color: var(--hairline); text-underline-offset: 3px; }
+.ib-nombre a:hover { color: var(--sea-deep); text-decoration-color: currentColor; }
+.ib-valor { font-size: var(--t-sm); font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ib-valor small { margin-left: 8px; font-size: var(--t-xs); font-weight: 500; color: var(--ink-muted); }
+.ib-barra {
+    grid-column: 1 / -1;
+    height: 8px;
+    border-radius: var(--r-pill);
+    background: var(--hairline-soft);
+    overflow: hidden;
+}
+.ib-barra > span {
+    display: block; height: 100%;
+    border-radius: inherit;
+    background: var(--sea);
+    transform-origin: left center;
+    transform: scaleX(0);
+}
+.ib-lista.visible .ib-barra > span { transform: scaleX(var(--p, 0)); }
+@media (prefers-reduced-motion: no-preference) {
+    .ib-barra > span { transition: transform .9s var(--ease-out) calc(var(--i, 0) * 70ms); }
+}
+.ib-fila.destacada .ib-nombre { color: var(--ink); }
+.ib-fila.destacada .ib-barra > span { background: var(--naranja); }
+.ib-vacio { font-size: var(--t-sm); color: var(--ink-muted); }
+
+.indicadores-hora { margin-top: var(--s5); font-size: var(--t-xs); color: var(--ink-muted); }
+.indicadores-hora:empty { display: none; }
+
+/* El informe de Power BI queda como enlace para el equipo */
+.indicadores-powerbi {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s4);
+    margin-top: var(--s7);
+    padding: var(--s5) var(--s6);
+    border: 1px dashed var(--hairline);
+    border-radius: var(--r-lg);
+}
+.indicadores-powerbi h2 { font-size: var(--t-md); }
+.indicadores-powerbi p { margin-top: 4px; max-width: 62ch; font-size: var(--t-sm); color: var(--ink-3); }
+
+@media (max-width: 900px) {
+    .indicadores-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+    .indicadores-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+    .indicador { padding: var(--s4) var(--s4) var(--s5); }
+    .indicadores-powerbi { padding: var(--s4); }
 }
 
 /* ---------- 25. Movimiento de entrada ---------- */
