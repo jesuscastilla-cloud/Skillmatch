@@ -311,7 +311,7 @@ function displaySuggestions(suggestions, yo = { ciudad: '', habilidades: new Set
 
         const enviada = sentRequestIds.has(String(user.id));
         const conectar = enviada
-            ? `<button class="btn btn-secondary btn-small" disabled><i data-ico="clock"></i> Solicitud enviada</button>`
+            ? `<button class="btn btn-secondary btn-small btn-estado" disabled><i data-ico="clock"></i> Solicitud enviada</button>`
             : `<button class="btn btn-primary btn-small" onclick="sendConnectionRequest('${user.id}', this)"><i data-ico="handshake"></i> Conectar</button>`;
 
         return `
@@ -339,7 +339,9 @@ async function sendConnectionRequest(userId, boton) {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/connections`, {
             method: 'POST',
-            body: JSON.stringify({ connectedUserId: userId, message: '¡Me gustaría conectar contigo!' })
+            // Sin mensaje inventado: antes se mandaba siempre "¡Me gustaría conectar
+            // contigo!" y la otra persona lo veia como si lo hubieras escrito tu
+            body: JSON.stringify({ connectedUserId: userId })
         });
         if (response.ok) {
             showToast('<i data-ico="check"></i> Solicitud enviada');
@@ -347,7 +349,7 @@ async function sendConnectionRequest(userId, boton) {
             // "Conectar"; ahora el boton cambia en su sitio
             sentRequestIds.add(String(userId));
             if (boton) {
-                boton.outerHTML = '<button class="btn btn-secondary btn-small" disabled><i data-ico="clock"></i> Solicitud enviada</button>';
+                boton.outerHTML = '<button class="btn btn-secondary btn-small btn-estado" disabled><i data-ico="clock"></i> Solicitud enviada</button>';
             } else {
                 loadSuggestions();
             }

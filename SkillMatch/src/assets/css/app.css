@@ -472,6 +472,15 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
     opacity: .5;
     pointer-events: none;
 }
+/* Un estado, no una accion ("Solicitud enviada", "En tus conexiones"): se lee
+   completo, sin el gris de un boton apagado (en modo oscuro casi no se veia) */
+.btn.btn-estado:disabled {
+    opacity: 1;
+    background: transparent;
+    border-color: var(--hairline);
+    color: var(--ink-3);
+    box-shadow: none;
+}
 
 .btn-primary,
 .btn.primary,

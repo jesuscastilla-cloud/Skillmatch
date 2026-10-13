@@ -72,8 +72,10 @@
                                 Editar perfil
                             </button>
                             <button type="button" class="btn-edit-profile" id="changePasswordBtn"><i data-ico="lock"></i> Cambiar contraseña</button>
-                            <!-- Solo en el perfil de otra persona (profile.js le pone el enlace) -->
-                            <a class="btn btn-primary btn-small" id="messageUserBtn" href="mensajes.html" hidden><i data-ico="chat"></i> Enviar mensaje</a>
+                            <!-- Solo en el perfil de otra persona: profile.js pone el estado de
+                                 la conexion (Conectar, Solicitud enviada, Aceptar o En tus conexiones) y el enlace del mensaje -->
+                            <button type="button" class="btn btn-primary btn-small" id="connectUserBtn" hidden><i data-ico="handshake"></i> Conectar</button>
+                            <a class="btn btn-secondary btn-small" id="messageUserBtn" href="mensajes.html" hidden><i data-ico="chat"></i> Enviar mensaje</a>
                         </div>
                     </div>
                 </div>

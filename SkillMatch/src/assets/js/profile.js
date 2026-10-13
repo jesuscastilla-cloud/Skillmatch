@@ -70,6 +70,7 @@ async function loadUserProfile() {
                     mensaje.href = 'mensajes.html?userId=' + encodeURIComponent(user.id);
                     mensaje.hidden = false;
                 }
+                cargarConexion(user.id);
             }
         } else {
             displayUserProfile(user);
@@ -106,6 +107,86 @@ function hideEditButtons() {
     // "Vacantes para ti" se calculaba con las habilidades de la otra persona
     const recomendadas = document.getElementById('recommendedJobs');
     if (recomendadas) recomendadas.closest('.sidebar-card').style.display = 'none';
+}
+
+// ---- Conectar desde el perfil de otra persona ----
+// Antes solo se podia conectar desde las sugerencias de Conexiones. El boton
+// dice en que va la conexion; si la otra persona ya te envio la solicitud,
+// la aceptas ahi mismo. Sin genero en los textos ("En tus conexiones").
+const ESTADOS_CONEXION = {
+    ninguna:    { texto: 'Conectar',          ico: 'handshake', activo: true },
+    recibida:   { texto: 'Aceptar solicitud', ico: 'check',     activo: true },
+    enviada:    { texto: 'Solicitud enviada', ico: 'clock',     activo: false },
+    conectados: { texto: 'En tus conexiones', ico: 'check',     activo: false }
+};
+
+async function cargarConexion(otroId) {
+    const boton = document.getElementById('connectUserBtn');
+    if (!boton) return;
+    const lista = ruta => fetchWithAuth(ruta).then(r => r.ok ? r.json() : []).catch(() => []);
+    try {
+        const [estado, enviadas, recibidas] = await Promise.all([
+            fetchWithAuth(`/connections/check/${encodeURIComponent(otroId)}`).then(r => {
+                if (!r.ok) throw new Error(`El servidor respondió ${r.status}`);
+                return r.json();
+            }),
+            lista('/connections/sent-requests'),
+            lista('/connections/pending-requests')
+        ]);
+        const recibida = recibidas.find(r => String(r.userId) === String(otroId));
+        if (estado.isConnected) pintarConexion('conectados');
+        else if (recibida) pintarConexion('recibida', recibida.id);
+        else if (enviadas.some(r => String(r.connectedUserId) === String(otroId))) pintarConexion('enviada');
+        else pintarConexion('ninguna');
+    } catch (error) {
+        // Sin saber en que va la conexion, mejor no ofrecer el boton
+    }
+    if (!boton.dataset.listo) {
+        boton.dataset.listo = '1';
+        boton.addEventListener('click', () => conectarDesdePerfil(otroId, boton));
+    }
+}
+
+function pintarConexion(estado, solicitudId) {
+    const boton = document.getElementById('connectUserBtn');
+    const datos = ESTADOS_CONEXION[estado];
+    boton.innerHTML = `<i data-ico="${datos.ico}"></i> ${datos.texto}`;
+    boton.dataset.estado = estado;
+    boton.dataset.solicitud = solicitudId || '';
+    boton.disabled = !datos.activo;
+    boton.classList.toggle('btn-primary', datos.activo);
+    boton.classList.toggle('btn-secondary', !datos.activo);
+    boton.classList.toggle('btn-estado', !datos.activo);
+    boton.hidden = false;
+    // Si ya no hay nada que hacer con la conexion, escribir pasa a ser lo principal
+    const mensaje = document.getElementById('messageUserBtn');
+    if (mensaje) {
+        mensaje.classList.toggle('btn-primary', !datos.activo);
+        mensaje.classList.toggle('btn-secondary', datos.activo);
+    }
+}
+
+async function conectarDesdePerfil(otroId, boton) {
+    const aceptar = boton.dataset.estado === 'recibida';
+    const liberar = SkillMatchUI.ocupado(boton);
+    try {
+        const response = aceptar
+            ? await fetchWithAuth(`/connections/${encodeURIComponent(boton.dataset.solicitud)}/accept`, { method: 'PATCH' })
+            : await fetchWithAuth('/connections', { method: 'POST', body: JSON.stringify({ connectedUserId: otroId }) });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || '');
+        }
+        liberar();
+        const nombre = escaparHtml(currentUserProfile.firstName || 'esta persona');
+        pintarConexion(aceptar ? 'conectados' : 'enviada');
+        SkillMatchUI.aviso(aceptar
+            ? `Listo: ${nombre} ya está en tus conexiones.`
+            : `Le enviaste una solicitud a ${nombre}. Te avisaremos cuando responda.`, 'ok');
+    } catch (error) {
+        liberar();
+        SkillMatchUI.aviso(escaparHtml(error.message) || 'No se pudo enviar la solicitud. Intenta de nuevo.', 'error');
+    }
 }
 
 /** true cuando se ve el perfil de otra persona: sin botones para borrar
@@ -163,8 +244,14 @@ function displayUserProfile(user) {
     // promedio" era en realidad el % de perfil completo, repetido y distinto
     // del de la lista de progreso. Las postulaciones reales van a la derecha.
 
-    // Conexiones reales (antes el "0 conexiones" del HTML nunca cambiaba)
+    // Conexiones reales (antes el "0 conexiones" del HTML nunca cambiaba). En el
+    // perfil de otra persona no hay de donde sacarlas: se oculta (antes decia
+    // "0 conexiones" aunque tuviera varias)
     if (!user.isOtherUser) loadConnectionsCount();
+    else {
+        const conexiones = document.getElementById('userConnections');
+        if (conexiones) conexiones.hidden = true;
+    }
 
     // Calcular progreso del perfil
     calculateProfileProgress(user);

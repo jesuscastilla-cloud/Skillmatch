@@ -57,8 +57,8 @@ y el escape del texto del servidor (XSS).
 | Certificaciones reales | `/users/{id}/certifications` | Se quitaron las inventadas; no hay reales |
 | Directorio de empresas | `GET /companies/search` | "Empresas" en la barra lleva a una sección de la portada |
 
-Perfil de otra persona (`perfil-usuario.html?id=…`): ya tiene "Enviar mensaje" y no muestra "Vacantes para ti"
-ni botones para borrar lo suyo (arreglado el 9 de octubre). Falta un botón para conectar.
+Perfil de otra persona (`perfil-usuario.html?id=…`): tiene "Enviar mensaje" y "Conectar" (que cambia a "Solicitud
+enviada", "Aceptar solicitud" o "En tus conexiones"), y no muestra "Vacantes para ti" ni botones para borrar lo suyo.
 
 ## Mejoras de calidad
 
@@ -120,6 +120,10 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   que alguien se postuló), `createApplicationUpdateNotification` (la persona no se entera de que la aceptaron
   o rechazaron) y `createNewJobNotification` existen en `NotificationService`, pero ningún servicio las llama.
   Solo llegan las de conexiones y mensajes. El frontend ya sabe abrir esos enlaces cuando lleguen.
+- Si alguien rechaza una solicitud de conexión, la otra persona no puede volver a enviarla nunca: la conexión
+  rechazada queda guardada y `sendConnectionRequest` responde "Ya existe una conexión o solicitud pendiente".
+- No hay forma de saber cuántas conexiones tiene otra persona (solo las propias); por eso ese dato se oculta en
+  su perfil.
 
 ## Avance
 
@@ -206,6 +210,9 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   todas" era un enlace a "#" y ahora muestra también las leídas, cada aviso se abre con el teclado, Escape cierra
   la lista y, si fallaba marcar como leída, el clic no llevaba a ningún lado. Las pestañas de Conexiones se
   recuerdan en la dirección (`?tab=solicitudes`) y se recorren con las flechas.
+- **"Conectar" en el perfil de otra persona (hecho):** dice en qué va la conexión y deja aceptar ahí mismo una
+  solicitud recibida. De paso: ese perfil decía "0 conexiones" aunque la persona tuviera varias (ahora se oculta)
+  y "Conectar" en las sugerencias mandaba "¡Me gustaría conectar contigo!" sin que la persona lo escribiera.
 
 ## Orden propuesto (solo frontend)
 
