@@ -1709,6 +1709,8 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     transition: background-color .14s var(--ease);
 }
 .notification-item:hover { background: var(--surface-sunk); }
+/* Por dentro: la lista tiene scroll y cortaba el contorno del foco */
+.notification-item:focus-visible { outline-offset: -3px; border-radius: 0; }
 .notification-item.unread { background: var(--sea-light); }
 .notification-item.unread:hover { background: #D6ECEE; }
 
@@ -1727,12 +1729,14 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     text-align: center;
     background: var(--surface-sunk);
 }
-.btn-mark-all-read {
+.btn-mark-all-read,
+.notifications-footer button {
     font-size: var(--t-sm);
     font-weight: 600;
     color: var(--sea-deep);
 }
-.btn-mark-all-read:hover { text-decoration: underline; }
+.btn-mark-all-read:hover,
+.notifications-footer button:hover { text-decoration: underline; }
 
 /* ---------- 19. Portada ---------- */
 
@@ -3530,6 +3534,35 @@ footer.pie > .container { position: relative; z-index: 1; }
     .postulacion-accion { grid-column: 1 / -1; justify-content: flex-start; }
 }
 @media (pointer: coarse) { .btn-retirar, .btn-retiro-no { min-height: 44px; } }
+
+/* Lo que anuncio una notificacion (SkillMatchUI.resaltar): borde naranja por
+   dentro (por fuera lo cortaban las listas con scroll) y un destello de fondo
+   al llegar. El destello va detras del texto (isolation + z-index -1) y solo
+   anima la opacidad. */
+.resaltado,
+.resaltado:focus-visible {
+    position: relative;
+    isolation: isolate;
+    outline: 2px solid var(--naranja);
+    outline-offset: -2px;
+}
+.resaltado::after {
+    content: "";
+    position: absolute; inset: 0; z-index: -1;
+    border-radius: inherit;
+    background: var(--naranja-soft);
+    opacity: 0;
+    pointer-events: none;
+}
+.postulacion-fila.resaltado { padding-inline: var(--s3); border-radius: var(--r-md); }
+@media (prefers-reduced-motion: no-preference) {
+    .resaltado::after { animation: destello-aviso 2.4s var(--ease) .3s; }
+}
+@keyframes destello-aviso {
+    0%, 100% { opacity: 0; }
+    25%, 55% { opacity: 1; }
+}
+[data-theme="dark"] .resaltado::after { background: rgba(255, 118, 24, .16); }
 
 /* ---------- 22c. Ventana de candidatos (perfil de empresa) ---------- */
 /* Antes cada tarjeta llevaba 20 estilos fijos en el JS: blanca en modo oscuro */

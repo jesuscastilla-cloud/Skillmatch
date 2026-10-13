@@ -1,7 +1,7 @@
 /* =====================================================================
  *  SkillMatch — capa de interfaz
  *
- *  Se encarga de nueve cosas, y de nada mas:
+ *  Se encarga de diez cosas, y de nada mas:
  *    1. Iconos SVG (reemplazan a los emojis, se ven igual en todos lados)
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
@@ -12,6 +12,7 @@
  *    7. Campo de etiquetas para habilidades (SkillMatchUI.etiquetas)
  *    8. Carrusel de vacantes de la portada (SkillMatchUI.carrusel)
  *    9. Cuenta: ventanas desde JS, cambiar contrasena y mensajes sin leer
+ *   10. Marcar lo que anuncio una notificacion (SkillMatchUI.resaltar)
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -2156,6 +2157,19 @@
     }
 
     UI.actualizarNoLeidos = actualizarNoLeidos;
+
+    /* ---------- 20. Llegar desde una notificacion ---------- */
+
+    /** Lleva la vista a lo que anuncio una notificacion (una solicitud, una
+     *  postulacion) y lo marca con un borde naranja para encontrarlo de un
+     *  vistazo. El foco tambien va ahi: un lector de pantalla lo lee. */
+    UI.resaltar = function (el) {
+        if (!el) return;
+        el.classList.add('resaltado');
+        if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+        el.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+        el.focus({ preventScroll: true });
+    };
 
     /* ---------- 9. Arranque ---------- */
 

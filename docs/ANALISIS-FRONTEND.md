@@ -51,9 +51,9 @@ y el escape del texto del servidor (XSS).
 | Mensajes sin leer en la barra | `GET /messages/unread-count` | Hecho: número junto a "Mensajes" arriba y en la barra del celular |
 | Retirar una postulación | `DELETE /applications/{id}` | Hecho: en "Mis postulaciones", mientras siga Enviada o Revisada |
 | Ver todas mis postulaciones | `GET /applications/my-applications` | Hecho: "Ver todas" abre "Mis postulaciones" |
-| Saber si ya me postulé | `GET /applications/check` | No se usa (ver crítico 4) |
-| Vacantes paginadas y filtradas en el servidor | `GET /jobs?page=`, `GET /jobs/filter` | Solo 20 vacantes (crítico 5) |
-| Enlaces de las notificaciones | `?tab=pending`, `?userId=`, `?jobId=`, `?tab=applicants` | Ninguna página los lee |
+| Saber si ya me postulé | `GET /applications/check` | Hecho: "Ya te postulaste" en Vacantes (punto 4) |
+| Vacantes paginadas | `GET /jobs?page=` | Hecho: "Cargar más" de 20 en 20 (punto 4) |
+| Enlaces de las notificaciones | `?tab=pending`, `?userId=`, `?jobId=`, `?tab=applications`, `?tab=applicants` | Hecho: cada uno abre la pestaña o ventana y marca la solicitud o postulación |
 | Certificaciones reales | `/users/{id}/certifications` | Se quitaron las inventadas; no hay reales |
 | Directorio de empresas | `GET /companies/search` | "Empresas" en la barra lleva a una sección de la portada |
 
@@ -116,6 +116,10 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   siguen Enviadas o Revisadas.
 - `PUT /users/{id}/password` acepta contraseñas desde 6 caracteres; el registro y el frontend piden 8.
   Conviene subir el mínimo a 8 en `UpdatePasswordRequest` y en el registro.
+- Nadie crea 3 de las 6 notificaciones: `createApplicationReceivedNotification` (la empresa no se entera de
+  que alguien se postuló), `createApplicationUpdateNotification` (la persona no se entera de que la aceptaron
+  o rechazaron) y `createNewJobNotification` existen en `NotificationService`, pero ningún servicio las llama.
+  Solo llegan las de conexiones y mensajes. El frontend ya sabe abrir esos enlaces cuando lleguen.
 
 ## Avance
 
@@ -194,6 +198,14 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   edad, sexo, estado civil ni foto, sin datos de contacto, casilla "Tengo 18 años o más" y página de
   política de tratamiento de datos (borrador, enlazada desde los registros y el pie). Detalle en
   `docs/REGISTRO-Y-MARCO-LEGAL.md`.
+- **Notificaciones que llevan al sitio exacto (hecho):** una solicitud de conexión abre Conexiones en la pestaña
+  "Solicitudes" con esa solicitud marcada (si ya se respondió, lo dice); una postulación abre "Mis postulaciones"
+  (persona) o baja a "Postulaciones recibidas" (empresa) con ella marcada, aunque estuviera escondida tras "Ver
+  todas". La marca es `SkillMatchUI.resaltar` (ui.js, sección 20): borde naranja, un destello y el foco. En la
+  campana: el número de no leídas nunca salía (el backend manda `{count}` y se comparaba el objeto con 0), "Ver
+  todas" era un enlace a "#" y ahora muestra también las leídas, cada aviso se abre con el teclado, Escape cierra
+  la lista y, si fallaba marcar como leída, el clic no llevaba a ningún lado. Las pestañas de Conexiones se
+  recuerdan en la dirección (`?tab=solicitudes`) y se recorren con las flechas.
 
 ## Orden propuesto (solo frontend)
 

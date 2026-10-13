@@ -46,40 +46,40 @@
 
     <section class="connections-container">
         <div class="container">
-            <div class="connections-tabs">
-                <button class="tab-btn active" data-tab="mis-conexiones">
+            <div class="connections-tabs" role="tablist" aria-label="Tu red">
+                <button type="button" class="tab-btn active" data-tab="mis-conexiones" role="tab" id="tab-mis-conexiones" aria-controls="mis-conexiones" aria-selected="true">
                     Mis conexiones<span id="connections-count"></span>
                 </button>
-                <button class="tab-btn" data-tab="solicitudes">
+                <button type="button" class="tab-btn" data-tab="solicitudes" role="tab" id="tab-solicitudes" aria-controls="solicitudes" aria-selected="false" tabindex="-1">
                     Solicitudes<span id="requests-count"></span>
                 </button>
-                <button class="tab-btn" data-tab="sugerencias">Sugerencias</button>
-                <button class="tab-btn" data-tab="mensajes">Mensajes</button>
+                <button type="button" class="tab-btn" data-tab="sugerencias" role="tab" id="tab-sugerencias" aria-controls="sugerencias" aria-selected="false" tabindex="-1">Sugerencias</button>
+                <button type="button" class="tab-btn" data-tab="mensajes" role="tab" id="tab-mensajes" aria-controls="mensajes" aria-selected="false" tabindex="-1">Mensajes</button>
             </div>
 
             <!-- Tab: Mis conexiones -->
-            <div id="mis-conexiones" class="tab-content active">
+            <div id="mis-conexiones" class="tab-content active" role="tabpanel" aria-labelledby="tab-mis-conexiones">
                 <div id="connections-container" class="connections-list">
                     <div class="loading-message">Cargando conexiones...</div>
                 </div>
             </div>
 
             <!-- Tab: Solicitudes Pendientes -->
-            <div id="solicitudes" class="tab-content">
+            <div id="solicitudes" class="tab-content" role="tabpanel" aria-labelledby="tab-solicitudes">
                 <div id="requests-container" class="connections-list">
                     <div class="loading-message">Cargando solicitudes...</div>
                 </div>
             </div>
 
             <!-- Tab: Sugerencias -->
-            <div id="sugerencias" class="tab-content">
+            <div id="sugerencias" class="tab-content" role="tabpanel" aria-labelledby="tab-sugerencias">
                 <div id="suggestions-container" class="suggestions-list">
                     <div class="loading-message">Cargando sugerencias...</div>
                 </div>
             </div>
 
             <!-- Tab: Mensajes -->
-            <div id="mensajes" class="tab-content">
+            <div id="mensajes" class="tab-content" role="tabpanel" aria-labelledby="tab-mensajes">
                 <div class="messages-redirect">
                     <span class="messages-redirect-icon"><i data-ico="chat"></i></span>
                     <h2>Tus conversaciones</h2>

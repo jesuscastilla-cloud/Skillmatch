@@ -13,18 +13,50 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSuggestions();
 });
 
-function setupTabs() {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
+// ?tab= en la direccion. La notificacion de una solicitud llega con
+// "?tab=pending" (nombre del backend) y antes se abria siempre "Mis conexiones".
+// Las demas usan el nombre de la pestana: ?tab=solicitudes, ?tab=sugerencias...
+const PESTANA_PRIMERA = 'mis-conexiones';
+const PESTANAS_DEL_BACKEND = { pending: 'solicitudes' };
 
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            document.getElementById(this.getAttribute('data-tab')).classList.add('active');
+function setupTabs() {
+    const tabBtns = [...document.querySelectorAll('.tab-btn')];
+
+    tabBtns.forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-tab');
+            abrirPestana(id);
+            // La direccion recuerda la pestana: al recargar o volver, sigue ahi
+            const direccion = new URL(window.location.href);
+            if (id === PESTANA_PRIMERA) direccion.searchParams.delete('tab'); else direccion.searchParams.set('tab', id);
+            direccion.searchParams.delete('solicitud');
+            history.replaceState(null, '', direccion);
+        });
+        // Flechas para pasar de una pestana a otra (lo que espera un lector de pantalla)
+        btn.addEventListener('keydown', e => {
+            const paso = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+            const destino = paso ? tabBtns[(i + paso + tabBtns.length) % tabBtns.length]
+                : e.key === 'Home' ? tabBtns[0] : e.key === 'End' ? tabBtns[tabBtns.length - 1] : null;
+            if (!destino) return;
+            e.preventDefault();
+            destino.focus();
+            destino.click();
         });
     });
+
+    const tab = new URLSearchParams(window.location.search).get('tab') || '';
+    const pedida = PESTANAS_DEL_BACKEND[tab] || tab;
+    abrirPestana(tabBtns.some(b => b.getAttribute('data-tab') === pedida) ? pedida : PESTANA_PRIMERA);
+}
+
+function abrirPestana(id) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        const activa = b.getAttribute('data-tab') === id;
+        b.classList.toggle('active', activa);
+        b.setAttribute('aria-selected', activa ? 'true' : 'false');
+        b.tabIndex = activa ? 0 : -1;
+    });
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === id));
 }
 
 function getCurrentUserId() {
@@ -50,7 +82,7 @@ function updateTabCount(spanId, count) {
 function showToast(message, type = 'success') {
     const texto = message.replace(/<i [^>]*><\/i>\s*/g, '');
     if (window.SkillMatchUI) {
-        SkillMatchUI.aviso(texto, type === 'error' ? 'error' : 'ok');
+        SkillMatchUI.aviso(texto, type === 'error' || type === 'info' ? type : 'ok');
         return;
     }
     const container = document.getElementById('toast-container');
@@ -136,6 +168,7 @@ async function loadPendingRequests() {
             const requests = await response.json();
             updateTabCount('requests-count', requests.length);
             displayRequests(requests);
+            marcarSolicitudPedida(requests);
         } else {
             container.innerHTML = '<div class="error-message">Error al cargar solicitudes</div>';
         }
@@ -158,7 +191,7 @@ function displayRequests(requests) {
             : '';
 
         return `
-            <div class="connection-card">
+            <div class="connection-card" data-solicitud="${escaparHtml(req.id)}">
                 <div class="connection-header">
                     ${avatarCircle(req.userName)}
                     <div class="connection-info">
@@ -174,6 +207,21 @@ function displayRequests(requests) {
                 ${req.message ? `<div class="connection-body"><p class="connection-note">"${escaparHtml(req.message)}"</p></div>` : ''}
             </div>`;
     }).join('');
+}
+
+// La notificacion de una solicitud trae cual es (?solicitud=): se marca. Solo
+// la primera vez: despues de aceptar o rechazar, la lista se vuelve a pintar
+let solicitudPedida = new URLSearchParams(window.location.search).get('solicitud');
+function marcarSolicitudPedida(requests) {
+    if (!solicitudPedida) return;
+    const pedida = solicitudPedida;
+    solicitudPedida = null;
+    if (!requests.some(r => String(r.id) === pedida)) {
+        showToast('Esa solicitud ya fue respondida.', 'info');
+        return;
+    }
+    const tarjeta = [...document.querySelectorAll('#requests-container [data-solicitud]')].find(t => t.dataset.solicitud === pedida);
+    if (tarjeta && window.SkillMatchUI) SkillMatchUI.resaltar(tarjeta);
 }
 
 // ─── Sugerencias ─────────────────────────────────────────────────────────────

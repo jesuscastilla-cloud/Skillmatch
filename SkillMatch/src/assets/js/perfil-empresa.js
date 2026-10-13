@@ -164,7 +164,9 @@ function loadActivityStats() {
     });
 }
 
-// Cargar ofertas desde backend
+// Cargar ofertas desde backend. La promesa queda guardada: quien quiera bajar
+// hasta las postulaciones espera a que las ofertas (que van arriba) ocupen su sitio
+let ofertasCargadas = Promise.resolve();
 function loadOffers() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
@@ -175,7 +177,7 @@ function loadOffers() {
     }
 
     // Cargar desde backend
-    fetchWithAuth(`${API_BASE_URL}/jobs/company/${userData.companyId}`)
+    ofertasCargadas = fetchWithAuth(`${API_BASE_URL}/jobs/company/${userData.companyId}`)
     .then(response => {
         if (!response.ok) throw new Error('Error al cargar ofertas');
         return response.json();
@@ -902,6 +904,7 @@ async function loadApplications() {
             const data = await response.json();
             const applications = Array.isArray(data) ? data : (data.content || []);
             displayApplications(applications);
+            postulacionDesdeAviso();
         } else {
             throw new Error('Error ' + response.status);
         }
@@ -953,6 +956,32 @@ function displayApplications(applications) {
     `;
 }
 
+// La notificacion de una postulacion nueva llega con "?tab=applicants" (y
+// ?postulacion= con cual es). Antes abria el perfil arriba y habia que buscarla.
+// Ahora baja a "Postulaciones recibidas" y la marca. Solo la primera vez.
+let postulacionesPedidas = new URLSearchParams(window.location.search).get('tab') === 'applicants';
+function postulacionDesdeAviso() {
+    if (!postulacionesPedidas) return;
+    postulacionesPedidas = false;
+    ofertasCargadas.finally(() => requestAnimationFrame(irAPostulacionPedida));
+}
+
+function irAPostulacionPedida() {
+    const pedida = new URLSearchParams(window.location.search).get('postulacion');
+    const tarjeta = pedida && [...document.querySelectorAll('#applications-list .application-card')].find(t => t.dataset.applicationId === pedida);
+    if (!tarjeta) {
+        const seccion = document.getElementById('candidatos');
+        if (seccion) seccion.scrollIntoView({ block: 'start' });
+        return;
+    }
+    // Si quedo entre las escondidas, se muestran todas
+    if (tarjeta.hidden) {
+        const verTodas = document.querySelector('#applications-list .btn-ver-todas');
+        if (verTodas) showAllApplications(verTodas);
+    }
+    SkillMatchUI.resaltar(tarjeta);
+}
+
 function showAllApplications(boton) {
     document.querySelectorAll('#applications-list .application-card[hidden]').forEach(card => { card.hidden = false; });
     boton.remove();
@@ -976,7 +1005,7 @@ function createApplicationCard(application, oculta) {
         : 'fecha desconocida';
 
     return `
-        <div class="application-card" data-application-id="${application.id}"${oculta ? ' hidden' : ''}>
+        <div class="application-card" data-application-id="${escaparHtml(application.id)}"${oculta ? ' hidden' : ''}>
             <div class="application-header">
                 <div class="candidate-info">
                     <h3>${sanitize(application.userName || 'Candidato')}</h3>

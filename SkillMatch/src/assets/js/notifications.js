@@ -42,9 +42,9 @@ function createNotificationsDropdown() {
     const notificationsHTML = `
         <li class="nav-notification-item">
             <div class="notifications-container">
-                <button class="notifications-btn" id="notificationsBtn">
+                <button type="button" class="notifications-btn" id="notificationsBtn" aria-label="Notificaciones" aria-expanded="false" aria-controls="notificationsDropdown">
                     <i data-ico="bell"></i>
-                    <span class="notifications-badge" id="notificationsBadge" style="display: none;">0</span>
+                    <span class="notifications-badge" id="notificationsBadge" style="display: none;" aria-hidden="true">0</span>
                 </button>
                 <div class="notifications-dropdown" id="notificationsDropdown" style="display: none;">
                     <div class="notifications-header">
@@ -55,7 +55,7 @@ function createNotificationsDropdown() {
                         <div class="loading-message">Cargando...</div>
                     </div>
                     <div class="notifications-footer">
-                        <a href="#" id="viewAllNotificationsBtn">Ver todas</a>
+                        <button type="button" id="viewAllNotificationsBtn">Ver todas</button>
                     </div>
                 </div>
             </div>
@@ -81,26 +81,59 @@ function setupNotificationListeners() {
         notificationsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isVisible = notificationsDropdown.style.display === 'block';
-            notificationsDropdown.style.display = isVisible ? 'none' : 'block';
-            
-            if (!isVisible) {
-                loadNotifications();
-            }
+            mostrarNotificaciones(!isVisible);
         });
     }
-    
+
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', markAllAsRead);
     }
-    
-    // Cerrar dropdown al hacer clic fuera
+
+    // "Ver todas": antes era un enlace a "#" que no llevaba a ningun lado.
+    // Ahora cambia la lista entre las nuevas y todas (tambien las ya leidas).
+    const verTodas = document.getElementById('viewAllNotificationsBtn');
+    if (verTodas) {
+        verTodas.addEventListener('click', () => {
+            verTodasLasNotificaciones = !verTodasLasNotificaciones;
+            verTodas.textContent = verTodasLasNotificaciones ? 'Ver solo las nuevas' : 'Ver todas';
+            loadNotifications();
+        });
+    }
+
+    // Cada aviso lleva a su pagina. Antes era un onclick en un <div>: con el
+    // teclado no se podia abrir
+    const lista = document.getElementById('notificationsList');
+    if (lista) {
+        lista.addEventListener('click', e => abrirNotificacion(e.target.closest('.notification-item')));
+        lista.addEventListener('keydown', e => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const item = e.target.closest('.notification-item');
+            if (!item) return;
+            e.preventDefault();
+            abrirNotificacion(item);
+        });
+    }
+
+    // Cerrar dropdown al hacer clic fuera o con Escape
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.notifications-container')) {
-            if (notificationsDropdown) {
-                notificationsDropdown.style.display = 'none';
-            }
-        }
+        if (!e.target.closest('.notifications-container')) mostrarNotificaciones(false);
     });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' || !notificationsDropdown || notificationsDropdown.style.display !== 'block') return;
+        mostrarNotificaciones(false);
+        notificationsBtn.focus();
+    });
+}
+
+let verTodasLasNotificaciones = false;
+
+function mostrarNotificaciones(si) {
+    const dropdown = document.getElementById('notificationsDropdown');
+    const boton = document.getElementById('notificationsBtn');
+    if (!dropdown) return;
+    dropdown.style.display = si ? 'block' : 'none';
+    if (boton) boton.setAttribute('aria-expanded', si ? 'true' : 'false');
+    if (si) loadNotifications();
 }
 
 // Cargar notificaciones
@@ -116,11 +149,14 @@ async function loadNotifications() {
     try {
         const countResponse = await fetchWithAuth(`${API_BASE_URL}/notifications/count`, { signal });
         if (countResponse.ok) {
-            const count = await countResponse.json();
-            updateNotificationBadge(count);
+            // El backend manda {count: 6}. Antes se comparaba el objeto entero
+            // con 0 y el numero de la campana no salia nunca
+            const datos = await countResponse.json();
+            updateNotificationBadge(Number(datos && typeof datos === 'object' ? datos.count : datos) || 0);
         }
 
-        const response = await fetchWithAuth(`${API_BASE_URL}/notifications/unread`, { signal });
+        const ruta = verTodasLasNotificaciones ? '/notifications' : '/notifications/unread';
+        const response = await fetchWithAuth(`${API_BASE_URL}${ruta}`, { signal });
         if (response.ok) {
             const notifications = await response.json();
             displayNotifications(notifications);
@@ -142,6 +178,9 @@ function updateNotificationBadge(count) {
     } else {
         badge.style.display = 'none';
     }
+    // El numero se ve pero un lector de pantalla no lo lee: va en el nombre del boton
+    const boton = document.getElementById('notificationsBtn');
+    if (boton) boton.setAttribute('aria-label', count > 0 ? `Notificaciones, ${count} sin leer` : 'Notificaciones');
 }
 
 // Mostrar notificaciones
@@ -150,16 +189,18 @@ function displayNotifications(notifications) {
     if (!container) return;
     
     if (notifications.length === 0) {
-        container.innerHTML = '<div class="no-notifications">No tienes notificaciones nuevas</div>';
+        container.innerHTML = `<div class="no-notifications">${verTodasLasNotificaciones ? 'Todavía no tienes notificaciones' : 'No tienes notificaciones nuevas'}</div>`;
         return;
     }
-    
-    container.innerHTML = notifications.slice(0, 5).map(notif => {
+
+    // Las nuevas: las 5 primeras. Todas: hasta 30 (la lista tiene scroll)
+    container.innerHTML = notifications.slice(0, verTodasLasNotificaciones ? 30 : 5).map(notif => {
         const icon = getNotificationIcon(notif.type);
         const time = formatNotificationTime(notif.createdAt);
-        
+        const destino = destinoNotificacion(notif);
+
         return `
-            <div class="notification-item ${notif.isRead ? 'read' : 'unread'}" data-id="${notif.id}" onclick="handleNotificationClick('${notif.id}', '${notif.actionUrl || ''}')">
+            <div class="notification-item ${notif.isRead ? 'read' : 'unread'}" data-id="${escaparHtml(notif.id)}" data-destino="${escaparHtml(destino)}" role="link" tabindex="0">
                 <div class="notification-icon">${icon}</div>
                 <div class="notification-content">
                     <p class="notification-message">${escaparHtml(notif.content || notif.message || '')}</p>
@@ -198,25 +239,50 @@ function formatNotificationTime(dateString) {
     return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 }
 
-// Manejar clic en notificación
-async function handleNotificationClick(notificationId, actionUrl) {
-    // Marcar como leída
+// Que solicitud o postulacion anuncia cada tipo de aviso: la pagina de destino
+// la busca con este dato y la marca (SkillMatchUI.resaltar)
+const DATO_DE_NOTIFICACION = {
+    connection_request: 'solicitud',
+    application_received: 'postulacion',
+    application_update: 'postulacion'
+};
+
+// A donde lleva un aviso. El backend manda "/pages/conexiones.html?tab=pending":
+// todas las paginas estan en la misma carpeta, asi que se usa la ruta relativa
+// (con "/pages/" fallaba en Live Server, donde la carpeta es otra). Solo se
+// aceptan paginas de este mismo sitio.
+function destinoNotificacion(notif) {
+    if (!notif.actionUrl || notif.actionUrl === 'null') return '';
     try {
-        await fetchWithAuth(`${API_BASE_URL}/notifications/${notificationId}/read`, {
-            method: 'PATCH'
-        });
-        
-        // Actualizar UI
-        loadNotifications();
-        
-        // Navegar si hay URL. El backend manda "/pages/mensajes.html?...": todas
-        // las paginas estan en la misma carpeta, asi que se usa la ruta relativa
-        // (con "/pages/" fallaba en Live Server, donde la carpeta es otra)
-        if (actionUrl && actionUrl !== 'null') {
-            window.location.href = actionUrl.replace(/^\/?pages\//, '');
-        }
-    } catch (error) {
+        const url = new URL(notif.actionUrl.replace(/^\/?pages\//, ''), window.location.href);
+        if (url.origin !== window.location.origin) return '';
+        const dato = DATO_DE_NOTIFICACION[notif.type];
+        if (dato && notif.relatedId) url.searchParams.set(dato, notif.relatedId);
+        return url.pathname.split('/').pop() + url.search;
+    } catch (e) {
+        return '';
     }
+}
+
+function abrirNotificacion(item) {
+    if (item) handleNotificationClick(item.dataset.id, item.dataset.destino);
+}
+
+// Manejar clic en notificación
+async function handleNotificationClick(notificationId, destino) {
+    // Marcar como leida. keepalive: la peticion termina aunque la pagina cambie
+    const marcar = fetchWithAuth(`${API_BASE_URL}/notifications/${encodeURIComponent(notificationId)}/read`, {
+        method: 'PATCH',
+        keepalive: true
+    }).catch(() => { /* sin conexion: se ira igual a la pagina */ });
+
+    // Antes, si fallaba marcarla como leida, el clic no llevaba a ningun lado
+    if (destino) {
+        window.location.href = destino;
+        return;
+    }
+    await marcar;
+    loadNotifications();
 }
 
 // Marcar todas como leídas

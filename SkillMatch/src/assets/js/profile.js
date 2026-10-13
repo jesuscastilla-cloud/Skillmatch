@@ -779,6 +779,7 @@ async function loadInterestedCompanies() {
             if (companies.length === 0) {
                 companiesContainer.innerHTML = '<p class="empty-text">Aún no te has postulado a ninguna vacante.</p>' +
                     '<a href="oportunidades.html" class="btn-view-all">Buscar vacantes <i data-ico="arrow"></i></a>';
+                postulacionesDesdeAviso();
                 return;
             }
 
@@ -812,6 +813,7 @@ async function loadInterestedCompanies() {
             }).join('') +
                 // Todas, con la opcion de retirar (antes solo se veian 4 y no habia como retirar)
                 `<button type="button" class="btn-view-all" onclick="verPostulaciones()">${companies.length > 4 ? `Ver las ${companies.length}` : 'Ver todas'} <i data-ico="arrow"></i></button>`;
+            postulacionesDesdeAviso();
         } else {
             companiesContainer.innerHTML = '<p class="empty-text">No se pudieron cargar tus postulaciones</p>';
         }
@@ -894,6 +896,24 @@ function verPostulaciones() {
             retirarPostulacion(boton.dataset.confirmar, boton);
         }
     });
+}
+
+// La notificacion de una postulacion llega con "?tab=applications" (y
+// ?postulacion= con cual es): se abre "Mis postulaciones" con esa marcada.
+// Antes llevaba al perfil y no pasaba nada mas. Solo la primera vez.
+let postulacionesPedidas = new URLSearchParams(window.location.search).get('tab') === 'applications';
+function postulacionesDesdeAviso() {
+    if (!postulacionesPedidas || esPerfilAjeno()) return;
+    postulacionesPedidas = false;
+    if (!misPostulaciones.length) {
+        SkillMatchUI.resaltar(document.getElementById('applicationsCard'));
+        return;
+    }
+    verPostulaciones();
+    const pedida = new URLSearchParams(window.location.search).get('postulacion');
+    const fila = pedida && [...ventanaPostulaciones.cuerpo.querySelectorAll('.postulacion-fila')].find(f => f.dataset.id === pedida);
+    // Con la ventana ya abierta, para que el desplazamiento sea dentro de ella
+    if (fila) requestAnimationFrame(() => SkillMatchUI.resaltar(fila));
 }
 
 async function retirarPostulacion(id, boton) {
