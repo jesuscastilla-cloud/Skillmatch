@@ -204,12 +204,3 @@ async function fetchWithAuth(url, options = {}) {
     return response;
 }
 
-/** Comprueba que el backend responde. Devuelve true/false. */
-async function apiDisponible() {
-    try {
-        const r = await fetch(`${API_BASE_URL}/health`, { method: 'GET' });
-        return r.ok;
-    } catch (_) {
-        return false;
-    }
-}

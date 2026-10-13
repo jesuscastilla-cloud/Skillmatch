@@ -62,18 +62,19 @@ ni botones para borrar lo suyo (arreglado el 9 de octubre). Falta un botón para
 
 ## Mejoras de calidad
 
-- **Ventana de candidatos del perfil de empresa:** 20 estilos fijos en el JS (fondo blanco, colores
-  sueltos). No respeta el modo oscuro ni los colores de la marca.
-- **9 `confirm()` del navegador** (eliminar habilidad, experiencia, educación u oferta; aplicar;
-  iniciar sesión para guardar): cambiarlos por una ventana de la marca.
-- **Buscadores y redes:** 12 de 13 páginas no tienen `<meta name="description">`; solo la portada
-  tiene etiquetas `og:` (vista previa al compartir en WhatsApp).
-- **Peso muerto:** 3 imágenes que nadie usa (`match-intelligent.png` de 1,8 MB,
-  `usuario-profile.png`, `business-opportunities.png`): 2,1 MB dentro del jar.
-- **Código muerto:** `showRecovery` (auth.js), `contactCandidate` y la primera copia de
-  `viewCandidateProfile` (perfil-empresa.js), `apiDisponible` (api-config.js).
-- **Mensajes** consulta el servidor cada 5 s aunque la pestaña esté oculta (las notificaciones sí se
-  pausan).
+- **Ventana de candidatos del perfil de empresa (hecho):** ahora con clases y los colores de la marca;
+  funciona en modo oscuro. Las postulaciones "Revisadas" también se pueden aceptar o rechazar.
+- **`confirm()` del navegador (hecho):** los 3 que quedaban (quitar habilidad, experiencia o estudio) son
+  ahora una pregunta de la marca (`SkillMatchUI.confirmar`), con el foco en "Cancelar".
+- **Buscadores y redes (hecho):** las 14 páginas tienen descripción; las públicas que se comparten
+  (Vacantes, Únete y los registros) tienen vista previa `og:`, y las que solo sirven con sesión llevan
+  `noindex`. Falta: `og:image` debe ser la dirección completa del sitio cuando haya dominio final.
+- **Peso muerto (hecho):** fuera las 3 imágenes que nadie usaba (2 MB). Las portadas en SVG sí se usan
+  (el nombre se arma en `editor-imagen.js`).
+- **Código muerto (hecho):** fuera `showRecovery` y todo el formulario escondido de "recuperar
+  contraseña" (login.html y auth.js: decía "restablecida" sin hacer nada), `contactCandidate` y la
+  primera copia de `viewCandidateProfile`, `apiDisponible` y el CSS que solo usaban.
+- **Mensajes (hecho desde el punto 2):** solo consulta el servidor con la pestaña a la vista.
 - **Lottie:** siguen faltando los JSON de Lottieflow.
 - **Indicadores:** pendiente de decidir (el Power BI pide iniciar sesión).
 
@@ -82,10 +83,9 @@ ni botones para borrar lo suyo (arreglado el 9 de octubre). Falta un botón para
 91 tomas (13 páginas × claro/oscuro × 375/1280 px, con las tres sesiones): **sin errores de JS, sin
 desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experiencias. Lo que queda:
 
-- Etiqueta "Aceptada" del perfil de empresa: contraste 4,1:1 en modo claro (mínimo 4,5).
-- Zonas táctiles pequeñas en celular: los nombres de zona del mapa de la portada (22 px de alto),
-  "Nueva oferta" (26 px) y el enlace de la web de la empresa (26 px). ("Limpiar todo" y la "×" de
-  habilidad ya tienen zona invisible de 44 px.)
+- Etiqueta "Aceptada" (hecho): de 4,1:1 a 5,3:1.
+- Zonas táctiles (hecho): "Nueva oferta" y el enlace de la web de la empresa llegan a 44 px en celular.
+  El mapa de la portada ya estaba bien: cada botón ocupa toda su tarjeta con una capa invisible.
 - Falsos positivos revisados a mano: el logo del pie sí tiene nombre (el `alt` de la imagen), "Centro"
   del mapa se mide contra un fondo que no es el real, y las "mayúsculas" que quedan son nombres
   propios, cargos escritos por las empresas y categorías con barra.

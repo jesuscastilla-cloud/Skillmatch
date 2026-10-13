@@ -746,7 +746,6 @@ input.is-valid, select.is-valid, textarea.is-valid { border-color: var(--verde);
 }
 .form-section:first-of-type { border-top: 0; padding-top: 0; }
 
-.field-center { text-align: center; }
 
 /* Casillas y radios */
 .checkbox-label {
@@ -2788,8 +2787,6 @@ footer.pie > .container { position: relative; z-index: 1; }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-.toggle-form { color: var(--sea-deep); cursor: pointer; font-weight: 600; }
-.toggle-form:hover { text-decoration: underline; }
 
 .registro-section { padding: var(--s7) 0 var(--s9); }
 /* Registro de usuario / empresa: titulo centrado y formulario en tarjeta.
@@ -4401,7 +4398,7 @@ kbd {
    ===================================================================== */
 
 /* ---- Utilidades ---- */
-.hidden, .is-hidden, .avatar-img-hidden { display: none !important; }
+.hidden, .avatar-img-hidden { display: none !important; }
 /* Separador con texto ("o") entre dos acciones */
 .divider {
     display: flex; align-items: center; gap: var(--s3);
@@ -4416,8 +4413,6 @@ kbd {
 .form-row > * { flex: 1 1 200px; }
 .form-footer { margin-top: var(--s5); padding-top: var(--s4); border-top: 1px solid var(--hairline-soft); text-align: center; }
 .form-hint, .signup-hint { font-size: var(--t-sm); color: var(--ink-muted); }
-.option-row { display: flex; flex-wrap: wrap; gap: var(--s4); }
-.option-row label { display: inline-flex; align-items: center; gap: var(--s2); cursor: pointer; font-weight: 500; }
 .forgot-password { position: relative; font-size: var(--t-sm); font-weight: 600; color: var(--sea-deep); }
 /* Zona tactil de 44px sin mover nada de lugar */
 .forgot-password::after { content: ""; position: absolute; inset: -14px -8px; }
