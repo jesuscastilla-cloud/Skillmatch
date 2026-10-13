@@ -2507,6 +2507,20 @@ footer.pie > .container { position: relative; z-index: 1; }
 .pie-arriba .ico { width: 16px; height: 16px; transform: rotate(-90deg); transition: transform .3s var(--ease-out); }
 .pie-arriba:hover { color: #fff; }
 .pie-arriba:hover .ico { transform: rotate(-90deg) translateX(3px); }
+/* "Instalar la app": solo cuando el navegador lo permite (ui.js, seccion 21) */
+.pie-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s5); }
+.pie-instalar {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 44px;
+    padding: 0 var(--s4);
+    border: 1px solid rgba(255,255,255,.24);
+    border-radius: var(--r-pill);
+    color: #fff;
+    font-size: var(--t-sm); font-weight: 600;
+    transition: background-color .16s var(--ease), border-color .16s var(--ease);
+}
+.pie-instalar .ico { width: 16px; height: 16px; }
+.pie-instalar:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.4); }
 
 /* "SkillMatch" gigante: sale del borde de abajo, tenue y desvaneciendose */
 .pie-gigante {
@@ -3858,6 +3872,17 @@ a.meta-tag { position: relative; }
     .indicador { padding: var(--s4) var(--s4) var(--s5); }
     .indicadores-powerbi { padding: var(--s4); }
 }
+
+/* ---------- 24b. Sin conexion (la muestra sw.js) ---------- */
+.sin-conexion {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s4);
+    min-height: 100vh; min-height: 100dvh;
+    padding: var(--s7) var(--s5);
+    text-align: center;
+}
+.sin-conexion-logo { width: 180px; height: auto; margin-bottom: var(--s3); }
+.sin-conexion h1 { font-size: clamp(1.9rem, 1.3rem + 2.4vw, 2.75rem); }
+.sin-conexion .lede { margin-inline: auto; }
 
 /* ---------- 25. Movimiento de entrada ---------- */
 

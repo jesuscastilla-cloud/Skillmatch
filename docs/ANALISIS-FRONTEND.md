@@ -225,6 +225,16 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   200 vacantes más recientes (no hay filtro por habilidad). Barras propias que solo animan `transform`. El Power BI
   queda como enlace para el equipo. Código en `assets/js/indicadores.js` y la sección 24 de `app.css`. Para Jesús:
   el endpoint de conteos (ya pedido arriba) lo reduciría a una sola consulta.
+- **Instalar como app (PWA, hecho):** `manifest.json` (nombre, colores, íconos y accesos directos a Vacantes y
+  Mensajes) y `sw.js` en la raíz de `SkillMatch/src`, para que controle todas las páginas; la configuración de
+  seguridad ya deja pasar `/*.json` y `/*.js`, así que no hubo que tocar el backend. Reglas del service worker:
+  la API y lo de otros sitios nunca se guardan (ahí van los datos de cada persona); páginas, CSS y JS van primero
+  a la red, así que una versión nueva se ve al instante y la copia solo se usa sin conexión; las imágenes, primero
+  la copia. Sin internet, las páginas ya abiertas se ven y las demás muestran `pages/sin-conexion.html`, que se
+  recarga sola cuando vuelve la red. En el pie, "Instalar la app" aparece cuando el navegador lo permite. Íconos
+  nuevos de 192 y 512 px (normales y "maskable" para Android), nítidos: el favicon de 192 px se reconstruyó
+  color por color en vez de estirarlo. Solo funciona con https o en el mismo equipo (localhost): en el celular por
+  la IP del wifi no se puede instalar; en Render sí.
 
 ## Orden propuesto (solo frontend)
 

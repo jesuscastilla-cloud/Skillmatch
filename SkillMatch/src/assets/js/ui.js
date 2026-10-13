@@ -1,7 +1,7 @@
 /* =====================================================================
  *  SkillMatch — capa de interfaz
  *
- *  Se encarga de diez cosas, y de nada mas:
+ *  Se encarga de once cosas, y de nada mas:
  *    1. Iconos SVG (reemplazan a los emojis, se ven igual en todos lados)
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
@@ -13,6 +13,7 @@
  *    8. Carrusel de vacantes de la portada (SkillMatchUI.carrusel)
  *    9. Cuenta: ventanas desde JS, cambiar contrasena y mensajes sin leer
  *   10. Marcar lo que anuncio una notificacion (SkillMatchUI.resaltar)
+ *   11. Instalar como app: service worker (sw.js) y boton del pie
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -83,6 +84,7 @@
         chevron:   '<path d="m6 9 6 6 6-6"/>',
         lock:      '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
         upload:    '<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/>',
+        download:  '<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/>',
         desktop:   '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/>',
         sun:       '<circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.2M12 18.8V21M4.2 12H2M22 12h-2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>',
         moon:      '<path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/>'
@@ -1076,7 +1078,11 @@
                 '</div>' +
                 '<div class="pie-base">' +
                     '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias para conectar a las personas y las empresas de la ciudad.</p>' +
-                    '<button type="button" class="pie-arriba"><i data-ico="arrow"></i>Volver arriba</button>' +
+                    '<div class="pie-acciones">' +
+                        // Solo aparece cuando el navegador deja instalar (seccion 21)
+                        '<button type="button" class="pie-instalar" hidden><i data-ico="download"></i>Instalar la app</button>' +
+                        '<button type="button" class="pie-arriba"><i data-ico="arrow"></i>Volver arriba</button>' +
+                    '</div>' +
                 '</div>' +
             '</div>' +
             '<div class="pie-gigante" aria-hidden="true"><span>Skill</span><span>Match</span></div>';
@@ -2171,10 +2177,47 @@
         el.focus({ preventScroll: true });
     };
 
+    /* ---------- 21. Instalar como app (PWA) ---------- */
+
+    // sw.js vive en la raiz del sitio (junto a pages/), asi controla todas las
+    // paginas: aqui y en Render. Solo funciona en https o en este equipo
+    // (localhost); por la IP de la red local el navegador no lo permite.
+    function registrarApp() {
+        if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register(RUTA_JS + '../../sw.js').catch(function () { /* sin app: el sitio sigue igual */ });
+        });
+    }
+
+    // Chrome y Edge avisan cuando se puede instalar (beforeinstallprompt). No se
+    // bloquea su propio aviso: el boton del pie es una segunda forma de hacerlo.
+    let pedidoDeInstalar = null;
+    function botonInstalar() {
+        window.addEventListener('beforeinstallprompt', function (e) {
+            pedidoDeInstalar = e;
+            document.querySelectorAll('.pie-instalar').forEach(function (b) { b.hidden = false; });
+        });
+        document.addEventListener('click', function (e) {
+            const boton = e.target.closest('.pie-instalar');
+            if (!boton || !pedidoDeInstalar) return;
+            pedidoDeInstalar.prompt();
+            pedidoDeInstalar.userChoice.finally(function () {
+                pedidoDeInstalar = null;
+                boton.hidden = true;
+            });
+        });
+        window.addEventListener('appinstalled', function () {
+            document.querySelectorAll('.pie-instalar').forEach(function (b) { b.hidden = true; });
+            UI.aviso('Listo: SkillMatch quedó instalada en tu dispositivo.', 'ok');
+        });
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
         construirPie();
+        registrarApp();
+        botonInstalar();
         hydrateIcons(document);
         iconObserver.observe(document.body, { childList: true, subtree: true });
         marcarNavegacionActiva();
