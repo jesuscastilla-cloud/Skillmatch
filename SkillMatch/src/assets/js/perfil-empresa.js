@@ -359,7 +359,7 @@ function openEditAboutModal() {
     createModal('Editar "Acerca de nosotros"', `
         <div class="form-group">
             <label for="editAboutText">Descripción de la empresa</label>
-            <textarea id="editAboutText" rows="6" style="width:100%;padding:0.8rem;border:1px solid #e4e6e9;border-radius:8px;font-family:inherit;">${aboutText}</textarea>
+            <textarea id="editAboutText" rows="6" maxlength="2000">${aboutText}</textarea>
             <small>Describe tu empresa, misión, visión y valores</small>
         </div>
     `, () => {
@@ -717,185 +717,84 @@ async function guardarOferta(isEdit, offerId) {
 }
 
 async function showCandidatesModal(offer) {
+    // Antes la ventana y cada tarjeta llevaban 20 estilos fijos (fondo blanco,
+    // grises sueltos): no cambiaban en modo oscuro ni usaban la marca
+    const modal = createModal(`Candidatos para: ${sanitize(offer.title)}`,
+        '<p class="candidatos-estado">Cargando candidatos…</p>', null, 'Guardar', { ancho: 720 });
+    const cuerpo = modal.querySelector('.modal-body');
+    const acciones = modal.querySelector('.modal-actions');
+    if (acciones) acciones.hidden = true;
 
-    // Mostrar modal con loading
-    const modal = createModal(`Candidatos para: ${sanitize(offer.title)}`, `
-        <div style="text-align:center;padding:2rem;">
-            <p>Cargando candidatos...</p>
-        </div>
-    `);
-    
-    // Ocultar botones de acción mientras carga
-    const modalActions = modal.querySelector('.modal-actions');
-    if (modalActions) modalActions.style.display = 'none';
-    
     try {
-        // Obtener aplicaciones para esta oferta
-        const response = await fetchWithAuth(`${API_BASE_URL}/applications/job/${offer.id}`);
-        
-        if (!response.ok) {
-            throw new Error('Error al cargar candidatos');
-        }
-        
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/job/${encodeURIComponent(offer.id)}`);
+        if (!response.ok) throw new Error('Error al cargar candidatos');
         const applications = await response.json();
-        
-        // Generar contenido del modal
-        let content = '';
-        
-        if (applications.length === 0) {
-            content = `
-                <div style="text-align:center;padding:2rem;">
-                    <p style="color:#65676b;font-size:1.1rem;">No hay candidatos para esta oferta todavía.</p>
-                </div>
-            `;
-        } else {
-            content = `
-                <div style="max-height:500px;overflow-y:auto;">
-                    <p style="margin-bottom:1.5rem;color:#65676b;">
-                        <strong>${applications.length}</strong> candidato${applications.length !== 1 ? 's' : ''} ha${applications.length !== 1 ? 'n' : ''} aplicado a esta oferta.
-                    </p>
-                    ${applications.map(app => createCandidateCard(app, offer.id)).join('')}
-                </div>
-            `;
-        }
-        
-        // Actualizar contenido del modal
-        const modalBody = modal.querySelector('.modal-body');
-        if (modalBody) {
-            modalBody.innerHTML = content;
-        }
-        
-        // Mostrar botón de cerrar
-        if (modalActions) {
-            modalActions.style.display = 'flex';
-            modalActions.innerHTML = '<button class="btn-secondary-modal" onclick="closeModal()">Cerrar</button>';
-        }
-        
+        const n = applications.length;
+        cuerpo.innerHTML = n === 0
+            ? '<p class="candidatos-estado">Todavía nadie se ha postulado a esta vacante.</p>'
+            : `<p class="candidatos-resumen"><strong>${n}</strong> ${n === 1 ? 'persona se postuló' : 'personas se postularon'} a esta vacante.</p>
+               ${applications.map(app => createCandidateCard(app, offer.id)).join('')}`;
     } catch (error) {
-        const modalBody = modal.querySelector('.modal-body');
-        if (modalBody) {
-            modalBody.innerHTML = `
-                <div style="text-align:center;padding:2rem;">
-                    <p style="color:#dc3545;">Error al cargar los candidatos. Por favor, intenta de nuevo.</p>
-                </div>
-            `;
-        }
-        
-        // Mostrar botón de cerrar
-        if (modalActions) {
-            modalActions.style.display = 'flex';
-            modalActions.innerHTML = '<button class="btn-secondary-modal" onclick="closeModal()">Cerrar</button>';
-        }
+        cuerpo.innerHTML = '<p class="candidatos-estado candidatos-error">No pudimos cargar los candidatos. Intenta de nuevo en un momento.</p>';
+    }
+    if (acciones) {
+        acciones.hidden = false;
+        acciones.innerHTML = '<button type="button" class="btn-secondary-modal" onclick="closeModal()">Cerrar</button>';
     }
 }
 
+const ESTADOS_CANDIDATO = { pendiente: 'Pendiente', revisada: 'Revisada', aceptada: 'Aceptada', rechazada: 'Rechazada' };
+
 function createCandidateCard(application, offerId) {
-    const appliedDate = new Date(application.appliedDate).toLocaleDateString('es-ES', {
-        day: 'numeric', month: 'long', year: 'numeric'
-    });
-
-    const statusConfig = {
-        'pendiente': { color: '#b45309', bg: '#fef3c7', border: '#fcd34d', label: 'Pendiente' },
-        'revisada':  { color: '#0369a1', bg: '#e0f2fe', border: '#7dd3fc', label: 'Revisada'  },
-        'aceptada':  { color: '#166534', bg: '#dcfce7', border: '#86efac', label: 'Aceptada'  },
-        'rechazada': { color: '#991b1b', bg: '#fee2e2', border: '#fca5a5', label: 'Rechazada' }
-    };
-
-    const status = application.status?.toLowerCase() || 'pendiente';
-    const sc = statusConfig[status] || statusConfig['pendiente'];
-
-    const name = sanitize(application.userName) || 'Candidato';
-    const initials = name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
-    const avatarColors = ['#0369a1','#0891b2','#0d9488','#059669','#7c3aed','#9333ea','#c026d3'];
-    const avatarBg = avatarColors[name.charCodeAt(0) % avatarColors.length];
-
-    const avatarHtml = application.userProfileImageUrl
-        ? `<img src="${sanitize(application.userProfileImageUrl)}"
-                alt="${name}"
-                onerror="this.outerHTML=this.nextElementSibling.outerHTML;this.nextElementSibling.style.display='flex';"
-                style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;">
-           <div style="display:none;width:64px;height:64px;border-radius:50%;background:${avatarBg};color:white;font-size:1.4rem;font-weight:700;align-items:center;justify-content:center;">${initials}</div>`
-        : `<div style="width:64px;height:64px;border-radius:50%;background:${avatarBg};color:white;font-size:1.4rem;font-weight:700;display:flex;align-items:center;justify-content:center;">${initials}</div>`;
-
-    const infoRow = (icon, label, value, isLink = false) => {
-        if (!value) return '';
-        const content = isLink
-            ? `<a href="mailto:${value}" style="color:#0369a1;text-decoration:none;font-weight:500;">${sanitize(value)}</a>`
-            : `<span style="color:#374151;">${sanitize(value)}</span>`;
-        return `
-            <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;">
-                <span style="font-size:0.95rem;width:1.1rem;text-align:center;flex-shrink:0;">${icon}</span>
-                <span style="font-size:0.8rem;color:#6b7280;font-weight:600;min-width:4.5rem;">${label}</span>
-                <span style="font-size:0.875rem;">${content}</span>
-            </div>`;
-    };
+    const fecha = new Date(application.appliedDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+    const status = String(application.status || 'pendiente').toLowerCase();
+    const etiqueta = ESTADOS_CANDIDATO[status] || ESTADOS_CANDIDATO.pendiente;
+    const name = sanitize(application.userName) || 'Persona';
+    const initials = (application.userName || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const iniciales = `<span class="candidato-iniciales"${application.userProfileImageUrl ? ' hidden' : ''}>${sanitize(initials)}</span>`;
+    // Si la foto no carga, quedan las iniciales
+    const avatar = application.userProfileImageUrl
+        ? `<img class="candidato-foto" src="${sanitize(application.userProfileImageUrl)}" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false">${iniciales}`
+        : iniciales;
+    const dato = (icono, nombre, valor) => valor
+        ? `<li><i data-ico="${icono}"></i><span class="candidato-dato-nombre">${nombre}</span><span class="candidato-dato-valor">${valor}</span></li>`
+        : '';
+    const correo = application.userEmail ? sanitize(application.userEmail) : '';
+    // Aceptar o rechazar mientras la empresa no haya decidido (igual que en la lista de postulaciones)
+    const decidir = status === 'pendiente' || status === 'revisada';
 
     return `
-        <div style="border:1px solid #e5e7eb;border-radius:14px;background:white;overflow:hidden;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-
-            <!-- Header con avatar y datos principales -->
-            <div style="display:flex;align-items:flex-start;gap:1.25rem;padding:1.5rem 1.5rem 1.25rem;">
-                <div style="flex-shrink:0;">${avatarHtml}</div>
-                <div style="flex:1;min-width:0;">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
-                        <div>
-                            <h4 style="margin:0 0 0.2rem 0;color:#111827;font-size:1.1rem;font-weight:700;line-height:1.3;">${name}</h4>
-                            <p style="margin:0;color:#6b7280;font-size:0.875rem;font-weight:500;">${sanitize(application.userHeadline) || 'Profesional'}</p>
-                        </div>
-                        <span style="flex-shrink:0;display:inline-flex;align-items:center;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.78rem;font-weight:700;letter-spacing:0.03em;color:${sc.color};background:${sc.bg};border:1px solid ${sc.border};">
-                            ${sc.label}
-                        </span>
-                    </div>
-
-                    <!-- Info de contacto -->
-                    <div style="margin-top:0.9rem;border-top:1px solid #f3f4f6;padding-top:0.75rem;">
-                        ${infoRow('<i data-ico="mail"></i>', 'Email', application.userEmail, true)}
-                        ${infoRow('<i data-ico="phone"></i>', 'Teléfono', application.userPhone)}
-                        ${infoRow('⊙', 'Ubicación', application.userLocation)}
-                        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;">
-                            <span style="font-size:0.95rem;width:1.1rem;text-align:center;flex-shrink:0;"><i data-ico="clock"></i></span>
-                            <span style="font-size:0.8rem;color:#9ca3af;">Aplicó el ${appliedDate}</span>
-                        </div>
-                    </div>
+        <article class="candidato-tarjeta">
+            <div class="candidato-cabeza">
+                <div class="candidato-avatar">${avatar}</div>
+                <div class="candidato-nombre">
+                    <h3>${name}</h3>
+                    <p>${sanitize(application.userHeadline) || 'Sin título en su perfil'}</p>
                 </div>
+                <span class="status-badge ${ESTADOS_CANDIDATO[status] ? status : 'pendiente'}">${etiqueta}</span>
             </div>
-
-            <!-- Carta de presentación -->
+            <ul class="candidato-datos">
+                ${dato('mail', 'Correo', correo ? `<a href="mailto:${correo}">${correo}</a>` : '')}
+                ${dato('phone', 'Teléfono', sanitize(application.userPhone))}
+                ${dato('pin', 'Ciudad', sanitize(application.userLocation))}
+                ${dato('clock', 'Se postuló', fecha)}
+            </ul>
             ${application.coverLetter ? `
-                <div style="margin:0 1.5rem 1.25rem;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:1rem;">
-                    <p style="margin:0 0 0.5rem 0;color:#374151;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;">Carta de presentación</p>
-                    <p style="margin:0;color:#4b5563;font-size:0.875rem;line-height:1.7;">${sanitize(application.coverLetter)}</p>
-                </div>
-            ` : ''}
-
-            <!-- Acciones -->
-            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;padding:1rem 1.5rem;background:#f9fafb;border-top:1px solid #f3f4f6;">
-                <button onclick="viewCandidateProfile('${application.userId}')"
-                        style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:#1e3a5f;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
-                    Ver perfil
-                </button>
-                <a href="mensajes.html?userId=${encodeURIComponent(application.userId)}"
-                   style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:#0B7E8C;color:white;border-radius:8px;font-size:0.85rem;font-weight:600;text-decoration:none;">
-                    <i data-ico="chat"></i> Mensaje
-                </a>
+                <div class="candidato-carta">
+                    <p class="candidato-carta-titulo">Su mensaje para la empresa</p>
+                    <p>${sanitize(application.coverLetter)}</p>
+                </div>` : ''}
+            <div class="candidato-acciones">
+                <button type="button" class="btn-candidato" data-id="${escaparHtml(application.userId)}" onclick="viewCandidateProfile(this.dataset.id)">Ver perfil</button>
+                <a class="btn-candidato principal" href="mensajes.html?userId=${encodeURIComponent(application.userId)}"><i data-ico="chat"></i> Mensaje</a>
                 <!-- Nombre y correo en data-: dentro del onclick una comilla en el nombre ejecutaba codigo -->
-                <button data-email="${escaparHtml(application.userEmail)}" data-nombre="${escaparHtml(application.userName)}" onclick="contactCandidateByEmail(this.dataset.email, this.dataset.nombre)"
-                        style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:white;color:#0369a1;border:1.5px solid #bfdbfe;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
-                    Contactar
-                </button>
-                ${status === 'pendiente' ? `
-                    <button onclick="updateCandidateStatus('${application.id}', 'aceptada', '${offerId}')"
-                            style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
-                        <i data-ico="check"></i> Aceptar
-                    </button>
-                    <button onclick="updateCandidateStatus('${application.id}', 'rechazada', '${offerId}')"
-                            style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:white;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
-                        <i data-ico="close"></i> Rechazar
-                    </button>
+                ${correo ? `<button type="button" class="btn-candidato" data-email="${escaparHtml(application.userEmail)}" data-nombre="${escaparHtml(application.userName)}" onclick="contactCandidateByEmail(this.dataset.email, this.dataset.nombre)"><i data-ico="mail"></i> Correo</button>` : ''}
+                ${decidir ? `
+                    <button type="button" class="btn-candidato aceptar" data-id="${escaparHtml(application.id)}" data-oferta="${escaparHtml(offerId)}" onclick="updateCandidateStatus(this.dataset.id, 'aceptada', this.dataset.oferta)"><i data-ico="check"></i> Aceptar</button>
+                    <button type="button" class="btn-candidato rechazar" data-id="${escaparHtml(application.id)}" data-oferta="${escaparHtml(offerId)}" onclick="updateCandidateStatus(this.dataset.id, 'rechazada', this.dataset.oferta)"><i data-ico="close"></i> Rechazar</button>
                 ` : ''}
             </div>
-        </div>
-    `;
+        </article>`;
 }
 
 // Función para contactar candidato por email
@@ -927,17 +826,6 @@ async function updateCandidateStatus(applicationId, newStatus, offerId) {
     } catch (error) {
         alert('Error al actualizar el estado del candidato: ' + error.message);
     }
-}
-
-function viewCandidateProfile(candidateId) {
-    showNotification('Abriendo perfil del candidato...');
-    setTimeout(() => {
-        window.location.href = 'perfil-usuario.html';
-    }, 1000);
-}
-
-function contactCandidate(candidateId, candidateName) {
-    showNotification(`Abriendo chat con ${candidateName}...`);
 }
 
 // ========================================

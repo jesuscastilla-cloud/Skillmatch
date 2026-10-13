@@ -584,7 +584,6 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .btn-block { width: 100%; }
 
 .btn-icon,
-.offer-menu-btn,
 .btn-close-modal,
 .modal-close,
 .notifications-btn {
@@ -599,7 +598,6 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
     transition: background-color .16s var(--ease), color .16s var(--ease), transform .16s var(--ease);
 }
 .btn-icon:hover,
-.offer-menu-btn:hover,
 .btn-close-modal:hover,
 .modal-close:hover,
 .notifications-btn:hover {
@@ -974,7 +972,9 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     /* Los del perfil de empresa faltaban: solo estaban los del perfil de usuario */
     .btn-edit-avatar, .btn-edit-logo-new, .btn-icon-action { min-width: 44px; min-height: 44px; }
     /* Botones de icono (agregar, menu de la oferta, cerrar) y acciones de las ofertas */
-    .btn-icon, .offer-menu-btn, .btn-close-modal, .modal-close, .notifications-btn { min-width: 44px; min-height: 44px; }
+    .btn-icon, .btn-close-modal, .modal-close, .notifications-btn { min-width: 44px; min-height: 44px; }
+    /* "Nueva oferta" medía 26 px de alto */
+    .btn-new-offer { min-height: 44px; }
     .btn-small, .btn-mini-action, .btn-offer-action { min-height: 44px; }
     /* Barra superior: logo y botones de sesion; campo para subir archivos */
     .logo a, .btn-login, .btn-register, input[type="file"] { min-height: 44px; }
@@ -1157,10 +1157,10 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 }
 
 .status-badge.pendiente,  .badge-warn  { background: var(--sol-soft);  color: var(--sol-deep); }
-.status-badge.aceptada,   .badge-ok    { background: var(--verde-soft); color: var(--verde); }
+.status-badge.aceptada,   .badge-ok    { background: var(--verde-soft); color: var(--verde-texto); } /* con --verde quedaba en 4,1:1 */
 .status-badge.rechazada,  .badge-error { background: var(--rojo-soft);  color: var(--rojo); }
 .status-badge.revisada,   .badge-info  { background: var(--sea-light);  color: var(--sea-deep); }
-.status-badge.activa                   { background: var(--verde-soft); color: var(--verde); }
+.status-badge.activa                   { background: var(--verde-soft); color: var(--verde-texto); }
 .status-badge.cerrada                  { background: var(--hairline-soft); color: var(--ink-muted); }
 /* Las ofertas del perfil de empresa usan .active/.inactive ("Activa" salía gris) */
 .status-badge.active   { background: var(--verde-soft); color: var(--verde-texto); }
@@ -3527,6 +3527,88 @@ footer.pie > .container { position: relative; z-index: 1; }
     .postulacion-accion { grid-column: 1 / -1; justify-content: flex-start; }
 }
 @media (pointer: coarse) { .btn-retirar, .btn-retiro-no { min-height: 44px; } }
+
+/* ---------- 22c. Ventana de candidatos (perfil de empresa) ---------- */
+/* Antes cada tarjeta llevaba 20 estilos fijos en el JS: blanca en modo oscuro */
+
+.candidatos-resumen { margin-bottom: var(--s4); color: var(--ink-3); }
+.candidatos-resumen strong { color: var(--ink); }
+.candidatos-estado { padding: var(--s6) 0; text-align: center; color: var(--ink-muted); }
+.candidatos-error { color: var(--rojo); }
+.candidato-tarjeta {
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow: var(--sh-1);
+    overflow: hidden;
+}
+.candidato-tarjeta + .candidato-tarjeta { margin-top: var(--s4); }
+.candidato-cabeza { display: flex; align-items: flex-start; gap: var(--s4); padding: var(--s5) var(--s5) var(--s3); }
+.candidato-avatar { flex: 0 0 auto; }
+.candidato-foto, .candidato-iniciales {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+}
+.candidato-foto { display: block; object-fit: cover; }
+.candidato-iniciales {
+    display: grid; place-items: center;
+    background: var(--sea-light); color: var(--sea-deep);
+    font-family: var(--font-display); font-size: var(--t-lg); font-weight: 700;
+}
+.candidato-iniciales[hidden], .candidato-foto[hidden] { display: none; }
+.candidato-nombre { flex: 1; min-width: 0; }
+.candidato-nombre h3 { font-size: var(--t-md); overflow-wrap: break-word; }
+.candidato-nombre p { margin-top: 2px; font-size: var(--t-sm); color: var(--ink-3); }
+.candidato-cabeza .status-badge { flex: 0 0 auto; }
+.candidato-datos {
+    list-style: none; margin: 0 var(--s5); padding: var(--s3) 0;
+    border-top: 1px solid var(--hairline-soft);
+}
+.candidato-datos li { display: flex; align-items: center; gap: var(--s2); padding: 4px 0; font-size: var(--t-sm); }
+.candidato-datos .ico { flex: 0 0 auto; color: var(--ink-muted); }
+.candidato-dato-nombre { min-width: 6.5rem; font-weight: 600; color: var(--ink-muted); }
+.candidato-dato-valor { min-width: 0; overflow-wrap: anywhere; color: var(--ink-2); }
+.candidato-datos a { color: var(--sea-deep); font-weight: 600; }
+.candidato-carta {
+    margin: 0 var(--s5) var(--s4);
+    padding: var(--s4);
+    border-radius: var(--r-md);
+    background: var(--surface-sunk);
+}
+.candidato-carta-titulo { margin-bottom: var(--s1); font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+.candidato-carta p:last-child { font-size: var(--t-sm); line-height: 1.65; color: var(--ink-2); white-space: pre-line; }
+.candidato-acciones {
+    display: flex; flex-wrap: wrap; gap: var(--s2);
+    padding: var(--s3) var(--s5);
+    border-top: 1px solid var(--hairline-soft);
+    background: var(--surface-sunk);
+}
+.btn-candidato {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 36px;
+    padding: 6px var(--s4);
+    border-radius: var(--r-pill);
+    border: 1px solid var(--hairline);
+    background: var(--surface); color: var(--ink);
+    font-size: var(--t-sm); font-weight: 600;
+    text-decoration: none;
+}
+.btn-candidato:hover { border-color: var(--sea); color: var(--sea-deep); background: var(--sea-light); }
+.btn-candidato.principal { border-color: transparent; background: var(--sea); color: #fff; }
+.btn-candidato.principal:hover { background: var(--sea-deep); color: #fff; }
+[data-theme="dark"] .btn-candidato.principal,
+[data-theme="dark"] .btn-candidato.principal:hover { color: var(--surface-inverse); }
+.btn-candidato.aceptar { border-color: transparent; background: var(--verde-soft); color: var(--verde-texto); }
+.btn-candidato.rechazar:hover { border-color: var(--rojo); color: var(--rojo); background: var(--rojo-soft); }
+@media (pointer: coarse) { .btn-candidato { min-height: 44px; } }
+@media (max-width: 600px) {
+    .candidato-cabeza { flex-wrap: wrap; }
+    .candidato-dato-nombre { min-width: 5.5rem; }
+}
+
+/* Enlace a la web de la empresa: zona para tocar de 44 px sin agrandar la etiqueta */
+a.meta-tag { position: relative; }
+@media (pointer: coarse) { a.meta-tag::after { content: ""; position: absolute; inset: -9px -4px; } }
 
 /* ---------- 23. Mensajes y conexiones ---------- */
 
