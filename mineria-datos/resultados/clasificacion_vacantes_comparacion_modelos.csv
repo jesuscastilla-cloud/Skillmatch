@@ -1,0 +1,4 @@
+modelo,accuracy_cv_media,accuracy_cv_desv,accuracy_prueba
+Regresion logistica,0.7728,0.0271,0.7308
+Naive Bayes (Bernoulli),0.7792,0.0187,0.765
+Random Forest,0.7888,0.0256,0.7778

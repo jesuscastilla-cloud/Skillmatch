@@ -1,0 +1,8 @@
+metrica,valor
+filas_totales,1167.0
+habilidades_usadas,198.0
+filas_entrenamiento,933.0
+filas_prueba,234.0
+accuracy_referencia,0.2051
+accuracy_modelo,0.7308
+f1_macro,0.7346
