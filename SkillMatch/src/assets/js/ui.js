@@ -237,6 +237,22 @@
                 miPerfil.setAttribute('href', 'perfil-empresa.html');
             }
         }
+        // Paginas publicas (portada, Indicadores, politica...) escritas con la
+        // barra de visitante: con sesion se ve la misma barra del resto del sitio.
+        // Antes una persona veia "Como funciona" y "Empresas" en lugar de
+        // Conexiones y Mensajes (y el numero de mensajes sin leer no salia)
+        const comoFunciona = principales && principales.querySelector('a[href$="#como-funciona"]');
+        const enlaceEmpresas = principales && principales.querySelector('a[href="empresas.html"]');
+        if (comoFunciona && enlaceEmpresas) {
+            if (datos.userType === 'empresa') {
+                comoFunciona.parentElement.remove();
+            } else {
+                comoFunciona.setAttribute('href', 'conexiones.html');
+                comoFunciona.textContent = 'Conexiones';
+            }
+            enlaceEmpresas.setAttribute('href', 'mensajes.html');
+            enlaceEmpresas.textContent = 'Mensajes';
+        }
         const entrar = document.querySelector('header .nav-links a.btn-login:not([data-cerrar-sesion])');
         const unirse = document.querySelector('header .nav-links a.btn-register');
         if (!entrar) return;
