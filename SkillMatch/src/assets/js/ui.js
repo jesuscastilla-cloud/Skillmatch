@@ -77,6 +77,7 @@
         bookmark:  '<path d="M6.5 4h11a1 1 0 0 1 1 1v15l-6.5-4-6.5 4V5a1 1 0 0 1 1-1Z"/>',
         send:      '<path d="M21 4 3 11l7 2.5L12.5 21 21 4Z"/><path d="m10 14 4-4"/>',
         menu:      '<path d="M4 7h16M4 12h16M4 17h16"/>',
+        columnas:  '<rect x="3.5" y="4" width="4.5" height="16" rx="1.2"/><rect x="9.75" y="4" width="4.5" height="11" rx="1.2"/><rect x="16" y="4" width="4.5" height="7" rx="1.2"/>',
         filter:    '<path d="M4 6h16M7 12h10M10 18h4"/>',
         logout:    '<path d="M14 7V5.5A1.5 1.5 0 0 0 12.5 4h-6A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h6a1.5 1.5 0 0 0 1.5-1.5V17"/><path d="M10 12h10M17 8.5l3.5 3.5L17 15.5"/>',
         plus:      '<path d="M12 5v14M5 12h14"/>',

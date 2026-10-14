@@ -935,6 +935,8 @@ const POSTULACIONES_VISIBLES = 5;
 function displayApplications(applications) {
     const applicationsList = document.getElementById('applications-list');
     if (!applicationsList) return;
+    postulacionesEmpresa = [...applications].sort((a, b) => new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0));
+    prepararVistaPostulaciones(applications.length > 0);
 
     if (applications.length === 0) {
         applicationsList.innerHTML = '<div class="empty-state"><p>Aún no has recibido postulaciones. Cuando alguien se postule a tus ofertas, aparecerá aquí.</p></div>';
@@ -970,6 +972,7 @@ function postulacionDesdeAviso() {
 }
 
 function irAPostulacionPedida() {
+    if (vistaPostulaciones === 'tablero') mostrarVistaPostulaciones('lista', false);
     const pedida = new URLSearchParams(window.location.search).get('postulacion');
     const tarjeta = pedida && [...document.querySelectorAll('#applications-list .application-card')].find(t => t.dataset.applicationId === pedida);
     if (!tarjeta) {
@@ -983,6 +986,158 @@ function irAPostulacionPedida() {
         if (verTodas) showAllApplications(verTodas);
     }
     SkillMatchUI.resaltar(tarjeta);
+}
+
+// ---- Tablero de postulaciones ----
+// Otra forma de ver las mismas postulaciones: una columna por estado. Se
+// mueven arrastrando la tarjeta (mouse) o con sus botones (teclado y celular).
+// La vista elegida se recuerda en este navegador.
+const COLUMNAS_TABLERO = [
+    { estado: 'pendiente', titulo: 'Pendientes', ico: 'clock' },
+    { estado: 'revisada', titulo: 'Revisadas', ico: 'eye' },
+    { estado: 'aceptada', titulo: 'Aceptadas', ico: 'check' },
+    { estado: 'rechazada', titulo: 'Rechazadas', ico: 'close' }
+];
+// Botones de cada tarjeta segun su columna (arrastrando se puede ir a cualquiera)
+const MOVIMIENTOS_TABLERO = {
+    pendiente: [['revisada', 'Marcar revisada'], ['aceptada', 'Aceptar'], ['rechazada', 'Rechazar']],
+    revisada: [['aceptada', 'Aceptar'], ['rechazada', 'Rechazar']],
+    aceptada: [['revisada', 'Volver a revisadas']],
+    rechazada: [['revisada', 'Volver a revisadas']]
+};
+const VISTA_POSTULACIONES_KEY = 'skillmatch_vista_postulaciones';
+let postulacionesEmpresa = [];
+let vistaPostulaciones = 'lista';
+try { if (localStorage.getItem(VISTA_POSTULACIONES_KEY) === 'tablero') vistaPostulaciones = 'tablero'; } catch (e) { /* sin almacenamiento: lista */ }
+
+const estadoPostulacionEmpresa = app => String(app.status || 'pendiente').toLowerCase();
+
+function tarjetaTablero(app) {
+    const estado = estadoPostulacionEmpresa(app);
+    // Sin el año cuando es del año en curso: la tarjeta es angosta
+    const dia = app.appliedDate ? new Date(app.appliedDate) : null;
+    const fecha = dia ? dia.toLocaleDateString('es-CO', dia.getFullYear() === new Date().getFullYear()
+        ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    return `
+        <li class="tablero-tarjeta" draggable="true" data-id="${escaparHtml(app.id)}">
+            <a class="tablero-nombre" href="perfil-usuario.html?id=${encodeURIComponent(app.userId)}" target="_blank" rel="noopener">${sanitize(app.userName || 'Candidato')}</a>
+            <p class="tablero-vacante">${sanitize(app.jobTitle || 'Oferta sin título')}</p>
+            ${fecha ? `<p class="tablero-fecha">Se postuló el ${fecha}</p>` : ''}
+            <div class="tablero-acciones">
+                ${(MOVIMIENTOS_TABLERO[estado] || []).map(([destino, texto]) =>
+                    `<button type="button" class="tablero-mover${destino === 'aceptada' ? ' aceptar' : ''}" data-mover="${destino}">${texto}</button>`).join('')}
+            </div>
+        </li>`;
+}
+
+function pintarTablero() {
+    const tablero = document.getElementById('applications-board');
+    if (!tablero) return;
+    tablero.innerHTML = COLUMNAS_TABLERO.map(col => {
+        const apps = postulacionesEmpresa.filter(a => estadoPostulacionEmpresa(a) === col.estado);
+        return `
+            <section class="tablero-columna" data-estado="${col.estado}" aria-labelledby="columna-${col.estado}">
+                <h3 id="columna-${col.estado}"><i data-ico="${col.ico}"></i> ${col.titulo} <span class="tablero-cuenta">${apps.length}</span></h3>
+                <ul class="tablero-lista">${apps.map(tarjetaTablero).join('') || '<li class="tablero-vacia">Ninguna por ahora</li>'}</ul>
+            </section>`;
+    }).join('');
+}
+
+// Muestra la lista o el tablero; "recordar" lo guarda para la proxima vez
+function mostrarVistaPostulaciones(vista, recordar) {
+    vistaPostulaciones = vista;
+    const lista = document.getElementById('applications-list');
+    const tablero = document.getElementById('applications-board');
+    if (!lista || !tablero) return;
+    lista.hidden = vista === 'tablero';
+    tablero.hidden = vista !== 'tablero';
+    if (vista === 'tablero') pintarTablero();
+    document.querySelectorAll('#vistaPostulaciones .vista-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.vista === vista ? 'true' : 'false'));
+    if (recordar) {
+        try { localStorage.setItem(VISTA_POSTULACIONES_KEY, vista); } catch (e) { /* sin almacenamiento */ }
+    }
+}
+
+// El selector solo aparece si hay postulaciones; los eventos se conectan una vez
+function prepararVistaPostulaciones(hay) {
+    const selector = document.getElementById('vistaPostulaciones');
+    const tablero = document.getElementById('applications-board');
+    if (!selector || !tablero) return;
+    selector.hidden = !hay;
+    if (!selector.dataset.listo) {
+        selector.dataset.listo = '1';
+        selector.addEventListener('click', e => {
+            const boton = e.target.closest('.vista-btn');
+            if (boton) mostrarVistaPostulaciones(boton.dataset.vista, true);
+        });
+        tablero.addEventListener('click', e => {
+            const boton = e.target.closest('[data-mover]');
+            if (boton) moverPostulacion(boton.closest('.tablero-tarjeta').dataset.id, boton.dataset.mover, true);
+        });
+        tablero.addEventListener('dragstart', e => {
+            const tarjeta = e.target.closest('.tablero-tarjeta');
+            if (!tarjeta) return;
+            e.dataTransfer.setData('text/plain', tarjeta.dataset.id);
+            e.dataTransfer.effectAllowed = 'move';
+            tarjeta.classList.add('arrastrando');
+        });
+        tablero.addEventListener('dragend', e => {
+            const tarjeta = e.target.closest('.tablero-tarjeta');
+            if (tarjeta) tarjeta.classList.remove('arrastrando');
+            tablero.querySelectorAll('.encima').forEach(c => c.classList.remove('encima'));
+        });
+        tablero.addEventListener('dragover', e => {
+            const columna = e.target.closest('.tablero-columna');
+            if (!columna) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            tablero.querySelectorAll('.encima').forEach(c => { if (c !== columna) c.classList.remove('encima'); });
+            columna.classList.add('encima');
+        });
+        tablero.addEventListener('drop', e => {
+            const columna = e.target.closest('.tablero-columna');
+            if (!columna) return;
+            e.preventDefault();
+            columna.classList.remove('encima');
+            moverPostulacion(e.dataTransfer.getData('text/plain'), columna.dataset.estado, false);
+        });
+    }
+    if (!hay) mostrarVistaPostulaciones('lista', false);
+    else if (vistaPostulaciones === 'tablero') mostrarVistaPostulaciones('tablero', false);
+}
+
+// Cambia el estado en el servidor. La tarjeta se mueve al instante y vuelve a
+// su columna si el servidor no responde bien.
+async function moverPostulacion(id, estado, conTeclado) {
+    const app = postulacionesEmpresa.find(a => String(a.id) === String(id));
+    if (!app || estadoPostulacionEmpresa(app) === estado) return;
+    const antes = app.status;
+    const columna = COLUMNAS_TABLERO.find(c => c.estado === estado);
+    app.status = estado;
+    pintarTablero();
+    // Con teclado, el foco sigue a la tarjeta en su nueva columna
+    const enfocar = () => {
+        if (!conTeclado) return;
+        const tarjeta = [...document.querySelectorAll('#applications-board .tablero-tarjeta')].find(t => t.dataset.id === String(id));
+        const destino = tarjeta && (tarjeta.querySelector('[data-mover]') || tarjeta.querySelector('a'));
+        if (destino) destino.focus();
+    };
+    enfocar();
+    try {
+        const params = new URLSearchParams({ status: estado });
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/${encodeURIComponent(id)}/status?${params}`, { method: 'PATCH' });
+        if (!response.ok) throw new Error(`Error ${response.status}`);
+        showNotification(`${sanitize(app.userName || 'La postulación')} pasó a ${columna.titulo.toLowerCase()}.`);
+        // La lista y las cifras de arriba tambien cambian
+        displayApplications(postulacionesEmpresa);
+        enfocar();
+        loadActivityStats();
+    } catch (error) {
+        app.status = antes;
+        pintarTablero();
+        enfocar();
+        showNotification('No se pudo mover la postulación. Intenta de nuevo.', 'error');
+    }
 }
 
 function showAllApplications(boton) {

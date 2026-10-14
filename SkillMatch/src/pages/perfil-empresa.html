@@ -129,11 +129,17 @@
                     <div class="content-section-card" id="candidatos">
                         <div class="section-card-header">
                             <h2>Postulaciones recibidas</h2>
+                            <!-- Lista o tablero por estado (perfil-empresa.js) -->
+                            <div class="vista-postulaciones" id="vistaPostulaciones" role="group" aria-label="Cómo ver las postulaciones" hidden>
+                                <button type="button" class="vista-btn" data-vista="lista" aria-pressed="true"><i data-ico="list"></i> Lista</button>
+                                <button type="button" class="vista-btn" data-vista="tablero" aria-pressed="false"><i data-ico="columnas"></i> Tablero</button>
+                            </div>
                         </div>
                         <div class="section-card-body">
                             <div id="applications-list" class="applications-container">
                                 <p class="loading-text">Cargando postulaciones...</p>
                             </div>
+                            <div id="applications-board" class="tablero" hidden></div>
                         </div>
                     </div>
                 </main>

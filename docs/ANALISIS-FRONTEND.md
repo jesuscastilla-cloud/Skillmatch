@@ -270,6 +270,12 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   otra persona ("Ver hoja de vida") y desde la ventana de candidatos de la empresa. Mientras el backend falle en
   experiencias, la hoja avisa en pantalla (no en el PDF) que sale sin esa sección. De paso: las fechas "2025-09-12"
   se leen como fecha local (con `new Date()` salían un día antes por la hora de Colombia).
+- **Tablero de postulaciones (hecho, del plan original):** en "Postulaciones recibidas" la empresa elige ver la lista o
+  un tablero con una columna por estado (Pendientes, Revisadas, Aceptadas, Rechazadas). Las tarjetas se mueven
+  arrastrándolas con el mouse o con sus botones ("Marcar revisada", "Aceptar", "Rechazar", "Volver a revisadas"), que
+  sirven con teclado y en el celular; el foco sigue a la tarjeta. El cambio se ve al instante y vuelve atrás si el
+  servidor falla; la lista y las cifras de arriba se actualizan. La vista elegida se recuerda en el navegador. Al
+  llegar desde una notificación se muestra la lista, para marcar la postulación.
 
 ## Orden propuesto (solo frontend)
 

@@ -3673,6 +3673,96 @@ footer.pie > .container { position: relative; z-index: 1; }
 a.meta-tag { position: relative; }
 @media (pointer: coarse) { a.meta-tag::after { content: ""; position: absolute; inset: -9px -4px; } }
 
+/* ---------- 22d. Tablero de postulaciones (perfil de empresa) ---------- */
+/* Una columna por estado. Se arrastra con el mouse; con teclado o en el
+   celular, cada tarjeta tiene botones. Solo cambian bordes y fondos. */
+
+.vista-postulaciones {
+    display: inline-flex; gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-pill);
+    background: var(--surface-sunk);
+}
+.vista-postulaciones[hidden] { display: none; }
+.vista-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 34px; padding: 0 var(--s3);
+    border-radius: var(--r-pill);
+    font-size: var(--t-sm); font-weight: 600; color: var(--ink-3);
+}
+.vista-btn .ico { width: 15px; height: 15px; }
+.vista-btn:hover { color: var(--ink); }
+.vista-btn[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--sh-1); }
+
+.tablero {
+    display: grid; grid-template-columns: repeat(4, minmax(170px, 1fr)); gap: var(--s3);
+    overflow-x: auto;
+    padding-bottom: var(--s2);
+    scroll-snap-type: x proximity;
+}
+.tablero[hidden] { display: none; }
+.tablero-columna {
+    display: flex; flex-direction: column;
+    min-width: 0;
+    padding: var(--s3);
+    border: 2px dashed transparent;
+    border-radius: var(--r-md);
+    background: var(--surface-sunk);
+    scroll-snap-align: start;
+    transition: border-color .15s var(--ease), background-color .15s var(--ease);
+}
+.tablero-columna.encima { border-color: var(--sea); background: var(--sea-light); }
+[data-theme="dark"] .tablero-columna.encima { background: rgba(43, 182, 198, .12); }
+.tablero-columna h3 {
+    display: flex; align-items: center; gap: 6px;
+    padding: 2px 4px var(--s2);
+    font-size: var(--t-sm); font-weight: 700; color: var(--ink-2);
+}
+.tablero-columna h3 .ico { width: 15px; height: 15px; }
+.tablero-cuenta {
+    margin-left: auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 24px; height: 22px; padding: 0 7px;
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    font-size: var(--t-xs); color: var(--ink-3);
+}
+/* Columna larga: desplazamiento propio en vez de alargar toda la pagina */
+.tablero-lista { list-style: none; margin: 0; padding: 2px; display: flex; flex-direction: column; gap: var(--s2); min-height: 64px; max-height: min(70vh, 640px); overflow-y: auto; }
+.tablero-tarjeta {
+    padding: var(--s3);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    box-shadow: var(--sh-1);
+    cursor: grab;
+}
+.tablero-tarjeta.arrastrando { opacity: .45; }
+.tablero-nombre { font-weight: 700; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.tablero-nombre:hover { color: var(--sea-deep); text-decoration: underline; }
+.tablero-vacante { margin-top: 2px; font-size: var(--t-sm); color: var(--ink-3); overflow-wrap: anywhere; }
+.tablero-fecha { margin-top: 2px; font-size: var(--t-xs); color: var(--ink-muted); }
+.tablero-acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s2); }
+.tablero-mover {
+    min-height: 32px; padding: 0 10px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    font-size: var(--t-xs); font-weight: 600; color: var(--ink-2);
+}
+.tablero-mover:hover { border-color: var(--sea); color: var(--sea-deep); }
+[data-theme="dark"] .tablero-mover:hover { color: var(--sea); }
+.tablero-mover.aceptar { border-color: transparent; background: var(--sea); color: #fff; }
+.tablero-mover.aceptar:hover { background: var(--sea-deep); color: #fff; }
+/* En oscuro el turquesa es claro: letra oscura, como "Buscar" y "Unirse ahora" */
+[data-theme="dark"] .tablero-mover.aceptar, [data-theme="dark"] .tablero-mover.aceptar:hover { color: var(--bg-deep); }
+.tablero-vacia { padding: var(--s3) 4px; font-size: var(--t-sm); color: var(--ink-muted); }
+@media (pointer: coarse) {
+    .vista-btn, .tablero-mover { min-height: 44px; }
+    .tablero-tarjeta { cursor: auto; }
+}
+
 /* ---------- 23. Mensajes y conexiones ---------- */
 
 .messages-layout, .conexiones-layout {
