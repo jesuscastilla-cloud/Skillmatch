@@ -62,11 +62,14 @@
 
     <section class="opportunities-container">
         <div class="container">
-            <!-- Solo para personas con sesión: ver todas o solo las que guardaron.
+            <!-- Solo para empresas con sesión (oportunidades.js) -->
+            <p class="aviso-empresa" id="avisoEmpresa" hidden><i data-ico="eye"></i> <span>Así ven las personas las vacantes. Para publicar o gestionar las tuyas, ve a <a href="perfil-empresa.html">Mi empresa</a>.</span></p>
+            <!-- Con sesión: una persona ve todas o las que guardó; una empresa, todas o las suyas.
                  Va encima de filtros y lista: en el celular los filtros van primero -->
             <div class="tab-list vista-vacantes" id="vistaVacantes" role="group" aria-label="Qué vacantes ver" hidden>
                 <button type="button" class="tab-btn active" data-vista="todas" aria-pressed="true">Todas las vacantes</button>
                 <button type="button" class="tab-btn" data-vista="guardadas" aria-pressed="false"><i data-ico="heart"></i> Guardadas <span class="vista-cuenta" id="savedCount"></span></button>
+                <button type="button" class="tab-btn" data-vista="mias" aria-pressed="false" hidden><i data-ico="building"></i> Mis vacantes <span class="vista-cuenta" id="misVacantesCount"></span></button>
             </div>
             <div class="opportunities-layout">
                 <!-- Sidebar de Filtros -->

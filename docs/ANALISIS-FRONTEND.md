@@ -292,6 +292,11 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   hoteles, comercio, tecnología, salud, industria, construcción y educación; generadas con los colores de la marca). Se
   guardan en el servidor en la cuenta de usuario de la empresa, así que el perfil público las muestra a quien tiene
   sesión; para los visitantes y las tarjetas de Vacantes falta el cambio del backend (PENDIENTES-BACKEND 2.2).
+- **Vacantes vistas por una empresa (hecho):** la empresa sigue viendo todas las vacantes (le sirve para comparar
+  ofertas y salarios), pero adaptado: un aviso arriba ("Así ven las personas las vacantes…"), la pestaña "Mis
+  vacantes" con todas las suyas (también las cerradas, marcadas), "Tu vacante" y "Ver candidatos" en las suyas (abre
+  directo la ventana de candidatos de esa oferta con `perfil-empresa.html?candidatos=<id>`) y orden por "Más reciente"
+  (la compatibilidad no aplica a una empresa).
 
 ## Orden propuesto (solo frontend)
 

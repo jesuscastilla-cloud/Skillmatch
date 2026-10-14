@@ -52,10 +52,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // la lista se pinta una sola vez, ya con el % y "Ya te postulaste"
     userSkillsReady = Promise.all([loadUserSkills(), loadAppliedJobs(), loadSavedJobs()]);
     const parametros = new URLSearchParams(window.location.search);
+    if (esEmpresa()) prepararVistaEmpresa();
     // Desde "Vacantes guardadas" del perfil se llega con ?guardadas=1
     if (parametros.get('guardadas') === '1' && sesion() && !esEmpresa()) {
         paginacion.modo = 'guardadas';
         marcarVista('guardadas');
+    } else if (parametros.get('mias') === '1' && esEmpresa()) {
+        paginacion.modo = 'mias';
+        marcarVista('mias');
     } else if ((parametros.get('q') || '').trim()) {
         // Desde la portada ("Ver todas en Vacantes") y la paleta de comandos
         // llega la búsqueda con ?q=. Se busca desde la primera carga (antes
@@ -101,7 +105,12 @@ async function cargarPagina(numero) {
 
     try {
         let data;
-        if (paginacion.modo === 'guardadas') {
+        if (paginacion.modo === 'mias') {
+            // Todas las de la empresa, tambien las cerradas (salen marcadas)
+            const response = await fetchWithAuth(`${API_BASE_URL}/jobs/company/${encodeURIComponent(sesion().companyId)}`, { signal: senal });
+            if (!response.ok) throw new Error(`El servidor respondió ${response.status}`);
+            data = (await response.json()).sort((a, b) => new Date(b.postedDate || 0) - new Date(a.postedDate || 0));
+        } else if (paginacion.modo === 'guardadas') {
             // Las guardadas no vienen por páginas: se trae cada vacante por su id
             // (/saved-jobs/my-saved-jobs no trae habilidades ni descripción, y
             // sin ellas la tarjeta no podría mostrar el % ni el detalle)
@@ -237,6 +246,16 @@ function displayJobs(jobs) {
     if (!jobs || jobs.length === 0) {
         shownJobs = [];
         const porFiltros = allJobs.length > 0;
+        if (paginacion.modo === 'mias' && !porFiltros) {
+            container.innerHTML = `
+                <div class="no-results-message">
+                    <h3>Aún no has publicado vacantes</h3>
+                    <p>Cuando publiques una, aquí la verás tal como la ven las personas.</p>
+                    <a class="btn btn-primary" href="perfil-empresa.html?nueva=1"><i data-ico="plus"></i> Publicar una vacante</a>
+                </div>`;
+            updateResultsCount(0);
+            return;
+        }
         if (paginacion.modo === 'guardadas' && !porFiltros) {
             container.innerHTML = `
                 <div class="no-results-message">
@@ -296,7 +315,11 @@ function anilloCompatibilidad(job) {
 
 // Botones de guardar y postularse (las empresas no se postulan ni guardan)
 function botonesVacante(job) {
-    if (esEmpresa()) return '';
+    if (esEmpresa()) return esMiVacante(job)
+        ? `<span class="tu-vacante"><i data-ico="building"></i> Tu vacante</span>` +
+          (vacanteCerrada(job) ? '<span class="vacante-cerrada"><i data-ico="clock"></i> Ya no recibe postulaciones</span>' : '') +
+          `<a class="btn-apply" href="perfil-empresa.html?candidatos=${encodeURIComponent(job.id)}">Ver candidatos</a>`
+        : '';
     const id = escaparHtml(job.id);
     const guardada = savedJobIds.has(job.id);
     const guardar = `<button type="button" class="btn-save${guardada ? ' saved' : ''}" data-job-id="${id}" onclick="toggleSaveJob(this.dataset.jobId, this)">${guardada ? '<i data-ico="heart"></i> Guardada' : '<i data-ico="save"></i> Guardar'}</button>`;
@@ -582,21 +605,22 @@ function performSearch() {
     const modo = query ? 'busqueda' : 'todas';
     if (modo === paginacion.modo && query === paginacion.query) return;
     // Buscar es sobre todas las vacantes: se sale de "Guardadas"
-    if (paginacion.modo === 'guardadas') marcarVista('todas');
+    if (paginacion.modo === 'guardadas' || paginacion.modo === 'mias') marcarVista('todas');
     paginacion = { modo, query, pagina: 0, ultima: true, total: 0, cargando: false };
     loadJobs();
 }
 
-// "Todas las vacantes" o "Guardadas"
+// "Todas las vacantes", "Guardadas" (persona) o "Mis vacantes" (empresa)
 function cambiarVista(vista) {
     const query = document.getElementById('searchInput')?.value.trim() || '';
-    const modo = vista === 'guardadas' ? 'guardadas' : (query ? 'busqueda' : 'todas');
+    const modo = vista === 'guardadas' || vista === 'mias' ? vista : (query ? 'busqueda' : 'todas');
     marcarVista(vista);
     if (modo === paginacion.modo) return;
     paginacion = { modo, query: modo === 'busqueda' ? query : '', pagina: 0, ultima: true, total: 0, cargando: false };
     // La dirección recuerda la vista: al recargar o volver se queda en Guardadas
     const direccion = new URL(window.location.href);
     if (vista === 'guardadas') direccion.searchParams.set('guardadas', '1'); else direccion.searchParams.delete('guardadas');
+    if (vista === 'mias') direccion.searchParams.set('mias', '1'); else direccion.searchParams.delete('mias');
     history.replaceState(null, '', direccion);
     loadJobs();
 }
@@ -607,6 +631,42 @@ function marcarVista(vista) {
         b.classList.toggle('active', activa);
         b.setAttribute('aria-pressed', String(activa));
     });
+}
+
+// ---- Vacantes vistas por una empresa ----
+// Le sirve para ver como quedan sus ofertas frente a las demas. Arriba, un
+// aviso de que asi las ven las personas; la pestana "Mis vacantes" muestra solo
+// las suyas, y en las suyas sale "Tu vacante" con "Ver candidatos". Se ordena
+// por "Más reciente": la compatibilidad no aplica a una empresa.
+function esMiVacante(job) {
+    const datos = sesion();
+    return !!datos && !!datos.companyId && String(job.companyId) === String(datos.companyId);
+}
+
+async function prepararVistaEmpresa() {
+    const aviso = document.getElementById('avisoEmpresa');
+    if (aviso) aviso.hidden = false;
+    const vista = document.getElementById('vistaVacantes');
+    const guardadas = vista && vista.querySelector('[data-vista="guardadas"]');
+    const mias = vista && vista.querySelector('[data-vista="mias"]');
+    if (guardadas) guardadas.remove();
+    if (mias) mias.hidden = false;
+    if (vista) vista.hidden = false;
+    const orden = document.getElementById('sortSelect');
+    if (orden) {
+        orden.value = 'recent';
+        const compatibilidad = orden.querySelector('option[value="match"]');
+        if (compatibilidad) compatibilidad.remove();
+    }
+    const datos = sesion();
+    if (!datos.companyId) return;
+    try {
+        const r = await fetchWithAuth(`${API_BASE_URL}/jobs/company/${encodeURIComponent(datos.companyId)}`);
+        if (!r.ok) return;
+        const propias = await r.json();
+        const cuenta = document.getElementById('misVacantesCount');
+        if (cuenta && propias.length) cuenta.textContent = `(${propias.length.toLocaleString('es-CO')})`;
+    } catch (e) { /* sin el numero, la pestana igual funciona */ }
 }
 
 function actualizarContadorGuardadas() {
@@ -693,6 +753,8 @@ function updateResultsCount(count) {
     const guardadas = paginacion.modo === 'guardadas';
     if (hayFiltros()) {
         resultsCount.textContent = `${plural(count, 'vacante cumple', 'vacantes cumplen')} los filtros (de ${n(allJobs.length)} ${guardadas ? 'guardadas' : 'cargadas'})`;
+    } else if (paginacion.modo === 'mias') {
+        resultsCount.textContent = plural(allJobs.length, 'vacante publicada por tu empresa', 'vacantes publicadas por tu empresa');
     } else if (guardadas) {
         resultsCount.textContent = plural(allJobs.length, 'vacante guardada', 'vacantes guardadas');
     } else if (paginacion.modo === 'busqueda') {

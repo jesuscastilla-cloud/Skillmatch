@@ -5953,6 +5953,29 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 }
 /* "Todas las vacantes | Guardadas (n)": las mismas pestañas de Conexiones */
 .vista-vacantes .tab-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+/* Vacantes vistas por una empresa (oportunidades.js) */
+.aviso-empresa {
+    display: flex; align-items: flex-start; gap: var(--s2);
+    margin-bottom: var(--s4);
+    padding: var(--s3) var(--s4);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-md);
+    background: var(--sea-light);
+    font-size: var(--t-sm); color: var(--ink-2);
+}
+.aviso-empresa .ico { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px; color: var(--sea-deep); }
+.aviso-empresa a { color: var(--sea-deep); font-weight: 600; }
+[data-theme="dark"] .aviso-empresa { background: rgba(43, 182, 198, .1); }
+[data-theme="dark"] .aviso-empresa .ico, [data-theme="dark"] .aviso-empresa a { color: var(--sea); }
+.tu-vacante {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--r-pill);
+    background: var(--naranja-soft); color: var(--naranja-texto);
+    font-size: var(--t-xs); font-weight: 700;
+}
+.tu-vacante .ico { width: 14px; height: 14px; }
+[data-theme="dark"] .tu-vacante { background: rgba(255, 118, 24, .16); }
 .vista-cuenta { color: var(--ink-muted); font-weight: 500; }
 /* Una guardada que cerró: en vez de "Postularme" */
 .vacante-cerrada {

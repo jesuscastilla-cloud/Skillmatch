@@ -338,6 +338,7 @@ function loadActivityStats() {
 // Cargar ofertas desde backend. La promesa queda guardada: quien quiera bajar
 // hasta las postulaciones espera a que las ofertas (que van arriba) ocupen su sitio
 let ofertasCargadas = Promise.resolve();
+let candidatosAbiertos = false;
 function loadOffers() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
@@ -390,6 +391,12 @@ function loadOffers() {
         
         currentOffers = offersWithCandidates;
         renderOffers(currentOffers);
+        // "Ver candidatos" en Vacantes llega con ?candidatos=<id de la oferta>
+        const pedida = new URLSearchParams(window.location.search).get('candidatos');
+        if (pedida && !candidatosAbiertos) {
+            candidatosAbiertos = true;
+            viewOfferCandidates(pedida);
+        }
     })
     .catch(error => {
         // Sin las copias del navegador: antes se mostraban como si fueran reales
