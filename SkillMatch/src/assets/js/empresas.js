@@ -174,10 +174,9 @@ function iniciarDirectorio() {
         titulo.textContent = 'Resultados';
         lista.innerHTML = tarjetasCargando(3);
         mas.hidden = true;
-        // El servidor usa el texto como expresion regular: "(" o "+" la rompian
-        const seguro = texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // textoParaBuscar (api-config.js): el servidor usa el texto como expresion regular
         try {
-            const datos = await pedirJson('/companies/search?keyword=' + encodeURIComponent(seguro));
+            const datos = await pedirJson('/companies/search?keyword=' + encodeURIComponent(textoParaBuscar(texto)));
             if (mio !== turno) return;
             resultados = (datos || []).sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
             mostrados = 0;

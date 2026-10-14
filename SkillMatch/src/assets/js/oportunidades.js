@@ -96,7 +96,7 @@ async function cargarPagina(numero) {
     searchAbortController = new AbortController();
     const senal = searchAbortController.signal;
     const url = paginacion.modo === 'busqueda'
-        ? `${API_BASE_URL}/jobs/search?keyword=${encodeURIComponent(paginacion.query)}&page=${numero}&size=${TAM_PAGINA}`
+        ? `${API_BASE_URL}/jobs/search?keyword=${encodeURIComponent(textoParaBuscar(paginacion.query))}&page=${numero}&size=${TAM_PAGINA}`
         : `${API_BASE_URL}/jobs?page=${numero}&size=${TAM_PAGINA}`;
 
     try {

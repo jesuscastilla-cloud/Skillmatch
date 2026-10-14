@@ -868,7 +868,9 @@
             if (q.length < 2) return;
             espera = setTimeout(function () {
                 busquedaVacantes = new AbortController();
-                fetch(API_PALETA + '/jobs/search?keyword=' + encodeURIComponent(q), { signal: busquedaVacantes.signal })
+                // El backend usa el texto como expresion regular: "(" le daba error
+                const seguro = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                fetch(API_PALETA + '/jobs/search?keyword=' + encodeURIComponent(seguro), { signal: busquedaVacantes.signal })
                     .then(function (r) { return r.ok ? r.json() : null; })
                     .then(function (datos) {
                         if (!datos || paleta.hidden) return;
