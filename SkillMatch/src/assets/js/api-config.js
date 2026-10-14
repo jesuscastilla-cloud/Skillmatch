@@ -136,6 +136,12 @@ function escaparHtml(texto) {
 }
 
 /** Solo enlaces http(s) o relativos: un "javascript:..." en un adjunto ejecutaria codigo. */
+/** El backend usa el texto de busqueda como expresion regular: un "(" o un "+"
+ *  le daban error. Asi se busca el texto tal cual se escribio. */
+function textoParaBuscar(texto) {
+    return String(texto || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function urlSegura(url) {
     const u = String(url || '').trim();
     return /^(https?:\/\/|\/|\.{1,2}\/)/i.test(u) ? escaparHtml(u) : '#';

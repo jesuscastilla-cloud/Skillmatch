@@ -11,13 +11,14 @@
     <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#EDF2F8">
-    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="../assets/css/app.css">
 </head>
 <body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
     <header>
         <nav class="container" aria-label="Principal">
             <div class="nav-left">
@@ -38,7 +39,7 @@
         </nav>
     </header>
 
-    <main>
+    <main id="main">
         <div class="container">
             <div class="messages-container">
                 <!-- Lista de conversaciones -->

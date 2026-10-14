@@ -9,7 +9,12 @@
     <meta property="og:description" content="Únete a SkillMatch: crea tu perfil si buscas trabajo o registra tu empresa si quieres contratar en Cartagena.">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="es_CO">
-    <meta property="og:image" content="../assets/img/logo.png">
+    <!-- Las redes necesitan la direccion completa (la del sitio en Render) -->
+    <meta property="og:image" content="https://skillmatch-yz37.onrender.com/assets/img/compartir.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SkillMatch: el trabajo que buscas ya está en Cartagena">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
@@ -19,9 +24,10 @@
     <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#EDF2F8">
-    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
 </head>
 <body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
     <header>
         <nav class="container" aria-label="Principal">
             <div class="nav-left">
@@ -42,7 +48,7 @@
         </nav>
     </header>
 
-    <section class="registro-section">
+    <section class="registro-section" id="main">
         <div class="container">
             <div class="welcome-text">
                 <h1>Únete a SkillMatch</h1>

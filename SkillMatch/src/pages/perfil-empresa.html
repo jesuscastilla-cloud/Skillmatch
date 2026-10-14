@@ -15,9 +15,10 @@
     <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#EDF2F8">
-    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
 </head>
 <body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
     <header>
         <nav class="container" aria-label="Principal">
             <div class="nav-left">
@@ -42,13 +43,16 @@
          reales (antes: logo "ST", web, ciudad, seguidores y cifras escritos a mano).
          Sin botones para cambiar portada, logo o datos: el backend solo deja que la
          empresa edite su descripcion (lo demas es del administrador). -->
-    <section class="company-hero-new">
+    <section class="company-hero-new" id="main">
         <div class="container">
             <div class="company-header-card">
                 <div class="company-cover-img" id="companyCover" aria-hidden="true"></div>
+                <!-- Logo y portada: se guardan en la cuenta de la empresa (perfil-empresa.js) -->
+                <button type="button" class="btn-edit-cover" id="editCompanyCoverBtn"><span><i data-ico="camera"></i></span> Cambiar portada</button>
                 <div class="company-header-content">
                     <div class="company-logo-wrapper">
                         <div class="company-logo-img company-logo-iniciales" id="companyLogo" aria-hidden="true"></div>
+                        <button type="button" class="btn-edit-avatar" id="editCompanyLogoBtn" aria-label="Cambiar el logo"><i data-ico="camera"></i></button>
                     </div>
                     <div class="company-info-wrapper">
                         <div class="company-title-section">
@@ -58,6 +62,7 @@
                         </div>
                         <div class="perfil-acciones">
                             <button type="button" class="btn-edit-profile" id="changePasswordBtn"><i data-ico="lock"></i> Cambiar contraseña</button>
+                            <button type="button" class="btn-edit-profile" id="recorridoEmpresaBtn"><i data-ico="bulb"></i> Cómo funciona</button>
                         </div>
                     </div>
                 </div>
@@ -100,6 +105,19 @@
                 </aside>
 
                 <main class="company-main-area">
+                    <!-- Primeros pasos de una empresa nueva (perfil-empresa.js): desaparece cuando todo esta listo -->
+                    <section class="content-section-card primeros-pasos" id="primerosPasos" aria-labelledby="primerosPasosTitulo" hidden>
+                        <div class="section-card-header">
+                            <h2 id="primerosPasosTitulo">Primeros pasos</h2>
+                            <span class="primeros-pasos-cuenta" id="primerosPasosCuenta"></span>
+                        </div>
+                        <div class="section-card-body">
+                            <p class="primeros-pasos-intro">Así las personas conocen tu empresa y encuentran tus vacantes.</p>
+                            <div class="panel-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-labelledby="primerosPasosTitulo" id="primerosPasosBarra"><span></span></div>
+                            <ol class="primeros-pasos-lista" id="primerosPasosLista"></ol>
+                        </div>
+                    </section>
+
                     <div class="content-section-card">
                         <div class="section-card-header">
                             <h2>Acerca de nosotros</h2>
@@ -128,11 +146,17 @@
                     <div class="content-section-card" id="candidatos">
                         <div class="section-card-header">
                             <h2>Postulaciones recibidas</h2>
+                            <!-- Lista o tablero por estado (perfil-empresa.js) -->
+                            <div class="vista-postulaciones" id="vistaPostulaciones" role="group" aria-label="Cómo ver las postulaciones" hidden>
+                                <button type="button" class="vista-btn" data-vista="lista" aria-pressed="true"><i data-ico="list"></i> Lista</button>
+                                <button type="button" class="vista-btn" data-vista="tablero" aria-pressed="false"><i data-ico="columnas"></i> Tablero</button>
+                            </div>
                         </div>
                         <div class="section-card-body">
                             <div id="applications-list" class="applications-container">
                                 <p class="loading-text">Cargando postulaciones...</p>
                             </div>
+                            <div id="applications-board" class="tablero" hidden></div>
                         </div>
                     </div>
                 </main>
@@ -149,6 +173,7 @@
 
     <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/editor-imagen.js"></script>
     <script src="../assets/js/perfil-empresa.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>
