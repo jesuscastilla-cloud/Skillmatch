@@ -68,7 +68,8 @@ enviada", "Aceptar solicitud" o "En tus conexiones"), y no muestra "Vacantes par
   ahora una pregunta de la marca (`SkillMatchUI.confirmar`), con el foco en "Cancelar".
 - **Buscadores y redes (hecho):** las 14 páginas tienen descripción; las públicas que se comparten
   (Vacantes, Únete y los registros) tienen vista previa `og:`, y las que solo sirven con sesión llevan
-  `noindex`. Falta: `og:image` debe ser la dirección completa del sitio cuando haya dominio final.
+  `noindex`. La imagen para compartir (`assets/img/compartir.png`, 1200 × 630) usa la dirección completa del sitio en
+  Render (`https://skillmatch-yz37.onrender.com`); si el sitio cambia de dirección, hay que cambiarla en esas 8 páginas.
 - **Peso muerto (hecho):** fuera las 3 imágenes que nadie usaba (2 MB). Las portadas en SVG sí se usan
   (el nombre se arma en `editor-imagen.js`).
 - **Código muerto (hecho):** fuera `showRecovery` y todo el formulario escondido de "recuperar
