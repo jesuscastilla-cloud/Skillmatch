@@ -77,14 +77,13 @@ SkillMatch/
 - Diseño Responsive
 - Interfaz Intuitiva y Moderna
 
-## Estado del Proyecto
-Actualmente en desarrollo, con las siguientes fases planificadas:
-- [x] Diseño de interfaz de usuario
-- [x] Implementación del frontend estático
-- [ ] Configuración de base de datos
-- [ ] Desarrollo del backend
-- [ ] Implementación de API
-- [ ] Integración frontend-backend
+## Minería de Datos I
+
+El análisis de datos del proyecto (clasificación de vacantes por habilidades) está en la carpeta `mineria-datos/`. Ver `mineria-datos/README.md`.
+
+Documentos de la entrega:
+- `documentos/propuesta_modelo.pdf`
+- `documentos/informe_metodologico.pdf`
 
 ## Misión
 Potenciar el ecosistema empresarial y educativo de Cartagena de Indias, facilitando la conexión entre el talento local y las oportunidades laborales de la región.
