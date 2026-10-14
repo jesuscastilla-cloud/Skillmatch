@@ -262,6 +262,18 @@
         } catch (e) {
             vacantes.innerHTML = '<li class="panel-vacio">No pudimos cargar las vacantes. Intenta de nuevo en un momento.</li>';
         }
+        // La primera vez: un recorrido por el panel (ui.js, SkillMatchUI.recorrido)
+        setTimeout(() => {
+            if (!window.SkillMatchUI || !SkillMatchUI.recorrido) return;
+            SkillMatchUI.recorrido({ clave: 'inicio-persona', pasos: [
+                { objetivo: '#panelSaludo', titulo: 'Este es tu inicio', texto: 'Cada vez que entres a SkillMatch verás aquí lo tuyo: cómo van tus postulaciones, tus mensajes y las vacantes que encajan contigo.' },
+                { objetivo: '.panel-cifras', titulo: 'Tu resumen', texto: 'Postulaciones en proceso, mensajes sin leer, solicitudes de conexión y vacantes guardadas. Toca cualquiera para ir directo.' },
+                { objetivo: '.panel-postulaciones', titulo: 'Tus postulaciones, paso a paso', texto: 'Mira si la empresa ya revisó tu postulación y cuál fue su respuesta.' },
+                { objetivo: '.panel-perfil', titulo: 'Tu perfil', texto: 'Completa lo que falta. Con tus habilidades, SkillMatch calcula qué tanto encajas en cada vacante.' },
+                { objetivo: '.panel-vacantes', titulo: 'Vacantes para ti', texto: 'Las vacantes más recientes que más coinciden con lo que sabes hacer.' },
+                { objetivo: '.search-section .search-box', titulo: 'Busca lo que quieras', texto: 'Escribe un cargo, una habilidad o una empresa. Para volver a ver este recorrido, toca la lupa de arriba y escribe «recorrido».' }
+            ] });
+        }, 600);
     }
 
     // ---- Empresa ----

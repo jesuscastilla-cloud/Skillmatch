@@ -1,7 +1,7 @@
 /* =====================================================================
  *  SkillMatch — capa de interfaz
  *
- *  Se encarga de doce cosas, y de nada mas:
+ *  Se encarga de trece cosas, y de nada mas:
  *    1. Iconos SVG (reemplazan a los emojis, se ven igual en todos lados)
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
@@ -15,6 +15,7 @@
  *   10. Marcar lo que anuncio una notificacion (SkillMatchUI.resaltar)
  *   11. Instalar como app: service worker (sw.js) y boton del pie
  *   12. Tamano de letra (pie y paleta), para quien ve con dificultad
+ *   13. Recorrido guiado la primera vez (SkillMatchUI.recorrido)
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -743,6 +744,10 @@
         if (!localStorage.getItem('token')) {
             lista.push({ grupo: 'Cuenta', ico: 'user', titulo: 'Iniciar sesión', claves: 'entrar login acceder', href: 'login.html' });
             lista.push({ grupo: 'Cuenta', ico: 'sparkle', titulo: 'Crear mi perfil', claves: 'registro registrarme cuenta nueva', href: 'seleccionar-registro.html' });
+        }
+        if (recorridoDePagina) {
+            lista.push({ grupo: 'Ayuda', ico: 'bulb', titulo: 'Ver el recorrido de esta página', claves: 'recorrido ayuda guia como funciona tour',
+                accion: function () { UI.recorrido(Object.assign({}, recorridoDePagina, { forzar: true })); } });
         }
         TAMANOS_LETRA.forEach(function (t) {
             lista.push({ grupo: 'Preferencias', ico: 'eye', titulo: 'Tamaño de letra: ' + t.nombre.toLowerCase(),
@@ -2289,6 +2294,132 @@
             b.setAttribute('aria-pressed', String(b.dataset.letra === actual));
         });
     }
+
+    /* ---------- 23. Recorrido guiado ---------- */
+
+    // La primera vez que alguien entra a una pagina con recorrido, la pantalla se
+    // oscurece menos la parte que se explica y una tarjeta cuenta para que sirve.
+    // Una sola vez por navegador (se puede volver a ver desde la paleta Ctrl+K).
+    // Teclado: flechas para moverse, Escape para salir; el foco queda en la tarjeta.
+    // Solo se animan transform y opacity; con movimiento reducido, sin animar.
+    //   SkillMatchUI.recorrido({ clave: 'inicio-persona', pasos: [{ objetivo, titulo, texto }] })
+    // objetivo: selector o elemento. Los pasos cuyo objetivo no existe o no se ve se saltan.
+    const RECORRIDO_KEY = 'skillmatch_recorrido_';
+    let recorridoDePagina = null;
+    let recorridoAbierto = null;
+
+    function recorridoVisto(clave) {
+        try { return localStorage.getItem(RECORRIDO_KEY + clave) === 'visto'; } catch (e) { return true; }
+    }
+
+    UI.recorrido = function (opciones) {
+        recorridoDePagina = { clave: opciones.clave, pasos: opciones.pasos };
+        if (recorridoAbierto) return;
+        if (!opciones.forzar && recorridoVisto(opciones.clave)) return;
+        // Con una ventana abierta (por ejemplo "Nueva oferta") no se interrumpe
+        if (document.querySelector('.modal.active, .modal.is-open')) return;
+        const visible = function (el) { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+        const pasos = opciones.pasos.map(function (p) {
+            const el = typeof p.objetivo === 'string' ? document.querySelector(p.objetivo) : p.objetivo;
+            return el && visible(el) ? Object.assign({}, p, { el: el }) : null;
+        }).filter(Boolean);
+        if (!pasos.length) return;
+
+        const volverA = document.activeElement;
+        const raiz = document.createElement('div');
+        raiz.className = 'recorrido';
+        raiz.setAttribute('role', 'dialog');
+        raiz.setAttribute('aria-modal', 'true');
+        raiz.setAttribute('aria-labelledby', 'recorridoTitulo');
+        raiz.innerHTML =
+            '<div class="recorrido-foco" aria-hidden="true"></div>' +
+            '<div class="recorrido-tarjeta">' +
+                '<p class="recorrido-paso" id="recorridoPaso"></p>' +
+                '<h2 class="recorrido-titulo" id="recorridoTitulo" tabindex="-1"></h2>' +
+                '<p class="recorrido-texto" id="recorridoTexto"></p>' +
+                '<div class="recorrido-acciones">' +
+                    '<button type="button" class="recorrido-saltar" data-saltar>Saltar recorrido</button>' +
+                    '<span class="recorrido-espacio"></span>' +
+                    '<button type="button" class="btn btn-secondary btn-small" data-anterior>Anterior</button>' +
+                    '<button type="button" class="btn btn-primary btn-small" data-siguiente>Siguiente</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(raiz);
+        const foco = raiz.querySelector('.recorrido-foco');
+        const tarjeta = raiz.querySelector('.recorrido-tarjeta');
+        let actual = -1, cuadro = 0;
+
+        // Foco y tarjeta en su sitio (tambien al hacer scroll o cambiar el tamano)
+        function ubicar() {
+            const paso = pasos[actual];
+            if (!paso) return;
+            const r = paso.el.getBoundingClientRect();
+            const margen = 8;
+            foco.style.width = (r.width + margen * 2) + 'px';
+            foco.style.height = (r.height + margen * 2) + 'px';
+            foco.style.transform = 'translate(' + (r.left - margen) + 'px,' + (r.top - margen) + 'px)';
+            const celular = window.innerWidth < 640;
+            tarjeta.classList.toggle('abajo-fija', celular);
+            if (celular) { tarjeta.style.transform = ''; return; }
+            const ancho = tarjeta.offsetWidth, alto = tarjeta.offsetHeight;
+            const debajo = r.bottom + margen + 14;
+            const y = debajo + alto < window.innerHeight - 16 ? debajo : Math.max(16, r.top - margen - 14 - alto);
+            const x = Math.min(Math.max(16, r.left), window.innerWidth - ancho - 16);
+            tarjeta.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+        }
+        function alMover() { cancelAnimationFrame(cuadro); cuadro = requestAnimationFrame(ubicar); }
+
+        function ir(n) {
+            if (n < 0 || n >= pasos.length) return;
+            actual = n;
+            const paso = pasos[n];
+            raiz.querySelector('#recorridoPaso').textContent = 'Paso ' + (n + 1) + ' de ' + pasos.length;
+            raiz.querySelector('#recorridoTitulo').textContent = paso.titulo;
+            raiz.querySelector('#recorridoTexto').textContent = paso.texto;
+            raiz.querySelector('[data-anterior]').hidden = n === 0;
+            raiz.querySelector('[data-siguiente]').textContent = n === pasos.length - 1 ? 'Terminar' : 'Siguiente';
+            paso.el.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+            ubicar();
+            // Despues del scroll suave, otra vez en su sitio
+            setTimeout(ubicar, reduceMotion ? 0 : 420);
+            raiz.querySelector('#recorridoTitulo').focus({ preventScroll: true });
+        }
+
+        function cerrar() {
+            try { localStorage.setItem(RECORRIDO_KEY + opciones.clave, 'visto'); } catch (e) { /* sin almacenamiento */ }
+            window.removeEventListener('resize', alMover);
+            window.removeEventListener('scroll', alMover, true);
+            document.removeEventListener('keydown', teclas, true);
+            raiz.remove();
+            recorridoAbierto = null;
+            if (volverA && volverA.focus) volverA.focus({ preventScroll: true });
+        }
+
+        function teclas(e) {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cerrar(); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); if (actual < pasos.length - 1) ir(actual + 1); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); ir(actual - 1); }
+            else if (e.key === 'Tab') {
+                // El foco no se sale de la tarjeta
+                const botones = Array.from(tarjeta.querySelectorAll('button:not([hidden])'));
+                const primero = botones[0], ultimo = botones[botones.length - 1];
+                if (e.shiftKey && (document.activeElement === primero || !tarjeta.contains(document.activeElement))) { e.preventDefault(); ultimo.focus(); }
+                else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+            }
+        }
+
+        raiz.querySelector('[data-saltar]').addEventListener('click', cerrar);
+        raiz.querySelector('[data-anterior]').addEventListener('click', function () { ir(actual - 1); });
+        raiz.querySelector('[data-siguiente]').addEventListener('click', function () {
+            if (actual === pasos.length - 1) cerrar(); else ir(actual + 1);
+        });
+        window.addEventListener('resize', alMover);
+        window.addEventListener('scroll', alMover, true);
+        document.addEventListener('keydown', teclas, true);
+        recorridoAbierto = raiz;
+        ir(0);
+        requestAnimationFrame(function () { raiz.classList.add('visible'); });
+    };
 
     /* ---------- 9. Arranque ---------- */
 

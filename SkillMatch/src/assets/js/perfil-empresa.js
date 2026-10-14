@@ -393,6 +393,18 @@ function loadActivityStats() {
 // hasta las postulaciones espera a que las ofertas (que van arriba) ocupen su sitio
 let ofertasCargadas = Promise.resolve();
 let candidatosAbiertos = false;
+let recorridoEmpresaListo = false;
+
+function recorridoMiEmpresa() {
+    if (!window.SkillMatchUI || !SkillMatchUI.recorrido) return;
+    SkillMatchUI.recorrido({ clave: 'mi-empresa', pasos: [
+        { objetivo: '.company-header-card', titulo: 'Este es el panel de tu empresa', texto: 'Pon tu logo y elige una portada: así te reconocen las personas en tu perfil público.' },
+        { objetivo: '#primerosPasos', titulo: 'Primeros pasos', texto: 'Lo que falta para que las personas conozcan tu empresa. Toca cada paso para completarlo.' },
+        { objetivo: '#ofertas', titulo: 'Tus ofertas', texto: 'Publica, edita o archiva tus vacantes. En cada una ves cuántas personas se postularon y cómo van.' },
+        { objetivo: '#candidatos', titulo: 'Postulaciones recibidas', texto: 'Revisa, acepta o rechaza. Puedes verlas como lista o como tablero por estado.' },
+        { objetivo: 'header a[href="oportunidades.html"]', titulo: 'Vacantes', texto: 'Aquí ves las vacantes como las ven las personas, y en "Mis vacantes" solo las tuyas.' }
+    ] });
+}
 function loadOffers() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
@@ -446,10 +458,16 @@ function loadOffers() {
         currentOffers = offersWithCandidates;
         renderOffers(currentOffers);
         // "Ver candidatos" en Vacantes llega con ?candidatos=<id de la oferta>
-        const pedida = new URLSearchParams(window.location.search).get('candidatos');
+        const parametros = new URLSearchParams(window.location.search);
+        const pedida = parametros.get('candidatos');
         if (pedida && !candidatosAbiertos) {
             candidatosAbiertos = true;
             viewOfferCandidates(pedida);
+        }
+        // La primera vez, un recorrido por "Mi empresa" (si no se llego a hacer algo puntual)
+        if (!recorridoEmpresaListo && !pedida && !parametros.get('nueva') && !parametros.get('tab')) {
+            recorridoEmpresaListo = true;
+            setTimeout(recorridoMiEmpresa, 900);
         }
     })
     .catch(error => {

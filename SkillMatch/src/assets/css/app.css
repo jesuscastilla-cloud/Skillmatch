@@ -4551,6 +4551,41 @@ a.meta-tag { position: relative; }
     .hoja * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
+/* ---------- 24f. Recorrido guiado (ui.js, seccion 23) ---------- */
+/* El foco es un recuadro con una sombra enorme que oscurece todo lo demas.
+   Se mueve con transform; solo opacity y transform tienen transicion. */
+.recorrido { position: fixed; inset: 0; z-index: 1200; opacity: 0; }
+.recorrido.visible { opacity: 1; }
+.recorrido-foco {
+    position: fixed; top: 0; left: 0;
+    border-radius: var(--r-lg);
+    box-shadow: 0 0 0 9999px rgba(6, 26, 49, .72);
+    outline: 2px solid var(--naranja); outline-offset: 2px;
+    pointer-events: none;
+}
+.recorrido-tarjeta {
+    position: fixed; top: 0; left: 0;
+    width: min(380px, calc(100vw - 32px));
+    padding: var(--s5);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow: var(--sh-4, 0 18px 50px rgba(6, 26, 49, .35));
+    color: var(--ink);
+}
+.recorrido-tarjeta.abajo-fija { top: auto; bottom: 16px; left: 16px; right: 16px; width: auto; transform: none; }
+.recorrido-paso { font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--naranja-texto); }
+.recorrido-titulo { margin-top: 4px; font-size: var(--t-lg); outline: none; }
+.recorrido-texto { margin-top: var(--s2); font-size: var(--t-sm); line-height: 1.6; color: var(--ink-3); }
+.recorrido-acciones { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s4); }
+.recorrido-espacio { flex: 1; }
+.recorrido-saltar { min-height: 36px; font-size: var(--t-sm); font-weight: 600; color: var(--ink-muted); text-decoration: underline; text-underline-offset: 3px; }
+.recorrido-saltar:hover { color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) {
+    .recorrido { transition: opacity .25s var(--ease); }
+    .recorrido-foco, .recorrido-tarjeta:not(.abajo-fija) { transition: transform .35s var(--ease-out); }
+}
+@media (pointer: coarse) { .recorrido-saltar { min-height: 44px; } }
+
 /* ---------- 25. Movimiento de entrada ---------- */
 
 /* Una sola secuencia orquestada al cargar: la barra baja, el contenido
