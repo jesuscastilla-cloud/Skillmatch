@@ -280,6 +280,13 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   sirven con teclado y en el celular; el foco sigue a la tarjeta. El cambio se ve al instante y vuelve atrás si el
   servidor falla; la lista y las cifras de arriba se actualizan. La vista elegida se recuerda en el navegador. Al
   llegar desde una notificación se muestra la lista, para marcar la postulación.
+- **Fotos en el sitio publicado (arreglado):** en Render ninguna foto de perfil ni portada abría ("No pudimos abrir
+  esa imagen"). El editor la mostraba con una URL `blob:`, y la CSP del backend (`img-src 'self' data: https:`) no la
+  permite; en local no se notaba porque Live Server no manda CSP. Ahora se lee como `data:`. Además acepta cualquier
+  imagen que el navegador abra (fotos sin tipo o HEIC) y explica qué hacer con una HEIC que no se puede leer.
+- **Vista previa al publicar vacante (hecho, del plan original):** en "Nueva oferta" y "Editar oferta", a la derecha
+  (debajo en el celular) se ve la tarjeta tal como saldrá en Vacantes, y se actualiza mientras se escribe: título,
+  ciudad, tipo, modalidad, experiencia, salario, el comienzo de la descripción, las habilidades y la fecha límite.
 
 ## Orden propuesto (solo frontend)
 

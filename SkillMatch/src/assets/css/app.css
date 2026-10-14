@@ -3763,6 +3763,37 @@ a.meta-tag { position: relative; }
     .tablero-tarjeta { cursor: auto; }
 }
 
+/* ---------- 22e. Vista previa al publicar una vacante (perfil-empresa.js) ---------- */
+/* Formulario a la izquierda y, fija a la derecha, la tarjeta tal como sale en
+   Vacantes. En pantallas angostas la vista previa queda debajo. */
+
+.oferta-con-vista {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: var(--s5);
+    align-items: start;
+}
+.oferta-vista {
+    position: sticky; top: 0;
+    padding: var(--s4);
+    border: 1px dashed var(--hairline);
+    border-radius: var(--r-lg);
+    background: var(--surface-sunk);
+}
+.oferta-vista-titulo {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: var(--s3);
+    font-size: var(--t-sm); font-weight: 700; color: var(--ink-2);
+}
+.oferta-vista-titulo .ico { width: 16px; height: 16px; }
+.oferta-vista .opportunity-card { margin: 0; box-shadow: var(--sh-2); }
+.oferta-vista .card-actions { flex-wrap: wrap; }
+.oferta-vista-falta { color: var(--ink-muted); font-style: italic; font-weight: 500; }
+.oferta-vista-nota { display: flex; align-items: flex-start; gap: 6px; margin-top: var(--s3); font-size: var(--t-xs); color: var(--ink-3); }
+.oferta-vista-nota .ico { flex: 0 0 auto; width: 14px; height: 14px; margin-top: 1px; }
+@media (max-width: 960px) {
+    .oferta-con-vista { grid-template-columns: minmax(0, 1fr); }
+    .oferta-vista { position: static; }
+}
+
 /* ---------- 23. Mensajes y conexiones ---------- */
 
 .messages-layout, .conexiones-layout {

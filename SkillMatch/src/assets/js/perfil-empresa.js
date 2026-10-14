@@ -544,6 +544,7 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
     const fechaInicial = guardada && guardada >= hoy && guardada <= tope ? guardada : fechaDentroDe(30);
 
     createModal(isEdit ? 'Editar oferta' : 'Nueva oferta', `
+        <div class="oferta-con-vista">
         <div class="form-grid oferta-form">
             <div class="form-group span-full">
                 <label for="offerTitle">Título de la oferta *</label>
@@ -610,7 +611,13 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
             </div>
             <p class="error-text span-full" id="offerError" role="alert" hidden></p>
         </div>
-    `, () => guardarOferta(isEdit, offerId), isEdit ? 'Guardar cambios' : 'Publicar oferta', { ancho: 760 });
+        <!-- Vista previa: la misma tarjeta de Vacantes, se pinta mientras se escribe -->
+        <aside class="oferta-vista" aria-label="Vista previa de la vacante">
+            <p class="oferta-vista-titulo"><i data-ico="eye"></i> Así la verán las personas en Vacantes</p>
+            <div id="offerPreview"></div>
+        </aside>
+        </div>
+    `, () => guardarOferta(isEdit, offerId), isEdit ? 'Guardar cambios' : 'Publicar oferta', { ancho: 1120 });
 
     // Habilidades como etiquetas (componente de ui.js, el mismo del registro)
     const etiquetas = SkillMatchUI.etiquetas(document.getElementById('offerSkills'), document.getElementById('offerSkillInput'), { iniciales: oferta.skills || [] });
@@ -629,7 +636,77 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
     // El aviso de error se va en cuanto se corrige algo
     document.querySelector('.oferta-form').addEventListener('input', () => { document.getElementById('offerError').hidden = true; });
     vista();
+    // Vista previa: cualquier cambio del formulario o de las habilidades la repinta
+    let cuadro = 0;
+    const repintar = () => { cancelAnimationFrame(cuadro); cuadro = requestAnimationFrame(() => pintarVistaOferta(oferta.postedDate)); };
+    ['input', 'change'].forEach(tipo => document.querySelector('.oferta-form').addEventListener(tipo, repintar));
+    new MutationObserver(repintar).observe(document.getElementById('offerSkills'), { childList: true });
+    pintarVistaOferta(oferta.postedDate);
     document.getElementById('offerTitle').focus();
+}
+
+// ---- Vista previa de la vacante ----
+// La misma tarjeta que ven las personas en Vacantes (mismas clases de app.css),
+// con lo que se va escribiendo. Es solo para mirar: inert la deja fuera del
+// teclado y del lector de pantalla (el formulario ya tiene esos datos).
+const TIPOS_VISTA = { empleo: 'Empleo', practica: 'Práctica', freelance: 'Independiente' };
+const MODALIDADES_VISTA = { presencial: 'Presencial', remoto: 'Remoto', hibrido: 'Híbrido' };
+const EXPERIENCIAS_VISTA = {
+    'sin-experiencia': 'Sin experiencia', junior: 'Hasta 1 año de experiencia',
+    'semi-senior': '1 a 3 años de experiencia', senior: 'Más de 3 años de experiencia'
+};
+
+function pintarVistaOferta(publicada) {
+    const destino = document.getElementById('offerPreview');
+    if (!destino) return;
+    const valor = id => ((document.getElementById(id) || {}).value || '').trim();
+    const falta = texto => `<span class="oferta-vista-falta">${texto}</span>`;
+    const empresa = currentCompanyData.name || currentCompanyData.firstName || 'Tu empresa';
+    const min = Number(valor('offerSalaryMin')) || 0;
+    const max = Number(valor('offerSalaryMax')) || 0;
+    const pesos = v => '$' + v.toLocaleString('es-CO');
+    const salario = min && max ? `${pesos(min)} - ${pesos(max)}` : min ? `Desde ${pesos(min)}` : max ? `Hasta ${pesos(max)}` : 'Salario a convenir';
+    const descripcion = valor('offerDescription');
+    const corta = descripcion.length > 150 ? descripcion.slice(0, 150) + '...' : descripcion;
+    const habilidades = habilidadesDeOferta();
+    const etiquetas = habilidades.length
+        ? habilidades.slice(0, 4).map(h => `<span class="skill">${sanitize(h)}</span>`).join('') +
+          (habilidades.length > 4 ? `<span class="skill skill-mas">+${habilidades.length - 4}</span>` : '')
+        : '<span class="skill">Sin especificar</span>';
+    const fecha = publicada
+        ? new Date(publicada).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
+        : 'Hoy';
+    const limite = valor('offerDeadline');
+    // data-revelado: sin la animacion de entrada de ui.js (se repinta con cada
+    // letra y en el celular quedaba escondida esperando entrar en pantalla)
+    destino.innerHTML = `
+        <div class="opportunity-card" inert data-revelado="1">
+            <div class="card-header-opp">
+                <div class="company-logo-opp">${sanitize(empresa.charAt(0))}</div>
+                <div class="card-info">
+                    <h3 class="job-title"><span class="job-title-link">${valor('offerTitle') ? sanitize(valor('offerTitle')) : falta('Título de la oferta')}</span></h3>
+                    <p class="company-name">${sanitize(empresa)}</p>
+                </div>
+            </div>
+            <div class="card-meta">
+                <span class="meta-item"><i data-ico="pin"></i> ${valor('offerLocation') ? sanitize(valor('offerLocation')) : 'Sin ciudad'}</span>
+                <span class="meta-item"><i data-ico="briefcase"></i> ${TIPOS_VISTA[sinTildesOferta(valor('offerType'))] || 'Empleo'}</span>
+                <span class="meta-item"><i data-ico="desktop"></i> ${MODALIDADES_VISTA[sinTildesOferta(valor('offerModality'))] || 'Presencial'}</span>
+                <span class="meta-item"><i data-ico="cap"></i> ${EXPERIENCIAS_VISTA[valor('offerLevel')] || 'Experiencia a convenir'}</span>
+                <span class="meta-item"><i data-ico="money"></i> ${salario}</span>
+            </div>
+            <p class="card-description">${corta ? sanitize(corta) : falta('Aquí sale el comienzo de la descripción.')}</p>
+            <div class="card-skills">${etiquetas}</div>
+            <div class="card-footer">
+                <span class="post-date"><i data-ico="calendar"></i> ${fecha}</span>
+                <div class="card-actions">
+                    <button type="button" class="btn-ver-detalle" tabindex="-1">Ver detalle</button>
+                    <button type="button" class="btn-apply" tabindex="-1">Postularme</button>
+                </div>
+            </div>
+        </div>
+        ${limite ? `<p class="oferta-vista-nota"><i data-ico="clock"></i> Recibe postulaciones hasta el ${fechaLegible(limite)}.</p>` : ''}
+        <p class="oferta-vista-nota"><i data-ico="eye"></i> Al abrir "Ver detalle" se ven también los requisitos, las responsabilidades y los beneficios.</p>`;
 }
 
 async function guardarOferta(isEdit, offerId) {
