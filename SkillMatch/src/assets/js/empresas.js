@@ -151,6 +151,9 @@ function iniciarDirectorio() {
             const datos = await pedirJson(`/companies?status=active&page=${pagina}&size=${POR_PAGINA}&sort=name,asc`);
             if (mio !== turno) return;
             pintar(datos.content || [], pagina > 0);
+            if (pagina === 0 && !(datos.content || []).length) {
+                lista.innerHTML = '<li class="directorio-vacio">Todavía no hay empresas registradas. Cuando se registren, aquí verás a qué se dedica cada una y sus vacantes.</li>';
+            }
             ultima = datos.last !== false;
             cuenta.textContent = plural(datos.totalElements || 0, 'empresa', 'empresas');
             mas.hidden = ultima;
