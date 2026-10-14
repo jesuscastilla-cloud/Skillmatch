@@ -304,6 +304,9 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
 - **Cifras por vacante (hecho, del plan original):** cada oferta de "Mi empresa" muestra cómo van sus postulaciones,
   con una barra por estado (por revisar, revisadas, aceptadas, rechazadas) y los números. Sale de las postulaciones que
   la página ya trae, sin consultas nuevas, y se actualiza al aceptar, rechazar o mover en el tablero.
+- **Tamaño de letra (hecho, del plan original):** en el pie de todas las páginas, "Letra" con tres botones (normal,
+  grande y muy grande) y también en la paleta Ctrl+K. Todo el texto usa `rem`, así que crece entero (16, 18 o 20 px de
+  base). Se recuerda en el navegador y lo aplica el guion del `<head>` antes de pintar, para que la página no salte.
 
 ## Orden propuesto (solo frontend)
 

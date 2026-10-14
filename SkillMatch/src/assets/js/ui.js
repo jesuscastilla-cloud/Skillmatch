@@ -1,7 +1,7 @@
 /* =====================================================================
  *  SkillMatch — capa de interfaz
  *
- *  Se encarga de once cosas, y de nada mas:
+ *  Se encarga de doce cosas, y de nada mas:
  *    1. Iconos SVG (reemplazan a los emojis, se ven igual en todos lados)
  *    2. Orientacion: pagina activa, barra inferior en movil, progreso
  *    3. Estados de carga: esqueletos y botones ocupados
@@ -14,6 +14,7 @@
  *    9. Cuenta: ventanas desde JS, cambiar contrasena y mensajes sin leer
  *   10. Marcar lo que anuncio una notificacion (SkillMatchUI.resaltar)
  *   11. Instalar como app: service worker (sw.js) y boton del pie
+ *   12. Tamano de letra (pie y paleta), para quien ve con dificultad
  *
  *  Se carga en todas las paginas y funciona sin configuracion.
  * ===================================================================== */
@@ -743,6 +744,10 @@
             lista.push({ grupo: 'Cuenta', ico: 'user', titulo: 'Iniciar sesión', claves: 'entrar login acceder', href: 'login.html' });
             lista.push({ grupo: 'Cuenta', ico: 'sparkle', titulo: 'Crear mi perfil', claves: 'registro registrarme cuenta nueva', href: 'seleccionar-registro.html' });
         }
+        TAMANOS_LETRA.forEach(function (t) {
+            lista.push({ grupo: 'Preferencias', ico: 'eye', titulo: 'Tamaño de letra: ' + t.nombre.toLowerCase(),
+                claves: 'letra texto grande pequena tamano zoom leer accesibilidad', accion: function () { ponerTamanoLetra(t.id); } });
+        });
         const oscuro = document.documentElement.getAttribute('data-theme') === 'dark';
         lista.push({
             grupo: 'Preferencias', ico: oscuro ? 'sun' : 'moon',
@@ -1105,6 +1110,13 @@
                 '</div>' +
                 '<div class="pie-base">' +
                     '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias para conectar a las personas y las empresas de la ciudad.</p>' +
+                    // Tamano de letra (seccion 22): tres botones, el elegido marcado
+                    '<div class="pie-letra" role="group" aria-label="Tamaño de letra">' +
+                        '<span>Letra</span>' +
+                        TAMANOS_LETRA.map(function (t) {
+                            return '<button type="button" class="pie-letra-btn" data-letra="' + t.id + '" aria-pressed="false" aria-label="' + t.nombre + '" title="' + t.nombre + '">A</button>';
+                        }).join('') +
+                    '</div>' +
                     '<div class="pie-acciones">' +
                         // Solo aparece cuando el navegador deja instalar (seccion 21)
                         '<button type="button" class="pie-instalar" hidden><i data-ico="download"></i>Instalar la app</button>' +
@@ -1113,6 +1125,11 @@
                 '</div>' +
             '</div>' +
             '<div class="pie-gigante" aria-hidden="true"><span>Skill</span><span>Match</span></div>';
+
+        pie.querySelectorAll('.pie-letra-btn').forEach(function (b) {
+            b.addEventListener('click', function () { ponerTamanoLetra(b.dataset.letra); });
+        });
+        marcarTamanoLetra();
 
         // Volver arriba: sube (suave si se permite movimiento) y deja el foco
         // en el logo de la barra, para que con teclado se siga desde ahi
@@ -2236,6 +2253,40 @@
         window.addEventListener('appinstalled', function () {
             document.querySelectorAll('.pie-instalar').forEach(function (b) { b.hidden = true; });
             UI.aviso('Listo: SkillMatch quedó instalada en tu dispositivo.', 'ok');
+        });
+    }
+
+    /* ---------- 22. Tamano de letra ---------- */
+
+    // Todo el texto usa rem: cambiar el tamano de la raiz lo agranda todo (los
+    // espacios quedan igual). Se recuerda en este navegador y lo aplica el guion
+    // del <head> de cada pagina antes de pintar, para que no salte.
+    const LETRA_KEY = 'skillmatch_letra';
+    const TAMANOS_LETRA = [
+        { id: 'normal', nombre: 'Normal' },
+        { id: 'grande', nombre: 'Grande' },
+        { id: 'muy-grande', nombre: 'Muy grande' }
+    ];
+
+    function tamanoLetraActual() {
+        return document.documentElement.getAttribute('data-letra') || 'normal';
+    }
+
+    function ponerTamanoLetra(id) {
+        if (id === 'normal') document.documentElement.removeAttribute('data-letra');
+        else document.documentElement.setAttribute('data-letra', id);
+        try {
+            if (id === 'normal') localStorage.removeItem(LETRA_KEY); else localStorage.setItem(LETRA_KEY, id);
+        } catch (e) { /* sin almacenamiento: vale solo para esta pagina */ }
+        marcarTamanoLetra();
+        const t = TAMANOS_LETRA.find(function (x) { return x.id === id; });
+        if (t) UI.aviso('Tamaño de letra: ' + t.nombre.toLowerCase() + '.', 'ok', 2200);
+    }
+
+    function marcarTamanoLetra() {
+        const actual = tamanoLetraActual();
+        document.querySelectorAll('.pie-letra-btn').forEach(function (b) {
+            b.setAttribute('aria-pressed', String(b.dataset.letra === actual));
         });
     }
 

@@ -2511,6 +2511,26 @@ footer.pie > .container { position: relative; z-index: 1; }
 .pie-arriba .ico { width: 16px; height: 16px; transform: rotate(-90deg); transition: transform .3s var(--ease-out); }
 .pie-arriba:hover { color: #fff; }
 .pie-arriba:hover .ico { transform: rotate(-90deg) translateX(3px); }
+/* Tamano de letra (ui.js, seccion 22): todo el texto usa rem */
+:root[data-letra="grande"] { font-size: 112.5%; }
+:root[data-letra="muy-grande"] { font-size: 125%; }
+.pie-letra { display: inline-flex; align-items: center; gap: 4px; }
+.pie-letra > span { margin-right: 4px; font-size: var(--t-sm); color: rgba(255,255,255,.7); }
+.pie-letra-btn {
+    display: inline-grid; place-items: center;
+    min-width: 36px; min-height: 36px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: var(--r-sm);
+    color: rgba(255,255,255,.85);
+    font-family: var(--font-display); font-weight: 700; line-height: 1;
+}
+.pie-letra-btn[data-letra="normal"] { font-size: 14px; }
+.pie-letra-btn[data-letra="grande"] { font-size: 17px; }
+.pie-letra-btn[data-letra="muy-grande"] { font-size: 20px; }
+.pie-letra-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+.pie-letra-btn[aria-pressed="true"] { background: #fff; border-color: #fff; color: var(--bg-deep); }
+@media (pointer: coarse) { .pie-letra-btn { min-width: 44px; min-height: 44px; } }
+
 /* "Instalar la app": solo cuando el navegador lo permite (ui.js, seccion 21) */
 .pie-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s5); }
 .pie-instalar {
