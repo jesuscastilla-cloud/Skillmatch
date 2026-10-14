@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empresas - SkillMatch Cartagena</title>
+    <meta name="description" content="Las empresas que publican vacantes en SkillMatch: a qué se dedican, dónde están y qué vacantes tienen abiertas.">
+    <meta property="og:title" content="Empresas en SkillMatch">
+    <meta property="og:description" content="Conoce a las empresas antes de postularte: a qué se dedican, dónde están y qué vacantes tienen abiertas.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_CO">
+    <meta property="og:image" content="../assets/img/logo.png">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <header>
+        <nav class="container" aria-label="Principal">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
+                </div>
+                <ul class="nav-links nav-principales">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="conexiones.html">Conexiones</a></li>
+                    <li><a href="mensajes.html">Mensajes</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="perfil-usuario.html">Mi perfil</a></li>
+                <li><a href="index.html" class="btn-login" data-cerrar-sesion>Cerrar sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="main">
+        <section class="directorio-cabecera">
+            <div class="container">
+                <h1>Empresas en SkillMatch</h1>
+                <p>Conoce a las empresas antes de postularte: a qué se dedican, dónde están y qué vacantes tienen abiertas.</p>
+                <form class="directorio-buscar" id="buscarEmpresas" role="search" aria-label="Buscar empresas">
+                    <i data-ico="search"></i>
+                    <label class="sr-only" for="empresaBuscar">Buscar empresas por nombre o sector</label>
+                    <input type="search" id="empresaBuscar" placeholder="Busca por nombre o sector. Ej.: turismo, salud, logística" autocomplete="off" maxlength="60">
+                </form>
+            </div>
+        </section>
+
+        <!-- empresas.js llena las listas con los datos del servidor -->
+        <section class="directorio">
+            <div class="container">
+                <section class="directorio-bloque" id="empresasRecientesBloque" aria-labelledby="empresasRecientesTitulo">
+                    <div class="directorio-titulo">
+                        <h2 id="empresasRecientesTitulo">Publicaron vacantes hace poco</h2>
+                        <p>Las que más vacantes nuevas tienen.</p>
+                    </div>
+                    <ul class="empresas-grid" id="empresasRecientes"></ul>
+                </section>
+
+                <section class="directorio-bloque" aria-labelledby="empresasTitulo">
+                    <div class="directorio-titulo">
+                        <h2 id="empresasTitulo">Todas las empresas</h2>
+                        <p id="empresasCuenta" aria-live="polite"></p>
+                    </div>
+                    <ul class="empresas-grid" id="empresasLista"></ul>
+                    <div class="directorio-mas">
+                        <button type="button" class="btn btn-secondary" id="empresasMas" hidden>Cargar más empresas</button>
+                    </div>
+                </section>
+
+                <aside class="directorio-cta" id="directorioCta" aria-labelledby="directorioCtaTitulo">
+                    <div>
+                        <h2 id="directorioCtaTitulo">¿Tu empresa no aparece?</h2>
+                        <p>Regístrala y publica tus vacantes gratis. Las personas de Cartagena verán a qué se dedica tu empresa antes de postularse.</p>
+                    </div>
+                    <a class="btn btn-primary" href="registro-empresa.html">Registrar mi empresa <i data-ico="arrow"></i></a>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <!-- Pie de pagina: ui.js dibuja aqui el pie grande (este texto es el respaldo) -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/empresas.js"></script>
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>

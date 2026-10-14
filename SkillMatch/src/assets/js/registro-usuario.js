@@ -1,174 +1,148 @@
-﻿// Manejo del formulario de registro de usuario
-document.addEventListener('DOMContentLoaded', function() {
+// Registro de personas que buscan trabajo
+//
+// Antes el formulario tenía tres pasos y exigía profesión, área, años de
+// experiencia, estudios, departamento, modalidad, contrato, aspiración
+// salarial y hasta la hoja de vida en PDF, pero solo se enviaban nombre,
+// correo, teléfono y contraseña: todo lo demás se perdía. Ahora se pide solo
+// lo que SkillMatch guarda, y el paso 2 queda en el perfil recién creado.
+
+document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('form-registro-usuario');
-    
     if (!form) return;
-    
-    // Stepper logic (ya existe en el HTML inline, pero lo manejamos aquí también)
-    const steps = Array.from(form.querySelectorAll('.form-step'));
-    const stepper = Array.from(form.querySelectorAll('.stepper .step'));
-    let currentStep = 0;
-    
-    const showStep = (stepIndex) => {
-        steps.forEach((s, idx) => s.classList.toggle('active', idx === stepIndex));
-        stepper.forEach((el, idx) => {
-            el.classList.toggle('active', idx === stepIndex);
-            el.classList.toggle('completed', idx < stepIndex);
+
+    const pasos = Array.from(form.querySelectorAll('.form-step'));
+    const pestanas = Array.from(form.querySelectorAll('.stepper .step'));
+    const etiquetas = SkillMatchUI.etiquetas(
+        document.getElementById('usuario-habilidades'),
+        document.getElementById('usuario-habilidad')
+    );
+    let actual = 0;
+
+    const valor = id => document.getElementById(id).value.trim();
+
+    function mostrar(indice) {
+        pasos.forEach((p, i) => p.classList.toggle('active', i === indice));
+        pestanas.forEach((t, i) => {
+            t.classList.toggle('active', i === indice);
+            t.classList.toggle('completed', i < indice);
         });
-        currentStep = stepIndex;
-    };
-    
-    const validateStep = (stepIndex) => {
-        const required = steps[stepIndex].querySelectorAll('[required]');
-        for (const field of required) {
-            if (field.type === 'checkbox' && !field.checked) return false;
-            if (!field.value || field.value.trim() === '') return false;
+        actual = indice;
+        const primero = pasos[indice].querySelector('input');
+        if (primero) primero.focus();
+    }
+
+    function error(paso, mensaje) {
+        const aviso = pasos[paso].querySelector('.error-text');
+        aviso.textContent = mensaje || '';
+        aviso.hidden = !mensaje;
+        if (mensaje) aviso.scrollIntoView({ block: 'nearest' });
+    }
+
+    function validarCuenta() {
+        if (!valor('usuario-nombre') || !valor('usuario-apellidos') || !valor('usuario-email') || !valor('usuario-telefono')) {
+            return 'Completa tu nombre, tus apellidos, tu correo y tu teléfono.';
         }
-        return true;
-    };
-    
-    // Navegación entre pasos
-    const nextBtn1 = document.getElementById('next-step-1');
-    const prevBtn2 = document.getElementById('prev-step-2');
-    const nextBtn2 = document.getElementById('next-step-2');
-    const prevBtn3 = document.getElementById('prev-step-3');
-    
-    if (nextBtn1) {
-        nextBtn1.addEventListener('click', () => {
-            if (!validateStep(0)) {
-                alert('Por favor completa todos los campos requeridos del Paso 1.');
-                return;
-            }
-            
-            // Validar contraseñas coinciden
-            const pass = document.getElementById('usuario-pass').value;
-            const pass2 = document.getElementById('usuario-pass2').value;
-            if (pass !== pass2) {
-                alert('Las contraseñas no coinciden.');
-                return;
-            }
-            
-            showStep(1);
-        });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor('usuario-email'))) return 'Escribe un correo válido, por ejemplo nombre@gmail.com.';
+        if (!/^\+?[\d\s-]{7,20}$/.test(valor('usuario-telefono'))) return 'Escribe un teléfono válido, solo con números.';
+        const clave = document.getElementById('usuario-pass').value;
+        if (clave.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+        if (clave !== document.getElementById('usuario-pass2').value) return 'Las contraseñas no coinciden.';
+        return '';
     }
-    
-    if (prevBtn2) prevBtn2.addEventListener('click', () => showStep(0));
-    
-    if (nextBtn2) {
-        nextBtn2.addEventListener('click', () => {
-            if (!validateStep(1)) {
-                alert('Por favor completa todos los campos requeridos del Paso 2.');
-                return;
-            }
-            showStep(2);
-        });
-    }
-    
-    if (prevBtn3) prevBtn3.addEventListener('click', () => showStep(1));
-    
-    // Submit del formulario
-    form.addEventListener('submit', async function(e) {
+
+    document.getElementById('next-step-1').addEventListener('click', () => {
+        const problema = validarCuenta();
+        error(0, problema);
+        if (!problema) mostrar(1);
+    });
+    document.getElementById('prev-step-2').addEventListener('click', () => mostrar(0));
+
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        
-        // Validar paso 3
-        if (!validateStep(2)) {
-            alert('Por favor completa todos los campos requeridos del Paso 3.');
+        // Enter en el paso 1 pasa al siguiente en vez de enviar
+        if (actual === 0) {
+            document.getElementById('next-step-1').click();
             return;
         }
-        
-        // Obtener datos del formulario
-        const nombre = document.getElementById('usuario-nombre').value.trim();
-        const apellidos = document.getElementById('usuario-apellidos').value.trim();
-        const email = document.getElementById('usuario-email').value.trim();
-        const telefono = document.getElementById('usuario-telefono').value.trim();
-        const password = document.getElementById('usuario-pass').value;
-        const password2 = document.getElementById('usuario-pass2').value;
-        
-        // Validaciones adicionales
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            alert('Por favor ingresa un correo electrónico válido.');
+
+        const problema = validarCuenta();
+        if (problema) { mostrar(0); error(0, problema); return; }
+        if (!document.getElementById('usuario-mayor').checked) {
+            error(1, 'Para registrarte en SkillMatch debes tener 18 años o más.');
             return;
         }
-        
-        if (password.length < 6) {
-            alert('La contraseña debe tener al menos 6 caracteres.');
+        if (!document.getElementById('usuario-terminos').checked) {
+            error(1, 'Para crear tu perfil debes aceptar la política de tratamiento de datos.');
             return;
         }
-        
-        if (password !== password2) {
-            alert('Las contraseñas no coinciden.');
-            return;
-        }
-        
-        // Preparar datos para enviar al backend
-        const registerData = {
-            email: email,
-            password: password,
-            firstName: nombre,
-            lastName: apellidos,
-            phone: telefono,
-            userType: 'USER' // Especificar que es un usuario regular
-        };
-        
-        // Deshabilitar botón de submit
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Registrando...';
-        
-        
+        error(1, '');
+
+        const boton = form.querySelector('button[type="submit"]');
+        boton.disabled = true;
+        boton.textContent = 'Creando tu perfil…';
+
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.REGISTRO_USUARIO}`, {
+            const respuesta = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.REGISTRO_USUARIO}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(registerData)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: valor('usuario-email'),
+                    password: document.getElementById('usuario-pass').value,
+                    firstName: valor('usuario-nombre'),
+                    lastName: valor('usuario-apellidos'),
+                    phone: valor('usuario-telefono'),
+                    userType: 'USER'
+                })
             });
-            
-            
-            if (response.ok) {
-                const data = await response.json();
-                
-                // Guardar token y datos del usuario
-                saveToken(data.token);
-                saveUserData({
-                    id: data.id,
-                    companyId: data.companyId || null,
-                    firstName: data.firstName,
-                    lastName: data.lastName,
-                    email: data.email,
-                    role: data.role || registerData.userType || 'USER'
-                });
-                
-                alert('¡Registro exitoso! Bienvenido a SkillMatch.');
-                
-                // Redirigir a la página de perfil de usuario
-                window.location.href = 'perfil-usuario.html';
-                
-            } else {
-                let errorText = 'Error al registrar. Por favor intenta de nuevo.';
-                try {
-                    const errorData = await response.json();
-                    errorText = errorData.message || errorText;
-                } catch (e) {
-                    // Si no puede parsear JSON, usar el mensaje por defecto
-                }
-                
-                alert(errorText);
-                
-                // Rehabilitar botón
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+
+            if (!respuesta.ok) {
+                const cuerpo = await respuesta.json().catch(() => ({}));
+                const mensaje = cuerpo.message || cuerpo.error || 'No se pudo crear la cuenta.';
+                // Un correo repetido se corrige en el paso 1
+                if (/correo|email/i.test(mensaje)) { mostrar(0); error(0, mensaje); } else { error(1, mensaje); }
+                boton.disabled = false;
+                boton.textContent = 'Crear mi perfil';
+                return;
             }
-            
-        } catch (error) {
-            alert('Error de conexión. Por favor verifica que el servidor esté corriendo e intenta de nuevo.');
-            
-            // Rehabilitar botón
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+
+            const datos = await respuesta.json();
+            saveToken(datos.token);
+            saveUserData({
+                id: datos.id,
+                companyId: null,
+                firstName: datos.firstName,
+                lastName: datos.lastName,
+                email: datos.email,
+                role: datos.role || 'USER',
+                userType: 'usuario'
+            });
+
+            // Lo del paso 2 se guarda en el perfil recién creado
+            const perfil = {};
+            if (valor('usuario-titular')) perfil.headline = valor('usuario-titular');
+            if (valor('usuario-ciudad')) perfil.location = valor('usuario-ciudad');
+            if (valor('usuario-sobre-mi')) perfil.bio = valor('usuario-sobre-mi');
+            const guardados = [];
+            if (Object.keys(perfil).length) {
+                guardados.push(fetchWithAuth(`/users/${datos.id}`, { method: 'PUT', body: JSON.stringify(perfil) }));
+            }
+            etiquetas.obtener().forEach(nombre => {
+                guardados.push(fetchWithAuth(`/users/${datos.id}/skills`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name: nombre, level: 'INTERMEDIO' })
+                }));
+            });
+            const resultados = await Promise.all(guardados.map(p => p.then(r => r.ok).catch(() => false)));
+            const fallas = resultados.filter(ok => !ok).length;
+
+            alert(fallas
+                ? 'Tu perfil quedó creado, pero algunos datos no se guardaron. Complétalos desde tu perfil.'
+                : '¡Bienvenido a SkillMatch! Tu perfil quedó creado.');
+            window.location.href = 'perfil-usuario.html';
+        } catch (err) {
+            error(1, 'No pudimos conectar con SkillMatch. Revisa tu conexión e intenta de nuevo.');
+            boton.disabled = false;
+            boton.textContent = 'Crear mi perfil';
         }
     });
 });

@@ -3,8 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oportunidades - SkillMatch Cartagena</title>
-    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+    <title>Vacantes - SkillMatch Cartagena</title>
+    <meta name="description" content="Vacantes de empleo, prácticas y trabajo independiente en Cartagena y la región, de empresas de todos los sectores. Filtra por tipo, modalidad, experiencia y lugar.">
+    <meta property="og:title" content="Vacantes en Cartagena y la región">
+    <meta property="og:description" content="Vacantes de empleo, prácticas y trabajo independiente en Cartagena y la región, de empresas de todos los sectores. Filtra por tipo, modalidad, experiencia y lugar.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_CO">
+    <meta property="og:image" content="../assets/img/logo.png">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
@@ -12,31 +23,32 @@
 </head>
 <body>
     <header>
-        <nav class="container">
+        <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100"></a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
-                <ul class="nav-links">
+                <ul class="nav-links nav-principales">
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="oportunidades.html" class="active-nav">Oportunidades</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="conexiones.html">Conexiones</a></li>
+                    <li><a href="mensajes.html">Mensajes</a></li>
                 </ul>
             </div>
             <ul class="nav-links">
-                <li><a href="conexiones.html">Conexiones</a></li>
-                <li><a href="perfil-usuario.html">Mi Perfil</a></li>
-                <li><a href="login.html" class="btn-login">Cerrar Sesión</a></li>
+                <li><a href="perfil-usuario.html">Mi perfil</a></li>
+                <li><a href="index.html" class="btn-login" data-cerrar-sesion>Cerrar sesión</a></li>
             </ul>
         </nav>
     </header>
 
     <section class="opportunities-header">
         <div class="container">
-            <h1>Oportunidades Personalizadas</h1>
-            <p>Encuentra el trabajo perfecto que impulse tu carrera profesional</p>
+            <h1>Vacantes en Cartagena y la región</h1>
+            <p>Empleos, prácticas y trabajos independientes de empresas de todos los sectores.</p>
             
             <div class="search-bar-main">
-                <input type="text" id="searchInput" placeholder=" Buscar por cargo, empresa o habilidad..." class="search-input-main">
+                <input type="text" id="searchInput" placeholder="Busca por cargo, empresa o habilidad. Ej.: mesero, contador, bodega..." class="search-input-main" aria-label="Buscar vacantes por cargo, empresa o habilidad">
                 <button class="btn-search-main">Buscar</button>
             </div>
         </div>
@@ -44,57 +56,63 @@
 
     <section class="opportunities-container">
         <div class="container">
+            <!-- Solo para personas con sesión: ver todas o solo las que guardaron.
+                 Va encima de filtros y lista: en el celular los filtros van primero -->
+            <div class="tab-list vista-vacantes" id="vistaVacantes" role="group" aria-label="Qué vacantes ver" hidden>
+                <button type="button" class="tab-btn active" data-vista="todas" aria-pressed="true">Todas las vacantes</button>
+                <button type="button" class="tab-btn" data-vista="guardadas" aria-pressed="false"><i data-ico="heart"></i> Guardadas <span class="vista-cuenta" id="savedCount"></span></button>
+            </div>
             <div class="opportunities-layout">
                 <!-- Sidebar de Filtros -->
                 <aside class="opportunities-sidebar">
                     <div class="filter-card">
                         <div class="filter-header">
-                            <h3><i data-ico="target"></i> Filtros</h3>
-                            <button class="btn-clear-filters">Limpiar Todo</button>
+                            <h2><i data-ico="target"></i> Filtros</h2>
+                            <button class="btn-clear-filters">Limpiar todo</button>
                         </div>
 
                         <details class="filter-section" open>
                             <summary class="filter-section-header">
-                                <span class="filter-section-title"><i data-ico="list"></i> Tipo de Oportunidad</span>
+                                <span class="filter-section-title"><i data-ico="list"></i> Tipo de oportunidad</span>
                                 <span class="filter-count" data-group="type"></span>
                             </summary>
                             <div class="filter-options">
                                 <label class="checkbox-label">
-                                    <input type="checkbox" name="type" value="empleo" checked>
+                                    <input type="checkbox" name="type" value="empleo">
                                     <span class="checkbox-text"><i data-ico="briefcase"></i> Empleo</span>
                                 </label>
                                 <label class="checkbox-label">
-                                    <input type="checkbox" name="type" value="practica" checked>
+                                    <input type="checkbox" name="type" value="practica">
                                     <span class="checkbox-text"><i data-ico="cap"></i> Práctica</span>
                                 </label>
                                 <label class="checkbox-label">
                                     <input type="checkbox" name="type" value="freelance">
-                                    <span class="checkbox-text"><i data-ico="rocket"></i> Freelance</span>
+                                    <span class="checkbox-text"><i data-ico="rocket"></i> Independiente o por proyecto</span>
                                 </label>
                             </div>
                         </details>
 
                         <details class="filter-section" open>
                             <summary class="filter-section-header">
-                                <span class="filter-section-title"><i data-ico="briefcase"></i> Nivel de Experiencia</span>
+                                <span class="filter-section-title"><i data-ico="briefcase"></i> Experiencia que piden</span>
                                 <span class="filter-count" data-group="experience"></span>
                             </summary>
                             <div class="filter-options">
                                 <label class="checkbox-label">
-                                    <input type="checkbox" name="experience" value="sin-experiencia" checked>
-                                    <span class="checkbox-text"><i data-ico="sprout"></i> Sin Experiencia</span>
+                                    <input type="checkbox" name="experience" value="sin-experiencia">
+                                    <span class="checkbox-text"><i data-ico="sprout"></i> Sin experiencia</span>
                                 </label>
                                 <label class="checkbox-label">
                                     <input type="checkbox" name="experience" value="junior">
-                                    <span class="checkbox-text"><i data-ico="book"></i> Junior</span>
+                                    <span class="checkbox-text"><i data-ico="book"></i> Hasta 1 año</span>
                                 </label>
                                 <label class="checkbox-label">
                                     <input type="checkbox" name="experience" value="semi-senior">
-                                    <span class="checkbox-text"><i data-ico="star"></i> Semi-Senior</span>
+                                    <span class="checkbox-text"><i data-ico="star"></i> De 1 a 3 años</span>
                                 </label>
                                 <label class="checkbox-label">
                                     <input type="checkbox" name="experience" value="senior">
-                                    <span class="checkbox-text"><i data-ico="trophy"></i> Senior</span>
+                                    <span class="checkbox-text"><i data-ico="trophy"></i> Más de 3 años</span>
                                 </label>
                             </div>
                         </details>
@@ -106,23 +124,23 @@
                             </summary>
                             <div class="filter-options">
                                 <label class="checkbox-label">
-                                    <input type="checkbox" name="modality" value="remoto" checked>
-                                    <span class="checkbox-text"><i data-ico="home"></i> Remoto</span>
+                                    <input type="checkbox" name="modality" value="remoto">
+                                    <span class="checkbox-text"><i data-ico="home"></i> Remoto (desde casa)</span>
                                 </label>
                                 <label class="checkbox-label">
-                                    <input type="checkbox" name="modality" value="presencial" checked>
+                                    <input type="checkbox" name="modality" value="presencial">
                                     <span class="checkbox-text"><i data-ico="building"></i> Presencial</span>
                                 </label>
                                 <label class="checkbox-label">
                                     <input type="checkbox" name="modality" value="hibrido">
-                                    <span class="checkbox-text"><i data-ico="refresh"></i> Híbrido</span>
+                                    <span class="checkbox-text"><i data-ico="refresh"></i> Híbrido (casa y sitio de trabajo)</span>
                                 </label>
                             </div>
                         </details>
 
                         <details class="filter-section" open>
                             <summary class="filter-section-header">
-                                <span class="filter-section-title"><i data-ico="money"></i> Salario Mensual Máximo</span>
+                                <span class="filter-section-title"><i data-ico="money"></i> Salario mensual máximo</span>
                             </summary>
                             <div class="filter-salary-group">
                                 <input type="range" min="0" max="10000000" step="500000" value="10000000" class="salary-range" id="salaryRange" aria-label="Salario mensual máximo">
@@ -132,10 +150,7 @@
                                 </div>
                             </div>
                         </details>
-
-                        <button type="button" class="btn-apply-filters">
-                            <span><i data-ico="check"></i></span> Aplicar Filtros
-                        </button>
+                        <!-- Sin boton "Aplicar filtros": cada cambio filtra al instante (oportunidades.js) -->
                     </div>
                 </aside>
 
@@ -143,14 +158,14 @@
                 <main class="opportunities-main">
                     <div class="opportunities-toolbar">
                         <div class="results-info">
-                            <span id="resultsCount" class="results-count">Mostrando 1 oportunidad</span>
+                            <span id="resultsCount" class="results-count">Cargando vacantes…</span>
                         </div>
                         <div class="sort-controls">
                             <label for="sortSelect">Ordenar por:</label>
                             <select id="sortSelect" class="sort-select">
-                                <option value="match">Mayor Match</option>
-                                <option value="recent">Más Reciente</option>
-                                <option value="salary">Mejor Salario</option>
+                                <option value="match">Mayor compatibilidad</option>
+                                <option value="recent">Más reciente</option>
+                                <option value="salary">Mejor salario</option>
                             </select>
                         </div>
                     </div>
@@ -159,7 +174,7 @@
                     <div class="opportunities-list">
                         <div class="loading-message">
                             <div class="loading-spinner"></div>
-                            <p>Cargando oportunidades...</p>
+                            <p>Cargando vacantes...</p>
                         </div>
                     </div>
                 </main>
@@ -167,10 +182,48 @@
         </div>
     </section>
 
+    <!-- Detalle de una vacante (oportunidades.js) -->
+    <div id="jobDetailModal" class="modal modal-detalle" role="dialog" aria-modal="true" aria-labelledby="jobDetailTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="detalle-titulo">
+                    <h2 id="jobDetailTitle">Vacante</h2>
+                    <p class="company-name" id="jobDetailCompany"></p>
+                </div>
+                <button type="button" class="btn-close-modal" data-cerrar-ventana="jobDetailModal" aria-label="Cerrar"><i data-ico="close"></i></button>
+            </div>
+            <div class="modal-body" id="jobDetailBody"></div>
+            <div class="modal-actions" id="jobDetailActions"></div>
+        </div>
+    </div>
+
+    <!-- Postulacion: la carta la escribe la persona (antes se mandaba una inventada) -->
+    <div id="applyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="applyTitle">
+        <div class="modal-content-small">
+            <div class="modal-header">
+                <h2 id="applyTitle"><i data-ico="send"></i> Postularme</h2>
+                <button type="button" class="btn-close-modal" data-cerrar-ventana="applyModal" aria-label="Cerrar"><i data-ico="close"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="postulacion-a">Vas a postularte a <strong id="applyJobName"></strong> en <strong id="applyCompanyName"></strong>. La empresa verá tu perfil: tus datos, habilidades, experiencia y estudios.</p>
+                <div class="form-group">
+                    <label for="coverLetter">Mensaje para la empresa (opcional)</label>
+                    <textarea id="coverLetter" rows="6" maxlength="2000" placeholder="Cuéntale por qué te interesa esta vacante y qué puedes aportar."></textarea>
+                    <p class="field-help"><span id="coverLetterCount">0</span> / 2.000 caracteres</p>
+                </div>
+                <p class="error-text" id="applyError" role="alert" hidden></p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary-modal" data-cerrar-ventana="applyModal">Cancelar</button>
+                <button type="button" class="btn-primary-modal" id="sendApplicationBtn">Enviar postulación</button>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <div class="container">
-            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
-            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+            <p>Una bolsa de empleo para todos los sectores de Cartagena de Indias.</p>
         </div>
     </footer>
 

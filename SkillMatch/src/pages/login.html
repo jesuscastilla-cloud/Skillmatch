@@ -3,30 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - SkillMatch Cartagena</title>
+    <title>Iniciar sesión - SkillMatch Cartagena</title>
+    <meta name="description" content="Inicia sesión en SkillMatch, la bolsa de empleo de Cartagena para personas y empresas.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="../assets/css/app.css">
-    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
 </head>
 <body>
     <header>
-        <nav class="container">
+        <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html">
-                        <img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100">
-                    </a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
-                <ul class="nav-links">
+                <ul class="nav-links nav-principales">
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="index.html#innovacion">Innovación</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="index.html#como-funciona">Cómo funciona</a></li>
+                    <li><a href="empresas.html">Empresas</a></li>
                 </ul>
             </div>
             <ul class="nav-links">
-                <li><a href="index.html#usuarios-empresas">Usuarios</a></li>
-                <li><a href="index.html#usuarios-empresas">Empresas</a></li>
+                <li><a href="login.html" class="btn-login">Iniciar sesión</a></li>
+                <li><a href="seleccionar-registro.html" class="btn-register">Unirse ahora</a></li>
             </ul>
         </nav>
     </header>
@@ -39,106 +45,36 @@
                     <p>Entra para ver las vacantes que coinciden con tu perfil.</p>
                 </div>
                 <div class="login-form registro-form active" id="loginForm">
-                    <h2>Iniciar Sesión</h2>
+                    <h2>Iniciar sesión</h2>
+
+                    <!-- Mensajes: auth.js los muestra; role los anuncia al lector de pantalla -->
+                    <div id="error-message" role="alert"></div>
+                    <div id="success-message" role="status"></div>
+
                     <form>
                         <div class="form-group">
-                            <label for="email">Correo Electrónico</label>
+                            <label for="email">Correo electrónico</label>
                             <input type="email" id="email" required>
                         </div>
                         <div class="form-group">
                             <label for="password">Contraseña</label>
                             <input type="password" id="password" required>
                         </div>
-                        <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                        <button type="submit" class="btn btn-primary btn-full">Iniciar sesión</button>
                     </form>
-                    <span class="toggle-form" onclick="showRecovery()">¿Olvidaste tu contraseña?</span>
+                    <p class="auth-switch">¿Aún no tienes cuenta? <a href="seleccionar-registro.html">Crear una cuenta</a></p>
+                    <!-- Sin "¿Olvidaste tu contraseña?" hasta que el backend tenga recuperación (ver docs/ANALISIS-PROFUNDO.md) -->
                 </div>
 
-                <div class="login-form" id="recoveryFlow">
-                    <h2>Recuperar contraseña</h2>
-                    <form id="form-recovery" class="registro-form" novalidate>
-                        <div class="stepper" aria-label="Progreso de recuperación" role="tablist">
-                            <div class="step active" data-step="1"><span class="step-index">1</span><span class="step-label">Identificar</span></div>
-                            <div class="step" data-step="2"><span class="step-index">2</span><span class="step-label">Verificar</span></div>
-                            <div class="step" data-step="3"><span class="step-index">3</span><span class="step-label">Nueva clave</span></div>
-                        </div>
-
-                        <div class="form-step active" data-step="1">
-                            <div class="form-section">
-                                <h3 class="section-title">Identifica tu cuenta</h3>
-                                <div class="form-grid">
-                                    <div class="form-group span-full">
-                                        <label>Enviar código por</label>
-                                        <div class="option-row">
-                                            <label><input type="radio" name="rec-method" value="email" checked> Correo</label>
-                                            <label><input type="radio" name="rec-method" value="sms"> SMS</label>
-                                        </div>
-                                        <small class="input-help">Elige cómo recibir el código de verificación.</small>
-                                    </div>
-                                    <div class="form-group field-center span-full" id="wrap-email">
-                                        <label for="rec-email">Correo registrado</label>
-                                        <input type="email" id="rec-email" name="email" autocomplete="email" required>
-                                        <small class="input-help">Te enviaremos un código a este correo.</small>
-                                    </div>
-                                    <div class="form-group field-center span-full is-hidden" id="wrap-phone">
-                                        <label for="rec-phone">Número de teléfono</label>
-                                        <input type="tel" id="rec-phone" name="phone" inputmode="tel" placeholder="+57 300 123 4567">
-                                        <small class="input-help">Recibirás un SMS con el código.</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="step-actions">
-                                <button type="button" class="btn btn-primary" id="rec-next-1">Continuar</button>
-                            </div>
-                        </div>
-
-                        <div class="form-step" data-step="2">
-                            <div class="form-section">
-                                <h3 class="section-title">Verifica tu identidad</h3>
-                                <div class="form-grid">
-                                    <div class="form-group field-center span-full">
-                                        <label for="rec-code">Código de verificación (6 dígitos)</label>
-                                        <input type="text" id="rec-code" name="code" maxlength="6" pattern="\\d{6}" required>
-                                        <small class="input-help">Hemos enviado un código a tu correo. Revisa spam si no lo ves.</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="step-actions">
-                                <button type="button" class="btn btn-primary" id="rec-prev-2">Anterior</button>
-                                <button type="button" class="btn btn-primary" id="rec-next-2">Validar código</button>
-                            </div>
-                        </div>
-
-                        <div class="form-step" data-step="3">
-                            <div class="form-section">
-                                <h3 class="section-title">Crea una nueva contraseña</h3>
-                                <div class="form-grid">
-                                    <div class="form-group field-center">
-                                        <label for="rec-pass">Nueva contraseña</label>
-                                        <input type="password" id="rec-pass" name="pass" minlength="8" required>
-                                        <small class="input-help">Mínimo 8 caracteres, mezcla letras y números.</small>
-                                    </div>
-                                    <div class="form-group field-center">
-                                        <label for="rec-pass2">Confirmar contraseña</label>
-                                        <input type="password" id="rec-pass2" name="pass2" minlength="8" required>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="step-actions">
-                                <button type="button" class="btn btn-primary" id="rec-prev-3">Anterior</button>
-                                <button type="submit" class="btn btn-primary">Restablecer contraseña</button>
-                            </div>
-                        </div>
-                    </form>
-                    <span class="toggle-form" onclick="showLoginForm()">Volver a iniciar sesión</span>
-                </div>
             </div>
         </div>
 
         <aside class="auth-aside">
-            <h2>Tu perfil trabaja mientras tú no estás</h2>
-            <p style="margin-top:16px">Cada vez que una empresa de Cartagena publica una vacante,
-               SkillMatch la compara con tus habilidades y te avisa si vale la pena postularte.</p>
+            <!-- Personajes que miran (login-personajes.js los dibuja y los anima) -->
+            <div class="login-personajes" aria-hidden="true"></div>
+            <h2>Sabes qué tanto encajas antes de postularte</h2>
+            <p style="margin-top:16px">SkillMatch compara las vacantes de Cartagena con tus habilidades
+               y te muestra qué tan cerca estás de cada una.</p>
             <div class="hero-proof" style="margin-top:40px">
                 <div>
                     <span class="stat-number">3</span>
@@ -154,13 +90,14 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
-            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+            <p>Una bolsa de empleo para todos los sectores de Cartagena de Indias.</p>
         </div>
     </footer>
 
     <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/login-personajes.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>
 </html>

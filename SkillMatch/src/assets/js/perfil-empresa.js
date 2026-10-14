@@ -5,10 +5,8 @@ let currentOffers = [];
 let currentCompanyData = {};
 
 function sanitize(text) {
-    if (text == null) return '';
-    const div = document.createElement('div');
-    div.textContent = String(text);
-    return div.innerHTML;
+    // Tambien escapa comillas (sirve dentro de atributos); ver api-config.js
+    return escaparHtml(text);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -22,7 +20,20 @@ document.addEventListener('DOMContentLoaded', function() {
     loadActivityStats();
 });
 
-// Cargar datos de la empresa desde localStorage y backend
+// Tamano de la empresa tal como lo guarda el registro
+const TAMANOS_EMPRESA = {
+    micro: '1 a 10 personas', small: '11 a 50 personas', pequena: '11 a 50 personas',
+    medium: '51 a 200 personas', mediana: '51 a 200 personas',
+    large: 'Más de 200 personas', grande: 'Más de 200 personas'
+};
+
+// Iniciales de la empresa (antes salia "ST" para todas: un servicio externo
+// con el nombre fijo "Soluciones Tech")
+function companyInitials(nombre) {
+    return String(nombre || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+}
+
+// Cargar datos de la empresa: todo sale del backend; lo que no existe no se muestra
 function loadCompanyData() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
@@ -31,120 +42,142 @@ function loadCompanyData() {
         window.location.href = 'login-empresa.html';
         return;
     }
-    
+
     // Validar que exista companyId
     if (!userData.companyId) {
-        alert('<i data-ico="alert"></i> Tu cuenta no tiene una empresa asociada.\n\nPor favor contacta al administrador o cierra sesión e inicia sesión nuevamente.');
+        alert('Tu cuenta no tiene una empresa asociada.\n\nPor favor contacta al administrador o cierra sesión e inicia sesión nuevamente.');
         return;
     }
-    
+
     currentCompanyData = userData;
-    
-    // Actualizar nombre de la empresa
-    if (userData.firstName) {
-        const companyNameElement = document.getElementById('companyName');
-        if (companyNameElement) {
-            companyNameElement.textContent = userData.firstName;
+    pintarCabecera({ name: userData.firstName });
+
+    fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}`)
+    .then(response => {
+        if (!response.ok) throw new Error('Empresa no encontrada');
+        return response.json();
+    })
+    .then(company => {
+        currentCompanyData = { ...userData, ...company };
+        pintarCabecera(company);
+
+        // "Acerca de"
+        const aboutElement = document.getElementById('companyAbout');
+        if (aboutElement) {
+            const p = document.createElement('p');
+            p.textContent = company.description ||
+                'Aún no has agregado una descripción. Usa el lápiz para contar qué hace tu empresa.';
+            if (!company.description) p.className = 'empty-text';
+            aboutElement.replaceChildren(p);
+        }
+
+        // Beneficios: solo si la empresa los guardo (texto separado por comas o lineas)
+        const lista = String(company.benefits || '').split(/[\n,;]+/).map(b => b.trim()).filter(Boolean);
+        const tarjeta = document.getElementById('companyBenefitsCard');
+        if (tarjeta && lista.length) {
+            const ul = document.getElementById('companyBenefits');
+            ul.replaceChildren(...lista.map(b => { const li = document.createElement('li'); li.textContent = b; return li; }));
+            tarjeta.hidden = false;
+        }
+    })
+    .catch(() => {
+        const aboutElement = document.getElementById('companyAbout');
+        if (aboutElement) aboutElement.innerHTML = '<p class="error-text">No se pudo cargar la información de la empresa.</p>';
+    });
+}
+
+// Nombre, logo, sector y datos de la cabecera
+function pintarCabecera(company) {
+    const nombre = company.name || 'Mi empresa';
+    document.getElementById('companyName').textContent = nombre;
+    document.title = nombre + ' - SkillMatch Cartagena';
+
+    const logo = document.getElementById('companyLogo');
+    if (logo) {
+        if (company.logo) {
+            const img = document.createElement('img');
+            img.src = company.logo;
+            img.alt = '';
+            logo.replaceChildren(img);
+        } else {
+            logo.textContent = companyInitials(nombre);
         }
     }
-    
-    
-    // Cargar información completa de la empresa desde el backend
-    if (userData.companyId) {
-        fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Empresa no encontrada');
-            return response.json();
-        })
-        .then(company => {
-            
-            // Actualizar descripción "Acerca de"
-            const aboutElement = document.getElementById('companyAbout');
-            if (aboutElement && company.description) {
-                const p = document.createElement('p');
-                p.textContent = company.description;
-                aboutElement.replaceChildren(p);
-            } else if (aboutElement) {
-                aboutElement.innerHTML = `<p>Esta empresa aún no ha agregado una descripción. Haz clic en el botón de editar para agregar información sobre tu empresa.</p>`;
-            }
-            
-            // Actualizar otros datos si existen
-            if (company.industry) {
-                const industryElement = document.getElementById('companyIndustry');
-                if (industryElement) industryElement.textContent = company.industry;
-            }
-            
-            // Guardar datos completos
-            currentCompanyData = { ...userData, ...company };
-        })
-        .catch(error => {
-            const aboutElement = document.getElementById('companyAbout');
-            if (aboutElement) {
-                aboutElement.innerHTML = `<p>Esta empresa aún no ha agregado una descripción. Haz clic en el botón de editar para agregar información sobre tu empresa.</p>`;
-            }
-        });
+
+    const industria = document.getElementById('companyIndustry');
+    if (industria) industria.textContent = company.industry || '';
+
+    const meta = document.getElementById('companyMeta');
+    if (!meta) return;
+    const datos = [];
+    // Una empresa nueva queda con "No especificada" (lo pone el backend): no se muestra
+    if (company.location && !/^no especificad/i.test(company.location)) datos.push(['pin', company.location]);
+    if (company.size) datos.push(['users', TAMANOS_EMPRESA[String(company.size).toLowerCase()] || company.size]);
+    if (company.foundedYear) datos.push(['calendar', 'Desde ' + company.foundedYear]);
+    meta.replaceChildren(...datos.map(([ico, texto]) => {
+        const span = document.createElement('span');
+        span.className = 'meta-tag';
+        span.innerHTML = `<i data-ico="${ico}"></i> `;
+        span.append(texto);
+        return span;
+    }));
+    if (company.website) {
+        const a = document.createElement('a');
+        a.className = 'meta-tag';
+        a.href = /^https?:\/\//.test(company.website) ? company.website : 'https://' + company.website;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.innerHTML = '<i data-ico="globe"></i> ';
+        a.append(company.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''));
+        meta.append(a);
+    }
+    if (company.isVerified) {
+        const v = document.createElement('span');
+        v.className = 'meta-tag es-verificada';
+        v.innerHTML = '<i data-ico="check"></i> Empresa verificada';
+        meta.append(v);
     }
 }
 
-// Cargar estadísticas de actividad desde backend
+// Resumen de actividad con las cifras reales del backend. Antes:
+// "Contrataciones exitosas" mostraba las ofertas activas y "Miembros del
+// equipo" las postulaciones pendientes.
 function loadActivityStats() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    if (!userData.companyId) return;
 
-    if (!userData.companyId) {
-        return;
-    }
-
-    // Cargar estadísticas reales desde el endpoint de backend
+    const poner = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
     fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}/statistics`)
     .then(response => {
         if (!response.ok) throw new Error('Error al cargar estadísticas');
         return response.json();
     })
     .then(stats => {
-        
-        // Actualizar estadísticas REALES en el DOM
-        const statOfertasPublicadas = document.getElementById('statOfertasPublicadas');
-        const statCandidatosContactados = document.getElementById('statCandidatosContactados');
-        const statContratacionesExitosas = document.getElementById('statContratacionesExitosas');
-        const statMiembrosEquipo = document.getElementById('statMiembrosEquipo');
-        
-        if (statOfertasPublicadas) statOfertasPublicadas.textContent = stats.totalJobs || 0;
-        if (statCandidatosContactados) statCandidatosContactados.textContent = stats.totalApplications || 0;
-        if (statContratacionesExitosas) statContratacionesExitosas.textContent = stats.activeJobs || 0;
-        if (statMiembrosEquipo) statMiembrosEquipo.textContent = stats.pendingApplications || 0;
-        
-        // Agregar más estadísticas si hay elementos en el HTML
-        const profileViews = document.getElementById('profile-views');
-        const responseRate = document.getElementById('response-rate');
-        
-        if (profileViews) profileViews.textContent = stats.profileViews || 0;
-        if (responseRate) responseRate.textContent = `${(stats.responseRate || 0).toFixed(1)}%`;
-        
+        poner('statOfertasActivas', stats.activeJobs || 0);
+        poner('statPostulaciones', stats.totalApplications || 0);
+        poner('statPorRevisar', stats.pendingApplications || 0);
+        // Postulaciones que ya tienen respuesta (aceptadas, revisadas o rechazadas)
+        poner('statRespuesta', stats.totalApplications ? Math.round(stats.responseRate || 0) + ' %' : '–');
     })
-    .catch(error => {
-        // Valores por defecto en caso de error
-        document.getElementById('statOfertasPublicadas').textContent = '0';
-        document.getElementById('statCandidatosContactados').textContent = '0';
-        document.getElementById('statContratacionesExitosas').textContent = '0';
-        document.getElementById('statMiembrosEquipo').textContent = '0';
+    .catch(() => {
+        ['statOfertasActivas', 'statPostulaciones', 'statPorRevisar', 'statRespuesta'].forEach(id => poner(id, '–'));
     });
 }
 
-// Cargar ofertas desde backend
+// Cargar ofertas desde backend. La promesa queda guardada: quien quiera bajar
+// hasta las postulaciones espera a que las ofertas (que van arriba) ocupen su sitio
+let ofertasCargadas = Promise.resolve();
 function loadOffers() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
     if (!userData.companyId) {
-        const savedOffers = JSON.parse(localStorage.getItem('companyOffers') || '[]');
-        currentOffers = savedOffers;
-        if (savedOffers.length > 0) {
-            renderOffers(savedOffers);
-        }
+        const lista = document.getElementById('offersList');
+        if (lista) lista.innerHTML = '<p class="error-text">No encontramos tu empresa. Cierra sesión y vuelve a entrar.</p>';
         return;
     }
 
     // Cargar desde backend
-    fetchWithAuth(`${API_BASE_URL}/jobs/company/${userData.companyId}`)
+    ofertasCargadas = fetchWithAuth(`${API_BASE_URL}/jobs/company/${userData.companyId}`)
     .then(response => {
         if (!response.ok) throw new Error('Error al cargar ofertas');
         return response.json();
@@ -163,15 +196,22 @@ function loadOffers() {
             } catch (error) {
             }
             
+            // Tipo: el backend lo manda en minuscula y a veces con tilde ("práctica");
+            // la clase pinta el color de la etiqueta
+            const tipo = String(job.type || 'empleo').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            const TIPOS = { empleo: ['employment', 'Empleo'], practica: ['practice', 'Práctica'], freelance: ['freelance', 'Independiente'] };
+            const [claseTipo, nombreTipo] = TIPOS[tipo] || ['employment', job.type || 'Empleo'];
+            // La fecha esta en postedDate; createdAt llega vacio y salia "31/12/1969"
+            const fecha = job.postedDate || job.createdAt;
             return {
                 id: job.id,
                 title: job.title,
-                type: job.type?.toLowerCase() || 'employment',
-                typeLabel: job.type || 'Empleo',
+                type: claseTipo,
+                typeLabel: nombreTipo,
                 description: job.description,
                 salary: job.salaryRange,
                 location: job.location,
-                publishDate: new Date(job.createdAt).toLocaleDateString('es-ES'),
+                publishDate: fecha ? new Date(fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
                 candidates: candidateCount,
                 status: (job.status?.toLowerCase() === 'abierta' || job.active) ? 'active' : 'archived'
             };
@@ -181,12 +221,9 @@ function loadOffers() {
         renderOffers(currentOffers);
     })
     .catch(error => {
-        // Fallback a localStorage
-        const savedOffers = JSON.parse(localStorage.getItem('companyOffers') || '[]');
-        currentOffers = savedOffers;
-        if (savedOffers.length > 0) {
-            renderOffers(savedOffers);
-        }
+        // Sin las copias del navegador: antes se mostraban como si fueran reales
+        const lista = document.getElementById('offersList');
+        if (lista) lista.innerHTML = '<p class="error-text">No se pudieron cargar las ofertas. Intenta de nuevo en un momento.</p>';
     });
 }
 
@@ -196,7 +233,7 @@ function renderOffers(offers) {
     if (!offersList) return;
     
     if (offers.length === 0) {
-        offersList.innerHTML = '<p style="text-align:center;color:#65676b;padding:2rem;">No hay ofertas publicadas. ¡Crea tu primera oferta!</p>';
+        offersList.innerHTML = '<div class="empty-state"><p>Aún no has publicado ofertas.</p><button type="button" class="btn btn-primary" onclick="openNewOfferModal()"><i data-ico="plus"></i> Publicar mi primera oferta</button></div>';
         return;
     }
     
@@ -206,10 +243,9 @@ function renderOffers(offers) {
         <div class="offer-card" data-offer-id="${offerId}">
             <div class="offer-card-header">
                 <div class="offer-title-section">
-                    <h3>${offer.title}</h3>
+                    <h3>${sanitize(offer.title)}</h3>
                     <span class="offer-type-badge ${offer.type}">${offer.typeLabel}</span>
                 </div>
-                <button class="offer-menu-btn" onclick="showOfferMenu('${offerId}')" title="Opciones">⋮</button>
             </div>
             <div class="offer-card-info">
                 <div class="offer-info-row">
@@ -226,7 +262,7 @@ function renderOffers(offers) {
                 </div>
             </div>
             <div class="offer-card-actions">
-                <button class="btn-offer-action primary" onclick="viewOfferCandidates('${offerId}')">Ver Candidatos</button>
+                <button class="btn-offer-action primary" onclick="viewOfferCandidates('${offerId}')">Ver candidatos</button>
                 <button class="btn-offer-action" onclick="editOffer('${offerId}')">Editar</button>
                 <button class="btn-offer-action ${offer.status === 'active' ? '' : 'success'}" onclick="toggleOfferStatus('${offerId}')">
                     ${offer.status === 'active' ? 'Archivar' : 'Reabrir'}
@@ -243,37 +279,17 @@ function renderOffers(offers) {
 
 function setupEventListeners() {
     
-    // Botón Cerrar Sesión
-    const btnCerrarSesion = document.getElementById('btnCerrarSesion');
-    if (btnCerrarSesion) {
-        btnCerrarSesion.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('userData');
-                window.location.href = 'login.html';
-            }
-        });
-    }
-    
-    // Botón Editar Portada
-    const btnEditCover = document.getElementById('btnEditCover');
-    if (btnEditCover) {
-        btnEditCover.addEventListener('click', openChangeCoverModal);
-    }
-    
-    // Botón Editar Logo
-    const btnEditLogo = document.getElementById('btnEditLogo');
-    if (btnEditLogo) {
-        btnEditLogo.addEventListener('click', openChangeLogoModal);
-    }
-    
-    // Botón Editar Perfil
-    const btnEditProfile = document.getElementById('btnEditProfile');
-    if (btnEditProfile) {
-        btnEditProfile.addEventListener('click', openEditProfileModal);
-    }
-    
+    // "Cerrar sesión" (#btnCerrarSesion) lo maneja ui.js en todas las páginas
+    // (data-cerrar-sesion): avisa al backend y borra todo lo guardado
+
+    // (Portada, logo y datos de la empresa ya no se editan aqui: el backend solo
+    // deja a la empresa cambiar su descripcion y esos botones guardaban en el
+    // navegador, sin llegar al servidor)
+
+    // Cambiar contraseña: la ventana es de ui.js (la misma del perfil de persona)
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => SkillMatchUI.cambiarContrasena());
+
     // Botón Editar "Acerca de"
     const btnEditAbout = document.getElementById('btnEditAbout');
     if (btnEditAbout) {
@@ -285,47 +301,14 @@ function setupEventListeners() {
     if (btnNewOffer) {
         btnNewOffer.addEventListener('click', () => openNewOfferModal());
     }
-    
-    // Botón Upgrade Plan
-    const btnUpgradePlan = document.querySelector('.btn-upgrade-plan');
-    if (btnUpgradePlan) {
-        btnUpgradePlan.addEventListener('click', openUpgradePlanModal);
-    }
-    
 }
 
 // ========================================
 // FUNCIONES DE OFERTAS
 // ========================================
 
-function showOfferMenu(offerId) {
-    if (confirm('¿Deseas eliminar esta oferta?')) {
-        deleteOffer(offerId);
-    }
-}
-
-function deleteOffer(offerId) {
-
-    // Eliminar en backend
-    fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}`, { method: 'DELETE' })
-    .then(response => {
-        if (!response.ok) throw new Error('Error al eliminar oferta');
-        return response.json();
-    })
-    .then(data => {
-        currentOffers = currentOffers.filter((offer, index) => (offer.id || index) !== offerId);
-        localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
-        renderOffers(currentOffers);
-        showNotification('Oferta eliminada correctamente');
-    })
-    .catch(error => {
-        // Fallback: eliminar solo de localStorage
-        currentOffers = currentOffers.filter((offer, index) => (offer.id || index) !== offerId);
-        localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
-        renderOffers(currentOffers);
-        showNotification('Oferta eliminada localmente');
-    });
-}
+// (El botón "⋮" solo ofrecía eliminar, y en el backend eliminar no borra: cierra la
+// oferta igual que "Archivar", que además se puede deshacer con "Reabrir".)
 
 function viewOfferCandidates(offerId) {
     const offer = currentOffers.find((o, i) => (o.id || i) === offerId);
@@ -359,7 +342,6 @@ function toggleOfferStatus(offerId) {
     })
     .then(() => {
         currentOffers[offerIndex].status = newLocalStatus;
-        localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
         renderOffers(currentOffers);
         showNotification(newLocalStatus === 'active' ? 'Oferta reabierta' : 'Oferta archivada');
     })
@@ -372,99 +354,14 @@ function toggleOfferStatus(offerId) {
 // MODALES
 // ========================================
 
-function openChangeCoverModal() {
-    const currentCover = document.getElementById('companyCover')?.src || '';
-    createModal('Cambiar Portada', `
-        <div class="form-group">
-            <label for="newCoverUrl">URL de la imagen de portada</label>
-            <input type="url" id="newCoverUrl" placeholder="https://ejemplo.com/imagen.jpg" value="${currentCover}">
-            <small>Recomendado: 1200x300px</small>
-        </div>
-    `, () => {
-        const newUrl = document.getElementById('newCoverUrl').value;
-        if (newUrl) {
-            document.getElementById('companyCover').src = newUrl;
-            currentCompanyData.coverUrl = newUrl;
-            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
-            localStorage.setItem('userData', JSON.stringify({...existing, ...currentCompanyData}));
-            showNotification('Portada actualizada correctamente');
-            closeModal();
-        }
-    });
-}
-
-function openChangeLogoModal() {
-    const currentLogo = document.getElementById('companyLogo')?.src || '';
-    createModal('Cambiar Logo', `
-        <div class="form-group">
-            <label for="newLogoUrl">URL del logo</label>
-            <input type="url" id="newLogoUrl" placeholder="https://ejemplo.com/logo.png" value="${currentLogo}">
-            <small>Recomendado: 120x120px</small>
-        </div>
-    `, () => {
-        const newUrl = document.getElementById('newLogoUrl').value;
-        if (newUrl) {
-            document.getElementById('companyLogo').src = newUrl;
-            currentCompanyData.logoUrl = newUrl;
-            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
-            localStorage.setItem('userData', JSON.stringify({...existing, ...currentCompanyData}));
-            showNotification('Logo actualizado correctamente');
-            closeModal();
-        }
-    });
-}
-
-function openEditProfileModal() {
-    const companyIndustry = document.getElementById('companyIndustry')?.textContent || '';
-    createModal('Editar Perfil de Empresa', `
-        <div class="form-group">
-            <label for="editCompanyName">Nombre de la Empresa</label>
-            <input type="text" id="editCompanyName" value="${currentCompanyData.firstName || ''}">
-        </div>
-        <div class="form-group">
-            <label for="editCompanyIndustry">Sector / Industria</label>
-            <input type="text" id="editCompanyIndustry" value="${companyIndustry}">
-        </div>
-        <div class="form-group">
-            <label for="editCompanyEmail">Email</label>
-            <input type="email" id="editCompanyEmail" value="${currentCompanyData.email || ''}">
-        </div>
-        <div class="form-group">
-            <label for="editCompanyPhone">Teléfono</label>
-            <input type="tel" id="editCompanyPhone" value="${currentCompanyData.phone || ''}">
-        </div>
-    `, () => {
-        const newName = document.getElementById('editCompanyName').value;
-        const newIndustry = document.getElementById('editCompanyIndustry').value;
-        const newEmail = document.getElementById('editCompanyEmail').value;
-        const newPhone = document.getElementById('editCompanyPhone').value;
-        
-        if (newName) {
-            const nameElement = document.getElementById('companyName');
-            const industryElement = document.getElementById('companyIndustry');
-            if (nameElement) nameElement.textContent = newName;
-            if (industryElement) industryElement.textContent = newIndustry;
-            
-            currentCompanyData.firstName = newName;
-            currentCompanyData.email = newEmail;
-            currentCompanyData.phone = newPhone;
-
-            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
-            localStorage.setItem('userData', JSON.stringify({...existing, ...currentCompanyData}));
-            showNotification('Perfil actualizado correctamente');
-            closeModal();
-        }
-    });
-}
-
 function openEditAboutModal() {
     const aboutElement = document.getElementById('companyAbout');
     const aboutText = aboutElement?.querySelector('p')?.textContent || '';
     
-    createModal('Editar Acerca de Nosotros', `
+    createModal('Editar "Acerca de nosotros"', `
         <div class="form-group">
             <label for="editAboutText">Descripción de la empresa</label>
-            <textarea id="editAboutText" rows="6" style="width:100%;padding:0.8rem;border:1px solid #e4e6e9;border-radius:8px;font-family:inherit;">${aboutText}</textarea>
+            <textarea id="editAboutText" rows="6" maxlength="2000">${aboutText}</textarea>
             <small>Describe tu empresa, misión, visión y valores</small>
         </div>
     `, () => {
@@ -518,304 +415,388 @@ function openEditAboutModal() {
     });
 }
 
-function openNewOfferModal(existingOffer = null, offerId = null) {
-    const isEdit = existingOffer !== null;
-    
-    createModal(isEdit ? 'Editar Oferta' : 'Nueva Oferta de Empleo', `
-        <div class="form-group">
-            <label for="offerTitle">Título de la oferta *</label>
-            <input type="text" id="offerTitle" placeholder="ej. Desarrollador Frontend Senior" value="${existingOffer?.title || ''}" required>
-        </div>
-        <div class="form-group">
-            <label for="offerType">Tipo de oferta *</label>
-            <select id="offerType" required>
-                <option value="practice" ${existingOffer?.type === 'practice' ? 'selected' : ''}>Práctica</option>
-                <option value="employment" ${existingOffer?.type === 'employment' ? 'selected' : ''}>Empleo</option>
-                <option value="freelance" ${existingOffer?.type === 'freelance' ? 'selected' : ''}>Freelance</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="offerDescription">Descripción *</label>
-            <textarea id="offerDescription" rows="4" placeholder="Describe las responsabilidades y requisitos..." required>${existingOffer?.description || ''}</textarea>
-        </div>
-        <div class="form-group">
-            <label for="offerSalary">Rango Salarial (opcional)</label>
-            <input type="text" id="offerSalary" placeholder="ej. $2M - $3M / mes" value="${existingOffer?.salary || ''}">
-        </div>
-        <div class="form-group">
-            <label for="offerLocation">Ubicación *</label>
-            <input type="text" id="offerLocation" placeholder="ej. Cartagena de Indias" value="${existingOffer?.location || 'Cartagena de Indias'}" required>
-        </div>
-    `, () => {
-        const title = document.getElementById('offerTitle').value;
-        const type = document.getElementById('offerType').value;
-        const description = document.getElementById('offerDescription').value;
-        const salary = document.getElementById('offerSalary').value;
-        const location = document.getElementById('offerLocation').value;
-        
-        if (!title || !type || !description || !location) {
-            alert('Por favor completa todos los campos obligatorios (*)');
-            return;
-        }
-        
-        const typeLabels = { practice: 'práctica', employment: 'empleo', freelance: 'freelance' };
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        
-        // Preparar datos para el backend
-        
-        if (!userData.companyId) {
-            alert('<i data-ico="alert"></i> No se encontró el identificador de la empresa.\n\nPor favor, cierra sesión e inicia sesión nuevamente para sincronizar tus datos.');
-            return;
-        }
+// ---- Nueva oferta / editar oferta ----
+// Antes la ventana no preguntaba modalidad, nivel ni habilidades: guardaba
+// siempre "híbrido" y "junior", sin habilidades no había % de compatibilidad
+// y el salario del ejemplo ("$2M - $3M") quedaba en 2 pesos. Al editar era
+// peor: el backend reemplaza la oferta completa y se borraban requisitos,
+// responsabilidades, beneficios, duración y fecha límite.
 
-        const backendData = {
-            companyId: userData.companyId,
-            title,
-            description,
-            type: typeLabels[type],
-            location,
-            modality: 'híbrido',
-            experienceLevel: 'junior' // Valor por defecto si no se especifica
-        };
-        
-        // Agregar salario si existe
-        if (salary) {
-            const salaryMatch = salary.match(/\$?([\d.,]+)\s*-?\s*\$?([\d.,]+)?/);
-            if (salaryMatch) {
-                backendData.salaryMin = parseFloat(salaryMatch[1].replace(/[.,]/g, '')) || 0;
-                backendData.salaryMax = salaryMatch[2] ? parseFloat(salaryMatch[2].replace(/[.,]/g, '')) : backendData.salaryMin;
-            }
-        }
-        
-        // Determinar endpoint y método
-        const url = isEdit ? `${API_BASE_URL}/jobs/${offerId}` : `${API_BASE_URL}/jobs`;
-        const method = isEdit ? 'PUT' : 'POST';
-        
-        
-        // Guardar en backend
-        fetchWithAuth(url, {
-            method: method,
-            body: JSON.stringify(backendData)
-        })
-        .then(async response => {
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
-                throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            
-            // Actualizar lista local
-            const offerData = {
-                id: data.id,
-                title: data.title,
-                type: data.type?.toLowerCase() || 'employment',
-                typeLabel: data.type || 'Empleo',
-                description: data.description,
-                salary: data.salaryRange,
-                location: data.location,
-                publishDate: new Date(data.createdAt).toLocaleDateString('es-ES'),
-                candidates: 0,
-                status: 'active'
-            };
-            
-            if (isEdit) {
-                const index = currentOffers.findIndex((o, i) => (o.id || i) === offerId);
-                if (index !== -1) {
-                    currentOffers[index] = offerData;
-                }
-            } else {
-                currentOffers.unshift(offerData);
-            }
-            
-            localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
-            renderOffers(currentOffers);
-            showNotification(isEdit ? 'Oferta actualizada en la base de datos' : 'Oferta publicada en la base de datos');
-            closeModal();
-        })
-        .catch(error => {
-            alert('Error al guardar la oferta:\n\n' + error.message + '\n\nRevisa la consola (F12) para más detalles.');
-        });
-    });
+const CIUDADES_OFERTA = ['Cartagena de Indias', 'Turbaco', 'Arjona', 'Magangué', 'Barranquilla',
+    'Santa Marta', 'Montería', 'Sincelejo', 'Bogotá D.C.', 'Medellín', 'Cali', 'Bucaramanga'];
+
+// Lo que devuelve la lista de habilidades de la ventana abierta
+let habilidadesDeOferta = () => [];
+
+function sinTildesOferta(texto) {
+    return String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-async function showCandidatesModal(offer) {
+// ---- Reglas de publicación de una vacante ----
+// Lo que pide la ley colombiana a una vacante y lo que no deja pedir. Ver
+// docs/REGISTRO-Y-MARCO-LEGAL.md.
 
-    // Mostrar modal con loading
-    const modal = createModal(`Candidatos para: ${offer.title}`, `
-        <div style="text-align:center;padding:2rem;">
-            <p>Cargando candidatos...</p>
+// Resolución 2605 de 2014: una vacante puede estar publicada máximo 6 meses
+const MESES_MAXIMOS_VACANTE = 6;
+
+// Fecha AAAA-MM-DD en la hora de Colombia (con toISOString salía la fecha de
+// mañana después de las 7 de la noche)
+function fechaLocal(fecha) {
+    const d = new Date(fecha);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function fechaDentroDe(dias, meses) {
+    const d = new Date();
+    if (meses) d.setMonth(d.getMonth() + meses);
+    if (dias) d.setDate(d.getDate() + dias);
+    return fechaLocal(d);
+}
+const fechaLegible = iso => new Date(iso + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+
+// Ley 931 de 2004 y artículo 13 de la Constitución: una vacante no puede pedir
+// una edad, un sexo, un estado civil ni una foto; los requisitos son la
+// experiencia, los estudios y lo que se sabe hacer. Cada regla dice qué
+// encontró, para que la empresa sepa qué corregir. Cuidado con lo legítimo:
+// "3 años de experiencia" no es una edad, "mayor de edad" sí se puede pedir y
+// "experiencia en fotografía" no es pedir una foto.
+const NO_ES_EXPERIENCIA = '(?!\\s+de\\s+(?:experiencia|trabajo|labor|contrato))';
+const EDAD = '(?:1[5-9]|[2-6]\\d)';
+const REGLAS_NO_DISCRIMINACION = [
+    { motivo: 'pide una edad', patrones: [
+        // La edad que se le pide a la persona ("Edad: 25", "edad entre...", "edad
+        // máxima", "rango de edad"); "clientes de todas las edades" no lo es
+        /\b(?:rango|límite|limite|requisito)\s+de\s+edad\b/iu,
+        /\bedad\s*(?::|entre\b|máxima|maxima|mínima|minima|requerida|ideal|de\s+\d|\d)/iu,
+        new RegExp(`\\b${EDAD}\\s*(?:y|a|-|hasta)\\s*${EDAD}\\s*años\\b${NO_ES_EXPERIENCIA}`, 'iu'),
+        new RegExp(`\\b(?:menor(?:es)?|máximo|maximo|no\\s+mayor(?:es)?)\\s+(?:de\\s+)?${EDAD}\\s*años\\b${NO_ES_EXPERIENCIA}`, 'iu'),
+        // "mayor de 18 años" es lo mismo que "mayor de edad": se permite
+        new RegExp(`\\bmayor(?:es)?\\s+de\\s+(?:19|[2-6]\\d)\\s*años\\b${NO_ES_EXPERIENCIA}`, 'iu')
+    ] },
+    { motivo: 'pide un sexo o un género', patrones: [
+        /\b(?:solo|sólo|únicamente|unicamente|exclusivamente|preferiblemente)\s+(?:hombres?|mujeres?|varones?|damas?|caballeros?|señoritas?|señoras?)\b/iu,
+        /\b(?:sexo|género|genero)\s*[:-]?\s*(?:masculino|femenino|hombre|mujer)\b/iu,
+        /\bseñoritas?\b/iu
+    ] },
+    { motivo: 'pide un estado civil o no tener hijos', patrones: [
+        /\bestado\s+civil\b/iu,
+        /\b(?:solter[oa]s?|casad[oa]s?)\b/iu,
+        /\bsin\s+hijos\b/iu
+    ] },
+    { motivo: 'pide una foto o un aspecto físico', patrones: [
+        /\b(?:con|enviar|envía|envia|adjuntar|adjunta|anexar|anexa|incluir|incluye)\s+(?:una\s+|su\s+|tu\s+)?(?:foto|fotografía|fotografia)\b/iu,
+        /\bfoto\s+(?:reciente|tipo\s+documento|de\s+cuerpo\s+entero)\b/iu,
+        /\bbuena\s+presencia\b/iu
+    ] }
+];
+// Sin datos de contacto: las personas se postulan y escriben por SkillMatch
+// (así su información queda protegida y se evitan estafas)
+const REGLAS_CONTACTO = [
+    /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/u,
+    /(?:\+?57[\s.-]?)?\b3\d{2}[\s.-]?\d{3}[\s.-]?\d{4}\b/u,
+    /\b60\d[\s.-]?\d{3}[\s.-]?\d{4}\b/u,
+    /\bwhats?\s?app\b|\bwsp\b/iu
+];
+
+// Revisa los textos de la vacante: devuelve lo que no se puede publicar
+function revisarVacante(textos) {
+    const todo = textos.filter(Boolean).join('\n');
+    const discriminacion = [];
+    REGLAS_NO_DISCRIMINACION.forEach(regla => {
+        for (const patron of regla.patrones) {
+            const hallado = todo.match(patron);
+            if (hallado) { discriminacion.push(`«${hallado[0].trim()}» (${regla.motivo})`); break; }
+        }
+    });
+    const contacto = [];
+    REGLAS_CONTACTO.forEach(patron => {
+        const hallado = todo.match(patron);
+        if (hallado) contacto.push(`«${hallado[0].trim()}»`);
+    });
+    return { discriminacion, contacto };
+}
+
+async function openNewOfferModal(existingOffer = null, offerId = null) {
+    const isEdit = existingOffer !== null;
+    let oferta = {};
+    if (isEdit) {
+        // La oferta completa: lo que el formulario no muestra también se reenvía
+        try {
+            const respuesta = await fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}`);
+            if (!respuesta.ok) throw new Error();
+            oferta = await respuesta.json();
+        } catch (error) {
+            alert('No pudimos cargar la oferta para editarla. Intenta de nuevo.');
+            return;
+        }
+    }
+
+    const opciones = (lista, actual, porDefecto) => lista.map(([valor, texto]) => {
+        const elegida = sinTildesOferta(actual || porDefecto) === sinTildesOferta(valor);
+        return `<option value="${valor}"${elegida ? ' selected' : ''}>${texto}</option>`;
+    }).join('');
+    const lineas = lista => sanitize((lista || []).join('\n'));
+    const hoy = fechaLocal(new Date());
+    const tope = fechaDentroDe(0, MESES_MAXIMOS_VACANTE);
+    // Al editar se conserva la fecha si sigue valiendo; si no, 30 días desde hoy
+    const guardada = oferta.expirationDate ? String(oferta.expirationDate).slice(0, 10) : '';
+    const fechaInicial = guardada && guardada >= hoy && guardada <= tope ? guardada : fechaDentroDe(30);
+
+    createModal(isEdit ? 'Editar oferta' : 'Nueva oferta', `
+        <div class="form-grid oferta-form">
+            <div class="form-group span-full">
+                <label for="offerTitle">Título de la oferta *</label>
+                <input type="text" id="offerTitle" maxlength="200" placeholder="Ej.: Auxiliar de bodega" value="${sanitize(oferta.title)}">
+            </div>
+            <div class="form-group">
+                <label for="offerType">Tipo *</label>
+                <select id="offerType">${opciones([['empleo', 'Empleo'], ['práctica', 'Práctica'], ['freelance', 'Independiente o por proyecto']], oferta.type, 'empleo')}</select>
+            </div>
+            <div class="form-group">
+                <label for="offerModality">Modalidad *</label>
+                <select id="offerModality">${opciones([['presencial', 'Presencial'], ['híbrido', 'Híbrida'], ['remoto', 'Remota (desde casa)']], oferta.modality, 'presencial')}</select>
+            </div>
+            <div class="form-group">
+                <label for="offerLevel">Experiencia *</label>
+                <select id="offerLevel">${opciones([['sin-experiencia', 'Sin experiencia'], ['junior', 'Hasta 1 año'], ['semi-senior', 'De 1 a 3 años'], ['senior', 'Más de 3 años']], oferta.experienceLevel, 'junior')}</select>
+            </div>
+            <div class="form-group">
+                <label for="offerLocation">Ciudad *</label>
+                <input type="text" id="offerLocation" maxlength="100" list="ciudadesOferta" value="${sanitize(oferta.location || 'Cartagena de Indias')}">
+                <datalist id="ciudadesOferta">${CIUDADES_OFERTA.map(ciudad => `<option value="${ciudad}">`).join('')}</datalist>
+            </div>
+            <div class="form-group">
+                <label for="offerSalaryMin">Salario mínimo (pesos al mes)</label>
+                <input type="number" id="offerSalaryMin" min="0" step="50000" inputmode="numeric" placeholder="Ej.: 1800000" value="${oferta.salaryMin ?? ''}">
+            </div>
+            <div class="form-group">
+                <label for="offerSalaryMax">Salario máximo (pesos al mes)</label>
+                <input type="number" id="offerSalaryMax" min="0" step="50000" inputmode="numeric" placeholder="Ej.: 2500000" value="${oferta.salaryMax ?? ''}">
+            </div>
+            <p class="field-help span-full oferta-salario-vista" id="offerSalaryPreview" aria-live="polite"></p>
+            <div class="form-group">
+                <label for="offerDuration">Duración (opcional)</label>
+                <input type="text" id="offerDuration" maxlength="100" placeholder="Ej.: 6 meses" value="${sanitize(oferta.duration)}">
+            </div>
+            <div class="form-group">
+                <label for="offerDeadline">Recibir postulaciones hasta *</label>
+                <input type="date" id="offerDeadline" min="${hoy}" max="${tope}" value="${fechaInicial}" required>
+                <p class="field-help">Máximo 6 meses desde hoy: por ley una vacante no puede estar publicada más tiempo.</p>
+            </div>
+            <div class="form-group span-full">
+                <label for="offerSkillInput">Habilidades que pide *</label>
+                <div class="chips-campo" id="offerSkills">
+                    <input type="text" id="offerSkillInput" maxlength="40" autocomplete="off" placeholder="Escribe una y pulsa Enter">
+                </div>
+                <p class="field-help">Se comparan con las habilidades de cada persona para calcular su compatibilidad.</p>
+            </div>
+            <div class="form-group span-full">
+                <label for="offerDescription">Descripción *</label>
+                <textarea id="offerDescription" rows="4" maxlength="5000" placeholder="Cuenta de qué se trata el cargo y el equipo">${sanitize(oferta.description)}</textarea>
+                <p class="field-help">No pidas edad, sexo, estado civil ni foto, ni pongas teléfonos o correos: la vacante no se publica con esos datos.</p>
+            </div>
+            <div class="form-group span-full">
+                <label for="offerRequirements">Requisitos (uno por línea)</label>
+                <textarea id="offerRequirements" rows="3" placeholder="Ej.: Bachiller con curso de manipulación de alimentos">${lineas(oferta.requirements)}</textarea>
+            </div>
+            <div class="form-group span-full">
+                <label for="offerResponsibilities">Responsabilidades (una por línea)</label>
+                <textarea id="offerResponsibilities" rows="3" placeholder="Ej.: Atender a los clientes en el punto de venta">${lineas(oferta.responsibilities)}</textarea>
+            </div>
+            <div class="form-group span-full">
+                <label for="offerBenefits">Beneficios (uno por línea)</label>
+                <textarea id="offerBenefits" rows="3" placeholder="Ej.: Alimentación incluida">${lineas(oferta.benefits)}</textarea>
+            </div>
+            <p class="error-text span-full" id="offerError" role="alert" hidden></p>
         </div>
-    `);
-    
-    // Ocultar botones de acción mientras carga
-    const modalActions = modal.querySelector('.modal-actions');
-    if (modalActions) modalActions.style.display = 'none';
-    
+    `, () => guardarOferta(isEdit, offerId), isEdit ? 'Guardar cambios' : 'Publicar oferta', { ancho: 760 });
+
+    // Habilidades como etiquetas (componente de ui.js, el mismo del registro)
+    const etiquetas = SkillMatchUI.etiquetas(document.getElementById('offerSkills'), document.getElementById('offerSkillInput'), { iniciales: oferta.skills || [] });
+    habilidadesDeOferta = etiquetas.obtener;
+    const vista = () => {
+        const min = document.getElementById('offerSalaryMin').value;
+        const max = document.getElementById('offerSalaryMax').value;
+        const pesos = v => '$' + Number(v).toLocaleString('es-CO');
+        document.getElementById('offerSalaryPreview').textContent =
+            min && max ? `Se publicará como ${pesos(min)} - ${pesos(max)} al mes.`
+            : min ? `Se publicará como "desde ${pesos(min)}" al mes.`
+            : max ? `Se publicará como "hasta ${pesos(max)}" al mes.`
+            : 'Déjalo vacío si prefieres no publicar el salario.';
+    };
+    ['offerSalaryMin', 'offerSalaryMax'].forEach(id => document.getElementById(id).addEventListener('input', vista));
+    // El aviso de error se va en cuanto se corrige algo
+    document.querySelector('.oferta-form').addEventListener('input', () => { document.getElementById('offerError').hidden = true; });
+    vista();
+    document.getElementById('offerTitle').focus();
+}
+
+async function guardarOferta(isEdit, offerId) {
+    const valor = id => document.getElementById(id).value.trim();
+    const aviso = document.getElementById('offerError');
+    const error = mensaje => {
+        aviso.textContent = mensaje;
+        aviso.hidden = false;
+        aviso.scrollIntoView({ block: 'nearest' });
+    };
+    aviso.hidden = true;
+
+    const title = valor('offerTitle');
+    const description = valor('offerDescription');
+    const location = valor('offerLocation');
+    const skills = habilidadesDeOferta();
+    const salaryMin = valor('offerSalaryMin') === '' ? null : Number(valor('offerSalaryMin'));
+    const salaryMax = valor('offerSalaryMax') === '' ? null : Number(valor('offerSalaryMax'));
+
+    if (!title || !location || !description) return error('Completa el título, la ciudad y la descripción.');
+    if (!skills.length) return error('Agrega al menos una habilidad: con ellas se calcula la compatibilidad de cada persona.');
+    if ([salaryMin, salaryMax].some(s => s !== null && (Number.isNaN(s) || s < 0))) return error('El salario debe ser un número en pesos.');
+    // Quien escribe "2" pensando en millones publicaría un salario de 2 pesos
+    if ([salaryMin, salaryMax].some(s => s !== null && s > 0 && s < 50000)) return error('Escribe el salario completo en pesos, por ejemplo 1800000.');
+    if (salaryMin !== null && salaryMax !== null && salaryMin > salaryMax) return error('El salario mínimo no puede ser mayor que el máximo.');
+
+    const fecha = valor('offerDeadline');
+    const tope = fechaDentroDe(0, MESES_MAXIMOS_VACANTE);
+    if (!fecha) return error('Elige hasta qué fecha recibes postulaciones.');
+    if (fecha < fechaLocal(new Date())) return error('La fecha límite no puede ser anterior a hoy.');
+    if (fecha > tope) return error(`La fecha límite puede ser como máximo el ${fechaLegible(tope)}: por ley una vacante no puede estar publicada más de 6 meses.`);
+
+    const revision = revisarVacante([title, description, valor('offerRequirements'), valor('offerResponsibilities'),
+        valor('offerBenefits'), valor('offerDuration'), skills.join('\n')]);
+    const problemas = [];
+    if (revision.discriminacion.length) {
+        problemas.push('Por ley una vacante no puede pedir edad, sexo, estado civil ni foto (Ley 931 de 2004). Cambia ' +
+            revision.discriminacion.join('; ') + ' por lo que se necesita para el trabajo, como la experiencia o los estudios.');
+    }
+    if (revision.contacto.length) {
+        problemas.push('Quita los datos de contacto: ' + revision.contacto.join(', ') +
+            '. Las personas se postulan y te escriben por SkillMatch; así su información queda protegida y se evitan estafas.');
+    }
+    if (problemas.length) return error(problemas.join(' '));
+
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    if (!userData.companyId) return error('No encontramos tu empresa. Cierra sesión y vuelve a entrar.');
+
+    const lista = id => valor(id).split('\n').map(l => l.replace(/^[-•*]\s*/, '').trim()).filter(Boolean);
+    const datos = {
+        companyId: userData.companyId,
+        title,
+        description,
+        type: valor('offerType'),
+        modality: valor('offerModality'),
+        experienceLevel: valor('offerLevel'),
+        location,
+        salaryMin,
+        salaryMax,
+        duration: valor('offerDuration') || null,
+        skills,
+        requirements: lista('offerRequirements'),
+        responsibilities: lista('offerResponsibilities'),
+        benefits: lista('offerBenefits'),
+        expirationDate: fecha + 'T23:59:59'
+    };
+
+    const boton = document.getElementById('modalSaveBtn');
+    boton.disabled = true;
     try {
-        // Obtener aplicaciones para esta oferta
-        const response = await fetchWithAuth(`${API_BASE_URL}/applications/job/${offer.id}`);
-        
-        if (!response.ok) {
-            throw new Error('Error al cargar candidatos');
+        const respuesta = await fetchWithAuth(isEdit ? `${API_BASE_URL}/jobs/${offerId}` : `${API_BASE_URL}/jobs`, {
+            method: isEdit ? 'PUT' : 'POST',
+            body: JSON.stringify(datos)
+        });
+        if (!respuesta.ok) {
+            const cuerpo = await respuesta.json().catch(() => ({}));
+            throw new Error(cuerpo.message || 'El servidor no aceptó la oferta.');
         }
-        
-        const applications = await response.json();
-        
-        // Generar contenido del modal
-        let content = '';
-        
-        if (applications.length === 0) {
-            content = `
-                <div style="text-align:center;padding:2rem;">
-                    <p style="color:#65676b;font-size:1.1rem;">No hay candidatos para esta oferta todavía.</p>
-                </div>
-            `;
-        } else {
-            content = `
-                <div style="max-height:500px;overflow-y:auto;">
-                    <p style="margin-bottom:1.5rem;color:#65676b;">
-                        <strong>${applications.length}</strong> candidato${applications.length !== 1 ? 's' : ''} ha${applications.length !== 1 ? 'n' : ''} aplicado a esta oferta.
-                    </p>
-                    ${applications.map(app => createCandidateCard(app, offer.id)).join('')}
-                </div>
-            `;
-        }
-        
-        // Actualizar contenido del modal
-        const modalBody = modal.querySelector('.modal-body');
-        if (modalBody) {
-            modalBody.innerHTML = content;
-        }
-        
-        // Mostrar botón de cerrar
-        if (modalActions) {
-            modalActions.style.display = 'flex';
-            modalActions.innerHTML = '<button class="btn-secondary-modal" onclick="closeModal()">Cerrar</button>';
-        }
-        
-    } catch (error) {
-        const modalBody = modal.querySelector('.modal-body');
-        if (modalBody) {
-            modalBody.innerHTML = `
-                <div style="text-align:center;padding:2rem;">
-                    <p style="color:#dc3545;">Error al cargar los candidatos. Por favor, intenta de nuevo.</p>
-                </div>
-            `;
-        }
-        
-        // Mostrar botón de cerrar
-        if (modalActions) {
-            modalActions.style.display = 'flex';
-            modalActions.innerHTML = '<button class="btn-secondary-modal" onclick="closeModal()">Cerrar</button>';
-        }
+        closeModal();
+        showNotification(isEdit ? 'Oferta actualizada' : 'Oferta publicada');
+        // La lista y las cifras se recargan del servidor (antes se armaba a mano
+        // y salían fechas "1969" y el tipo en minúscula)
+        loadOffers();
+        loadActivityStats();
+    } catch (e) {
+        error('No se pudo guardar la oferta: ' + e.message);
+        boton.disabled = false;
     }
 }
 
+async function showCandidatesModal(offer) {
+    // Antes la ventana y cada tarjeta llevaban 20 estilos fijos (fondo blanco,
+    // grises sueltos): no cambiaban en modo oscuro ni usaban la marca
+    const modal = createModal(`Candidatos para: ${sanitize(offer.title)}`,
+        '<p class="candidatos-estado">Cargando candidatos…</p>', null, 'Guardar', { ancho: 720 });
+    const cuerpo = modal.querySelector('.modal-body');
+    const acciones = modal.querySelector('.modal-actions');
+    if (acciones) acciones.hidden = true;
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/job/${encodeURIComponent(offer.id)}`);
+        if (!response.ok) throw new Error('Error al cargar candidatos');
+        const applications = await response.json();
+        const n = applications.length;
+        cuerpo.innerHTML = n === 0
+            ? '<p class="candidatos-estado">Todavía nadie se ha postulado a esta vacante.</p>'
+            : `<p class="candidatos-resumen"><strong>${n}</strong> ${n === 1 ? 'persona se postuló' : 'personas se postularon'} a esta vacante.</p>
+               ${applications.map(app => createCandidateCard(app, offer.id)).join('')}`;
+    } catch (error) {
+        cuerpo.innerHTML = '<p class="candidatos-estado candidatos-error">No pudimos cargar los candidatos. Intenta de nuevo en un momento.</p>';
+    }
+    if (acciones) {
+        acciones.hidden = false;
+        acciones.innerHTML = '<button type="button" class="btn-secondary-modal" onclick="closeModal()">Cerrar</button>';
+    }
+}
+
+const ESTADOS_CANDIDATO = { pendiente: 'Pendiente', revisada: 'Revisada', aceptada: 'Aceptada', rechazada: 'Rechazada' };
+
 function createCandidateCard(application, offerId) {
-    const appliedDate = new Date(application.appliedDate).toLocaleDateString('es-ES', {
-        day: 'numeric', month: 'long', year: 'numeric'
-    });
-
-    const statusConfig = {
-        'pendiente': { color: '#b45309', bg: '#fef3c7', border: '#fcd34d', label: 'Pendiente' },
-        'revisada':  { color: '#0369a1', bg: '#e0f2fe', border: '#7dd3fc', label: 'Revisada'  },
-        'aceptada':  { color: '#166534', bg: '#dcfce7', border: '#86efac', label: 'Aceptada'  },
-        'rechazada': { color: '#991b1b', bg: '#fee2e2', border: '#fca5a5', label: 'Rechazada' }
-    };
-
-    const status = application.status?.toLowerCase() || 'pendiente';
-    const sc = statusConfig[status] || statusConfig['pendiente'];
-
-    const name = sanitize(application.userName) || 'Candidato';
-    const initials = name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
-    const avatarColors = ['#0369a1','#0891b2','#0d9488','#059669','#7c3aed','#9333ea','#c026d3'];
-    const avatarBg = avatarColors[name.charCodeAt(0) % avatarColors.length];
-
-    const avatarHtml = application.userProfileImageUrl
-        ? `<img src="${sanitize(application.userProfileImageUrl)}"
-                alt="${name}"
-                onerror="this.outerHTML=this.nextElementSibling.outerHTML;this.nextElementSibling.style.display='flex';"
-                style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;">
-           <div style="display:none;width:64px;height:64px;border-radius:50%;background:${avatarBg};color:white;font-size:1.4rem;font-weight:700;align-items:center;justify-content:center;">${initials}</div>`
-        : `<div style="width:64px;height:64px;border-radius:50%;background:${avatarBg};color:white;font-size:1.4rem;font-weight:700;display:flex;align-items:center;justify-content:center;">${initials}</div>`;
-
-    const infoRow = (icon, label, value, isLink = false) => {
-        if (!value) return '';
-        const content = isLink
-            ? `<a href="mailto:${value}" style="color:#0369a1;text-decoration:none;font-weight:500;">${sanitize(value)}</a>`
-            : `<span style="color:#374151;">${sanitize(value)}</span>`;
-        return `
-            <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;">
-                <span style="font-size:0.95rem;width:1.1rem;text-align:center;flex-shrink:0;">${icon}</span>
-                <span style="font-size:0.8rem;color:#6b7280;font-weight:600;min-width:4.5rem;">${label}</span>
-                <span style="font-size:0.875rem;">${content}</span>
-            </div>`;
-    };
+    const fecha = new Date(application.appliedDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+    const status = String(application.status || 'pendiente').toLowerCase();
+    const etiqueta = ESTADOS_CANDIDATO[status] || ESTADOS_CANDIDATO.pendiente;
+    const name = sanitize(application.userName) || 'Persona';
+    const initials = (application.userName || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const iniciales = `<span class="candidato-iniciales"${application.userProfileImageUrl ? ' hidden' : ''}>${sanitize(initials)}</span>`;
+    // Si la foto no carga, quedan las iniciales
+    const avatar = application.userProfileImageUrl
+        ? `<img class="candidato-foto" src="${sanitize(application.userProfileImageUrl)}" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false">${iniciales}`
+        : iniciales;
+    const dato = (icono, nombre, valor) => valor
+        ? `<li><i data-ico="${icono}"></i><span class="candidato-dato-nombre">${nombre}</span><span class="candidato-dato-valor">${valor}</span></li>`
+        : '';
+    const correo = application.userEmail ? sanitize(application.userEmail) : '';
+    // Aceptar o rechazar mientras la empresa no haya decidido (igual que en la lista de postulaciones)
+    const decidir = status === 'pendiente' || status === 'revisada';
 
     return `
-        <div style="border:1px solid #e5e7eb;border-radius:14px;background:white;overflow:hidden;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-
-            <!-- Header con avatar y datos principales -->
-            <div style="display:flex;align-items:flex-start;gap:1.25rem;padding:1.5rem 1.5rem 1.25rem;">
-                <div style="flex-shrink:0;">${avatarHtml}</div>
-                <div style="flex:1;min-width:0;">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
-                        <div>
-                            <h4 style="margin:0 0 0.2rem 0;color:#111827;font-size:1.1rem;font-weight:700;line-height:1.3;">${name}</h4>
-                            <p style="margin:0;color:#6b7280;font-size:0.875rem;font-weight:500;">${sanitize(application.userHeadline) || 'Profesional'}</p>
-                        </div>
-                        <span style="flex-shrink:0;display:inline-flex;align-items:center;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.78rem;font-weight:700;letter-spacing:0.03em;color:${sc.color};background:${sc.bg};border:1px solid ${sc.border};">
-                            ${sc.label}
-                        </span>
-                    </div>
-
-                    <!-- Info de contacto -->
-                    <div style="margin-top:0.9rem;border-top:1px solid #f3f4f6;padding-top:0.75rem;">
-                        ${infoRow('<i data-ico="mail"></i>', 'Email', application.userEmail, true)}
-                        ${infoRow('<i data-ico="phone"></i>', 'Teléfono', application.userPhone)}
-                        ${infoRow('⊙', 'Ubicación', application.userLocation)}
-                        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;">
-                            <span style="font-size:0.95rem;width:1.1rem;text-align:center;flex-shrink:0;"><i data-ico="clock"></i></span>
-                            <span style="font-size:0.8rem;color:#9ca3af;">Aplicó el ${appliedDate}</span>
-                        </div>
-                    </div>
+        <article class="candidato-tarjeta">
+            <div class="candidato-cabeza">
+                <div class="candidato-avatar">${avatar}</div>
+                <div class="candidato-nombre">
+                    <h3>${name}</h3>
+                    <p>${sanitize(application.userHeadline) || 'Sin título en su perfil'}</p>
                 </div>
+                <span class="status-badge ${ESTADOS_CANDIDATO[status] ? status : 'pendiente'}">${etiqueta}</span>
             </div>
-
-            <!-- Carta de presentación -->
+            <ul class="candidato-datos">
+                ${dato('mail', 'Correo', correo ? `<a href="mailto:${correo}">${correo}</a>` : '')}
+                ${dato('phone', 'Teléfono', sanitize(application.userPhone))}
+                ${dato('pin', 'Ciudad', sanitize(application.userLocation))}
+                ${dato('clock', 'Se postuló', fecha)}
+            </ul>
             ${application.coverLetter ? `
-                <div style="margin:0 1.5rem 1.25rem;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:1rem;">
-                    <p style="margin:0 0 0.5rem 0;color:#374151;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;">Carta de presentación</p>
-                    <p style="margin:0;color:#4b5563;font-size:0.875rem;line-height:1.7;">${sanitize(application.coverLetter)}</p>
-                </div>
-            ` : ''}
-
-            <!-- Acciones -->
-            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;padding:1rem 1.5rem;background:#f9fafb;border-top:1px solid #f3f4f6;">
-                <button onclick="viewCandidateProfile('${application.userId}')"
-                        style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:#1e3a5f;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
-                    Ver perfil
-                </button>
-                <button onclick="contactCandidateByEmail('${application.userEmail}', '${application.userName}')"
-                        style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:white;color:#0369a1;border:1.5px solid #bfdbfe;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
-                    Contactar
-                </button>
-                ${status === 'pendiente' ? `
-                    <button onclick="updateCandidateStatus('${application.id}', 'aceptada', '${offerId}')"
-                            style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
-                        <i data-ico="check"></i> Aceptar
-                    </button>
-                    <button onclick="updateCandidateStatus('${application.id}', 'rechazada', '${offerId}')"
-                            style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:white;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">
-                        <i data-ico="close"></i> Rechazar
-                    </button>
+                <div class="candidato-carta">
+                    <p class="candidato-carta-titulo">Su mensaje para la empresa</p>
+                    <p>${sanitize(application.coverLetter)}</p>
+                </div>` : ''}
+            <div class="candidato-acciones">
+                <button type="button" class="btn-candidato" data-id="${escaparHtml(application.userId)}" onclick="viewCandidateProfile(this.dataset.id)">Ver perfil</button>
+                <a class="btn-candidato principal" href="mensajes.html?userId=${encodeURIComponent(application.userId)}"><i data-ico="chat"></i> Mensaje</a>
+                <!-- Nombre y correo en data-: dentro del onclick una comilla en el nombre ejecutaba codigo -->
+                ${correo ? `<button type="button" class="btn-candidato" data-email="${escaparHtml(application.userEmail)}" data-nombre="${escaparHtml(application.userName)}" onclick="contactCandidateByEmail(this.dataset.email, this.dataset.nombre)"><i data-ico="mail"></i> Correo</button>` : ''}
+                ${decidir ? `
+                    <button type="button" class="btn-candidato aceptar" data-id="${escaparHtml(application.id)}" data-oferta="${escaparHtml(offerId)}" onclick="updateCandidateStatus(this.dataset.id, 'aceptada', this.dataset.oferta)"><i data-ico="check"></i> Aceptar</button>
+                    <button type="button" class="btn-candidato rechazar" data-id="${escaparHtml(application.id)}" data-oferta="${escaparHtml(offerId)}" onclick="updateCandidateStatus(this.dataset.id, 'rechazada', this.dataset.oferta)"><i data-ico="close"></i> Rechazar</button>
                 ` : ''}
             </div>
-        </div>
-    `;
+        </article>`;
 }
 
 // Función para contactar candidato por email
@@ -849,41 +830,11 @@ async function updateCandidateStatus(applicationId, newStatus, offerId) {
     }
 }
 
-function openUpgradePlanModal() {
-    createModal('Upgrade a Plan Premium', `
-        <div style="text-align:center;padding:1rem;">
-            <h3 style="color:#1ba3a3;margin-bottom:1rem;">Plan Premium</h3>
-            <p style="font-size:2rem;font-weight:700;color:#0f2f53;margin:1rem 0;">$99.000/mes</p>
-            <ul style="text-align:left;max-width:300px;margin:1.5rem auto;list-style:none;padding:0;">
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Ofertas ilimitadas</li>
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Mensajería directa con candidatos</li>
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Analytics avanzado</li>
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Destacar ofertas</li>
-                <li style="padding:0.5rem 0;"><i data-ico="check"></i> Soporte prioritario 24/7</li>
-            </ul>
-        </div>
-    `, () => {
-        showNotification('Redirigiendo a la pasarela de pago...');
-        closeModal();
-    }, 'Actualizar Plan');
-}
-
-function viewCandidateProfile(candidateId) {
-    showNotification('Abriendo perfil del candidato...');
-    setTimeout(() => {
-        window.location.href = 'perfil-usuario.html';
-    }, 1000);
-}
-
-function contactCandidate(candidateId, candidateName) {
-    showNotification(`Abriendo chat con ${candidateName}...`);
-}
-
 // ========================================
 // UTILIDADES
 // ========================================
 
-function createModal(title, content, onSave = null, saveButtonText = 'Guardar') {
+function createModal(title, content, onSave = null, saveButtonText = 'Guardar', opciones = {}) {
     const existingModal = document.getElementById('genericModal');
     if (existingModal) {
         existingModal.remove();
@@ -891,13 +842,12 @@ function createModal(title, content, onSave = null, saveButtonText = 'Guardar') 
     
     const modal = document.createElement('div');
     modal.id = 'genericModal';
-    modal.className = 'modal';
-    modal.style.display = 'flex';
+    modal.className = 'modal active'; // .active: ui.js la cierra con Escape
     modal.innerHTML = `
-        <div class="modal-content" style="max-width:600px;width:90%;">
+        <div class="modal-content" style="max-width:${opciones.ancho || 600}px;width:90%;">
             <div class="modal-header">
                 <h2>${title}</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button type="button" class="modal-close" onclick="closeModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
             </div>
             <div class="modal-body">
                 ${content}
@@ -931,35 +881,11 @@ function closeModal() {
     }
 }
 
-function showNotification(message) {
-    const notification = document.createElement('div');
-    notification.className = 'custom-notification';
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #1ba3a3, #0f7e7e);
-        color: white;
-        padding: 16px 24px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        font-weight: 500;
-        animation: slideInRight 0.3s ease;
-        max-width: 400px;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                document.body.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
+// Avisos de ui.js, los mismos del resto del sitio (antes uno propio con
+// estilos en linea, arriba a la derecha)
+function showNotification(message, tipo) {
+    if (window.SkillMatchUI) SkillMatchUI.aviso(message, tipo);
+    else alert(message);
 }
 
 // Cargar aplicaciones recibidas por la empresa
@@ -978,12 +904,13 @@ async function loadApplications() {
             const data = await response.json();
             const applications = Array.isArray(data) ? data : (data.content || []);
             displayApplications(applications);
+            postulacionDesdeAviso();
         } else {
-            const err = await response.json().catch(() => ({}));
-            console.error('Error al cargar aplicaciones:', response.status, err.message);
+            throw new Error('Error ' + response.status);
         }
     } catch (error) {
-        console.error('Error al cargar aplicaciones:', error);
+        const lista = document.getElementById('applications-list');
+        if (lista) lista.innerHTML = '<p class="error-text">No se pudieron cargar las postulaciones.</p>';
     }
 }
 
@@ -998,124 +925,104 @@ function normalizeStatus(status) {
     return statusMap[status.toLowerCase()] || status.toLowerCase();
 }
 
-// Mostrar aplicaciones en la interfaz
+// Mostrar las postulaciones en la seccion "Postulaciones recibidas". Antes el
+// codigo buscaba un contenedor (.company-profile-content) que no existe y no
+// mostraba nada: en su lugar se veian candidatos inventados.
+const POSTULACIONES_VISIBLES = 5;
 function displayApplications(applications) {
-    // Buscar o crear sección de aplicaciones
-    let applicationsSection = document.getElementById('applications-section');
-    
-    if (!applicationsSection) {
-        // Crear sección si no existe
-        const profileContent = document.querySelector('.company-profile-content');
-        if (!profileContent) return;
-        
-        applicationsSection = document.createElement('section');
-        applicationsSection.id = 'applications-section';
-        applicationsSection.className = 'info-section';
-        applicationsSection.innerHTML = `
-            <div class="section-header">
-                <h2><span class="section-icon"><i data-ico="inbox"></i></span> Aplicaciones Recibidas</h2>
-            </div>
-            <div id="applications-list" class="applications-container"></div>
-        `;
-        
-        // Insertar después de la sección de ofertas
-        const offersSection = document.getElementById('ofertas-section');
-        if (offersSection) {
-            offersSection.parentNode.insertBefore(applicationsSection, offersSection.nextSibling);
-        } else {
-            profileContent.appendChild(applicationsSection);
-        }
-    }
-    
     const applicationsList = document.getElementById('applications-list');
-    
+    if (!applicationsList) return;
+
     if (applications.length === 0) {
-        applicationsList.innerHTML = `
-            <div class="empty-state">
-                <p><i data-ico="inbox"></i> No has recibido aplicaciones todavía</p>
-            </div>
-        `;
+        applicationsList.innerHTML = '<div class="empty-state"><p>Aún no has recibido postulaciones. Cuando alguien se postule a tus ofertas, aparecerá aquí.</p></div>';
         return;
     }
-    
-    // Normalizar estados y agrupar
-    const grouped = {
-        pending: applications.filter(app => normalizeStatus(app.status) === 'pending'),
-        reviewed: applications.filter(app => normalizeStatus(app.status) === 'reviewed'),
-        accepted: applications.filter(app => normalizeStatus(app.status) === 'accepted'),
-        rejected: applications.filter(app => normalizeStatus(app.status) === 'rejected')
-    };
-    
+
+    // Las mas recientes primero
+    const ordenadas = [...applications].sort((a, b) => new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0));
+    const cuenta = estado => applications.filter(app => normalizeStatus(app.status) === estado).length;
+
     applicationsList.innerHTML = `
-        <div class="applications-stats">
-            <div class="stat-card">
-                <span class="stat-number">${grouped.pending.length}</span>
-                <span class="stat-label">Pendientes</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">${grouped.reviewed.length}</span>
-                <span class="stat-label">Revisadas</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">${grouped.accepted.length}</span>
-                <span class="stat-label">Aceptadas</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">${grouped.rejected.length}</span>
-                <span class="stat-label">Rechazadas</span>
-            </div>
+        <div class="apps-summary apps-summary-4">
+            <div><strong>${cuenta('pending')}</strong><span>Pendientes</span></div>
+            <div><strong>${cuenta('reviewed')}</strong><span>Revisadas</span></div>
+            <div><strong>${cuenta('accepted')}</strong><span>Aceptadas</span></div>
+            <div><strong>${cuenta('rejected')}</strong><span>Rechazadas</span></div>
         </div>
-        
         <div class="applications-list">
-            ${applications.map(app => createApplicationCard(app)).join('')}
+            ${ordenadas.map((app, i) => createApplicationCard(app, i >= POSTULACIONES_VISIBLES)).join('')}
         </div>
+        ${ordenadas.length > POSTULACIONES_VISIBLES ? `<button type="button" class="btn btn-secondary btn-ver-todas" onclick="showAllApplications(this)">Ver todas (${ordenadas.length})</button>` : ''}
     `;
 }
 
+// La notificacion de una postulacion nueva llega con "?tab=applicants" (y
+// ?postulacion= con cual es). Antes abria el perfil arriba y habia que buscarla.
+// Ahora baja a "Postulaciones recibidas" y la marca. Solo la primera vez.
+let postulacionesPedidas = new URLSearchParams(window.location.search).get('tab') === 'applicants';
+function postulacionDesdeAviso() {
+    if (!postulacionesPedidas) return;
+    postulacionesPedidas = false;
+    ofertasCargadas.finally(() => requestAnimationFrame(irAPostulacionPedida));
+}
+
+function irAPostulacionPedida() {
+    const pedida = new URLSearchParams(window.location.search).get('postulacion');
+    const tarjeta = pedida && [...document.querySelectorAll('#applications-list .application-card')].find(t => t.dataset.applicationId === pedida);
+    if (!tarjeta) {
+        const seccion = document.getElementById('candidatos');
+        if (seccion) seccion.scrollIntoView({ block: 'start' });
+        return;
+    }
+    // Si quedo entre las escondidas, se muestran todas
+    if (tarjeta.hidden) {
+        const verTodas = document.querySelector('#applications-list .btn-ver-todas');
+        if (verTodas) showAllApplications(verTodas);
+    }
+    SkillMatchUI.resaltar(tarjeta);
+}
+
+function showAllApplications(boton) {
+    document.querySelectorAll('#applications-list .application-card[hidden]').forEach(card => { card.hidden = false; });
+    boton.remove();
+}
+
 // Crear tarjeta de aplicación
-function createApplicationCard(application) {
+function createApplicationCard(application, oculta) {
     const normalizedStatus = normalizeStatus(application.status);
-    
-    const statusColors = {
-        pending: '#FFA500',
-        reviewed: '#1ba3a3',
-        accepted: '#28a745',
-        rejected: '#dc3545'
+
+    // Mismas etiquetas de estado que el resto del sitio (antes colores en linea)
+    const estados = {
+        pending:  ['pendiente', 'Pendiente', 'clock'],
+        reviewed: ['revisada', 'Revisada', 'eye'],
+        accepted: ['aceptada', 'Aceptada', 'check'],
+        rejected: ['rechazada', 'Rechazada', 'close']
     };
-    
-    const statusLabels = {
-        pending: 'Pendiente',
-        reviewed: 'Revisada',
-        accepted: 'Aceptada',
-        rejected: 'Rechazada'
-    };
-    
-    const appliedDate = new Date(application.appliedDate).toLocaleDateString('es-ES', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
-    
+    const [claseEstado, textoEstado, icono] = estados[normalizedStatus] || estados.pending;
+
+    const appliedDate = application.appliedDate
+        ? new Date(application.appliedDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+        : 'fecha desconocida';
+
     return `
-        <div class="application-card" data-application-id="${application.id}">
+        <div class="application-card" data-application-id="${escaparHtml(application.id)}"${oculta ? ' hidden' : ''}>
             <div class="application-header">
                 <div class="candidate-info">
-                    <h4>${application.userName || 'Candidato'}</h4>
-                    <p class="job-title">${application.jobTitle || 'Sin título'}</p>
+                    <h3>${sanitize(application.userName || 'Candidato')}</h3>
+                    <p class="application-job">${sanitize(application.jobTitle || 'Oferta sin título')}${application.userHeadline ? ' · ' + sanitize(application.userHeadline) : ''}</p>
                 </div>
-                <span class="application-status" style="background-color: ${statusColors[normalizedStatus]}">
-                    ${statusLabels[normalizedStatus]}
-                </span>
+                <span class="status-badge ${claseEstado}"><i data-ico="${icono}"></i> ${textoEstado}</span>
             </div>
-            <p class="application-date"><i data-ico="calendar"></i> Aplicó el ${appliedDate}</p>
+            <p class="application-date"><i data-ico="calendar"></i> Se postuló el ${appliedDate}</p>
             ${application.coverLetter ? `
-                <p class="cover-letter-preview">${application.coverLetter.substring(0, 150)}${application.coverLetter.length > 150 ? '...' : ''}</p>
+                <p class="cover-letter-preview">${sanitize(application.coverLetter.substring(0, 150))}${application.coverLetter.length > 150 ? '...' : ''}</p>
             ` : ''}
             <div class="application-actions">
-                <button class="btn-view-profile" onclick="viewCandidateProfile('${application.userId}')">Ver Perfil</button>
-                ${normalizedStatus === 'pending' ? `
-                    <button class="btn-accept" onclick="updateApplicationStatus('${application.id}', 'aceptada')"><i data-ico="check"></i> Aceptar</button>
-                    <button class="btn-reject" onclick="updateApplicationStatus('${application.id}', 'rechazada')"><i data-ico="close"></i> Rechazar</button>
+                <button class="btn btn-secondary btn-small" onclick="viewCandidateProfile('${application.userId}')">Ver perfil</button>
+                <a class="btn btn-secondary btn-small" href="mensajes.html?userId=${encodeURIComponent(application.userId)}"><i data-ico="chat"></i> Mensaje</a>
+                ${normalizedStatus === 'pending' || normalizedStatus === 'reviewed' ? `
+                    <button class="btn btn-primary btn-small" onclick="updateApplicationStatus('${application.id}', 'aceptada')"><i data-ico="check"></i> Aceptar</button>
+                    <button class="btn btn-secondary btn-small" onclick="updateApplicationStatus('${application.id}', 'rechazada')"><i data-ico="close"></i> Rechazar</button>
                 ` : ''}
             </div>
         </div>
@@ -1132,14 +1039,16 @@ async function updateApplicationStatus(applicationId, newStatus) {
         );
 
         if (response.ok) {
-            showNotification(`Aplicación ${newStatus === 'aceptada' ? 'aceptada' : 'rechazada'} exitosamente`);
+            showNotification(`Postulación ${newStatus === 'aceptada' ? 'aceptada' : 'rechazada'}`);
             loadApplications();
+            // Las cifras del resumen cambian (por revisar, respondidas)
+            loadActivityStats();
         } else {
             const err = await response.json().catch(() => ({}));
             throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        alert('Error al actualizar el estado de la aplicación: ' + error.message);
+        alert('Error al actualizar el estado de la postulación: ' + error.message);
     }
 }
 
@@ -1152,8 +1061,7 @@ function viewCandidateProfile(userId) {
 // Cargar aplicaciones al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     // Dar tiempo para que se carguen los datos de la empresa
-    setTimeout(() => {
-        loadApplications();
-    }, 1000);
+    // Sin esperar: la seccion ya existe en el HTML
+    if (typeof isAuthenticated === 'function' && isAuthenticated()) loadApplications();
 });
 

@@ -3,82 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Usuarios - SkillMatch Cartagena</title>
+    <title>Iniciar sesión para buscar trabajo - SkillMatch Cartagena</title>
+    <meta name="description" content="Entra a SkillMatch para ver las vacantes de Cartagena que encajan con lo que sabes hacer y seguir tus postulaciones.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="../assets/css/app.css">
-    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
 </head>
 <body>
     <header>
-        <nav class="container">
+        <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html">
-                        <img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100">
-                    </a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
-                <ul class="nav-links">
+                <ul class="nav-links nav-principales">
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="index.html#innovacion">Innovación</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="index.html#como-funciona">Cómo funciona</a></li>
+                    <li><a href="empresas.html">Empresas</a></li>
                 </ul>
             </div>
             <ul class="nav-links">
-                <li><a href="index.html#usuarios-empresas">Usuarios</a></li>
-                <li><a href="index.html#usuarios-empresas">Empresas</a></li>
+                <li><a href="login.html" class="btn-login">Iniciar sesión</a></li>
+                <li><a href="seleccionar-registro.html" class="btn-register">Unirse ahora</a></li>
             </ul>
         </nav>
     </header>
 
-    <section class="registro-section">
-        <div class="container">
-            <div class="welcome-text">
-                <h1>Portal de Usuarios</h1>
-                <p>Encuentra oportunidades para impulsar tu desarrollo profesional</p>
-            </div>
-            
+    <main class="auth-shell" id="main">
+        <div class="auth-panel">
             <div class="login-container">
+                <div class="welcome-text">
+                    <span class="auth-eyebrow"><i data-ico="user"></i> Busco trabajo</span>
+                    <h1>Vuelve a tu búsqueda</h1>
+                    <p>Entra para ver las vacantes y seguir tus postulaciones.</p>
+                </div>
+
                 <div class="login-form registro-form active" id="loginForm">
-                    <h2>Iniciar Sesión</h2>
-                    
-                    <!-- Mensaje de error -->
-                    <div id="error-message"></div>
-                    
-                    <!-- Mensaje de éxito -->
-                    <div id="success-message"></div>
-                    
+                    <h2>Iniciar sesión</h2>
+
+                    <!-- Mensajes: auth.js los muestra; role los anuncia al lector de pantalla -->
+                    <div id="error-message" role="alert"></div>
+                    <div id="success-message" role="status"></div>
+
                     <form id="usuario-login-form" method="post" novalidate>
                         <div class="form-group">
-                            <label for="email">Correo Electrónico</label>
+                            <label for="email">Correo electrónico</label>
                             <input type="email" id="email" name="email" autocomplete="email" required>
                         </div>
                         <div class="form-group">
                             <label for="password">Contraseña</label>
                             <input type="password" id="password" name="password" autocomplete="current-password" required>
+                            <!-- Sin "¿Olvidaste tu contraseña?" hasta que el backend tenga recuperación (ver docs/ANALISIS-PROFUNDO.md) -->
                         </div>
-                        <button type="submit" class="btn btn-primary" id="login-btn">Iniciar Sesión</button>
+                        <button type="submit" class="btn btn-primary btn-full" id="login-btn">Iniciar sesión</button>
                     </form>
-                    <p class="form-footer">
-                        <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
-                    </p>
                     <div class="divider">o</div>
-                    <a href="registro-usuario.html" class="btn btn-secondary">Crear cuenta de Usuario</a>
+                    <a href="registro-usuario.html" class="btn btn-secondary btn-full">Crear mi perfil</a>
+                    <p class="auth-switch">¿Representas a una empresa? <a href="login-empresa.html">Accede como empresa</a></p>
                 </div>
             </div>
         </div>
-    </section>
+
+        <aside class="auth-aside">
+            <!-- Personajes que miran (login-personajes.js los dibuja y los anima) -->
+            <div class="login-personajes" aria-hidden="true"></div>
+            <h2>Sabes qué tanto encajas antes de postularte</h2>
+            <ul class="auth-points">
+                <li><i data-ico="check"></i> Perfil con tus habilidades y experiencia</li>
+                <li><i data-ico="check"></i> Vacantes ordenadas según tus habilidades</li>
+                <li><i data-ico="check"></i> Seguimiento de tus postulaciones y mensajes con las empresas</li>
+            </ul>
+        </aside>
+    </main>
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
-            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+            <p>Una bolsa de empleo para todos los sectores de Cartagena de Indias.</p>
         </div>
     </footer>
 
     <!-- Scripts -->
     <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/login-personajes.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>
 </html>

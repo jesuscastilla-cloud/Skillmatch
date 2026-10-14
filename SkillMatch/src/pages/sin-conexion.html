@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin conexión - SkillMatch Cartagena</title>
+    <meta name="description" content="No hay conexión a internet.">
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
+    <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+    <!-- La muestra el service worker (sw.js) cuando no hay internet y esta pagina
+         no tiene copia guardada. Sin ui.js ni fuentes de Google: todo lo que usa
+         ya esta guardado en el dispositivo. -->
+    <main id="main" class="sin-conexion">
+        <img class="sin-conexion-logo" src="../assets/img/logo.png" alt="SkillMatch" width="531" height="160">
+        <h1>Sin conexión</h1>
+        <p class="lede">No hay internet en este momento. Cuando vuelva, esta página se recarga sola. Las páginas que ya abriste
+           se pueden ver, pero las vacantes, los mensajes y tu perfil necesitan conexión para estar al día.</p>
+        <button type="button" class="btn btn-primary" id="reintentar">Intentar de nuevo</button>
+    </main>
+    <script>
+        (function () {
+            if (document.documentElement.getAttribute('data-theme') === 'dark') {
+                document.querySelector('.sin-conexion-logo').src = '../assets/img/logo-oscuro.png';
+            }
+            document.getElementById('reintentar').addEventListener('click', function () { location.reload(); });
+            window.addEventListener('online', function () { location.reload(); });
+        })();
+    </script>
+</body>
+</html>
