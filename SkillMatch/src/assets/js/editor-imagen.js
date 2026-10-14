@@ -15,8 +15,17 @@
 (function () {
     'use strict';
 
-    const TIPOS = ['image/jpeg', 'image/png', 'image/webp'];
     const MAX_MB = 10;
+
+    // data URL en vez de blob: (la CSP del sitio publicado no permite blob:)
+    function leerComoDataUrl(file) {
+        return new Promise((ok, falla) => {
+            const lector = new FileReader();
+            lector.onload = () => ok(lector.result);
+            lector.onerror = () => falla(lector.error);
+            lector.readAsDataURL(file);
+        });
+    }
     // Carpeta de imagenes, sacada de donde esta este archivo (sirve en local y en Render)
     const RUTA_IMG = ((document.currentScript && document.currentScript.src) || '')
         .replace(/js\/[^/]*$/, 'img/');
@@ -121,7 +130,8 @@
         contenedor.classList.add('editor-imagen');
         contenedor.innerHTML =
             '<label class="editor-soltar">' +
-                '<input type="file" class="editor-archivo" accept="' + TIPOS.join(',') + '">' +
+                // image/*: el iPhone entrega la foto convertida a JPG
+                '<input type="file" class="editor-archivo" accept="image/*">' +
                 '<span class="editor-soltar-icono">' + icono('upload') + '</span>' +
                 '<strong>Arrastra tu imagen aquí</strong>' +
                 '<span>o <span class="editor-enlace">elige un archivo</span> de tu equipo</span>' +
@@ -151,7 +161,7 @@
 
         // Estado: tamano real de la foto, centro del encuadre (en pixeles de
         // la foto) y zoom. Asi el encuadre sobrevive a cambios de tamano.
-        let foto = null, cx = 0, cy = 0, z = 1, zMax = 3, urlTemporal = null;
+        let foto = null, cx = 0, cy = 0, z = 1, zMax = 3;
 
         function mostrarError(texto) {
             error.innerHTML = texto ? icono('alert') + ' <span>' + texto + '</span>' : '';
@@ -191,8 +201,12 @@
         async function cargar(file) {
             mostrarError('');
             if (!file) return;
-            if (TIPOS.indexOf(file.type) === -1) {
-                mostrarError('Ese archivo no es una imagen que podamos usar. Sube una foto en JPG, PNG o WebP.');
+            // Antes solo pasaban los tipos de TIPOS: algunos celulares entregan la
+            // foto sin tipo o como HEIC/HEIF (iPhone, algunos Samsung) y se
+            // rechazaba aunque el navegador la pudiera abrir. Ahora se intenta
+            // abrir cualquier imagen; al guardar sale en WebP o JPEG igual.
+            if (file.type && file.type.indexOf('image/') !== 0) {
+                mostrarError('Ese archivo no es una imagen. Sube una foto en JPG, PNG o WebP.');
                 return;
             }
             if (file.size > MAX_MB * 1024 * 1024) {
@@ -200,27 +214,33 @@
                              ' MB y el máximo es ' + MAX_MB + ' MB. Prueba con una versión más liviana.');
                 return;
             }
-            const url = URL.createObjectURL(file);
+            // La foto se lee como data URL y no como blob: la politica de
+            // seguridad del sitio publicado (CSP "img-src 'self' data: https:",
+            // SecurityConfig.java) bloquea las imagenes blob: y en Render ninguna
+            // foto abria ("No pudimos abrir esa imagen"). En local no pasaba
+            // porque Live Server no manda esa politica.
+            let url = '';
             const prueba = new Image();
-            prueba.src = url;
             try {
+                url = await leerComoDataUrl(file);
+                prueba.src = url;
                 await prueba.decode();
             } catch (e) {
-                URL.revokeObjectURL(url);
-                mostrarError('No pudimos abrir esa imagen. Puede estar dañada; prueba con otra.');
+                // HEIC: Safari la abre, pero Chrome y Edge en Windows o Android no
+                const heic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name || '');
+                mostrarError(heic
+                    ? 'Esa foto está en formato HEIC (el de los iPhone) y este navegador no la puede abrir. Conviértela a JPG o, en el iPhone, activa Ajustes > Cámara > Formatos > "Más compatible".'
+                    : 'No pudimos abrir esa imagen. Puede estar dañada o en un formato que este navegador no lee; prueba con una foto en JPG o PNG.');
                 return;
             }
             const w = prueba.naturalWidth, h = prueba.naturalHeight;
             // La restriccion de pixeles: con menos se veria borrosa al estirarse
             if (w < minimo[0] || h < minimo[1]) {
-                URL.revokeObjectURL(url);
                 mostrarError('Tu imagen mide ' + miles(w) + ' × ' + miles(h) + ' px. Para ' + nombre +
                              ' necesitamos al menos ' + miles(minimo[0]) + ' × ' + miles(minimo[1]) +
                              ' px, para que no se vea borrosa.');
                 return;
             }
-            if (urlTemporal) URL.revokeObjectURL(urlTemporal);
-            urlTemporal = url;
             foto = { w, h };
             img.src = url;
             img.width = w;
@@ -241,8 +261,6 @@
         }
 
         function reiniciar() {
-            if (urlTemporal) URL.revokeObjectURL(urlTemporal);
-            urlTemporal = null;
             foto = null;
             img.removeAttribute('src');
             archivo.value = '';
