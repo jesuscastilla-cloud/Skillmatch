@@ -47,6 +47,18 @@
         { id: 'aurora',    nombre: 'Aurora' },
         { id: 'plano',     nombre: 'Plano técnico' }
     ];
+    // Portadas exclusivas para empresas, una por sector (mismo estilo)
+    const GALERIA_EMPRESA = [
+        { id: 'marca',                nombre: 'SkillMatch' },
+        { id: 'empresa-puerto',       nombre: 'Puerto y logística' },
+        { id: 'empresa-turismo',      nombre: 'Turismo y hoteles' },
+        { id: 'empresa-comercio',     nombre: 'Comercio' },
+        { id: 'empresa-tecnologia',   nombre: 'Tecnología' },
+        { id: 'empresa-salud',        nombre: 'Salud' },
+        { id: 'empresa-industria',    nombre: 'Industria' },
+        { id: 'empresa-construccion', nombre: 'Construcción' },
+        { id: 'empresa-educacion',    nombre: 'Educación' }
+    ];
     const PREFIJO = 'galeria:';
 
     /** Convierte lo guardado en coverImageUrl en algo que se pueda pintar.
@@ -56,21 +68,24 @@
         if (!valor) return null;
         if (valor.indexOf(PREFIJO) === 0) {
             const id = valor.slice(PREFIJO.length);
-            const item = GALERIA.find(g => g.id === id);
+            const item = GALERIA.concat(GALERIA_EMPRESA).find(g => g.id === id);
             return item && item.id !== 'marca' ? RUTA_IMG + 'portadas/' + item.id + '.svg' : null;
         }
         return valor;
     }
 
-    /** Dibuja la galeria como un grupo de opciones (una sola elegida). */
+    /** Dibuja la galeria como un grupo de opciones (una sola elegida).
+     *  op.lista = 'empresa' muestra las portadas por sector. */
     function galeria(contenedor, op) {
         op = op || {};
+        const lista = op.lista === 'empresa' ? GALERIA_EMPRESA : GALERIA;
         let elegido = op.actual && op.actual.indexOf(PREFIJO) === 0 ? op.actual.slice(PREFIJO.length) : null;
+        if (elegido && !lista.some(g => g.id === elegido)) elegido = null;
 
         contenedor.classList.add('galeria-portadas');
         contenedor.setAttribute('role', 'radiogroup');
-        contenedor.setAttribute('aria-label', 'Portadas de SkillMatch');
-        contenedor.innerHTML = GALERIA.map(g =>
+        contenedor.setAttribute('aria-label', op.lista === 'empresa' ? 'Portadas para empresas' : 'Portadas de SkillMatch');
+        contenedor.innerHTML = lista.map(g =>
             '<button type="button" class="galeria-item" role="radio" data-id="' + g.id + '" aria-checked="false">' +
                 '<span class="galeria-miniatura' + (g.id === 'marca' ? ' es-marca' : '') + '"' +
                     (g.id === 'marca' ? '' : ' style="background-image:url(\'' + RUTA_IMG + 'portadas/' + g.id + '.svg\')"') + '>' +
@@ -373,5 +388,5 @@
         return { listo: () => !!foto, exportar, reiniciar, error: mostrarError };
     }
 
-    window.SkillMatchImagen = { editor, galeria, rutaPortada, GALERIA };
+    window.SkillMatchImagen = { editor, galeria, rutaPortada, GALERIA, GALERIA_EMPRESA };
 })();

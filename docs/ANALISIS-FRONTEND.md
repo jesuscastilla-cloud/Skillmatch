@@ -287,6 +287,11 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
 - **Vista previa al publicar vacante (hecho, del plan original):** en "Nueva oferta" y "Editar oferta", a la derecha
   (debajo en el celular) se ve la tarjeta tal como saldrá en Vacantes, y se actualiza mientras se escribe: título,
   ciudad, tipo, modalidad, experiencia, salario, el comienzo de la descripción, las habilidades y la fecha límite.
+- **Logo y portada de la empresa (hecho):** "Mi empresa" tiene "Cambiar logo" y "Cambiar portada" con el mismo editor
+  de las personas y una **galería exclusiva para empresas**, una portada por sector (puerto y logística, turismo y
+  hoteles, comercio, tecnología, salud, industria, construcción y educación; generadas con los colores de la marca). Se
+  guardan en el servidor en la cuenta de usuario de la empresa, así que el perfil público las muestra a quien tiene
+  sesión; para los visitantes y las tarjetas de Vacantes falta el cambio del backend (PENDIENTES-BACKEND 2.2).
 
 ## Orden propuesto (solo frontend)
 

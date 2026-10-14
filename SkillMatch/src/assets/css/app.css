@@ -4111,6 +4111,24 @@ a.meta-tag { position: relative; }
     box-shadow: var(--sh-1);
 }
 .empresa-cabeza .skeleton-title { display: block; width: 240px; }
+/* Portada arriba de la cabecera (la de la marca, o la que eligio la empresa) */
+.empresa-cabeza.con-portada { padding-top: 0; overflow: hidden; }
+.empresa-portada {
+    flex: 0 0 calc(100% + 2 * var(--s6));
+    height: 150px;
+    margin: 0 calc(-1 * var(--s6));
+    background:
+        var(--grain),
+        radial-gradient(circle at 85% 0%, rgba(11,126,140,.45), transparent 60%),
+        radial-gradient(circle at 0% 110%, rgba(255,118,24,.35), transparent 62%),
+        linear-gradient(120deg, #08203C, #096670);
+    background-blend-mode: overlay, normal, normal, normal;
+    background-size: 220px 220px, auto, auto, auto;
+    background-position: center;
+}
+.empresa-portada[style*="background-image"] { background-size: cover; background-blend-mode: normal; }
+.empresa-cabeza.con-portada .empresa-avatar.grande { margin-top: -52px; border: 4px solid var(--surface); box-shadow: var(--sh-2); overflow: hidden; }
+.empresa-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .empresa-cabeza .skeleton-line { display: block; margin-top: 10px; width: 160px; }
 .empresa-avatar.grande { width: 72px; height: 72px; border-radius: var(--r-lg); font-size: var(--t-lg); }
 .empresa-cabeza-texto { flex: 1 1 240px; min-width: 0; }
@@ -4169,6 +4187,8 @@ a.meta-tag { position: relative; }
 }
 @media (max-width: 600px) {
     .empresa-cabeza, .empresa-bloque { padding: var(--s4); }
+    .empresa-cabeza.con-portada { padding-top: 0; }
+    .empresa-portada { flex-basis: calc(100% + 2 * var(--s4)); margin: 0 calc(-1 * var(--s4)); height: 110px; }
     .empresa-vacante-extra { text-align: left; }
     .directorio-cta { padding: var(--s4); }
 }
@@ -5565,6 +5585,12 @@ kbd {
 }
 .company-header-content .company-logo-wrapper { margin-top: -56px; align-self: flex-start; }
 .company-header-content .company-info-wrapper { flex: 1 1 320px; min-width: 0; padding-top: var(--s4); }
+/* Logo y portada propios (perfil-empresa.js): el boton de la portada va arriba a
+   la derecha de la tarjeta y el del logo sobre su esquina */
+.company-header-card { position: relative; }
+.company-header-content .company-logo-wrapper { position: relative; }
+.company-logo-wrapper .btn-edit-avatar { bottom: -6px; right: -6px; border: 2px solid var(--surface); }
+.company-logo-img img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 /* Logo con las iniciales de la empresa (antes un servicio externo con "ST" fijo) */
 .company-logo-iniciales {
     display: grid; place-items: center;

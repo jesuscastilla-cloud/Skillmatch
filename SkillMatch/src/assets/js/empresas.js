@@ -311,8 +311,9 @@ function pintarPerfil(c, vacantes) {
             : '<p class="empresa-vacio">Por ahora no tiene vacantes abiertas. <a href="oportunidades.html">Ver otras vacantes</a></p>';
 
     contenedor.innerHTML = `
-        <div class="empresa-cabeza">
-            <span class="empresa-avatar grande" aria-hidden="true">${escaparHtml(iniciales(c.name))}</span>
+        <div class="empresa-cabeza con-portada">
+            <div class="empresa-portada" id="empresaPortada" aria-hidden="true"></div>
+            <span class="empresa-avatar grande" id="empresaLogo" aria-hidden="true">${escaparHtml(iniciales(c.name))}</span>
             <div class="empresa-cabeza-texto">
                 <h1>${escaparHtml(c.name || 'Empresa')}</h1>
                 ${lugar ? `<p>${lugar}</p>` : ''}
@@ -348,6 +349,29 @@ function pintarPerfil(c, vacantes) {
         </div>`;
 }
 
+// Logo y portada que la empresa eligio en "Mi empresa". Se guardan en su cuenta
+// de usuario, y el backend solo la muestra a quien tiene sesion: los visitantes
+// ven las iniciales y la portada de la marca (docs/PENDIENTES-BACKEND.md, 2.2).
+async function imagenesDeEmpresa(c) {
+    if (!c.userId || !sesionActual() || typeof fetchWithAuth !== 'function') return;
+    try {
+        const r = await fetchWithAuth(`/users/${encodeURIComponent(c.userId)}`);
+        if (!r.ok) return;
+        const cuenta = await r.json();
+        const portada = document.getElementById('empresaPortada');
+        const url = cuenta.coverImageUrl && window.SkillMatchImagen ? SkillMatchImagen.rutaPortada(cuenta.coverImageUrl) : null;
+        if (portada && url) portada.style.backgroundImage = `url("${url}")`;
+        const logo = document.getElementById('empresaLogo');
+        if (logo && cuenta.profileImageUrl) {
+            const img = document.createElement('img');
+            img.src = cuenta.profileImageUrl;
+            img.alt = '';
+            img.onerror = () => { logo.textContent = iniciales(c.name); };
+            logo.replaceChildren(img);
+        }
+    } catch (e) { /* se quedan las iniciales y la portada de la marca */ }
+}
+
 function perfilNoDisponible(contenedor, noExiste) {
     document.title = (noExiste ? 'Empresa no encontrada' : 'Empresa') + ' - SkillMatch Cartagena';
     contenedor.innerHTML = `
@@ -372,6 +396,7 @@ async function iniciarPerfil() {
                 vacantesAbiertas(id).catch(() => null)
             ]);
             pintarPerfil(empresa, vacantes);
+            imagenesDeEmpresa(empresa);
         } catch (e) {
             // El backend responde 404 si no existe (y 400 si el id no tiene forma de id)
             perfilNoDisponible(contenedor, e.status === 404 || e.status === 400);

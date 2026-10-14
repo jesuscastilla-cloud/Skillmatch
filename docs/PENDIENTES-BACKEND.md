@@ -64,6 +64,12 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
 - **Dónde:** `controller/CompanyController.java:40-41`.
 - **Arreglo:** usar la misma regla que ya tiene el PATCH de la descripción (línea 75):
   `hasRole('ADMIN') or @companyService.isOwner(#id, authentication.principal.id)`.
+- **Logo y portada:** hoy "Mi empresa" guarda el logo y la portada en la **cuenta de usuario** de la empresa
+  (`PUT /users/{id}/profile-image` y `/cover-image`), porque la empresa no puede cambiar su `logo` y `Company` no tiene
+  portada. Por eso solo los ve quien tiene sesión (`GET /users/{id}` pide sesión). Para que salgan a los visitantes, en
+  el directorio y en las tarjetas de Vacantes (`JobResponse.companyLogo`), conviene que la empresa pueda guardar su
+  `logo` y un campo nuevo `coverImage` en `Company` (y `CompanyResponse`). El frontend se cambia a esos campos en
+  cuanto existan.
 - **Frontend:** cuando esté, se agrega el formulario en el perfil de empresa y se vuelven a pedir esos datos en el
   registro.
 

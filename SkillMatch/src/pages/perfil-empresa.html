@@ -47,9 +47,12 @@
         <div class="container">
             <div class="company-header-card">
                 <div class="company-cover-img" id="companyCover" aria-hidden="true"></div>
+                <!-- Logo y portada: se guardan en la cuenta de la empresa (perfil-empresa.js) -->
+                <button type="button" class="btn-edit-cover" id="editCompanyCoverBtn"><span><i data-ico="camera"></i></span> Cambiar portada</button>
                 <div class="company-header-content">
                     <div class="company-logo-wrapper">
                         <div class="company-logo-img company-logo-iniciales" id="companyLogo" aria-hidden="true"></div>
+                        <button type="button" class="btn-edit-avatar" id="editCompanyLogoBtn" aria-label="Cambiar el logo"><i data-ico="camera"></i></button>
                     </div>
                     <div class="company-info-wrapper">
                         <div class="company-title-section">
@@ -156,6 +159,7 @@
 
     <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/editor-imagen.js"></script>
     <script src="../assets/js/perfil-empresa.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>

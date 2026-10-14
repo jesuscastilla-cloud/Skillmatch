@@ -62,6 +62,7 @@ function loadCompanyData() {
     .then(company => {
         currentCompanyData = { ...userData, ...company };
         pintarCabecera(company);
+        cargarImagenesEmpresa();
 
         // "Acerca de"
         const aboutElement = document.getElementById('companyAbout');
@@ -88,23 +89,191 @@ function loadCompanyData() {
     });
 }
 
+// ---- Logo y portada de la empresa ----
+// Antes habia botones que guardaban la imagen solo en el navegador (nadie mas la
+// veia) y se quitaron. El backend no deja a la empresa cambiar su "logo" (solo
+// ADMIN) ni tiene portada de empresa, pero la cuenta de la empresa es un usuario
+// y todo usuario guarda en el servidor su foto y su portada
+// (PUT /users/{id}/profile-image y /cover-image). Ahi quedan el logo y la
+// portada. Las ven quienes tienen sesion (perfil publico); para que salgan a los
+// visitantes y en las tarjetas de Vacantes falta un cambio en el backend
+// (docs/PENDIENTES-BACKEND.md, punto 2.2).
+let imagenesEmpresa = { logo: '', portada: '' };
+
+async function cargarImagenesEmpresa() {
+    const yo = JSON.parse(localStorage.getItem('userData') || '{}');
+    if (!yo.id) return;
+    try {
+        const r = await fetchWithAuth(`${API_BASE_URL}/users/${encodeURIComponent(yo.id)}`);
+        if (!r.ok) return;
+        const cuenta = await r.json();
+        imagenesEmpresa = { logo: cuenta.profileImageUrl || '', portada: cuenta.coverImageUrl || '' };
+        pintarLogoEmpresa(currentCompanyData.name || yo.firstName, imagenesEmpresa.logo || currentCompanyData.logo);
+        pintarPortadaEmpresa(imagenesEmpresa.portada);
+    } catch (e) { /* sin imagenes se quedan las iniciales y la portada de la marca */ }
+}
+
+function pintarLogoEmpresa(nombre, url) {
+    const logo = document.getElementById('companyLogo');
+    if (!logo) return;
+    if (url) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = '';
+        // Si la imagen no carga, vuelven las iniciales
+        img.onerror = () => { logo.textContent = companyInitials(nombre); logo.classList.add('company-logo-iniciales'); };
+        logo.replaceChildren(img);
+        logo.classList.remove('company-logo-iniciales');
+    } else {
+        logo.textContent = companyInitials(nombre);
+        logo.classList.add('company-logo-iniciales');
+    }
+}
+
+// La portada: de la galeria de empresas, una foto subida o la de la marca (CSS)
+function pintarPortadaEmpresa(valor) {
+    const portada = document.getElementById('companyCover');
+    if (!portada) return;
+    const url = window.SkillMatchImagen ? SkillMatchImagen.rutaPortada(valor) : null;
+    if (url) {
+        portada.style.backgroundImage = `url("${url}")`;
+        portada.style.backgroundSize = 'cover';
+        portada.style.backgroundPosition = 'center';
+        portada.style.backgroundBlendMode = 'normal';
+    } else {
+        ['background-image', 'background-size', 'background-position', 'background-blend-mode'].forEach(p => portada.style.removeProperty(p));
+    }
+}
+
+async function guardarImagenEmpresa(tipo, valor) {
+    const yo = JSON.parse(localStorage.getItem('userData') || '{}');
+    const ruta = tipo === 'logo' ? 'profile-image' : 'cover-image';
+    const response = await fetchWithAuth(`${API_BASE_URL}/users/${encodeURIComponent(yo.id)}/${ruta}`, {
+        method: 'PUT',
+        body: JSON.stringify({ imageUrl: valor })
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `El servidor respondió ${response.status}`);
+    }
+}
+
+// Ventana con un formulario de imagen (la crea ui.js; mismo estilo que en el perfil de persona)
+function ventanaImagen(id, titulo, icono, contenido, textoGuardar) {
+    const v = SkillMatchUI.ventana({
+        id, titulo, icono,
+        cuerpo: `<form id="${id}Form">${contenido}
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary-modal" data-cancelar>Cancelar</button>
+                <button type="submit" class="btn-primary-modal" id="${id}Guardar">${textoGuardar}</button>
+            </div></form>`
+    });
+    v.raiz.classList.add('modal-imagen');
+    v.raiz.querySelector('[data-cancelar]').addEventListener('click', v.cerrar);
+    return v;
+}
+
+function abrirLogoEmpresa() {
+    const v = ventanaImagen('ventanaLogo', 'Cambiar el logo', 'camera', '<div id="editorLogo"></div>', 'Guardar logo');
+    const guardar = document.getElementById('ventanaLogoGuardar');
+    guardar.disabled = true;
+    const editor = SkillMatchImagen.editor(document.getElementById('editorLogo'), {
+        aspecto: [1, 1], minimo: [200, 200], salida: [400, 400],
+        nombre: 'el logo', maxKB: 120,
+        alCambiar: listo => { guardar.disabled = !listo; }
+    });
+    document.getElementById('ventanaLogoForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        if (!editor.listo()) return;
+        const liberar = SkillMatchUI.ocupado(guardar);
+        try {
+            const valor = await editor.exportar();
+            await guardarImagenEmpresa('logo', valor);
+            imagenesEmpresa.logo = valor;
+            pintarLogoEmpresa(currentCompanyData.name, valor);
+            showNotification('Logo actualizado. Lo ven las personas en el perfil de tu empresa.');
+            v.cerrar();
+        } catch (error) {
+            liberar();
+            editor.error('No se pudo guardar el logo: ' + escaparHtml(error.message) + '. Intenta de nuevo.');
+        }
+    });
+}
+
+function abrirPortadaEmpresa() {
+    const v = ventanaImagen('ventanaPortada', 'Cambiar portada', 'image', `
+        <div class="tab-list" role="tablist" aria-label="Origen de la portada">
+            <button type="button" class="tab-btn active" role="tab" id="portadaTabGaleria" aria-selected="true" aria-controls="portadaGaleria">Para empresas</button>
+            <button type="button" class="tab-btn" role="tab" id="portadaTabSubir" aria-selected="false" aria-controls="portadaSubir">Subir imagen</button>
+        </div>
+        <div id="portadaGaleria" role="tabpanel" aria-labelledby="portadaTabGaleria"></div>
+        <div id="portadaSubir" role="tabpanel" aria-labelledby="portadaTabSubir" hidden></div>`, 'Guardar portada');
+    const guardar = document.getElementById('ventanaPortadaGuardar');
+    const actual = imagenesEmpresa.portada || 'galeria:marca';
+    const galeria = SkillMatchImagen.galeria(document.getElementById('portadaGaleria'), {
+        lista: 'empresa', actual,
+        // Al elegir una, se ve en la cabecera de una vez (si cancela, vuelve la de antes)
+        alElegir: valor => pintarPortadaEmpresa(valor)
+    });
+    const editor = SkillMatchImagen.editor(document.getElementById('portadaSubir'), {
+        aspecto: [4, 1], minimo: [1200, 300], salida: [1600, 400],
+        nombre: 'la portada', maxKB: 320,
+        alCambiar: () => actualizarBoton()
+    });
+    const subiendo = () => !document.getElementById('portadaSubir').hidden;
+    const actualizarBoton = () => { guardar.disabled = subiendo() && !editor.listo(); };
+    const pestana = cual => {
+        const subir = cual === 'subir';
+        [['portadaTabGaleria', !subir], ['portadaTabSubir', subir]].forEach(([idTab, si]) => {
+            const t = document.getElementById(idTab);
+            t.classList.toggle('active', si);
+            t.setAttribute('aria-selected', String(si));
+        });
+        document.getElementById('portadaGaleria').hidden = subir;
+        document.getElementById('portadaSubir').hidden = !subir;
+        actualizarBoton();
+    };
+    document.getElementById('portadaTabGaleria').addEventListener('click', () => pestana('galeria'));
+    document.getElementById('portadaTabSubir').addEventListener('click', () => pestana('subir'));
+    // Si la actual es una imagen propia, se abre en "Subir imagen"
+    pestana(actual.indexOf('galeria:') !== 0 ? 'subir' : 'galeria');
+    let guardada = false;
+    // Al cerrar sin guardar, vuelve la portada de antes
+    new MutationObserver((c, obs) => {
+        if (v.raiz.isConnected) return;
+        obs.disconnect();
+        if (!guardada) pintarPortadaEmpresa(imagenesEmpresa.portada);
+    }).observe(document.body, { childList: true });
+
+    document.getElementById('ventanaPortadaForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        let valor = galeria.valor();
+        if (!subiendo() && (!valor || valor === actual)) { guardada = true; v.cerrar(); return; }
+        if (subiendo() && !editor.listo()) return;
+        const liberar = SkillMatchUI.ocupado(guardar);
+        try {
+            if (subiendo()) valor = await editor.exportar();
+            await guardarImagenEmpresa('portada', valor);
+            imagenesEmpresa.portada = valor;
+            guardada = true;
+            pintarPortadaEmpresa(valor);
+            showNotification('Portada actualizada.');
+            v.cerrar();
+        } catch (error) {
+            liberar();
+            const mensaje = 'No se pudo guardar la portada: ' + escaparHtml(error.message) + '. Intenta de nuevo.';
+            if (subiendo()) editor.error(mensaje); else showNotification(mensaje, 'error');
+        }
+    });
+}
+
 // Nombre, logo, sector y datos de la cabecera
 function pintarCabecera(company) {
     const nombre = company.name || 'Mi empresa';
     document.getElementById('companyName').textContent = nombre;
     document.title = nombre + ' - SkillMatch Cartagena';
 
-    const logo = document.getElementById('companyLogo');
-    if (logo) {
-        if (company.logo) {
-            const img = document.createElement('img');
-            img.src = company.logo;
-            img.alt = '';
-            logo.replaceChildren(img);
-        } else {
-            logo.textContent = companyInitials(nombre);
-        }
-    }
+    pintarLogoEmpresa(nombre, imagenesEmpresa.logo || company.logo);
 
     const industria = document.getElementById('companyIndustry');
     if (industria) industria.textContent = company.industry || '';
@@ -291,6 +460,12 @@ function setupEventListeners() {
     // Cambiar contraseña: la ventana es de ui.js (la misma del perfil de persona)
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => SkillMatchUI.cambiarContrasena());
+
+    // Logo y portada (se guardan en la cuenta de la empresa)
+    const botonLogo = document.getElementById('editCompanyLogoBtn');
+    if (botonLogo) botonLogo.addEventListener('click', abrirLogoEmpresa);
+    const botonPortada = document.getElementById('editCompanyCoverBtn');
+    if (botonPortada) botonPortada.addEventListener('click', abrirPortadaEmpresa);
 
     // Botón Editar "Acerca de"
     const btnEditAbout = document.getElementById('btnEditAbout');
