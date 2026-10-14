@@ -790,6 +790,7 @@ function createCandidateCard(application, offerId) {
                 </div>` : ''}
             <div class="candidato-acciones">
                 <button type="button" class="btn-candidato" data-id="${escaparHtml(application.userId)}" onclick="viewCandidateProfile(this.dataset.id)">Ver perfil</button>
+                <a class="btn-candidato" href="hoja-de-vida.html?id=${encodeURIComponent(application.userId)}" target="_blank" rel="noopener"><i data-ico="list"></i> Hoja de vida</a>
                 <a class="btn-candidato principal" href="mensajes.html?userId=${encodeURIComponent(application.userId)}"><i data-ico="chat"></i> Mensaje</a>
                 <!-- Nombre y correo en data-: dentro del onclick una comilla en el nombre ejecutaba codigo -->
                 ${correo ? `<button type="button" class="btn-candidato" data-email="${escaparHtml(application.userEmail)}" data-nombre="${escaparHtml(application.userName)}" onclick="contactCandidateByEmail(this.dataset.email, this.dataset.nombre)"><i data-ico="mail"></i> Correo</button>` : ''}

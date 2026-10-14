@@ -263,6 +263,13 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   mensajes) y botones para publicar (`perfil-empresa.html?nueva=1` abre la ventana) y ver candidatos. Las secciones
   que invitan a registrarse se ocultan con sesión. Código en `assets/js/panel-inicio.js` y la sección 24d de
   `app.css`.
+- **Hoja de vida en PDF (hecho):** `hoja-de-vida.html` arma la hoja de vida con los datos reales del perfil (perfil,
+  experiencia, estudios, habilidades con su nivel y certificaciones) y "Descargar en PDF" usa la impresión del
+  navegador: sin librerías ni servicios. Al imprimir solo sale la hoja, en tamaño carta. La propia lleva correo y
+  teléfono; la de otra persona (`?id=`), no. Se llega desde Mi perfil ("Hoja de vida en PDF"), desde el perfil de
+  otra persona ("Ver hoja de vida") y desde la ventana de candidatos de la empresa. Mientras el backend falle en
+  experiencias, la hoja avisa en pantalla (no en el PDF) que sale sin esa sección. De paso: las fechas "2025-09-12"
+  se leen como fecha local (con `new Date()` salían un día antes por la hora de Colombia).
 
 ## Orden propuesto (solo frontend)
 

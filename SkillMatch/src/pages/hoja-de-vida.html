@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoja de vida - SkillMatch Cartagena</title>
+    <meta name="description" content="Hoja de vida armada con los datos del perfil de SkillMatch, lista para descargar en PDF.">
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <header>
+        <nav class="container" aria-label="Principal">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
+                </div>
+                <ul class="nav-links nav-principales">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="conexiones.html">Conexiones</a></li>
+                    <li><a href="mensajes.html">Mensajes</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="perfil-usuario.html">Mi perfil</a></li>
+                <li><a href="index.html" class="btn-login" data-cerrar-sesion>Cerrar sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="main" class="hoja-pagina">
+        <!-- Barra de acciones: no sale en el PDF -->
+        <div class="hoja-barra no-imprimir">
+            <div>
+                <h1 class="hoja-barra-titulo">Hoja de vida</h1>
+                <p>Se arma con los datos de tu perfil. Para cambiar algo, edítalo en tu perfil y vuelve aquí.</p>
+            </div>
+            <div class="hoja-barra-acciones">
+                <a class="btn btn-secondary btn-small" id="hojaVolver" href="perfil-usuario.html"><i data-ico="arrow"></i> Volver al perfil</a>
+                <button type="button" class="btn btn-primary btn-small" id="hojaDescargar" disabled><i data-ico="download"></i> Descargar en PDF</button>
+            </div>
+        </div>
+        <p class="hoja-aviso no-imprimir" id="hojaAviso" hidden></p>
+
+        <!-- La hoja: hoja-de-vida.js la llena con /users/{id}, sus habilidades,
+             experiencia y estudios. Al imprimir solo sale esto. -->
+        <article class="hoja" id="hoja" aria-busy="true">
+            <div class="hoja-cargando" aria-hidden="true">
+                <span class="skeleton skeleton-title"></span>
+                <span class="skeleton skeleton-line w-60"></span>
+                <span class="skeleton skeleton-line w-80"></span>
+                <span class="skeleton skeleton-line w-40"></span>
+            </div>
+        </article>
+    </main>
+
+    <!-- Pie de pagina: ui.js dibuja aqui el pie grande (este texto es el respaldo) -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/hoja-de-vida.js"></script>
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>

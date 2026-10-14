@@ -4248,6 +4248,96 @@ a.meta-tag { position: relative; }
     .pasos li { width: 64px; }
 }
 
+/* ---------- 24e. Hoja de vida en PDF (hoja-de-vida.js) ---------- */
+/* La hoja es siempre blanca con texto oscuro, como el papel, tambien en modo
+   oscuro: es la vista previa de lo que sale en el PDF. */
+
+.hoja-pagina { max-width: 900px; margin-inline: auto; padding: var(--s6) var(--s5) var(--s9); }
+.hoja-barra {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s4);
+    margin-bottom: var(--s5);
+}
+.hoja-barra-titulo { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem); }
+.hoja-barra p { margin-top: 4px; max-width: 56ch; font-size: var(--t-sm); color: var(--ink-3); }
+.hoja-barra-acciones { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.hoja-barra-acciones .btn-secondary .ico { transform: rotate(180deg); }
+.hoja-aviso {
+    margin-bottom: var(--s4);
+    padding: var(--s3) var(--s4);
+    border: 1px solid var(--naranja);
+    border-radius: var(--r-md);
+    background: var(--naranja-soft);
+    color: var(--ink);
+    font-size: var(--t-sm);
+}
+[data-theme="dark"] .hoja-aviso { background: rgba(255, 118, 24, .14); }
+
+.hoja {
+    --hoja-tinta: #0B1B2C;
+    --hoja-gris: #4A5E75;
+    --hoja-linea: #D8E1EB;
+    --hoja-acento: #096670;
+    padding: 56px 64px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-md);
+    background: #fff;
+    color: var(--hoja-tinta);
+    box-shadow: var(--sh-3);
+    font-size: 15px;
+    line-height: 1.55;
+}
+.hoja-cargando { display: flex; flex-direction: column; gap: 12px; }
+.hoja-cabeza { padding-bottom: 18px; border-bottom: 2px solid var(--hoja-acento); }
+.hoja-nombre { font-family: var(--font-display); font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; color: var(--hoja-tinta); }
+.hoja-titular { margin-top: 4px; font-size: 17px; font-weight: 600; color: var(--hoja-acento); }
+.hoja-contacto { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; color: var(--hoja-gris); }
+.hoja-contacto li { display: inline-flex; align-items: center; gap: 6px; }
+.hoja-contacto .ico { width: 14px; height: 14px; color: var(--hoja-acento); }
+.hoja-seccion { margin-top: 22px; }
+.hoja-seccion h2 {
+    margin-bottom: 8px;
+    font-family: var(--font-display);
+    font-size: 15px; font-weight: 700; letter-spacing: .08em;
+    color: var(--hoja-acento);
+    text-transform: uppercase;
+}
+.hoja-texto { color: var(--hoja-tinta); white-space: pre-line; }
+.hoja-item + .hoja-item { margin-top: 12px; }
+.hoja-item-cabeza { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; }
+.hoja-item-cabeza h3 { font-size: 16px; font-weight: 700; color: var(--hoja-tinta); }
+.hoja-item-cabeza span { font-size: 13px; color: var(--hoja-gris); white-space: nowrap; }
+.hoja-item-lugar { font-size: 14px; color: var(--hoja-gris); }
+.hoja-item p:not(.hoja-item-lugar) { margin-top: 4px; white-space: pre-line; }
+.hoja-habilidades { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.hoja-habilidades li {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 3px 10px;
+    border: 1px solid var(--hoja-linea);
+    border-radius: 999px;
+    font-size: 14px; font-weight: 600;
+}
+.hoja-habilidades small { font-size: 12px; font-weight: 500; color: var(--hoja-gris); }
+.hoja-vacia { margin-top: 22px; color: var(--hoja-gris); }
+.hoja-pie { max-width: none; margin-top: 28px; padding-top: 10px; border-top: 1px solid var(--hoja-linea); font-size: 12px; color: var(--hoja-gris); }
+
+@media (max-width: 640px) {
+    .hoja-pagina { padding: var(--s4) var(--s3) var(--s8); }
+    .hoja { padding: 28px 22px; font-size: 14px; }
+    .hoja-nombre { font-size: 26px; }
+}
+
+/* Al imprimir o guardar como PDF solo sale la hoja, en tamano carta */
+@media print {
+    @page { size: letter; margin: 14mm 16mm; }
+    body:has(.hoja) > footer, .no-imprimir, .skip-link, .route-progress { display: none !important; }
+    body:has(.hoja) { background: #fff !important; }
+    .hoja-pagina { max-width: none; padding: 0; }
+    .hoja { padding: 0; border: 0; border-radius: 0; box-shadow: none; font-size: 11pt; }
+    .hoja-item, .hoja-cabeza { break-inside: avoid; }
+    .hoja-seccion h2 { break-after: avoid; }
+    .hoja * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
 /* ---------- 25. Movimiento de entrada ---------- */
 
 /* Una sola secuencia orquestada al cargar: la barra baja, el contenido

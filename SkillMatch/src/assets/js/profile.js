@@ -71,6 +71,12 @@ async function loadUserProfile() {
                     mensaje.hidden = false;
                 }
                 cargarConexion(user.id);
+                // La hoja de vida de esta persona (sin su correo ni telefono)
+                const hoja = document.getElementById('cvBtn');
+                if (hoja) {
+                    hoja.href = 'hoja-de-vida.html?id=' + encodeURIComponent(user.id);
+                    hoja.innerHTML = '<i data-ico="list"></i> Ver hoja de vida';
+                }
             }
         } else {
             displayUserProfile(user);
