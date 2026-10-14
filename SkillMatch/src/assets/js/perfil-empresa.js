@@ -63,6 +63,7 @@ function loadCompanyData() {
         currentCompanyData = { ...userData, ...company };
         pintarCabecera(company);
         cargarImagenesEmpresa();
+        actualizarPaso('descripcion', !!company.description);
 
         // "Acerca de"
         const aboutElement = document.getElementById('companyAbout');
@@ -89,6 +90,53 @@ function loadCompanyData() {
     });
 }
 
+// ---- Primeros pasos de una empresa nueva ----
+// Lo que hace falta para que las personas conozcan la empresa y encuentren sus
+// vacantes. Cada paso pendiente es un boton que abre lo que falta; la tarjeta
+// desaparece cuando todo esta listo. null = todavia no se sabe (cargando).
+const PASOS_EMPRESA = [
+    { id: 'descripcion', texto: 'Cuenta a qué se dedica tu empresa', ico: 'pencil', accion: () => openEditAboutModal() },
+    { id: 'logo', texto: 'Pon el logo de tu empresa', ico: 'camera', accion: () => abrirLogoEmpresa() },
+    { id: 'portada', texto: 'Elige una portada', ico: 'image', accion: () => abrirPortadaEmpresa() },
+    { id: 'vacantes', texto: 'Publica tu primera vacante', ico: 'plus', accion: () => openNewOfferModal() },
+    { id: 'respuestas', texto: 'Responde a las personas que se postularon', ico: 'users',
+      accion: () => { const s = document.getElementById('candidatos'); if (s) s.scrollIntoView({ block: 'start' }); } }
+];
+const estadoPasos = { descripcion: null, logo: null, portada: null, vacantes: null, respuestas: null };
+
+function actualizarPaso(id, hecho) {
+    estadoPasos[id] = hecho;
+    pintarPrimerosPasos();
+}
+
+function pintarPrimerosPasos() {
+    const tarjeta = document.getElementById('primerosPasos');
+    if (!tarjeta) return;
+    // Se espera a saber los cuatro primeros, para que no aparezca y desaparezca
+    if (['descripcion', 'logo', 'portada', 'vacantes'].some(id => estadoPasos[id] === null)) return;
+    const pasos = PASOS_EMPRESA.filter(p => estadoPasos[p.id] !== 'no-aplica' && estadoPasos[p.id] !== null);
+    const hechos = pasos.filter(p => estadoPasos[p.id] === true).length;
+    tarjeta.hidden = hechos === pasos.length;
+    if (tarjeta.hidden) return;
+    document.getElementById('primerosPasosCuenta').textContent = `${hechos} de ${pasos.length}`;
+    const barra = document.getElementById('primerosPasosBarra');
+    barra.setAttribute('aria-valuenow', String(Math.round(hechos / pasos.length * 100)));
+    barra.querySelector('span').style.setProperty('--p', hechos / pasos.length);
+    const lista = document.getElementById('primerosPasosLista');
+    lista.innerHTML = pasos.map(p => estadoPasos[p.id] === true
+        ? `<li class="hecho"><span class="primeros-pasos-marca"><i data-ico="check"></i></span> ${p.texto}</li>`
+        : `<li><button type="button" class="primeros-pasos-boton" data-paso="${p.id}"><span class="primeros-pasos-marca"><i data-ico="${p.ico}"></i></span> ${p.texto} <i data-ico="arrow"></i></button></li>`
+    ).join('');
+    if (!lista.dataset.listo) {
+        lista.dataset.listo = '1';
+        lista.addEventListener('click', e => {
+            const boton = e.target.closest('[data-paso]');
+            const paso = boton && PASOS_EMPRESA.find(p => p.id === boton.dataset.paso);
+            if (paso) paso.accion();
+        });
+    }
+}
+
 // ---- Logo y portada de la empresa ----
 // Antes habia botones que guardaban la imagen solo en el navegador (nadie mas la
 // veia) y se quitaron. El backend no deja a la empresa cambiar su "logo" (solo
@@ -111,6 +159,8 @@ async function cargarImagenesEmpresa() {
         pintarLogoEmpresa(currentCompanyData.name || yo.firstName, imagenesEmpresa.logo || currentCompanyData.logo);
         pintarPortadaEmpresa(imagenesEmpresa.portada);
     } catch (e) { /* sin imagenes se quedan las iniciales y la portada de la marca */ }
+    actualizarPaso('logo', !!(imagenesEmpresa.logo || currentCompanyData.logo));
+    actualizarPaso('portada', !!imagenesEmpresa.portada && imagenesEmpresa.portada !== 'galeria:marca');
 }
 
 function pintarLogoEmpresa(nombre, url) {
@@ -191,6 +241,7 @@ function abrirLogoEmpresa() {
             await guardarImagenEmpresa('logo', valor);
             imagenesEmpresa.logo = valor;
             pintarLogoEmpresa(currentCompanyData.name, valor);
+            actualizarPaso('logo', true);
             showNotification('Logo actualizado. Lo ven las personas en el perfil de tu empresa.');
             v.cerrar();
         } catch (error) {
@@ -257,6 +308,7 @@ function abrirPortadaEmpresa() {
             imagenesEmpresa.portada = valor;
             guardada = true;
             pintarPortadaEmpresa(valor);
+            actualizarPaso('portada', valor !== 'galeria:marca');
             showNotification('Portada actualizada.');
             v.cerrar();
         } catch (error) {
@@ -327,6 +379,8 @@ function loadActivityStats() {
         poner('statOfertasActivas', stats.activeJobs || 0);
         poner('statPostulaciones', stats.totalApplications || 0);
         poner('statPorRevisar', stats.pendingApplications || 0);
+        // Solo cuenta como paso si ya alguien se postulo
+        actualizarPaso('respuestas', stats.totalApplications ? !stats.pendingApplications : 'no-aplica');
         // Postulaciones que ya tienen respuesta (aceptadas, revisadas o rechazadas)
         poner('statRespuesta', stats.totalApplications ? Math.round(stats.responseRate || 0) + ' %' : '–');
     })
@@ -409,6 +463,7 @@ function loadOffers() {
 function renderOffers(offers) {
     const offersList = document.getElementById('offersList');
     if (!offersList) return;
+    actualizarPaso('vacantes', offers.length > 0);
     
     if (offers.length === 0) {
         offersList.innerHTML = '<div class="empty-state"><p>Aún no has publicado ofertas.</p><button type="button" class="btn btn-primary" onclick="openNewOfferModal()"><i data-ico="plus"></i> Publicar mi primera oferta</button></div>';
@@ -589,6 +644,7 @@ function openEditAboutModal() {
             
             // Actualizar datos locales
             currentCompanyData.description = newText;
+            actualizarPaso('descripcion', !!newText);
             
             showNotification('Descripción actualizada correctamente');
             closeModal();

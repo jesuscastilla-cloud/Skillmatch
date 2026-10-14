@@ -297,6 +297,10 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   vacantes" con todas las suyas (también las cerradas, marcadas), "Tu vacante" y "Ver candidatos" en las suyas (abre
   directo la ventana de candidatos de esa oferta con `perfil-empresa.html?candidatos=<id>`) y orden por "Más reciente"
   (la compatibilidad no aplica a una empresa).
+- **Primeros pasos para empresas (hecho, del plan original):** tarjeta arriba en "Mi empresa" con el avance (por
+  ejemplo, 3 de 5) y cada paso pendiente como un botón que abre lo que falta: contar a qué se dedica, poner el logo,
+  elegir una portada, publicar la primera vacante y, si ya hay postulaciones, responderlas. Desaparece cuando todo
+  está listo.
 
 ## Orden propuesto (solo frontend)
 

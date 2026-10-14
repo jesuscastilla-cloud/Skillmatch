@@ -3673,6 +3673,43 @@ footer.pie > .container { position: relative; z-index: 1; }
 a.meta-tag { position: relative; }
 @media (pointer: coarse) { a.meta-tag::after { content: ""; position: absolute; inset: -9px -4px; } }
 
+/* ---------- 22c2. Primeros pasos de una empresa nueva (perfil-empresa.js) ---------- */
+.primeros-pasos { border-color: var(--sea); }
+.primeros-pasos-cuenta {
+    padding: 4px 12px;
+    border-radius: var(--r-pill);
+    background: var(--sea-light); color: var(--sea-deep);
+    font-size: var(--t-sm); font-weight: 700;
+}
+[data-theme="dark"] .primeros-pasos-cuenta { color: var(--sea); }
+.primeros-pasos-intro { font-size: var(--t-sm); color: var(--ink-3); }
+.primeros-pasos .panel-barra { margin-top: var(--s3); }
+.primeros-pasos-lista { list-style: none; margin: var(--s4) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.primeros-pasos-lista li.hecho { display: flex; align-items: center; gap: var(--s3); padding: 6px var(--s3); color: var(--ink-muted); text-decoration: line-through; text-decoration-color: var(--hairline); }
+.primeros-pasos-boton {
+    display: flex; align-items: center; gap: var(--s3);
+    width: 100%; min-height: 48px;
+    padding: 6px var(--s3);
+    border: 1px dashed var(--hairline);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    font-weight: 600; color: var(--ink-2); text-align: left;
+    transition: border-color .15s var(--ease), background-color .15s var(--ease);
+}
+.primeros-pasos-boton > .ico:last-child { margin-left: auto; width: 16px; height: 16px; color: var(--ink-muted); }
+.primeros-pasos-boton:hover { border-color: var(--sea); background: var(--sea-light); color: var(--ink); }
+[data-theme="dark"] .primeros-pasos-boton:hover { background: rgba(43, 182, 198, .1); }
+.primeros-pasos-marca {
+    display: grid; place-items: center; flex: 0 0 auto;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--sea-light); color: var(--sea-deep);
+}
+.primeros-pasos-marca .ico { width: 16px; height: 16px; }
+.primeros-pasos-lista li.hecho .primeros-pasos-marca { background: var(--sea); color: #fff; }
+[data-theme="dark"] .primeros-pasos-marca { color: var(--sea); }
+[data-theme="dark"] .primeros-pasos-lista li.hecho .primeros-pasos-marca { color: var(--bg-deep); }
+
 /* ---------- 22d. Tablero de postulaciones (perfil de empresa) ---------- */
 /* Una columna por estado. Se arrastra con el mouse; con teclado o en el
    celular, cada tarjeta tiene botones. Solo cambian bordes y fondos. */
