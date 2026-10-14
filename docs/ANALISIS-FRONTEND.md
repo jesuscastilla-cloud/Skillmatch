@@ -76,8 +76,8 @@ enviada", "Aceptar solicitud" o "En tus conexiones"), y no muestra "Vacantes par
   primera copia de `viewCandidateProfile`, `apiDisponible` y el CSS que solo usaban.
 - **Mensajes (hecho desde el punto 2):** solo consulta el servidor con la pestaña a la vista.
 - **Lottie:** siguen faltando los JSON de Lottieflow.
-- **Pendiente: "Saltar al contenido".** 11 páginas no tienen el enlace para saltar la barra con el teclado ni
-  `id="main"` (conexiones, mensajes, oportunidades, los perfiles, los logins, los registros, elegir cuenta y sin conexión).
+- **"Saltar al contenido" (hecho):** todas las páginas con barra tienen el enlace para saltarla con el teclado y su
+  contenido principal marcado con `id="main"` (antes faltaba en 11).
 - **Indicadores (hecho):** página propia con los datos del sitio, visible para todos (ver Avance).
 
 ## Resultado de la auditoría automática

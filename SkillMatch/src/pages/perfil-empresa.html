@@ -18,6 +18,7 @@
     <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
 </head>
 <body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
     <header>
         <nav class="container" aria-label="Principal">
             <div class="nav-left">
@@ -42,7 +43,7 @@
          reales (antes: logo "ST", web, ciudad, seguidores y cifras escritos a mano).
          Sin botones para cambiar portada, logo o datos: el backend solo deja que la
          empresa edite su descripcion (lo demas es del administrador). -->
-    <section class="company-hero-new">
+    <section class="company-hero-new" id="main">
         <div class="container">
             <div class="company-header-card">
                 <div class="company-cover-img" id="companyCover" aria-hidden="true"></div>
