@@ -395,9 +395,9 @@ let ofertasCargadas = Promise.resolve();
 let candidatosAbiertos = false;
 let recorridoEmpresaListo = false;
 
-function recorridoMiEmpresa() {
+function recorridoMiEmpresa(forzar) {
     if (!window.SkillMatchUI || !SkillMatchUI.recorrido) return;
-    SkillMatchUI.recorrido({ clave: 'mi-empresa', pasos: [
+    SkillMatchUI.recorrido({ clave: 'mi-empresa', forzar: forzar === true, pasos: [
         { objetivo: '.company-header-card', titulo: 'Este es el panel de tu empresa', texto: 'Pon tu logo y elige una portada: así te reconocen las personas en tu perfil público.' },
         { objetivo: '#primerosPasos', titulo: 'Primeros pasos', texto: 'Lo que falta para que las personas conozcan tu empresa. Toca cada paso para completarlo.' },
         { objetivo: '#ofertas', titulo: 'Tus ofertas', texto: 'Publica, edita o archiva tus vacantes. En cada una ves cuántas personas se postularon y cómo van.' },
@@ -574,6 +574,10 @@ function setupEventListeners() {
     // Cambiar contraseña: la ventana es de ui.js (la misma del perfil de persona)
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => SkillMatchUI.cambiarContrasena());
+
+    // "Como funciona": el recorrido por Mi empresa cuando se quiera
+    const botonRecorrido = document.getElementById('recorridoEmpresaBtn');
+    if (botonRecorrido) botonRecorrido.addEventListener('click', () => recorridoMiEmpresa(true));
 
     // Logo y portada (se guardan en la cuenta de la empresa)
     const botonLogo = document.getElementById('editCompanyLogoBtn');

@@ -312,7 +312,8 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   ("Paso 1 de 6", Siguiente, Anterior, Saltar). Una sola vez por navegador; se puede volver a ver desde la paleta (la
   lupa de la barra o Ctrl+K: "Ver el recorrido de esta página"). Con teclado (flechas y Escape, el foco queda en la
   tarjeta), sin animar con movimiento reducido, y no interrumpe si se llega a abrir una ventana (por ejemplo
-  "Nueva oferta"). Es `SkillMatchUI.recorrido` (ui.js, sección 23): sirve para cualquier página.
+  "Nueva oferta"). Es `SkillMatchUI.recorrido` (ui.js, sección 23): sirve para cualquier página. Botón visible
+  "Cómo funciona" en el panel de inicio (persona y empresa) y en "Mi empresa" para verlo cuando se quiera.
 
 ## Orden propuesto (solo frontend)
 

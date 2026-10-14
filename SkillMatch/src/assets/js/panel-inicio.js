@@ -155,7 +155,10 @@
                             <h1 id="panelSaludo">${saludo()}${nombre ? ', ' + nombre : ''}</h1>
                             <p class="panel-sub">Esto es lo que tienes pendiente en SkillMatch.</p>
                         </div>
-                        <a class="btn btn-accent" href="oportunidades.html"><i data-ico="search"></i> Buscar vacantes</a>
+                        <div class="panel-acciones">
+                            <a class="btn btn-accent" href="oportunidades.html"><i data-ico="search"></i> Buscar vacantes</a>
+                            <button type="button" class="btn btn-secondary" data-recorrido><i data-ico="bulb"></i> Cómo funciona</button>
+                        </div>
                     </div>
                     <ul class="panel-cifras" aria-label="Tu resumen">${CIFRAS_PERSONA.map(cifra).join('')}</ul>
                 </div>
@@ -263,18 +266,36 @@
             vacantes.innerHTML = '<li class="panel-vacio">No pudimos cargar las vacantes. Intenta de nuevo en un momento.</li>';
         }
         // La primera vez: un recorrido por el panel (ui.js, SkillMatchUI.recorrido)
-        setTimeout(() => {
-            if (!window.SkillMatchUI || !SkillMatchUI.recorrido) return;
-            SkillMatchUI.recorrido({ clave: 'inicio-persona', pasos: [
-                { objetivo: '#panelSaludo', titulo: 'Este es tu inicio', texto: 'Cada vez que entres a SkillMatch verás aquí lo tuyo: cómo van tus postulaciones, tus mensajes y las vacantes que encajan contigo.' },
-                { objetivo: '.panel-cifras', titulo: 'Tu resumen', texto: 'Postulaciones en proceso, mensajes sin leer, solicitudes de conexión y vacantes guardadas. Toca cualquiera para ir directo.' },
-                { objetivo: '.panel-postulaciones', titulo: 'Tus postulaciones, paso a paso', texto: 'Mira si la empresa ya revisó tu postulación y cuál fue su respuesta.' },
-                { objetivo: '.panel-perfil', titulo: 'Tu perfil', texto: 'Completa lo que falta. Con tus habilidades, SkillMatch calcula qué tanto encajas en cada vacante.' },
-                { objetivo: '.panel-vacantes', titulo: 'Vacantes para ti', texto: 'Las vacantes más recientes que más coinciden con lo que sabes hacer.' },
-                { objetivo: '.search-section .search-box', titulo: 'Busca lo que quieras', texto: 'Escribe un cargo, una habilidad o una empresa. Para volver a ver este recorrido, toca la lupa de arriba y escribe «recorrido».' }
-            ] });
-        }, 600);
+        setTimeout(() => recorridoPersona(false), 600);
     }
+
+    function recorridoPersona(forzar) {
+        if (!window.SkillMatchUI || !SkillMatchUI.recorrido) return;
+        SkillMatchUI.recorrido({ clave: 'inicio-persona', forzar, pasos: [
+            { objetivo: '#panelSaludo', titulo: 'Este es tu inicio', texto: 'Cada vez que entres a SkillMatch verás aquí lo tuyo: cómo van tus postulaciones, tus mensajes y las vacantes que encajan contigo.' },
+            { objetivo: '.panel-cifras', titulo: 'Tu resumen', texto: 'Postulaciones en proceso, mensajes sin leer, solicitudes de conexión y vacantes guardadas. Toca cualquiera para ir directo.' },
+            { objetivo: '.panel-postulaciones', titulo: 'Tus postulaciones, paso a paso', texto: 'Mira si la empresa ya revisó tu postulación y cuál fue su respuesta.' },
+            { objetivo: '.panel-perfil', titulo: 'Tu perfil', texto: 'Completa lo que falta. Con tus habilidades, SkillMatch calcula qué tanto encajas en cada vacante.' },
+            { objetivo: '.panel-vacantes', titulo: 'Vacantes para ti', texto: 'Las vacantes más recientes que más coinciden con lo que sabes hacer.' },
+            { objetivo: '.search-section .search-box', titulo: 'Busca lo que quieras', texto: 'Escribe un cargo, una habilidad o una empresa. Para volver a ver este recorrido, toca "Cómo funciona" arriba.' }
+        ] });
+    }
+
+    function recorridoEmpresa(forzar) {
+        if (!window.SkillMatchUI || !SkillMatchUI.recorrido) return;
+        SkillMatchUI.recorrido({ clave: 'inicio-empresa', forzar, pasos: [
+            { objetivo: '#panelSaludo', titulo: 'Este es el inicio de tu empresa', texto: 'Cada vez que entres verás aquí cómo van tus vacantes y tus candidatos.' },
+            { objetivo: '.panel-cifras', titulo: 'Tu resumen', texto: 'Ofertas activas, postulaciones por revisar y recibidas, y mensajes sin leer. Toca cualquiera para ir directo; el punto naranja avisa lo que espera respuesta.' },
+            { objetivo: '.panel-acciones', titulo: 'Publica y revisa', texto: 'Publica una vacante nueva o mira a tus candidatos. "Cómo funciona" vuelve a mostrar este recorrido.' },
+            { objetivo: '.search-section .search-box', titulo: 'Así buscan las personas', texto: 'Este es el buscador que usan para encontrar vacantes. Prueba con el cargo de una de tus ofertas.' }
+        ] });
+    }
+
+    // "Como funciona": el recorrido cuando se quiera (no depende de que salga solo)
+    panel.addEventListener('click', e => {
+        if (!e.target.closest('[data-recorrido]')) return;
+        if (esEmpresa) recorridoEmpresa(true); else recorridoPersona(true);
+    });
 
     // ---- Empresa ----
 
@@ -298,6 +319,7 @@
                         <div class="panel-acciones">
                             <a class="btn btn-accent" href="perfil-empresa.html?nueva=1"><i data-ico="plus"></i> Publicar una vacante</a>
                             <a class="btn btn-secondary" href="perfil-empresa.html?tab=applicants">Ver candidatos</a>
+                            <button type="button" class="btn btn-secondary" data-recorrido><i data-ico="bulb"></i> Cómo funciona</button>
                         </div>
                     </div>
                     <ul class="panel-cifras" aria-label="Tu resumen">${cifras.map(cifra).join('')}</ul>
@@ -312,6 +334,7 @@
         pintarCifra('panelPorRevisar', stats ? stats.pendingApplications || 0 : null, cifras[1].nombre, true);
         pintarCifra('panelRecibidas', stats ? stats.totalApplications || 0 : null, cifras[2].nombre);
         pintarCifra('panelMensajesEmpresa', noLeidos ? Number(noLeidos.count) || 0 : null, cifras[3].nombre, true);
+        setTimeout(() => recorridoEmpresa(false), 600);
     }
 
     if (esEmpresa) panelEmpresa(); else panelPersona();
