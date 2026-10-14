@@ -251,6 +251,18 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   "(" daba error 500; el frontend lo escapa); conviene escaparlo también en `CompanyService.searchCompanies`, igual
   que en `/jobs/filter` con `location`. La insignia de "empresa verificada" no se muestra: no hay un proceso de
   verificación real todavía.
+- **"Saltar al contenido" y barra con sesión en las páginas públicas (hecho):** el enlace para saltar la barra está
+  en todas las páginas que la tienen; en la portada, Indicadores, la política y los registros, quien tiene sesión ve
+  su barra (Conexiones y Mensajes) y no la de visitante.
+- **Panel de inicio (hecho):** quien entra con su cuenta ya no ve en la portada la presentación para visitantes con
+  "Crear mi perfil". Una persona ve un saludo según la hora, cuatro cifras que llevan a su sitio (postulaciones en
+  proceso, mensajes sin leer, solicitudes de conexión y vacantes guardadas, con un punto naranja si algo espera
+  respuesta), sus últimas postulaciones como una línea de pasos (Enviada, Revisada, Respuesta), lo que le falta al
+  perfil (la misma lista de Mi perfil, así el porcentaje coincide) y las vacantes recientes que más coinciden con
+  sus habilidades, sin las que ya se postuló. Una empresa ve sus cifras (ofertas activas, por revisar, recibidas y
+  mensajes) y botones para publicar (`perfil-empresa.html?nueva=1` abre la ventana) y ver candidatos. Las secciones
+  que invitan a registrarse se ocultan con sesión. Código en `assets/js/panel-inicio.js` y la sección 24d de
+  `app.css`.
 
 ## Orden propuesto (solo frontend)
 

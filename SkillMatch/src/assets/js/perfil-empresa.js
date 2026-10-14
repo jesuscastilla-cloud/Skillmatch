@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     loadOffers();
     loadActivityStats();
+    // "Publicar una vacante" del panel de inicio llega con ?nueva=1
+    if (new URLSearchParams(window.location.search).get('nueva') === '1') openNewOfferModal();
 });
 
 // Tamano de la empresa tal como lo guarda el registro
