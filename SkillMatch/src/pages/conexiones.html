@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conexiones - SkillMatch Cartagena</title>
-    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+    <meta name="description" content="Tus contactos en SkillMatch: personas y empresas de Cartagena con las que te conectas y conversas.">
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#EDF2F8">
     <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,70 +19,73 @@
 </head>
 <body>
     <header>
-        <nav class="container">
+        <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100"></a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
-                <ul class="nav-links">
+                <ul class="nav-links nav-principales">
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="conexiones.html" class="active-nav">Conexiones</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="conexiones.html">Conexiones</a></li>
+                    <li><a href="mensajes.html">Mensajes</a></li>
                 </ul>
             </div>
             <ul class="nav-links">
-                <li><a href="oportunidades.html">Oportunidades</a></li>
-                <li><a href="perfil-usuario.html">Mi Perfil</a></li>
-                <li><a href="login.html" class="btn-login">Cerrar Sesión</a></li>
+                <li><a href="perfil-usuario.html">Mi perfil</a></li>
+                <li><a href="index.html" class="btn-login" data-cerrar-sesion>Cerrar sesión</a></li>
             </ul>
         </nav>
     </header>
 
     <section class="connections-header">
         <div class="container">
-            <h1>Conexiones y Networking</h1>
-            <p>Expande tu red profesional y conecta con empresas</p>
+            <h1>Tu red de contactos</h1>
+            <p>Conecta con personas y empresas de tu sector, y escríbeles cuando quieras.</p>
         </div>
     </section>
 
     <section class="connections-container">
         <div class="container">
-            <div class="connections-tabs">
-                <button class="tab-btn active" data-tab="mis-conexiones">
-                    Mis Conexiones<span id="connections-count"></span>
+            <div class="connections-tabs" role="tablist" aria-label="Tu red">
+                <button type="button" class="tab-btn active" data-tab="mis-conexiones" role="tab" id="tab-mis-conexiones" aria-controls="mis-conexiones" aria-selected="true">
+                    Mis conexiones<span id="connections-count"></span>
                 </button>
-                <button class="tab-btn" data-tab="solicitudes">
+                <button type="button" class="tab-btn" data-tab="solicitudes" role="tab" id="tab-solicitudes" aria-controls="solicitudes" aria-selected="false" tabindex="-1">
                     Solicitudes<span id="requests-count"></span>
                 </button>
-                <button class="tab-btn" data-tab="sugerencias">Sugerencias</button>
-                <button class="tab-btn" data-tab="mensajes">Mensajes</button>
+                <button type="button" class="tab-btn" data-tab="sugerencias" role="tab" id="tab-sugerencias" aria-controls="sugerencias" aria-selected="false" tabindex="-1">Sugerencias</button>
+                <button type="button" class="tab-btn" data-tab="mensajes" role="tab" id="tab-mensajes" aria-controls="mensajes" aria-selected="false" tabindex="-1">Mensajes</button>
             </div>
 
-            <!-- Tab: Mis Conexiones -->
-            <div id="mis-conexiones" class="tab-content active">
+            <!-- Tab: Mis conexiones -->
+            <div id="mis-conexiones" class="tab-content active" role="tabpanel" aria-labelledby="tab-mis-conexiones">
                 <div id="connections-container" class="connections-list">
                     <div class="loading-message">Cargando conexiones...</div>
                 </div>
             </div>
 
             <!-- Tab: Solicitudes Pendientes -->
-            <div id="solicitudes" class="tab-content">
+            <div id="solicitudes" class="tab-content" role="tabpanel" aria-labelledby="tab-solicitudes">
                 <div id="requests-container" class="connections-list">
                     <div class="loading-message">Cargando solicitudes...</div>
                 </div>
             </div>
 
             <!-- Tab: Sugerencias -->
-            <div id="sugerencias" class="tab-content">
+            <div id="sugerencias" class="tab-content" role="tabpanel" aria-labelledby="tab-sugerencias">
                 <div id="suggestions-container" class="suggestions-list">
                     <div class="loading-message">Cargando sugerencias...</div>
                 </div>
             </div>
 
             <!-- Tab: Mensajes -->
-            <div id="mensajes" class="tab-content">
+            <div id="mensajes" class="tab-content" role="tabpanel" aria-labelledby="tab-mensajes">
                 <div class="messages-redirect">
-                    <p>Gestiona tus conversaciones en la sección de mensajes.</p>
-                    <a href="mensajes.html" class="btn btn-primary">Ir a Mensajes</a>
+                    <span class="messages-redirect-icon"><i data-ico="chat"></i></span>
+                    <h2>Tus conversaciones</h2>
+                    <p>Escríbele a tus conexiones y a las empresas desde la sección de mensajes.</p>
+                    <a href="mensajes.html" class="btn btn-primary">Ir a Mensajes <i data-ico="arrow"></i></a>
                 </div>
             </div>
         </div>
@@ -88,8 +96,8 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
-            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+            <p>Una bolsa de empleo para todos los sectores de Cartagena de Indias.</p>
         </div>
     </footer>
 

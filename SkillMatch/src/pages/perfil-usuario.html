@@ -3,31 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil (Usuario) - SkillMatch Cartagena</title>
+    <title>Mi perfil - SkillMatch Cartagena</title>
+    <meta name="description" content="Tu perfil en SkillMatch: lo que sabes hacer, tu experiencia, tus postulaciones y las vacantes que más encajan contigo.">
+    <meta name="robots" content="noindex">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="../assets/css/app.css">
-    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#EDF2F8">
     <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
 </head>
 <body>
     <header>
-        <nav class="container">
+        <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100"></a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
-                <ul class="nav-links">
+                <ul class="nav-links nav-principales">
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="perfil-usuario.html" class="active-nav">Mi Perfil</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="conexiones.html">Conexiones</a></li>
+                    <li><a href="mensajes.html">Mensajes</a></li>
                 </ul>
             </div>
             <ul class="nav-links">
-                <li><a href="oportunidades.html">Oportunidades</a></li>
-                <li><a href="conexiones.html">Conexiones</a></li>
-                <li><a href="login.html" class="btn-login">Cerrar Sesión</a></li>
+                <li><a href="perfil-usuario.html">Mi perfil</a></li>
+                <li><a href="index.html" class="btn-login" data-cerrar-sesion>Cerrar sesión</a></li>
             </ul>
         </nav>
     </header>
@@ -59,12 +65,19 @@
                             <p class="profile-headline" id="userHeadline">Cargando información...</p>
                             <div class="profile-meta">
                                 <span id="userLocation"><i data-ico="pin"></i> Cartagena, Colombia</span>
-                                <span id="userConnections">• 0 conexiones</span>
+                                <span id="userConnections"><i data-ico="users"></i> 0 conexiones</span>
                             </div>
                         </div>
-                        <button type="button" class="btn-edit-profile" id="editProfileBtn">
-                            Editar perfil
-                        </button>
+                        <div class="perfil-acciones">
+                            <button type="button" class="btn-edit-profile" id="editProfileBtn">
+                                Editar perfil
+                            </button>
+                            <button type="button" class="btn-edit-profile" id="changePasswordBtn"><i data-ico="lock"></i> Cambiar contraseña</button>
+                            <!-- Solo en el perfil de otra persona: profile.js pone el estado de
+                                 la conexion (Conectar, Solicitud enviada, Aceptar o En tus conexiones) y el enlace del mensaje -->
+                            <button type="button" class="btn btn-primary btn-small" id="connectUserBtn" hidden><i data-ico="handshake"></i> Conectar</button>
+                            <a class="btn btn-secondary btn-small" id="messageUserBtn" href="mensajes.html" hidden><i data-ico="chat"></i> Enviar mensaje</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -75,45 +88,9 @@
         <div class="container">
             <div class="profile-layout">
                 <aside class="profile-sidebar">
+                    <!-- Primero lo que le dice a la persona que le falta: cada pendiente abre su formulario -->
                     <div class="profile-card">
-                        <h3 class="card-title"><i data-ico="chart"></i> Estadísticas</h3>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-icon"><i data-ico="eye"></i></div>
-                                <div class="stat-content">
-                                    <span class="stat-value" id="profileViews">0</span>
-                                    <span class="stat-label">Vistas del perfil</span>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon"><i data-ico="briefcase"></i></div>
-                                <div class="stat-content">
-                                    <span class="stat-value" id="applicationsCount">0</span>
-                                    <span class="stat-label">Aplicaciones</span>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon"><i data-ico="target"></i></div>
-                                <div class="stat-content">
-                                    <span class="stat-value" id="matchRate">0%</span>
-                                    <span class="stat-label">Match promedio</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-card">
-                        <div class="card-header-flex">
-                            <h3 class="card-title"><i data-ico="target"></i> Habilidades</h3>
-                            <button type="button" class="btn-add-skill" id="addSkillBtn">+ Agregar</button>
-                        </div>
-                        <div class="skills-list-new" id="userSkills">
-                            <p class="loading-text">Cargando habilidades...</p>
-                        </div>
-                    </div>
-
-                    <div class="profile-card">
-                        <h3 class="card-title"><i data-ico="trending"></i> Progreso del Perfil</h3>
+                        <h2 class="card-title"><i data-ico="trending"></i> Progreso del perfil</h2>
                         <div class="profile-progress">
                             <div class="progress-bar">
                                 <div class="progress-fill" id="profileProgress"></div>
@@ -122,6 +99,16 @@
                             <ul class="progress-checklist" id="profileChecklist">
                                 <li>Cargando...</li>
                             </ul>
+                        </div>
+                    </div>
+
+                    <div class="profile-card">
+                        <div class="card-header-flex">
+                            <h2 class="card-title"><i data-ico="target"></i> Habilidades</h2>
+                            <button type="button" class="btn-add-skill" id="addSkillBtn">+ Agregar</button>
+                        </div>
+                        <div class="skills-list-new" id="userSkills">
+                            <p class="loading-text">Cargando habilidades...</p>
                         </div>
                     </div>
                 </aside>
@@ -147,103 +134,15 @@
                         </div>
                     </div>
 
-                    <div class="profile-section">
-                        <div class="section-header">
-                            <h2>Certificaciones y Logros</h2>
-                            <button type="button" class="btn-icon">+ Agregar</button>
-                        </div>
-                        <div class="certifications-grid">
-                            <div class="cert-item">
-                                <div class="cert-badge"><i data-ico="trophy"></i></div>
-                                <h4>Google Cloud Associate Cloud Engineer</h4>
-                                <p class="cert-issuer">Google Cloud</p>
-                                <p class="cert-date">Obtenido: Nov 2024</p>
-                            </div>
-                            <div class="cert-item">
-                                <div class="cert-badge"><i data-ico="trophy"></i></div>
-                                <h4>React Fundamentals Certificate</h4>
-                                <p class="cert-issuer">Udemy</p>
-                                <p class="cert-date">Obtenido: Sep 2024</p>
-                            </div>
-                            <div class="cert-item">
-                                <div class="cert-badge"><i data-ico="trophy"></i></div>
-                                <h4>JavaScript Advanced Course</h4>
-                                <p class="cert-issuer">Platzi</p>
-                                <p class="cert-date">Obtenido: Aug 2024</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-section">
-                        <div class="section-header">
-                            <h2>Proyectos y Portfolio</h2>
-                            <button type="button" class="btn-icon">+ Agregar</button>
-                        </div>
-                        <div class="projects-grid">
-                            <div class="project-item">
-                                <div class="project-header">
-                                    <h3>E-Commerce Platform</h3>
-                                    <p class="project-date">2024</p>
-                                </div>
-                                <p class="project-desc">Plataforma de comercio electrónico con carrito de compras, sistema de pagos e inventario.</p>
-                                <div class="project-tech">
-                                    <span>React</span>
-                                    <span>Node.js</span>
-                                    <span>MongoDB</span>
-                                </div>
-                                <a href="#" class="project-link">Ver proyecto <i data-ico="arrow"></i></a>
-                            </div>
-                            <div class="project-item">
-                                <div class="project-header">
-                                    <h3>Task Manager App</h3>
-                                    <p class="project-date">2024</p>
-                                </div>
-                                <p class="project-desc">Aplicación para gestionar tareas con autenticación de usuarios y base de datos en la nube.</p>
-                                <div class="project-tech">
-                                    <span>Vue.js</span>
-                                    <span>Firebase</span>
-                                    <span>CSS3</span>
-                                </div>
-                                <a href="#" class="project-link">Ver proyecto <i data-ico="arrow"></i></a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-section">
-                        <div class="section-header">
-                            <h2>Recomendaciones de Empresas</h2>
-                        </div>
-                        <div class="recommendations-list">
-                            <div class="recommendation-item">
-                                <div class="rec-header">
-                                    <img src="../assets/img/logo.png" alt="Empresa">
-                                    <div class="rec-info">
-                                        <h4>Excelente desarrollador</h4>
-                                        <p class="rec-company">María González - Soluciones Tech Cartagena</p>
-                                        <p class="rec-date">Recomendación de hace 2 meses</p>
-                                    </div>
-                                </div>
-                                <p class="rec-text">"Juan es un desarrollador muy competente. Demostró gran capacidad para aprender tecnologías nuevas y trabajar en equipo. Muy recomendado."</p>
-                            </div>
-                            <div class="recommendation-item">
-                                <div class="rec-header">
-                                    <img src="../assets/img/logo.png" alt="Empresa">
-                                    <div class="rec-info">
-                                        <h4>Profesional responsable y comprometido</h4>
-                                        <p class="rec-company">Carlos López - StartUp Digital</p>
-                                        <p class="rec-date">Recomendación de hace 1 mes</p>
-                                    </div>
-                                </div>
-                                <p class="rec-text">"Trabajar con Juan fue una excelente experiencia. Demuestra compromiso, responsabilidad y ganas de crecer profesionalmente."</p>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Certificaciones, proyectos y recomendaciones de empresas: eran contenido de
+                         ejemplo, igual para todos (recomendaciones de un tal "Juan"). Se quitaron hasta
+                         que el backend los guarde de verdad; el HTML anterior esta en el commit 0b22130. -->
                 </main>
 
                 <aside class="profile-right-sidebar">
                     <div class="sidebar-card">
                         <div class="card-header-flex">
-                            <h3 class="card-title"><i data-ico="briefcase"></i> Oportunidades Recomendadas</h3>
+                            <h2 class="card-title"><i data-ico="briefcase"></i> Vacantes para ti</h2>
                         </div>
                         <div id="recommendedJobs">
                             <p class="loading-text">Cargando oportunidades...</p>
@@ -251,10 +150,17 @@
                         <a href="oportunidades.html" class="btn-view-all">Ver todas <i data-ico="arrow"></i></a>
                     </div>
 
-                    <div class="sidebar-card">
-                        <h3 class="card-title"><i data-ico="building"></i> Empresas Interesadas</h3>
+                    <div class="sidebar-card" id="applicationsCard">
+                        <h2 class="card-title"><i data-ico="send"></i> Tus postulaciones</h2>
                         <div id="interestedCompanies">
                             <p class="loading-text">Cargando empresas...</p>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-card" id="savedJobsCard">
+                        <h2 class="card-title"><i data-ico="heart"></i> Vacantes guardadas <span class="vista-cuenta" id="savedJobsCount"></span></h2>
+                        <div id="savedJobsList">
+                            <p class="loading-text">Cargando vacantes guardadas...</p>
                         </div>
                     </div>
                 </aside>
@@ -266,7 +172,7 @@
     <div id="editProfileModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="pencil"></i> Editar Perfil</h2>
+                <h2><i data-ico="pencil"></i> Editar perfil</h2>
                 <button type="button" class="btn-close-modal" onclick="closeEditModal()"><i data-ico="close"></i></button>
             </div>
             <form id="editProfileForm">
@@ -281,7 +187,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="editEmail">Email *</label>
+                    <label for="editEmail">Correo electrónico *</label>
                     <input type="email" id="editEmail" required>
                 </div>
                 <div class="form-group">
@@ -290,11 +196,11 @@
                 </div>
                 <div class="form-group">
                     <label for="editHeadline">Título profesional</label>
-                    <input type="text" id="editHeadline" placeholder="Ej: Ingeniero de Sistemas | Desarrollador">
+                    <input type="text" id="editHeadline" placeholder="Ej.: Auxiliar contable, mesero bilingüe, técnico electricista">
                 </div>
                 <div class="form-group">
                     <label for="editLocation">Ubicación</label>
-                    <input type="text" id="editLocation" placeholder="Ej: Cartagena, Colombia">
+                    <input type="text" id="editLocation" placeholder="Ej.: Cartagena, Bolívar">
                 </div>
                 <div class="form-group">
                     <label for="editBio">Biografía</label>
@@ -302,49 +208,49 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeEditModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Guardar Cambios</button>
+                    <button type="submit" class="btn-primary-modal">Guardar cambios</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Cambiar Foto -->
-    <div id="changePhotoModal" class="modal">
-        <div class="modal-content-small">
+    <!-- La foto se sube desde el equipo: editor-imagen.js la valida, deja
+         encuadrarla y la reduce antes de guardarla -->
+    <div id="changePhotoModal" class="modal modal-imagen">
+        <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="camera"></i> Cambiar Foto de Perfil</h2>
-                <button type="button" class="btn-close-modal" onclick="closePhotoModal()"><i data-ico="close"></i></button>
+                <h2><i data-ico="camera"></i> Cambiar foto de perfil</h2>
+                <button type="button" class="btn-close-modal" onclick="closePhotoModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
             </div>
             <form id="changePhotoForm">
-                <div class="form-group">
-                    <label for="photoUrl">URL de la imagen</label>
-                    <input type="url" id="photoUrl" placeholder="https://ejemplo.com/imagen.jpg" required>
-                    <p class="form-hint">Ingresa la URL de tu foto de perfil</p>
-                </div>
+                <div id="photoEditor"></div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closePhotoModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Actualizar Foto</button>
+                    <button type="submit" class="btn-primary-modal" id="savePhotoBtn" disabled>Guardar foto</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Cambiar Portada -->
-    <div id="changeCoverModal" class="modal">
-        <div class="modal-content-small">
+    <!-- Portada: una de la galeria de SkillMatch o una foto propia -->
+    <div id="changeCoverModal" class="modal modal-imagen">
+        <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="image"></i> Cambiar Portada</h2>
-                <button type="button" class="btn-close-modal" onclick="closeCoverModal()"><i data-ico="close"></i></button>
+                <h2><i data-ico="image"></i> Cambiar portada</h2>
+                <button type="button" class="btn-close-modal" onclick="closeCoverModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
             </div>
             <form id="changeCoverForm">
-                <div class="form-group">
-                    <label for="coverUrl">URL de la imagen</label>
-                    <input type="url" id="coverUrl" placeholder="https://ejemplo.com/portada.jpg" required>
-                    <p class="form-hint">Ingresa la URL de tu imagen de portada (recomendado: 1200x200px)</p>
+                <div class="tab-list" role="tablist" aria-label="Origen de la portada">
+                    <button type="button" class="tab-btn active" role="tab" id="coverTabGallery" aria-selected="true" aria-controls="coverGallery">Galería</button>
+                    <button type="button" class="tab-btn" role="tab" id="coverTabUpload" aria-selected="false" aria-controls="coverUpload">Subir foto</button>
                 </div>
+                <div id="coverGallery" role="tabpanel" aria-labelledby="coverTabGallery"></div>
+                <div id="coverUpload" role="tabpanel" aria-labelledby="coverTabUpload" hidden></div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeCoverModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Actualizar Portada</button>
+                    <button type="submit" class="btn-primary-modal" id="saveCoverBtn">Guardar portada</button>
                 </div>
             </form>
         </div>
@@ -354,16 +260,16 @@
     <div id="addSkillModal" class="modal">
         <div class="modal-content-small">
             <div class="modal-header">
-                <h2><i data-ico="target"></i> Agregar Habilidad</h2>
+                <h2><i data-ico="target"></i> Agregar habilidad</h2>
                 <button type="button" class="btn-close-modal" onclick="closeAddSkillModal()"><i data-ico="close"></i></button>
             </div>
             <form id="addSkillForm">
                 <div class="form-group">
-                    <label for="skillName">Nombre de la Habilidad *</label>
-                    <input type="text" id="skillName" placeholder="Ej: JavaScript, React, Python" required>
+                    <label for="skillName">Nombre de la habilidad *</label>
+                    <input type="text" id="skillName" placeholder="Ej.: Atención al cliente, Excel, Inglés" required>
                 </div>
                 <div class="form-group">
-                    <label for="skillLevel">Nivel de Dominio *</label>
+                    <label for="skillLevel">Nivel de dominio *</label>
                     <select id="skillLevel" required>
                         <option value="">Selecciona un nivel</option>
                         <option value="BASICO">Básico</option>
@@ -374,7 +280,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeAddSkillModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Agregar Habilidad</button>
+                    <button type="submit" class="btn-primary-modal">Agregar habilidad</button>
                 </div>
             </form>
         </div>
@@ -384,7 +290,7 @@
     <div id="addExperienceModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="briefcase"></i> Agregar Experiencia</h2>
+                <h2><i data-ico="briefcase"></i> Agregar experiencia</h2>
                 <button type="button" class="btn-close-modal" onclick="closeAddExperienceModal()"><i data-ico="close"></i></button>
             </div>
             <form id="addExperienceForm">
@@ -398,11 +304,11 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="expStartDate">Fecha de Inicio *</label>
+                        <label for="expStartDate">Fecha de inicio *</label>
                         <input type="date" id="expStartDate" required>
                     </div>
                     <div class="form-group">
-                        <label for="expEndDate">Fecha de Fin</label>
+                        <label for="expEndDate">Fecha de fin</label>
                         <input type="date" id="expEndDate">
                     </div>
                 </div>
@@ -422,7 +328,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeAddExperienceModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Agregar Experiencia</button>
+                    <button type="submit" class="btn-primary-modal">Agregar experiencia</button>
                 </div>
             </form>
         </div>
@@ -432,7 +338,7 @@
     <div id="addEducationModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="cap"></i> Agregar Educación</h2>
+                <h2><i data-ico="cap"></i> Agregar educación</h2>
                 <button type="button" class="btn-close-modal" onclick="closeAddEducationModal()"><i data-ico="close"></i></button>
             </div>
             <form id="addEducationForm">
@@ -442,19 +348,19 @@
                 </div>
                 <div class="form-group">
                     <label for="eduDegree">Título *</label>
-                    <input type="text" id="eduDegree" placeholder="Ej: Ingeniería de Sistemas" required>
+                    <input type="text" id="eduDegree" placeholder="Ej.: Técnico en Contabilidad" required>
                 </div>
                 <div class="form-group">
-                    <label for="eduFieldOfStudy">Campo de Estudio</label>
-                    <input type="text" id="eduFieldOfStudy" placeholder="Ej: Desarrollo de Software">
+                    <label for="eduFieldOfStudy">Campo de estudio</label>
+                    <input type="text" id="eduFieldOfStudy" placeholder="Ej.: Administración">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="eduStartDate">Fecha de Inicio *</label>
+                        <label for="eduStartDate">Fecha de inicio *</label>
                         <input type="date" id="eduStartDate" required>
                     </div>
                     <div class="form-group">
-                        <label for="eduEndDate">Fecha de Fin</label>
+                        <label for="eduEndDate">Fecha de fin</label>
                         <input type="date" id="eduEndDate">
                     </div>
                 </div>
@@ -470,7 +376,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeAddEducationModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Agregar Educación</button>
+                    <button type="submit" class="btn-primary-modal">Agregar educación</button>
                 </div>
             </form>
         </div>
@@ -478,13 +384,14 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
-            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+            <p>Una bolsa de empleo para todos los sectores de Cartagena de Indias.</p>
         </div>
     </footer>
 
     <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/editor-imagen.js"></script>
     <script src="../assets/js/profile.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>

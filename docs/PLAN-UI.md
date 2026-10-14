@@ -16,7 +16,26 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
 - **Fondos con textura**: grano sutil y degradados *mesh* suaves con los tres colores de marca (portada y cabeceras). *(Stripe)*
 - **Fotografía real de Cartagena y estudiantes** en WebP dentro de `assets/img` (muralla, Getsemaní, gente trabajando).
 - **Ilustraciones SVG animadas propias** para estados vacíos, onboarding y errores.
+- **Login con personajes que miran** *(idea de Luis, agregada el 2026-10-04)*: las figuras del logo
+  siguen al mouse, miran el campo donde se escribe, cierran los ojos con la contraseña, una espía con
+  "mostrar contraseña" y reaccionan al error y al éxito. SVG propio, sin librerías.
+  Mejoras acordadas con Luis el 2026-10-05, en este orden:
+  1. **Accesorios con física** (acción secundaria): corbata, corbatín o carnet que se mecen con la
+     respiración, se levantan al caer y se asientan al aterrizar.
+  2. **Versión corporativa** en `login-empresa.html`: camisa y corbata (azul), corbatín (turquesa) y
+     lentes (naranja), en azul marino con detalles naranja; al aterrizar el azul se arregla la corbata.
+  2b. **Entrada con saltitos** *(idea de Luis, agregada el 2026-10-05; eligió la opción B del boceto)*:
+     cada personaje cae en un lugar equivocado, mira hacia su sitio y va saltando hasta acomodarse
+     (el azul y el turquesa se cruzan en el aire). En los dos logins.
+  3. **Asienten** cuando el correo ya tiene forma válida y **aviso de Bloq Mayús** en la contraseña.
+  4. **Profundidad** con el mouse (cada figura se mueve distinto), **se duermen** tras un rato sin uso
+     y **ladean la cabeza** si el mouse se queda quieto encima.
+  5. Pasar los personajes a `login.html` (el que abre la portada).
 - **Modo oscuro** completo con interruptor en la barra superior que recuerda la elección. *(Linear, GitHub)*
+  *(Idea de Luis, 2026-10-05)*: al cambiar de tema, el nuevo se revela en círculo desde el botón y salen
+  esporas (estrellas al pasar a oscuro, chispas de sol al pasar a claro). Excepción acordada: el círculo
+  es un `clip-path` sobre la foto de la View Transition, no sobre la página.
+  *(2026-10-07: Luis prefirió quitar las esporas; se quedan el círculo y el giro del icono.)*
 
 ### 3. Movimiento global y el mouse
 - **Cursor personalizado**: punto + anillo con retraso suave; crece sobre enlaces, dice "Ver" sobre tarjetas y "Arrastra" sobre carruseles. *(Awwwards)*
@@ -34,6 +53,8 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
 ### 2. Portada
 - **Hero con gradiente vivo** que respira y reacciona al mouse. *(Stripe)*
 - **Titular palabra por palabra** con palabra clave en bucle: "El trabajo / la práctica / el proyecto que buscas ya está en Cartagena".
+  *(Idea de Luis, 2026-10-05)*: la palabra que sale se deshace en **esporas** que el viento se lleva y la
+  nueva aparece letra por letra. La palabra clave va en su propia línea para que el hero no cambie de alto.
 - **Demo del match en vivo**: el visitante marca 3–4 habilidades y el anillo recalcula en tiempo real.
 - **Scroll-telling tipo Apple**: sección *sticky* con 4 escenas (creas tu perfil → te comparamos → recibes el match → te contratan).
 - **Historias de éxito** en carrusel infinito que se detiene con hover.

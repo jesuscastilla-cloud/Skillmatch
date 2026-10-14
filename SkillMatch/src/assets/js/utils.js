@@ -11,19 +11,26 @@ function formatCurrency(value) {
 function formatDate(dateString, showTimeToday = false) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (Number.isNaN(date.getTime())) return '';
+    // Se cuentan dias de calendario. Antes se redondeaba hacia arriba la
+    // diferencia en horas: cualquier cosa de las ultimas 24 h decia "Ayer"
+    // y nunca salia "Hoy" ni la hora.
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const dia = new Date(date); dia.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((hoy - dia) / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) {
+    if (diffDays <= 0) {
         return showTimeToday
-            ? date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+            ? date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
             : 'Hoy';
     }
     if (diffDays === 1) return 'Ayer';
     if (diffDays < 7) return `Hace ${diffDays} días`;
-    if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
-    return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+    if (diffDays < 30) {
+        const semanas = Math.floor(diffDays / 7);
+        return semanas === 1 ? 'Hace 1 semana' : `Hace ${semanas} semanas`;
+    }
+    return date.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function truncateText(text, maxLength) {

@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkillMatch Cartagena</title>
-    <meta name="description" content="Conecta usuarios de Cartagena con oportunidades laborales locales. Perfiles profesionales, oportunidades personalizadas y networking con empresas.">
-    <meta name="keywords" content="empleo, prácticas, usuarios, Cartagena, empresas, oportunidades, networking, tecnología, diseño, marketing, finanzas, recursos humanos, logística, salud, legal">
+    <meta name="description" content="Bolsa de empleo de Cartagena: vacantes de empleo, prácticas y trabajo independiente en todos los sectores. Compara tus habilidades con cada vacante antes de postularte.">
+    <meta name="keywords" content="empleo Cartagena, vacantes, trabajo, prácticas, hoja de vida, turismo, hotelería, comercio, logística, salud, construcción, administración, tecnología">
     <meta property="og:title" content="SkillMatch Cartagena">
-    <meta property="og:description" content="Conectando talento local con empresas de Cartagena">
+    <meta property="og:description" content="Vacantes de empleo y prácticas en Cartagena, para todos los sectores">
     <meta property="og:type" content="website">
     <meta property="og:image" content="../assets/img/logo.png">
-    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#EDF2F8">
     <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
 
@@ -27,15 +30,17 @@
         <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100"></a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
                 <ul class="nav-links nav-principales">
-                    <li><a href="#main">Inicio</a></li>
-                    <li><a href="#innovacion">Innovación</a></li>
+                    <li><a href="#main" class="active-nav" aria-current="page">Inicio</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="#como-funciona">Cómo funciona</a></li>
+                    <li><a href="empresas.html">Empresas</a></li>
                 </ul>
             </div>
             <ul class="nav-links">
-                <li><a href="login.html" class="btn-login">Iniciar Sesión</a></li>
+                <li><a href="login.html" class="btn-login">Iniciar sesión</a></li>
                 <li><a href="seleccionar-registro.html" class="btn-register">Unirse ahora</a></li>
             </ul>
         </nav>
@@ -45,7 +50,17 @@
         <div class="container">
             <div class="hero-grid">
                 <div class="hero-copy">
-                    <h1>El trabajo que buscas ya está en Cartagena</h1>
+                    <!-- Titular palabra por palabra; la palabra clave rota (index.js).
+                         El lector de pantalla lee la frase completa del aria-label. -->
+                    <h1 class="hero-titular" aria-label="El trabajo, la práctica o el proyecto que buscas ya está en Cartagena">
+                        <span class="hero-rotador" aria-hidden="true"><span class="hero-clave is-activa">El trabajo</span><span class="hero-clave">La práctica</span><span class="hero-clave">El proyecto</span></span>
+                        <span aria-hidden="true">que</span>
+                        <span aria-hidden="true">buscas</span>
+                        <span aria-hidden="true">ya</span>
+                        <span aria-hidden="true">está</span>
+                        <span aria-hidden="true">en</span>
+                        <span aria-hidden="true">Cartagena</span>
+                    </h1>
                     <p>SkillMatch compara tus habilidades con cada vacante de la ciudad y te muestra
                        qué tan cerca estás de conseguirla, antes de que te postules.</p>
 
@@ -61,7 +76,7 @@
                         </div>
                         <div>
                             <span class="stat-number" data-stat="companies">—</span>
-                            <span class="stat-label">empresas publicando</span>
+                            <span class="stat-label">empresas registradas</span>
                         </div>
                         <div>
                             <span class="stat-number" data-stat="users">—</span>
@@ -70,125 +85,137 @@
                     </div>
                 </div>
 
-                <!-- Muestra de lo que hace el producto, con datos de ejemplo -->
-                <div class="hero-card" aria-label="Ejemplo de vacante con porcentaje de compatibilidad">
+                <!-- Demo de la compatibilidad (Fase 2 del plan): vacante de ejemplo de un
+                     sector cualquiera; el visitante marca sus habilidades y el anillo se
+                     recalcula (index.js) -->
+                <div class="hero-card match-demo" role="group" aria-labelledby="demo-titulo">
                     <div class="result-header">
-                        <div style="display:flex; gap:14px; align-items:flex-start; min-width:0">
-                            <div class="result-logo">TS</div>
-                            <div style="min-width:0">
-                                <h3 class="job-title">Desarrollador Backend Java</h3>
-                                <p class="company-name">TechSolutions · Cartagena</p>
+                        <div class="hero-card-empresa">
+                            <div class="result-logo">HB</div>
+                            <div class="hero-card-texto">
+                                <p class="job-title" id="demo-titulo">Recepcionista bilingüe</p>
+                                <p class="company-name">Hotel en Bocagrande · Cartagena</p>
                             </div>
                         </div>
-                        <div class="match-ring" data-pct="92"></div>
+                        <div class="match-ring" data-pct="80" role="img" aria-label="80 por ciento de coincidencia con esta vacante"></div>
                     </div>
-                    <div class="card-meta" style="margin-top:16px">
-                        <span class="meta-item"><i data-ico="pin" class="ico-sm"></i> Híbrido</span>
+                    <div class="card-meta">
+                        <span class="meta-item"><i data-ico="pin" class="ico-sm"></i> Presencial</span>
                         <span class="meta-item"><i data-ico="briefcase" class="ico-sm"></i> Tiempo completo</span>
-                        <span class="meta-item result-salary"><i data-ico="money" class="ico-sm"></i> $4.5M – $6M</span>
+                        <span class="meta-item result-salary"><i data-ico="money" class="ico-sm"></i> $1.8M – $2.4M</span>
                     </div>
-                    <div class="card-skills" style="margin-top:14px">
-                        <span class="skill-tag">Java</span>
-                        <span class="skill-tag">Spring Boot</span>
-                        <span class="skill-tag">MongoDB</span>
-                        <span class="skill-tag">Docker</span>
+                    <p class="demo-instruccion"><i data-ico="sparkle" class="ico-sm"></i> Pruébalo: marca las habilidades que tienes</p>
+                    <div class="demo-habilidades" role="group" aria-label="Habilidades que pide la vacante">
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="25"><i data-ico="check" class="ico-sm"></i>Atención al cliente</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Manejo de caja</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Reservas</button>
+                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="15"><i data-ico="check" class="ico-sm"></i>Excel</button>
+                        <button type="button" class="demo-skill" aria-pressed="false" data-peso="20"><i data-ico="check" class="ico-sm"></i>Inglés</button>
                     </div>
-                    <p class="suggestion-reason" style="margin-top:16px">
-                        Coincides en 11 de 12 requisitos. Te falta experiencia con Kubernetes.
+                    <p class="suggestion-reason demo-razon" aria-live="polite">
+                        Coincides en 4 de 5 requisitos. Te falta Inglés.
                     </p>
                 </div>
             </div>
         </div>
+        <!-- Separador en forma de ola que se desplaza lento (Fase 2) -->
+        <div class="hero-ola" aria-hidden="true"></div>
     </section>
 
     
     <section class="search-section">
         <div class="container">
             <div class="search-box">
-                <input type="text" placeholder="Busca por cargo, habilidad o empresa..." class="search-input">
+                <input type="text" placeholder="Busca por cargo, habilidad o empresa..." class="search-input" aria-label="Buscar vacantes por cargo, habilidad o empresa">
                 <button class="search-btn"><i data-ico="search"></i> Buscar</button>
             </div>
             <div class="quick-filters">
                 <div class="filter-group">
                     <label for="location-select" class="sr-only">Lugar</label>
-                    <select id="location-select" class="filter-select">
+                    <select id="location-select" class="filter-select" data-lista="buscable" data-icono="pin"
+                            data-placeholder="Ciudad o municipio" data-todas="Todas las ciudades"
+                            data-destacar="Con vacantes ahora" data-vacio="Revisa cómo se escribe o prueba con otra ciudad.">
                         <option value="">Lugar (todas)</option>
-                        <optgroup label="Principales Ciudades">
-                            <option value="bogota">Bogotá D.C.</option>
-                            <option value="medellin">Medellín</option>
-                            <option value="cali">Cali</option>
-                            <option value="barranquilla">Barranquilla</option>
-                            <option value="cartagena">Cartagena de Indias</option>
-                            <option value="bucaramanga">Bucaramanga</option>
-                            <option value="pereira">Pereira</option>
-                            <option value="manizales">Manizales</option>
-                            <option value="armenia">Armenia</option>
-                            <option value="ibague">Ibagué</option>
-                            <option value="pasto">Pasto</option>
-                            <option value="cucuta">Cúcuta</option>
-                            <option value="villavicencio">Villavicencio</option>
-                            <option value="santa_marta">Santa Marta</option>
-                            <option value="valledupar">Valledupar</option>
-                            <option value="neiva">Neiva</option>
-                            <option value="popayan">Popayán</option>
-                            <option value="tunja">Tunja</option>
-                            <option value="riohacha">Riohacha</option>
-                        </optgroup>
-                        <optgroup label="Departamentos / Regiones">
-                            <option value="yopal">Yopal</option>
-                            <option value="florencia">Florencia</option>
-                            <option value="mocoa">Mocoa</option>
-                            <option value="quibdo">Quibdó</option>
-                        </optgroup>
-                        <optgroup label="Área Metropolitana y Municipios">
-                            <option value="soledad">Soledad (Atlántico)</option>
-                            <option value="envigado">Envigado (Antioquia)</option>
-                            <option value="bello">Bello (Antioquia)</option>
-                            <option value="itagui">Itagüí (Antioquia)</option>
-                            <option value="sabaneta">Sabaneta (Antioquia)</option>
-                            <option value="dosquebradas">Dosquebradas (Risaralda)</option>
-                            <option value="palmira">Palmira (Valle)</option>
-                            <option value="jamundi">Jamundí (Valle)</option>
+                        <optgroup label="Bolívar">
+                            <option value="cartagena">Cartagena de Indias (Bolívar)</option>
                             <option value="turbaco">Turbaco (Bolívar)</option>
-                            <option value="magangue">Magangué (Bolívar)</option>
                             <option value="arjona">Arjona (Bolívar)</option>
-                            <option value="funza">Funza (Cundinamarca)</option>
-                            <option value="mosquera">Mosquera (Cundinamarca)</option>
-                            <option value="chia">Chía (Cundinamarca)</option>
-                            <option value="zipaquira">Zipaquirá (Cundinamarca)</option>
-                            <option value="facatativa">Facatativá (Cundinamarca)</option>
-                            <option value="barichara">Barichara (Santander)</option>
+                            <option value="turbana">Turbaná (Bolívar)</option>
+                            <option value="clemencia">Clemencia (Bolívar)</option>
+                            <option value="santa_rosa">Santa Rosa (Bolívar)</option>
+                            <option value="el_carmen_de_bolivar">El Carmen de Bolívar</option>
+                            <option value="magangue">Magangué (Bolívar)</option>
+                            <option value="mompox">Mompox (Bolívar)</option>
                         </optgroup>
-                        <option value="otras">Otras ciudades / municipios</option>
+                        <optgroup label="Otras ciudades">
+                            <option value="armenia">Armenia (Quindío)</option>
+                            <option value="barichara">Barichara (Santander)</option>
+                            <option value="barranquilla">Barranquilla (Atlántico)</option>
+                            <option value="bello">Bello (Antioquia)</option>
+                            <option value="bogota">Bogotá D.C.</option>
+                            <option value="bucaramanga">Bucaramanga (Santander)</option>
+                            <option value="cali">Cali (Valle del Cauca)</option>
+                            <option value="chia">Chía (Cundinamarca)</option>
+                            <option value="cucuta">Cúcuta (Norte de Santander)</option>
+                            <option value="dosquebradas">Dosquebradas (Risaralda)</option>
+                            <option value="envigado">Envigado (Antioquia)</option>
+                            <option value="facatativa">Facatativá (Cundinamarca)</option>
+                            <option value="florencia">Florencia (Caquetá)</option>
+                            <option value="funza">Funza (Cundinamarca)</option>
+                            <option value="ibague">Ibagué (Tolima)</option>
+                            <option value="itagui">Itagüí (Antioquia)</option>
+                            <option value="jamundi">Jamundí (Valle del Cauca)</option>
+                            <option value="manizales">Manizales (Caldas)</option>
+                            <option value="medellin">Medellín (Antioquia)</option>
+                            <option value="mocoa">Mocoa (Putumayo)</option>
+                            <option value="monteria">Montería (Córdoba)</option>
+                            <option value="mosquera">Mosquera (Cundinamarca)</option>
+                            <option value="neiva">Neiva (Huila)</option>
+                            <option value="palmira">Palmira (Valle del Cauca)</option>
+                            <option value="pasto">Pasto (Nariño)</option>
+                            <option value="pereira">Pereira (Risaralda)</option>
+                            <option value="popayan">Popayán (Cauca)</option>
+                            <option value="quibdo">Quibdó (Chocó)</option>
+                            <option value="riohacha">Riohacha (La Guajira)</option>
+                            <option value="sabaneta">Sabaneta (Antioquia)</option>
+                            <option value="santa_marta">Santa Marta (Magdalena)</option>
+                            <option value="sincelejo">Sincelejo (Sucre)</option>
+                            <option value="soledad">Soledad (Atlántico)</option>
+                            <option value="tunja">Tunja (Boyacá)</option>
+                            <option value="valledupar">Valledupar (Cesar)</option>
+                            <option value="villavicencio">Villavicencio (Meta)</option>
+                            <option value="yopal">Yopal (Casanare)</option>
+                            <option value="zipaquira">Zipaquirá (Cundinamarca)</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="modality-select" class="sr-only">Modalidad</label>
-                    <select id="modality-select" class="filter-select">
+                    <select id="modality-select" class="filter-select" data-lista data-icono="desktop" data-todas="Cualquier modalidad">
                         <option value="">Modalidad</option>
-                        <option value="presencial">Presencial</option>
-                        <option value="virtual">Virtual</option>
-                        <option value="hibrida">Híbrida</option>
+                        <option value="presencial" data-icono="building">Presencial</option>
+                        <option value="virtual" data-icono="home">Remoto (desde casa)</option>
+                        <option value="hibrida" data-icono="refresh">Híbrida</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="experience-select" class="sr-only">Experiencia</label>
-                    <select id="experience-select" class="filter-select">
+                    <select id="experience-select" class="filter-select" data-lista data-icono="trending" data-todas="Cualquier experiencia">
                         <option value="">Experiencia</option>
-                        <option value="junior">Junior (0-1 año)</option>
-                        <option value="mid">Mid (1-3 años)</option>
-                        <option value="senior">Senior (3+ años)</option>
+                        <option value="junior" data-icono="sprout">Hasta 1 año</option>
+                        <option value="mid" data-icono="trending">De 1 a 3 años</option>
+                        <option value="senior" data-icono="star">Más de 3 años</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="salary-select" class="sr-only">Salario</label>
-                    <select id="salary-select" class="filter-select">
-                        <option value="">Rango</option>
-                        <option value="0-1000">Hasta $1.000.000</option>
-                        <option value="1000-2000">$1.000.000 - $2.000.000</option>
-                        <option value="2000-3000">$2.000.000 - $3.000.000</option>
-                        <option value="3000-5000">$3.000.000 - $5.000.000</option>
-                        <option value="5000+">Más de $5.000.000</option>
+                    <select id="salary-select" class="filter-select" data-lista data-icono="money" data-todas="Cualquier salario">
+                        <option value="">Salario</option>
+                        <option value="0-1000">Hasta $1 millón</option>
+                        <option value="1000-2000">De $1 a $2 millones</option>
+                        <option value="2000-3000">De $2 a $3 millones</option>
+                        <option value="3000-5000">De $3 a $5 millones</option>
+                        <option value="5000+">Más de $5 millones</option>
                     </select>
                 </div>
             </div>
@@ -207,48 +234,94 @@
         <div class="container">
             <div class="stat-box">
                 <div class="stat-value" id="stat-users">—</div>
-                <div class="stat-label">Usuarios Activos</div>
+                <div class="stat-label">Personas registradas</div>
             </div>
             <div class="stat-box">
                 <div class="stat-value" id="stat-companies">—</div>
-                <div class="stat-label">Empresas Aliadas</div>
+                <div class="stat-label">Empresas registradas</div>
             </div>
             <div class="stat-box">
                 <div class="stat-value" id="stat-jobs">—</div>
-                <div class="stat-label">Oportunidades Publicadas</div>
+                <div class="stat-label">Vacantes publicadas</div>
             </div>
             <div class="stat-box">
                 <div class="stat-value" id="stat-applications">—</div>
-                <div class="stat-label">Aplicaciones Enviadas</div>
+                <div class="stat-label">Postulaciones enviadas</div>
             </div>
         </div>
     </section>
 
-    <section class="features">
+    <!-- Fase 2 del plan: scroll-telling. Al bajar, cada paso enciende su escena
+         en la columna fija (index.js). Sin JavaScript se leen los 4 pasos. -->
+    <section class="features como-funciona" id="como-funciona" aria-labelledby="cf-titulo">
         <div class="container">
-            <h2 class="section-title-large">¿Cómo Funciona?</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <img src="../assets/img/usuario-profile.png" alt="Perfil de Usuario" />
+            <div class="section-header-center">
+                <h2 class="section-title-large" id="cf-titulo">¿Cómo funciona?</h2>
+                <p>Cuatro pasos entre tu perfil y tu próximo trabajo en Cartagena.</p>
+            </div>
+
+            <div class="cf-layout" data-escena="1">
+                <div class="cf-visual" aria-hidden="true">
+                    <div class="cf-escenario">
+                        <!-- 1. Creas tu perfil -->
+                        <div class="cf-escena" data-escena="1">
+                            <div class="cf-perfil">
+                                <div class="cf-avatar">TÚ</div>
+                                <div class="cf-lineas"><span></span><span></span></div>
+                            </div>
+                            <div class="cf-chips"><span>Atención al cliente</span><span>Inglés B1</span><span>Excel</span><span>Trabajo en equipo</span></div>
+                        </div>
+                        <!-- 2. Te comparamos -->
+                        <div class="cf-escena" data-escena="2">
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Recepcionista bilingüe</span><span class="cf-barra" style="--v:.92"></span></div>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Práctica en contabilidad</span><span class="cf-barra" style="--v:.74"></span></div>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Auxiliar de bodega</span><span class="cf-barra" style="--v:.51"></span></div>
+                        </div>
+                        <!-- 3. Ves tu compatibilidad -->
+                        <div class="cf-escena" data-escena="3">
+                            <div class="cf-match">
+                                <div class="match-ring cf-anillo" data-pct="80"></div>
+                                <div>
+                                    <strong>Recepcionista bilingüe</strong>
+                                    <p>Coincides en 4 de 5 requisitos. Te falta Inglés.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 4. Te contactan -->
+                        <div class="cf-escena" data-escena="4">
+                            <div class="cf-aviso">
+                                <div class="cf-aviso-icono"><i data-ico="calendar"></i></div>
+                                <div>
+                                    <strong>El hotel quiere entrevistarte</strong>
+                                    <p>Jueves, 10:00 a. m. · Cartagena</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <h3>Perfil de Usuario</h3>
-                    <p>Registra tus habilidades, proyectos y experiencia. Nuestro algoritmo creará tu perfil profesional único.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <img src="../assets/img/business-opportunities.png" alt="Ofertas Empresariales" />
-                    </div>
-                    <h3>Ofertas Empresariales</h3>
-                    <p>Empresas locales publican prácticas, freelance y empleos junior en tecnología, diseño, marketing, finanzas, logística, recursos humanos y más áreas profesionales.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <img src="../assets/img/match-intelligent.png" alt="Match Inteligente" />
-                    </div>
-                    <h3>Match Inteligente</h3>
-                    <p>IA avanzada analiza compatibilidad y recomienda las mejores oportunidades para cada perfil.</p>
-                </div>
+
+                <ol class="cf-pasos">
+                    <li class="cf-paso" data-paso="1">
+                        <span class="cf-num">01</span>
+                        <h3>Creas tu perfil</h3>
+                        <p>Registra tu experiencia, tus estudios y lo que sabes hacer: atender clientes, manejar caja, cocinar, llevar la contabilidad, conducir o programar.</p>
+                    </li>
+                    <li class="cf-paso" data-paso="2">
+                        <span class="cf-num">02</span>
+                        <h3>Te comparamos</h3>
+                        <p>Empresas de Cartagena publican empleos, prácticas y trabajos independientes en turismo, comercio, logística, salud, construcción, tecnología y más. Cada vacante se compara con tu perfil.</p>
+                    </li>
+                    <li class="cf-paso" data-paso="3">
+                        <span class="cf-num">03</span>
+                        <h3>Ves tu compatibilidad</h3>
+                        <p>Cada vacante te dice qué parte de lo que pide ya tienes y qué te falta para llegar.</p>
+                    </li>
+                    <li class="cf-paso" data-paso="4">
+                        <span class="cf-num">04</span>
+                        <h3>Te contactan</h3>
+                        <p>Te postulas a las que más te convienen, con un mensaje para la empresa. Ella ve tu perfil completo y, si le interesas, te escribe por SkillMatch.</p>
+                    </li>
+                </ol>
             </div>
         </div>
     </section>
@@ -257,24 +330,24 @@
         <div class="container">
             <div class="why-header">
                 <h2>¿Por qué SkillMatch?</h2>
-                <p>Una plataforma enfocada en resultados: talento local, oportunidades reales y procesos simples.</p>
+                <p>Una bolsa de empleo hecha para la ciudad: vacantes reales, personas de aquí y procesos simples.</p>
             </div>
             <div class="why-grid">
                 <div class="benefit-item">
                     <div class="benefit-badge"><i data-ico="target"></i></div>
-                    <h3>Matching con precisión</h3>
+                    <h3>Compatibilidad clara</h3>
                     <ul>
-                        <li>Alineación de habilidades y objetivos</li>
-                        <li>Algoritmo con señales relevantes</li>
-                        <li>Mejor fit por vacante</li>
+                        <li>Ves qué tanto encajas en cada vacante</li>
+                        <li>Sabes qué habilidades te faltan</li>
+                        <li>Vacantes ordenadas para ti</li>
                     </ul>
                 </div>
                 <div class="benefit-item">
                     <div class="benefit-badge"><i data-ico="globe"></i></div>
-                    <h3>Foco en lo local</h3>
+                    <h3>Hecho para Cartagena</h3>
                     <ul>
-                        <li>Conecta con empresas cercanas</li>
-                        <li>Impulso al ecosistema regional</li>
+                        <li>Empresas de tu ciudad y la región</li>
+                        <li>Todos los sectores y oficios</li>
                         <li>Más visibilidad para tu perfil</li>
                     </ul>
                 </div>
@@ -282,9 +355,9 @@
                     <div class="benefit-badge"><i data-ico="settings"></i></div>
                     <h3>Proceso simple</h3>
                     <ul>
-                        <li>Publicación y gestión ágil</li>
-                        <li>Seguimiento claro de candidaturas</li>
-                        <li>Feedback y métricas útiles</li>
+                        <li>Postularte toma un minuto</li>
+                        <li>Sigues el estado de cada postulación</li>
+                        <li>Hablas con las empresas por mensajes</li>
                     </ul>
                 </div>
             </div>
@@ -297,7 +370,7 @@
         <div class="container">
             <div class="section-header-center">
                 <h2>Cartagena es el punto de partida</h2>
-                <p>SkillMatch nace aquí: conectamos el talento y las empresas de la ciudad que ya conoces.</p>
+                <p>SkillMatch nace aquí: conectamos a las personas y a las empresas de la ciudad que ya conoces.</p>
             </div>
             <div class="cartagena-gallery">
                 <figure class="cartagena-photo reveal">
@@ -310,8 +383,106 @@
                 </figure>
                 <figure class="cartagena-photo reveal">
                     <img src="../assets/img/cartagena-estudiantes.webp" alt="Grupo de estudiantes trabajando juntos frente a una laptop" loading="lazy" width="1000" height="562">
-                    <figcaption>El talento local</figcaption>
+                    <figcaption>La gente de aquí</figcaption>
                 </figure>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fase 2 del plan: mapa SVG de Cartagena con puntos que laten por barrio.
+         Es ilustrativo (no a escala). La lista de zonas es el control accesible;
+         el mapa la acompaña y resalta en naranja la zona activa (index.js). -->
+    <section class="mapa-section" id="mapa-cartagena" aria-labelledby="mapa-titulo">
+        <div class="container">
+            <div class="section-header-center">
+                <h2 id="mapa-titulo">El trabajo está en toda la ciudad</h2>
+                <p>Cada zona de Cartagena mueve sectores distintos. Mira dónde se concentra el tipo de trabajo que buscas.</p>
+            </div>
+
+            <div class="mapa-layout">
+                <figure class="mapa-ctg reveal">
+                    <div class="mapa-lienzo" role="img" aria-label="Mapa ilustrativo de Cartagena con cuatro zonas de trabajo: Centro Histórico, Bocagrande, Manga y Mamonal">
+                        <svg viewBox="0 0 600 500" preserveAspectRatio="none" focusable="false">
+                            <defs>
+                                <pattern id="mapa-mar-puntos" width="12" height="12" patternUnits="userSpaceOnUse">
+                                    <circle cx="2" cy="2" r="1.1"/>
+                                </pattern>
+                            </defs>
+                            <!-- Mar Caribe y bahía: textura de puntos bajo la tierra -->
+                            <rect class="mapa-mar" width="600" height="500"/>
+                            <!-- Tierra firme: La Boquilla, Centro, Bocagrande y la orilla de Mamonal -->
+                            <path class="mapa-tierra" d="M450,-10 C440,30 418,70 392,104 C362,142 322,176 288,194 C272,202 254,202 246,214 C238,226 240,240 236,252 C228,276 214,304 202,330 C194,346 184,356 188,366 C194,376 222,376 240,368 C252,362 248,350 238,344 C228,336 230,318 238,300 C246,282 252,266 262,258 C274,252 290,262 306,254 C322,246 342,248 354,258 C364,272 364,300 374,328 C386,360 404,388 418,412 C430,436 440,470 446,510 L610,510 L610,-10 Z"/>
+                            <!-- Ciénaga de la Virgen: laguna, con otro tono que el mar -->
+                            <path class="mapa-laguna" d="M492,-10 C484,30 462,70 440,98 C426,116 420,138 432,150 C450,164 488,152 512,130 C536,108 548,70 552,30 C554,10 554,0 556,-10 Z"/>
+                            <!-- Isla de Manga -->
+                            <path class="mapa-tierra" d="M296,268 C304,258 326,256 338,264 C350,272 352,290 346,302 C340,314 322,320 306,314 C296,310 298,298 292,290 C288,282 290,274 296,268 Z"/>
+                            <!-- Isla de Tierra Bomba, alargada de norte a sur -->
+                            <path class="mapa-tierra" d="M172,386 C196,380 222,388 234,404 C244,418 236,436 240,452 C244,468 230,486 210,488 C192,490 186,476 172,470 C156,462 150,444 154,426 C156,410 154,392 172,386 Z"/>
+                            <!-- Barú, al sur de la bahía -->
+                            <path class="mapa-tierra" d="M222,510 C236,500 260,494 284,492 C306,490 318,482 340,484 C364,486 394,496 414,510 Z"/>
+                        </svg>
+
+                        <!-- Brillo naranja que se desliza hasta la zona activa -->
+                        <span class="mapa-foco"></span>
+
+                        <span class="mapa-agua" style="--x:20; --y:30">Mar Caribe</span>
+                        <span class="mapa-agua mapa-agua-cienaga" style="--x:83; --y:15">Ciénaga de la Virgen</span>
+                        <span class="mapa-agua" style="--x:32.5; --y:87.5">Tierra Bomba</span>
+                        <span class="mapa-agua" style="--x:56; --y:85">Bahía de Cartagena</span>
+
+                        <span class="mapa-punto" data-zona="centro" data-lado="izq" style="--x:44.7; --y:46; --orden:0">
+                            <span class="mapa-punto-marca"></span><span class="mapa-punto-nombre">Centro</span>
+                        </span>
+                        <span class="mapa-punto" data-zona="bocagrande" data-lado="izq" style="--x:37.7; --y:60.4; --orden:1">
+                            <span class="mapa-punto-marca"></span><span class="mapa-punto-nombre">Bocagrande</span>
+                        </span>
+                        <span class="mapa-punto" data-zona="manga" data-lado="der" style="--x:53; --y:57.2; --orden:2">
+                            <span class="mapa-punto-marca"></span><span class="mapa-punto-nombre">Manga</span>
+                        </span>
+                        <span class="mapa-punto" data-zona="mamonal" data-lado="arriba" style="--x:78.3; --y:85.6; --orden:3">
+                            <span class="mapa-punto-marca"></span><span class="mapa-punto-nombre">Mamonal</span>
+                        </span>
+                    </div>
+                    <figcaption class="mapa-nota">Mapa ilustrativo, no está a escala.</figcaption>
+                </figure>
+
+                <div class="mapa-panel">
+                    <ul class="mapa-zonas">
+                        <li class="mapa-zona reveal" data-zona="centro">
+                            <span class="mapa-zona-icono"><i data-ico="building"></i></span>
+                            <div>
+                                <h3><button type="button" class="mapa-zona-btn" aria-pressed="false">Centro Histórico</button></h3>
+                                <p class="mapa-zona-sector">Turismo, comercio y cultura</p>
+                                <p class="mapa-zona-texto">Hoteles, restaurantes, tiendas y oficinas en la ciudad amurallada y Getsemaní.</p>
+                            </div>
+                        </li>
+                        <li class="mapa-zona reveal" data-zona="bocagrande">
+                            <span class="mapa-zona-icono"><i data-ico="sun"></i></span>
+                            <div>
+                                <h3><button type="button" class="mapa-zona-btn" aria-pressed="false">Bocagrande</button></h3>
+                                <p class="mapa-zona-sector">Hotelería, comercio y oficinas</p>
+                                <p class="mapa-zona-texto">Torres de hoteles, centros comerciales y oficinas frente al mar, hasta Castillogrande.</p>
+                            </div>
+                        </li>
+                        <li class="mapa-zona reveal" data-zona="manga">
+                            <span class="mapa-zona-icono"><i data-ico="globe"></i></span>
+                            <div>
+                                <h3><button type="button" class="mapa-zona-btn" aria-pressed="false">Manga</button></h3>
+                                <p class="mapa-zona-sector">Puerto, logística y oficinas</p>
+                                <p class="mapa-zona-texto">La isla del terminal marítimo: comercio exterior, navieras, logística y oficinas.</p>
+                            </div>
+                        </li>
+                        <li class="mapa-zona reveal" data-zona="mamonal">
+                            <span class="mapa-zona-icono"><i data-ico="settings"></i></span>
+                            <div>
+                                <h3><button type="button" class="mapa-zona-btn" aria-pressed="false">Mamonal</button></h3>
+                                <p class="mapa-zona-sector">Industria y petroquímica</p>
+                                <p class="mapa-zona-texto">La zona industrial de la bahía: refinería, plantas, zonas francas y logística.</p>
+                            </div>
+                        </li>
+                    </ul>
+                    <a href="oportunidades.html" class="link-view-all mapa-enlace">Ver vacantes abiertas <i data-ico="arrow" class="ico-sm"></i></a>
+                </div>
             </div>
         </div>
     </section>
@@ -320,40 +491,40 @@
         <div class="container">
             <div class="section-header-center">
                 <h2>Elige cómo quieres usar SkillMatch</h2>
-                <p>Como usuario, construyes tu perfil profesional. Como empresa, encuentras talento listo para aportar.</p>
+                <p>Si buscas trabajo, armas tu perfil y te postulas. Si eres empresa, publicas vacantes y encuentras a quién contratar.</p>
             </div>
 
             <div class="pathways">
                 <div class="pathway-card usuario">
                     <div class="pathway-header">
-                        <div class="pathway-icon"><i data-ico="cap"></i></div>
+                        <div class="pathway-icon"><i data-ico="user"></i></div>
                         <div>
-                            <h3>Para Usuarios</h3>
-                            <p>Construye tu perfil profesional y conecta con oportunidades reales.</p>
+                            <h3>Si buscas trabajo</h3>
+                            <p>Arma tu perfil con lo que sabes hacer y postúlate a vacantes reales.</p>
                         </div>
                     </div>
                     <ul class="pathway-features">
-                        <li>Perfil y portafolio con logros y proyectos</li>
-                        <li>Recomendaciones según tu perfil y habilidades</li>
-                        <li>Seguimiento de candidaturas y feedback</li>
+                        <li><i data-ico="check"></i> Perfil con tus habilidades y experiencia</li>
+                        <li><i data-ico="check"></i> Vacantes ordenadas según tus habilidades</li>
+                        <li><i data-ico="check"></i> Seguimiento de tus postulaciones</li>
                     </ul>
-                    <a href="login-usuario.html" class="btn btn-primary">Comienza tu camino <i data-ico="arrow"></i></a>
+                    <a href="registro-usuario.html" class="btn btn-primary">Crear mi perfil <i data-ico="arrow"></i></a>
                 </div>
 
                 <div class="pathway-card empresa">
                     <div class="pathway-header">
-                        <div class="pathway-icon"><i data-ico="briefcase"></i></div>
+                        <div class="pathway-icon"><i data-ico="building"></i></div>
                         <div>
-                            <h3>Para Empresas</h3>
-                            <p>Encuentra talento joven local y acelera tus procesos.</p>
+                            <h3>Si eres empresa</h3>
+                            <p>Publica tus vacantes y recibe postulaciones de personas de la región.</p>
                         </div>
                     </div>
                     <ul class="pathway-features">
-                        <li>Acceso a talento verificado de la región</li>
-                        <li>Matching inteligente para cada vacante</li>
-                        <li>Gestión simple de ofertas y candidatos</li>
+                        <li><i data-ico="check"></i> Personas de Cartagena y la región</li>
+                        <li><i data-ico="check"></i> Postulaciones con el perfil de cada candidato</li>
+                        <li><i data-ico="check"></i> Gestión simple de ofertas y candidatos</li>
                     </ul>
-                    <a href="login-empresa.html" class="btn btn-primary">Encuentra talento <i data-ico="arrow"></i></a>
+                    <a href="login-empresa.html" class="btn btn-primary">Publicar mis vacantes <i data-ico="arrow"></i></a>
                 </div>
             </div>
         </div>
@@ -362,8 +533,8 @@
     <section class="innovation-section" id="innovacion">
         <div class="container">
             <div class="innovation-header">
-                <h2> Innovación Futura</h2>
-                <p>Roadmap de funcionalidades enfocadas en impacto y resultados.</p>
+                <h2>Lo que viene</h2>
+                <p>Ideas en las que estamos trabajando para ayudarte más.</p>
             </div>
 
             <div class="roadmap-grid">
@@ -371,15 +542,15 @@
                     <div class="roadmap-header">
                         <div class="roadmap-icon"><i data-ico="chat"></i></div>
                         <div class="roadmap-title">
-                            <h3>Simulador de Entrevistas IA</h3>
+                            <h3>Práctica de entrevistas</h3>
                             <span class="status-badge status-building">En desarrollo</span>
                         </div>
                     </div>
-                    <p>Practica entrevistas con IA y recibe feedback accionable.</p>
+                    <p>Ensaya entrevistas y recibe recomendaciones para mejorar.</p>
                     <ul class="roadmap-points">
-                        <li>Rúbricas por rol y seniority</li>
-                        <li>Métricas y seguimiento de progreso</li>
-                        <li>Informe exportable</li>
+                        <li>Preguntas según el cargo y tu experiencia</li>
+                        <li>Seguimiento de tu progreso</li>
+                        <li>Informe para descargar</li>
                     </ul>
                 </article>
 
@@ -387,15 +558,15 @@
                     <div class="roadmap-header">
                         <div class="roadmap-icon"><i data-ico="chart"></i></div>
                         <div class="roadmap-title">
-                            <h3>Predictor de Demanda Laboral</h3>
+                            <h3>Lo que pide la ciudad</h3>
                             <span class="status-badge status-planned">Próximo</span>
                         </div>
                     </div>
-                    <p>Recomendaciones de habilidades según la demanda local.</p>
+                    <p>Te dice qué habilidades buscan más las empresas de Cartagena.</p>
                     <ul class="roadmap-points">
-                        <li>Señales del mercado regional</li>
-                        <li>Trayectorias de aprendizaje sugeridas</li>
-                        <li>Alertas de tendencia</li>
+                        <li>Oficios y cargos más pedidos</li>
+                        <li>Cursos sugeridos para aprenderlas</li>
+                        <li>Avisos cuando algo cambie</li>
                     </ul>
                 </article>
 
@@ -403,15 +574,15 @@
                     <div class="roadmap-header">
                         <div class="roadmap-icon"><i data-ico="trophy"></i></div>
                         <div class="roadmap-title">
-                            <h3>Sistema de Reputación</h3>
+                            <h3>Referencias verificadas</h3>
                             <span class="status-badge status-idea">Idea</span>
                         </div>
                     </div>
-                    <p>Reconoce el desempeño con señales verificables.</p>
+                    <p>Recomendaciones de jefes y clientes anteriores en tu perfil.</p>
                     <ul class="roadmap-points">
-                        <li>Badges por proyectos y feedback</li>
-                        <li>Ranking transparente y justo</li>
-                        <li>Verificación de logros</li>
+                        <li>Insignias por trabajos bien hechos</li>
+                        <li>Calificaciones claras y justas</li>
+                        <li>Logros comprobados</li>
                     </ul>
                 </article>
 
@@ -419,29 +590,37 @@
                     <div class="roadmap-header">
                         <div class="roadmap-icon"><i data-ico="handshake"></i></div>
                         <div class="roadmap-title">
-                            <h3>Red de Mentorías</h3>
+                            <h3>Acompañamiento</h3>
                             <span class="status-badge status-planned">Próximo</span>
                         </div>
                     </div>
-                    <p>Mentoría con profesionales locales de alto impacto.</p>
+                    <p>Personas con experiencia en tu oficio te orientan.</p>
                     <ul class="roadmap-points">
-                        <li>Match mentor-mentee por objetivos</li>
-                        <li>Sesiones con agenda y materiales</li>
-                        <li>Seguimiento y retroalimentación</li>
+                        <li>Te unimos con alguien de tu área</li>
+                        <li>Encuentros con temas y materiales</li>
+                        <li>Seguimiento de tus avances</li>
                     </ul>
                 </article>
             </div>
+        </div>
+    </section>
 
-            <div class="roadmap-cta">
-                <a href="#" class="btn btn-secondary">Ver roadmap completo <i data-ico="arrow"></i></a>
+    <!-- Llamada final (Fase 2): franja oscura que continua en el pie de pagina -->
+    <section class="cta-final" aria-labelledby="cta-final-titulo">
+        <div class="container">
+            <h2 id="cta-final-titulo">Tu próximo paso en Cartagena empieza hoy</h2>
+            <p>Crea tu perfil, descubre qué tan cerca estás de cada vacante y postúlate a las que más te convienen.</p>
+            <div class="cta-final-acciones">
+                <a href="seleccionar-registro.html" class="btn btn-accent">Crear mi perfil</a>
+                <a href="login-empresa.html" class="btn btn-secondary">Soy empresa</a>
             </div>
         </div>
     </section>
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
-            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+            <p>Una bolsa de empleo para todos los sectores de Cartagena de Indias.</p>
         </div>
     </footer>
 
