@@ -96,6 +96,9 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
 
 ## Para Jesús (backend)
 
+> La lista ordenada por urgencia, con archivo, línea y cómo arreglar cada punto, está en
+> `docs/PENDIENTES-BACKEND.md`. Esta sección es el historial de cómo se fue encontrando cada uno.
+
 - Urgente: fuga de datos en `/connections/suggestions` (hash de contraseña, correo y teléfono).
 - Que la empresa pueda editar sus datos (`PUT /companies/{id}` es solo de ADMIN) para guardar sector,
   tamaño, ciudad y web del registro.
