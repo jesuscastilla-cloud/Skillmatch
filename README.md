@@ -120,3 +120,13 @@ Dentro de `SkillMatch/docs/` encontrarás:
 - HTML5 / CSS3
 - JavaScript
 - Live Server
+
+---
+
+## Minería de Datos I
+
+El análisis de datos del proyecto (clasificación de vacantes por habilidades) está en la carpeta `mineria-datos/`. Ver `mineria-datos/README.md`.
+
+Documentos de la entrega:
+- `documentos/propuesta_modelo.pdf`
+- `documentos/informe_metodologico.pdf`
