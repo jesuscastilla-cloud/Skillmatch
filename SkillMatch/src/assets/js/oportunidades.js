@@ -312,6 +312,15 @@ function vacanteCerrada(job) {
     return job.active === false || normalizeStr(job.status) === 'cerrada';
 }
 
+// Nombre de la empresa como enlace a su perfil publico (empresa.html). Antes
+// era solo texto y no habia donde conocer a la empresa antes de postularse
+function enlaceEmpresa(job) {
+    const nombre = escaparHtml(job.companyName || 'Empresa confidencial');
+    return job.companyId && job.companyName
+        ? `<a class="enlace-empresa" href="empresa.html?id=${encodeURIComponent(job.companyId)}">${nombre}</a>`
+        : nombre;
+}
+
 // Crear tarjeta de trabajo
 function createJobCard(job) {
     const id = escaparHtml(job.id);
@@ -321,7 +330,7 @@ function createJobCard(job) {
                 <div class="company-logo-opp">${job.companyName ? escaparHtml(job.companyName.charAt(0)) : '<i data-ico="building"></i>'}</div>
                 <div class="card-info">
                     <h3 class="job-title"><button type="button" class="job-title-link" data-job-id="${id}" onclick="abrirDetallePorId(this.dataset.jobId)">${escaparHtml(job.title)}</button></h3>
-                    <p class="company-name">${escaparHtml(job.companyName || 'Empresa confidencial')}</p>
+                    <p class="company-name">${enlaceEmpresa(job)}</p>
                 </div>
                 ${anilloCompatibilidad(job)}
             </div>
@@ -385,7 +394,7 @@ function abrirDetalle(job) {
         : '';
 
     document.getElementById('jobDetailTitle').textContent = job.title || 'Vacante';
-    document.getElementById('jobDetailCompany').textContent = job.companyName || 'Empresa confidencial';
+    document.getElementById('jobDetailCompany').innerHTML = enlaceEmpresa(job);
     document.getElementById('jobDetailBody').innerHTML = `
         ${match ? `<div class="detalle-match">${anilloCompatibilidad(job)}<p>Tienes <strong>${match.tiene} de ${match.pedidas}</strong> habilidades que pide esta vacante.</p></div>` : ''}
         <ul class="detalle-datos">

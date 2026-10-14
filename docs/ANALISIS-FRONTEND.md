@@ -55,7 +55,7 @@ y el escape del texto del servidor (XSS).
 | Vacantes paginadas | `GET /jobs?page=` | Hecho: "Cargar más" de 20 en 20 (punto 4) |
 | Enlaces de las notificaciones | `?tab=pending`, `?userId=`, `?jobId=`, `?tab=applications`, `?tab=applicants` | Hecho: cada uno abre la pestaña o ventana y marca la solicitud o postulación |
 | Certificaciones reales | `/users/{id}/certifications` | Se quitaron las inventadas; no hay reales |
-| Directorio de empresas | `GET /companies/search` | "Empresas" en la barra lleva a una sección de la portada |
+| Directorio de empresas | `GET /companies`, `/companies/search`, `/companies/{id}`, `/jobs/company/{id}` | Hecho: `empresas.html` y el perfil público `empresa.html?id=` |
 
 Perfil de otra persona (`perfil-usuario.html?id=…`): tiene "Enviar mensaje" y "Conectar" (que cambia a "Solicitud
 enviada", "Aceptar solicitud" o "En tus conexiones"), y no muestra "Vacantes para ti" ni botones para borrar lo suyo.
@@ -76,6 +76,8 @@ enviada", "Aceptar solicitud" o "En tus conexiones"), y no muestra "Vacantes par
   primera copia de `viewCandidateProfile`, `apiDisponible` y el CSS que solo usaban.
 - **Mensajes (hecho desde el punto 2):** solo consulta el servidor con la pestaña a la vista.
 - **Lottie:** siguen faltando los JSON de Lottieflow.
+- **Pendiente: "Saltar al contenido".** 11 páginas no tienen el enlace para saltar la barra con el teclado ni
+  `id="main"` (conexiones, mensajes, oportunidades, los perfiles, los logins, los registros, elegir cuenta y sin conexión).
 - **Indicadores (hecho):** página propia con los datos del sitio, visible para todos (ver Avance).
 
 ## Resultado de la auditoría automática
@@ -235,6 +237,20 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   nuevos de 192 y 512 px (normales y "maskable" para Android), nítidos: el favicon de 192 px se reconstruyó
   color por color en vez de estirarlo. Solo funciona con https o en el mismo equipo (localhost): en el celular por
   la IP del wifi no se puede instalar; en Render sí.
+- **Directorio de empresas (hecho):** antes no había dónde conocer a una empresa: "Empresas" en la barra de
+  visitantes llevaba a una sección de la portada y su nombre en Vacantes no llevaba a ningún lado. Ahora
+  `empresas.html` muestra las que publicaron vacantes hace poco y todas de la A a la Z (de 24 en 24, con el
+  número de vacantes abiertas de cada una, pedido solo cuando la tarjeta está por verse) y busca por nombre o
+  sector; la búsqueda queda en la dirección (`?q=`). `empresa.html?id=` es el perfil público: a qué se dedica,
+  datos, sitio web, sus vacantes abiertas (cada una abre en Vacantes) y "Escribir a la empresa" para personas con
+  sesión. No se muestran el correo ni el teléfono de la empresa. El nombre de la empresa en las tarjetas y en el
+  detalle de Vacantes lleva a su perfil; también está en el pie, en la paleta Ctrl+K (junto con Indicadores) y en
+  "Empresas" de la barra de visitantes. El tamaño se muestra en palabras (Pequeña, Mediana, Grande, Muy grande)
+  porque el backend no guarda cuántas personas son. De paso: la barra marcaba la página actual antes de cambiar sus
+  enlaces para los visitantes (ahora al revés). Para Jesús: la búsqueda usa el texto como expresión regular (un
+  "(" daba error 500; el frontend lo escapa); conviene escaparlo también en `CompanyService.searchCompanies`, igual
+  que en `/jobs/filter` con `location`. La insignia de "empresa verificada" no se muestra: no hay un proceso de
+  verificación real todavía.
 
 ## Orden propuesto (solo frontend)
 

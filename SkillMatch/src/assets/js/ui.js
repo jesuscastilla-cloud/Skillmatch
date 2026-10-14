@@ -163,13 +163,18 @@
     }
 
     /** Marca el enlace de la pagina actual aunque el HTML no lo traiga. */
+    // Paginas que pertenecen a la seccion de otra: el perfil de una empresa es
+    // parte de "Empresas"
+    const SECCION_DE = { 'empresa.html': 'empresas.html' };
+
     function marcarNavegacionActiva() {
         const actual = paginaActual();
+        const seccion = SECCION_DE[actual] || actual;
         document.querySelectorAll('header .nav-links a').forEach(function (a) {
             const destino = (a.getAttribute('href') || '').split('/').pop();
-            if (destino && destino === actual && !a.classList.contains('btn-login') && !a.classList.contains('btn-register')) {
+            if (destino && destino === seccion && !a.classList.contains('btn-login') && !a.classList.contains('btn-register')) {
                 a.classList.add('active-nav');
-                a.setAttribute('aria-current', 'page');
+                a.setAttribute('aria-current', destino === actual ? 'page' : 'true');
             }
         });
     }
@@ -218,7 +223,7 @@
                 a.removeAttribute('data-cerrar-sesion');
             };
             cambiar(conexiones, 'index.html#como-funciona', 'Cómo funciona');
-            cambiar(principales.querySelector('a[href="mensajes.html"]'), 'index.html#usuarios-empresas', 'Empresas');
+            cambiar(principales.querySelector('a[href="mensajes.html"]'), 'empresas.html', 'Empresas');
             cambiar(miPerfil, 'login.html', 'Iniciar sesión', 'btn-login');
             cambiar(document.querySelector('header .nav-links a[data-cerrar-sesion]'), 'seleccionar-registro.html', 'Unirse ahora', 'btn-register');
             return;
@@ -715,6 +720,8 @@
             const href = (d.href === 'perfil-usuario.html' && esEmpresa) ? 'perfil-empresa.html' : d.href;
             return { grupo: 'Ir a', ico: d.ico, titulo: d.label === 'Perfil' ? 'Mi perfil' : d.label, claves: d.href, href: href };
         });
+        lista.push({ grupo: 'Ir a', ico: 'building', titulo: 'Empresas', claves: 'empresas directorio companias negocios', href: 'empresas.html' });
+        lista.push({ grupo: 'Ir a', ico: 'chart', titulo: 'Indicadores del mercado', claves: 'indicadores estadisticas cifras salarios', href: 'dashboard.html' });
         if (!localStorage.getItem('token')) {
             lista.push({ grupo: 'Cuenta', ico: 'user', titulo: 'Iniciar sesión', claves: 'entrar login acceder', href: 'login.html' });
             lista.push({ grupo: 'Cuenta', ico: 'sparkle', titulo: 'Crear mi perfil', claves: 'registro registrarme cuenta nueva', href: 'seleccionar-registro.html' });
@@ -1040,6 +1047,7 @@
         { titulo: 'Busco trabajo', enlaces: [
             ['seleccionar-registro.html', 'Crear mi perfil'],
             ['oportunidades.html', 'Ver vacantes'],
+            ['empresas.html', 'Conocer las empresas'],
             ['login-usuario.html', 'Iniciar sesión']
         ] },
         { titulo: 'Empresas', enlaces: [
@@ -2220,8 +2228,10 @@
         botonInstalar();
         hydrateIcons(document);
         iconObserver.observe(document.body, { childList: true, subtree: true });
-        marcarNavegacionActiva();
+        // Primero la barra segun la sesion: para un visitante cambia enlaces (por
+        // ejemplo "Mensajes" pasa a "Empresas") y despues se marca el actual
         sesionEnBarra();
+        marcarNavegacionActiva();
         construirTabbar();
         actualizarNoLeidos();
         document.addEventListener('visibilitychange', function () { if (!document.hidden) actualizarNoLeidos(); });
