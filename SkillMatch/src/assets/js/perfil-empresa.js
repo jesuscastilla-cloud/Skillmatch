@@ -494,6 +494,7 @@ function renderOffers(offers) {
                     <span class="status-badge ${offer.status === 'active' ? 'active' : 'inactive'}">${offer.status === 'active' ? 'Activa' : 'Archivada'}</span>
                 </div>
             </div>
+            <div class="oferta-cifras" data-cifras="${sanitize(String(offerId))}"></div>
             <div class="offer-card-actions">
                 <button class="btn-offer-action primary" onclick="viewOfferCandidates('${offerId}')">Ver candidatos</button>
                 <button class="btn-offer-action" onclick="editOffer('${offerId}')">Editar</button>
@@ -504,6 +505,39 @@ function renderOffers(offers) {
         </div>
     `;
     }).join('');
+    pintarCifrasOfertas();
+}
+
+// ---- Cifras por vacante ----
+// En cada oferta, como van sus postulaciones: una barra por estado y los
+// numeros. Sale de las postulaciones que la pagina ya trae (sin consultas nuevas)
+// y se actualiza al aceptar, rechazar o mover en el tablero.
+const ESTADOS_CIFRAS = [
+    ['pendiente', 'por revisar', 'por revisar'],
+    ['revisada', 'revisada', 'revisadas'],
+    ['aceptada', 'aceptada', 'aceptadas'],
+    ['rechazada', 'rechazada', 'rechazadas']
+];
+let postulacionesCargadas = false;
+
+function pintarCifrasOfertas() {
+    if (!postulacionesCargadas) return;
+    document.querySelectorAll('[data-cifras]').forEach(caja => {
+        const apps = postulacionesEmpresa.filter(a => String(a.jobId) === caja.dataset.cifras);
+        if (!apps.length) {
+            caja.innerHTML = '<p class="oferta-cifras-vacia">Todavía nadie se ha postulado.</p>';
+            return;
+        }
+        const cuenta = estado => apps.filter(a => estadoPostulacionEmpresa(a) === estado).length;
+        const partes = ESTADOS_CIFRAS.map(([estado, uno, varios]) => ({ estado, n: cuenta(estado), uno, varios })).filter(p => p.n);
+        caja.innerHTML = `
+            <div class="oferta-cifras-barra" role="img" aria-label="${partes.map(p => `${p.n} ${p.n === 1 ? p.uno : p.varios}`).join(', ')}">
+                ${partes.map(p => `<span class="${p.estado}" style="flex-grow:${p.n}"></span>`).join('')}
+            </div>
+            <ul class="oferta-cifras-leyenda" aria-hidden="true">
+                ${partes.map(p => `<li class="${p.estado}"><b>${p.n}</b> ${p.n === 1 ? p.uno : p.varios}</li>`).join('')}
+            </ul>`;
+    });
 }
 
 // ========================================
@@ -1251,6 +1285,8 @@ function displayApplications(applications) {
     const applicationsList = document.getElementById('applications-list');
     if (!applicationsList) return;
     postulacionesEmpresa = [...applications].sort((a, b) => new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0));
+    postulacionesCargadas = true;
+    pintarCifrasOfertas();
     prepararVistaPostulaciones(applications.length > 0);
 
     if (applications.length === 0) {

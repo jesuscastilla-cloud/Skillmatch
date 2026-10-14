@@ -3710,6 +3710,21 @@ a.meta-tag { position: relative; }
 [data-theme="dark"] .primeros-pasos-marca { color: var(--sea); }
 [data-theme="dark"] .primeros-pasos-lista li.hecho .primeros-pasos-marca { color: var(--bg-deep); }
 
+/* Cifras por vacante en cada oferta (perfil-empresa.js) */
+.oferta-cifras { margin-top: var(--s3); }
+.oferta-cifras:empty { display: none; }
+.oferta-cifras-vacia { font-size: var(--t-sm); color: var(--ink-muted); }
+.oferta-cifras-barra { display: flex; gap: 2px; height: 8px; border-radius: var(--r-pill); overflow: hidden; background: var(--hairline-soft); }
+.oferta-cifras-barra span { flex-basis: 0; }
+.oferta-cifras-barra .pendiente, .oferta-cifras-leyenda .pendiente::before { background: var(--naranja); }
+.oferta-cifras-barra .revisada,  .oferta-cifras-leyenda .revisada::before  { background: var(--sea-luz, #2BB6C6); }
+.oferta-cifras-barra .aceptada,  .oferta-cifras-leyenda .aceptada::before  { background: var(--verde); }
+.oferta-cifras-barra .rechazada, .oferta-cifras-leyenda .rechazada::before { background: var(--ink-muted); }
+.oferta-cifras-leyenda { list-style: none; margin: var(--s2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px var(--s4); font-size: var(--t-xs); color: var(--ink-3); }
+.oferta-cifras-leyenda li { display: inline-flex; align-items: center; gap: 6px; }
+.oferta-cifras-leyenda li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; }
+.oferta-cifras-leyenda b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
 /* ---------- 22d. Tablero de postulaciones (perfil de empresa) ---------- */
 /* Una columna por estado. Se arrastra con el mouse; con teclado o en el
    celular, cada tarjeta tiene botones. Solo cambian bordes y fondos. */

@@ -301,6 +301,9 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   ejemplo, 3 de 5) y cada paso pendiente como un botón que abre lo que falta: contar a qué se dedica, poner el logo,
   elegir una portada, publicar la primera vacante y, si ya hay postulaciones, responderlas. Desaparece cuando todo
   está listo.
+- **Cifras por vacante (hecho, del plan original):** cada oferta de "Mi empresa" muestra cómo van sus postulaciones,
+  con una barra por estado (por revisar, revisadas, aceptadas, rechazadas) y los números. Sale de las postulaciones que
+  la página ya trae, sin consultas nuevas, y se actualiza al aceptar, rechazar o mover en el tablero.
 
 ## Orden propuesto (solo frontend)
 
