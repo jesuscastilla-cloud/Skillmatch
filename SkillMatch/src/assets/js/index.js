@@ -222,7 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
         claves.forEach(partirEnLetras);
         let actual = 0;
         setInterval(function () {
-            if (document.hidden) return;
+            // Con sesion el heroe queda escondido detras del panel de inicio
+            if (document.hidden || rotador.closest('[hidden]')) return;
             const saliente = claves[actual];
             actual = (actual + 1) % claves.length;
             soltarEsporas(saliente);

@@ -68,7 +68,8 @@ enviada", "Aceptar solicitud" o "En tus conexiones"), y no muestra "Vacantes par
   ahora una pregunta de la marca (`SkillMatchUI.confirmar`), con el foco en "Cancelar".
 - **Buscadores y redes (hecho):** las 14 páginas tienen descripción; las públicas que se comparten
   (Vacantes, Únete y los registros) tienen vista previa `og:`, y las que solo sirven con sesión llevan
-  `noindex`. Falta: `og:image` debe ser la dirección completa del sitio cuando haya dominio final.
+  `noindex`. La imagen para compartir (`assets/img/compartir.png`, 1200 × 630) usa la dirección completa del sitio en
+  Render (`https://skillmatch-yz37.onrender.com`); si el sitio cambia de dirección, hay que cambiarla en esas 8 páginas.
 - **Peso muerto (hecho):** fuera las 3 imágenes que nadie usaba (2 MB). Las portadas en SVG sí se usan
   (el nombre se arma en `editor-imagen.js`).
 - **Código muerto (hecho):** fuera `showRecovery` y todo el formulario escondido de "recuperar
@@ -76,8 +77,8 @@ enviada", "Aceptar solicitud" o "En tus conexiones"), y no muestra "Vacantes par
   primera copia de `viewCandidateProfile`, `apiDisponible` y el CSS que solo usaban.
 - **Mensajes (hecho desde el punto 2):** solo consulta el servidor con la pestaña a la vista.
 - **Lottie:** siguen faltando los JSON de Lottieflow.
-- **Pendiente: "Saltar al contenido".** 11 páginas no tienen el enlace para saltar la barra con el teclado ni
-  `id="main"` (conexiones, mensajes, oportunidades, los perfiles, los logins, los registros, elegir cuenta y sin conexión).
+- **"Saltar al contenido" (hecho):** todas las páginas con barra tienen el enlace para saltarla con el teclado y su
+  contenido principal marcado con `id="main"` (antes faltaba en 11).
 - **Indicadores (hecho):** página propia con los datos del sitio, visible para todos (ver Avance).
 
 ## Resultado de la auditoría automática
@@ -95,6 +96,9 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   análisis del 2026-10-09).
 
 ## Para Jesús (backend)
+
+> La lista ordenada por urgencia, con archivo, línea y cómo arreglar cada punto, está en
+> `docs/PENDIENTES-BACKEND.md`. Esta sección es el historial de cómo se fue encontrando cada uno.
 
 - Urgente: fuga de datos en `/connections/suggestions` (hash de contraseña, correo y teléfono).
 - Que la empresa pueda editar sus datos (`PUT /companies/{id}` es solo de ADMIN) para guardar sector,
@@ -251,6 +255,65 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   "(" daba error 500; el frontend lo escapa); conviene escaparlo también en `CompanyService.searchCompanies`, igual
   que en `/jobs/filter` con `location`. La insignia de "empresa verificada" no se muestra: no hay un proceso de
   verificación real todavía.
+- **"Saltar al contenido" y barra con sesión en las páginas públicas (hecho):** el enlace para saltar la barra está
+  en todas las páginas que la tienen; en la portada, Indicadores, la política y los registros, quien tiene sesión ve
+  su barra (Conexiones y Mensajes) y no la de visitante.
+- **Panel de inicio (hecho):** quien entra con su cuenta ya no ve en la portada la presentación para visitantes con
+  "Crear mi perfil". Una persona ve un saludo según la hora, cuatro cifras que llevan a su sitio (postulaciones en
+  proceso, mensajes sin leer, solicitudes de conexión y vacantes guardadas, con un punto naranja si algo espera
+  respuesta), sus últimas postulaciones como una línea de pasos (Enviada, Revisada, Respuesta), lo que le falta al
+  perfil (la misma lista de Mi perfil, así el porcentaje coincide) y las vacantes recientes que más coinciden con
+  sus habilidades, sin las que ya se postuló. Una empresa ve sus cifras (ofertas activas, por revisar, recibidas y
+  mensajes) y botones para publicar (`perfil-empresa.html?nueva=1` abre la ventana) y ver candidatos. Las secciones
+  que invitan a registrarse se ocultan con sesión. Código en `assets/js/panel-inicio.js` y la sección 24d de
+  `app.css`.
+- **Hoja de vida en PDF (hecho):** `hoja-de-vida.html` arma la hoja de vida con los datos reales del perfil (perfil,
+  experiencia, estudios, habilidades con su nivel y certificaciones) y "Descargar en PDF" usa la impresión del
+  navegador: sin librerías ni servicios. Al imprimir solo sale la hoja, en tamaño carta. La propia lleva correo y
+  teléfono; la de otra persona (`?id=`), no. Se llega desde Mi perfil ("Hoja de vida en PDF"), desde el perfil de
+  otra persona ("Ver hoja de vida") y desde la ventana de candidatos de la empresa. Mientras el backend falle en
+  experiencias, la hoja avisa en pantalla (no en el PDF) que sale sin esa sección. De paso: las fechas "2025-09-12"
+  se leen como fecha local (con `new Date()` salían un día antes por la hora de Colombia).
+- **Tablero de postulaciones (hecho, del plan original):** en "Postulaciones recibidas" la empresa elige ver la lista o
+  un tablero con una columna por estado (Pendientes, Revisadas, Aceptadas, Rechazadas). Las tarjetas se mueven
+  arrastrándolas con el mouse o con sus botones ("Marcar revisada", "Aceptar", "Rechazar", "Volver a revisadas"), que
+  sirven con teclado y en el celular; el foco sigue a la tarjeta. El cambio se ve al instante y vuelve atrás si el
+  servidor falla; la lista y las cifras de arriba se actualizan. La vista elegida se recuerda en el navegador. Al
+  llegar desde una notificación se muestra la lista, para marcar la postulación.
+- **Fotos en el sitio publicado (arreglado):** en Render ninguna foto de perfil ni portada abría ("No pudimos abrir
+  esa imagen"). El editor la mostraba con una URL `blob:`, y la CSP del backend (`img-src 'self' data: https:`) no la
+  permite; en local no se notaba porque Live Server no manda CSP. Ahora se lee como `data:`. Además acepta cualquier
+  imagen que el navegador abra (fotos sin tipo o HEIC) y explica qué hacer con una HEIC que no se puede leer.
+- **Vista previa al publicar vacante (hecho, del plan original):** en "Nueva oferta" y "Editar oferta", a la derecha
+  (debajo en el celular) se ve la tarjeta tal como saldrá en Vacantes, y se actualiza mientras se escribe: título,
+  ciudad, tipo, modalidad, experiencia, salario, el comienzo de la descripción, las habilidades y la fecha límite.
+- **Logo y portada de la empresa (hecho):** "Mi empresa" tiene "Cambiar logo" y "Cambiar portada" con el mismo editor
+  de las personas y una **galería exclusiva para empresas**, una portada por sector (puerto y logística, turismo y
+  hoteles, comercio, tecnología, salud, industria, construcción y educación; generadas con los colores de la marca). Se
+  guardan en el servidor en la cuenta de usuario de la empresa, así que el perfil público las muestra a quien tiene
+  sesión; para los visitantes y las tarjetas de Vacantes falta el cambio del backend (PENDIENTES-BACKEND 2.2).
+- **Vacantes vistas por una empresa (hecho):** la empresa sigue viendo todas las vacantes (le sirve para comparar
+  ofertas y salarios), pero adaptado: un aviso arriba ("Así ven las personas las vacantes…"), la pestaña "Mis
+  vacantes" con todas las suyas (también las cerradas, marcadas), "Tu vacante" y "Ver candidatos" en las suyas (abre
+  directo la ventana de candidatos de esa oferta con `perfil-empresa.html?candidatos=<id>`) y orden por "Más reciente"
+  (la compatibilidad no aplica a una empresa).
+- **Primeros pasos para empresas (hecho, del plan original):** tarjeta arriba en "Mi empresa" con el avance (por
+  ejemplo, 3 de 5) y cada paso pendiente como un botón que abre lo que falta: contar a qué se dedica, poner el logo,
+  elegir una portada, publicar la primera vacante y, si ya hay postulaciones, responderlas. Desaparece cuando todo
+  está listo.
+- **Cifras por vacante (hecho, del plan original):** cada oferta de "Mi empresa" muestra cómo van sus postulaciones,
+  con una barra por estado (por revisar, revisadas, aceptadas, rechazadas) y los números. Sale de las postulaciones que
+  la página ya trae, sin consultas nuevas, y se actualiza al aceptar, rechazar o mover en el tablero.
+- **Tamaño de letra (hecho, del plan original):** en el pie de todas las páginas, "Letra" con tres botones (normal,
+  grande y muy grande) y también en la paleta Ctrl+K. Todo el texto usa `rem`, así que crece entero (16, 18 o 20 px de
+  base). Se recuerda en el navegador y lo aplica el guion del `<head>` antes de pintar, para que la página no salte.
+- **Recorrido guiado (hecho, del plan original):** la primera vez que una persona entra a su panel de inicio, o una
+  empresa a "Mi empresa", la pantalla se oscurece menos la parte que se explica y una tarjeta cuenta para qué sirve
+  ("Paso 1 de 6", Siguiente, Anterior, Saltar). Una sola vez por navegador; se puede volver a ver desde la paleta (la
+  lupa de la barra o Ctrl+K: "Ver el recorrido de esta página"). Con teclado (flechas y Escape, el foco queda en la
+  tarjeta), sin animar con movimiento reducido, y no interrumpe si se llega a abrir una ventana (por ejemplo
+  "Nueva oferta"). Es `SkillMatchUI.recorrido` (ui.js, sección 23): sirve para cualquier página. Botón visible
+  "Cómo funciona" en el panel de inicio (persona y empresa) y en "Mi empresa" para verlo cuando se quiera.
 
 ## Orden propuesto (solo frontend)
 

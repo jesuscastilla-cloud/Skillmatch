@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     loadOffers();
     loadActivityStats();
+    // "Publicar una vacante" del panel de inicio llega con ?nueva=1
+    if (new URLSearchParams(window.location.search).get('nueva') === '1') openNewOfferModal();
 });
 
 // Tamano de la empresa tal como lo guarda el registro
@@ -60,6 +62,8 @@ function loadCompanyData() {
     .then(company => {
         currentCompanyData = { ...userData, ...company };
         pintarCabecera(company);
+        cargarImagenesEmpresa();
+        actualizarPaso('descripcion', !!company.description);
 
         // "Acerca de"
         const aboutElement = document.getElementById('companyAbout');
@@ -86,23 +90,242 @@ function loadCompanyData() {
     });
 }
 
+// ---- Primeros pasos de una empresa nueva ----
+// Lo que hace falta para que las personas conozcan la empresa y encuentren sus
+// vacantes. Cada paso pendiente es un boton que abre lo que falta; la tarjeta
+// desaparece cuando todo esta listo. null = todavia no se sabe (cargando).
+const PASOS_EMPRESA = [
+    { id: 'descripcion', texto: 'Cuenta a qué se dedica tu empresa', ico: 'pencil', accion: () => openEditAboutModal() },
+    { id: 'logo', texto: 'Pon el logo de tu empresa', ico: 'camera', accion: () => abrirLogoEmpresa() },
+    { id: 'portada', texto: 'Elige una portada', ico: 'image', accion: () => abrirPortadaEmpresa() },
+    { id: 'vacantes', texto: 'Publica tu primera vacante', ico: 'plus', accion: () => openNewOfferModal() },
+    { id: 'respuestas', texto: 'Responde a las personas que se postularon', ico: 'users',
+      accion: () => { const s = document.getElementById('candidatos'); if (s) s.scrollIntoView({ block: 'start' }); } }
+];
+const estadoPasos = { descripcion: null, logo: null, portada: null, vacantes: null, respuestas: null };
+
+function actualizarPaso(id, hecho) {
+    estadoPasos[id] = hecho;
+    pintarPrimerosPasos();
+}
+
+function pintarPrimerosPasos() {
+    const tarjeta = document.getElementById('primerosPasos');
+    if (!tarjeta) return;
+    // Se espera a saber los cuatro primeros, para que no aparezca y desaparezca
+    if (['descripcion', 'logo', 'portada', 'vacantes'].some(id => estadoPasos[id] === null)) return;
+    const pasos = PASOS_EMPRESA.filter(p => estadoPasos[p.id] !== 'no-aplica' && estadoPasos[p.id] !== null);
+    const hechos = pasos.filter(p => estadoPasos[p.id] === true).length;
+    tarjeta.hidden = hechos === pasos.length;
+    if (tarjeta.hidden) return;
+    document.getElementById('primerosPasosCuenta').textContent = `${hechos} de ${pasos.length}`;
+    const barra = document.getElementById('primerosPasosBarra');
+    barra.setAttribute('aria-valuenow', String(Math.round(hechos / pasos.length * 100)));
+    barra.querySelector('span').style.setProperty('--p', hechos / pasos.length);
+    const lista = document.getElementById('primerosPasosLista');
+    lista.innerHTML = pasos.map(p => estadoPasos[p.id] === true
+        ? `<li class="hecho"><span class="primeros-pasos-marca"><i data-ico="check"></i></span> ${p.texto}</li>`
+        : `<li><button type="button" class="primeros-pasos-boton" data-paso="${p.id}"><span class="primeros-pasos-marca"><i data-ico="${p.ico}"></i></span> ${p.texto} <i data-ico="arrow"></i></button></li>`
+    ).join('');
+    if (!lista.dataset.listo) {
+        lista.dataset.listo = '1';
+        lista.addEventListener('click', e => {
+            const boton = e.target.closest('[data-paso]');
+            const paso = boton && PASOS_EMPRESA.find(p => p.id === boton.dataset.paso);
+            if (paso) paso.accion();
+        });
+    }
+}
+
+// ---- Logo y portada de la empresa ----
+// Antes habia botones que guardaban la imagen solo en el navegador (nadie mas la
+// veia) y se quitaron. El backend no deja a la empresa cambiar su "logo" (solo
+// ADMIN) ni tiene portada de empresa, pero la cuenta de la empresa es un usuario
+// y todo usuario guarda en el servidor su foto y su portada
+// (PUT /users/{id}/profile-image y /cover-image). Ahi quedan el logo y la
+// portada. Las ven quienes tienen sesion (perfil publico); para que salgan a los
+// visitantes y en las tarjetas de Vacantes falta un cambio en el backend
+// (docs/PENDIENTES-BACKEND.md, punto 2.2).
+let imagenesEmpresa = { logo: '', portada: '' };
+
+async function cargarImagenesEmpresa() {
+    const yo = JSON.parse(localStorage.getItem('userData') || '{}');
+    if (!yo.id) return;
+    try {
+        const r = await fetchWithAuth(`${API_BASE_URL}/users/${encodeURIComponent(yo.id)}`);
+        if (!r.ok) return;
+        const cuenta = await r.json();
+        imagenesEmpresa = { logo: cuenta.profileImageUrl || '', portada: cuenta.coverImageUrl || '' };
+        pintarLogoEmpresa(currentCompanyData.name || yo.firstName, imagenesEmpresa.logo || currentCompanyData.logo);
+        pintarPortadaEmpresa(imagenesEmpresa.portada);
+    } catch (e) { /* sin imagenes se quedan las iniciales y la portada de la marca */ }
+    actualizarPaso('logo', !!(imagenesEmpresa.logo || currentCompanyData.logo));
+    actualizarPaso('portada', !!imagenesEmpresa.portada && imagenesEmpresa.portada !== 'galeria:marca');
+}
+
+function pintarLogoEmpresa(nombre, url) {
+    const logo = document.getElementById('companyLogo');
+    if (!logo) return;
+    if (url) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = '';
+        // Si la imagen no carga, vuelven las iniciales
+        img.onerror = () => { logo.textContent = companyInitials(nombre); logo.classList.add('company-logo-iniciales'); };
+        logo.replaceChildren(img);
+        logo.classList.remove('company-logo-iniciales');
+    } else {
+        logo.textContent = companyInitials(nombre);
+        logo.classList.add('company-logo-iniciales');
+    }
+}
+
+// La portada: de la galeria de empresas, una foto subida o la de la marca (CSS)
+function pintarPortadaEmpresa(valor) {
+    const portada = document.getElementById('companyCover');
+    if (!portada) return;
+    const url = window.SkillMatchImagen ? SkillMatchImagen.rutaPortada(valor) : null;
+    if (url) {
+        portada.style.backgroundImage = `url("${url}")`;
+        portada.style.backgroundSize = 'cover';
+        portada.style.backgroundPosition = 'center';
+        portada.style.backgroundBlendMode = 'normal';
+    } else {
+        ['background-image', 'background-size', 'background-position', 'background-blend-mode'].forEach(p => portada.style.removeProperty(p));
+    }
+}
+
+async function guardarImagenEmpresa(tipo, valor) {
+    const yo = JSON.parse(localStorage.getItem('userData') || '{}');
+    const ruta = tipo === 'logo' ? 'profile-image' : 'cover-image';
+    const response = await fetchWithAuth(`${API_BASE_URL}/users/${encodeURIComponent(yo.id)}/${ruta}`, {
+        method: 'PUT',
+        body: JSON.stringify({ imageUrl: valor })
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `El servidor respondió ${response.status}`);
+    }
+}
+
+// Ventana con un formulario de imagen (la crea ui.js; mismo estilo que en el perfil de persona)
+function ventanaImagen(id, titulo, icono, contenido, textoGuardar) {
+    const v = SkillMatchUI.ventana({
+        id, titulo, icono,
+        cuerpo: `<form id="${id}Form">${contenido}
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary-modal" data-cancelar>Cancelar</button>
+                <button type="submit" class="btn-primary-modal" id="${id}Guardar">${textoGuardar}</button>
+            </div></form>`
+    });
+    v.raiz.classList.add('modal-imagen');
+    v.raiz.querySelector('[data-cancelar]').addEventListener('click', v.cerrar);
+    return v;
+}
+
+function abrirLogoEmpresa() {
+    const v = ventanaImagen('ventanaLogo', 'Cambiar el logo', 'camera', '<div id="editorLogo"></div>', 'Guardar logo');
+    const guardar = document.getElementById('ventanaLogoGuardar');
+    guardar.disabled = true;
+    const editor = SkillMatchImagen.editor(document.getElementById('editorLogo'), {
+        aspecto: [1, 1], minimo: [200, 200], salida: [400, 400],
+        nombre: 'el logo', maxKB: 120,
+        alCambiar: listo => { guardar.disabled = !listo; }
+    });
+    document.getElementById('ventanaLogoForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        if (!editor.listo()) return;
+        const liberar = SkillMatchUI.ocupado(guardar);
+        try {
+            const valor = await editor.exportar();
+            await guardarImagenEmpresa('logo', valor);
+            imagenesEmpresa.logo = valor;
+            pintarLogoEmpresa(currentCompanyData.name, valor);
+            actualizarPaso('logo', true);
+            showNotification('Logo actualizado. Lo ven las personas en el perfil de tu empresa.');
+            v.cerrar();
+        } catch (error) {
+            liberar();
+            editor.error('No se pudo guardar el logo: ' + escaparHtml(error.message) + '. Intenta de nuevo.');
+        }
+    });
+}
+
+function abrirPortadaEmpresa() {
+    const v = ventanaImagen('ventanaPortada', 'Cambiar portada', 'image', `
+        <div class="tab-list" role="tablist" aria-label="Origen de la portada">
+            <button type="button" class="tab-btn active" role="tab" id="portadaTabGaleria" aria-selected="true" aria-controls="portadaGaleria">Para empresas</button>
+            <button type="button" class="tab-btn" role="tab" id="portadaTabSubir" aria-selected="false" aria-controls="portadaSubir">Subir imagen</button>
+        </div>
+        <div id="portadaGaleria" role="tabpanel" aria-labelledby="portadaTabGaleria"></div>
+        <div id="portadaSubir" role="tabpanel" aria-labelledby="portadaTabSubir" hidden></div>`, 'Guardar portada');
+    const guardar = document.getElementById('ventanaPortadaGuardar');
+    const actual = imagenesEmpresa.portada || 'galeria:marca';
+    const galeria = SkillMatchImagen.galeria(document.getElementById('portadaGaleria'), {
+        lista: 'empresa', actual,
+        // Al elegir una, se ve en la cabecera de una vez (si cancela, vuelve la de antes)
+        alElegir: valor => pintarPortadaEmpresa(valor)
+    });
+    const editor = SkillMatchImagen.editor(document.getElementById('portadaSubir'), {
+        aspecto: [4, 1], minimo: [1200, 300], salida: [1600, 400],
+        nombre: 'la portada', maxKB: 320,
+        alCambiar: () => actualizarBoton()
+    });
+    const subiendo = () => !document.getElementById('portadaSubir').hidden;
+    const actualizarBoton = () => { guardar.disabled = subiendo() && !editor.listo(); };
+    const pestana = cual => {
+        const subir = cual === 'subir';
+        [['portadaTabGaleria', !subir], ['portadaTabSubir', subir]].forEach(([idTab, si]) => {
+            const t = document.getElementById(idTab);
+            t.classList.toggle('active', si);
+            t.setAttribute('aria-selected', String(si));
+        });
+        document.getElementById('portadaGaleria').hidden = subir;
+        document.getElementById('portadaSubir').hidden = !subir;
+        actualizarBoton();
+    };
+    document.getElementById('portadaTabGaleria').addEventListener('click', () => pestana('galeria'));
+    document.getElementById('portadaTabSubir').addEventListener('click', () => pestana('subir'));
+    // Si la actual es una imagen propia, se abre en "Subir imagen"
+    pestana(actual.indexOf('galeria:') !== 0 ? 'subir' : 'galeria');
+    let guardada = false;
+    // Al cerrar sin guardar, vuelve la portada de antes
+    new MutationObserver((c, obs) => {
+        if (v.raiz.isConnected) return;
+        obs.disconnect();
+        if (!guardada) pintarPortadaEmpresa(imagenesEmpresa.portada);
+    }).observe(document.body, { childList: true });
+
+    document.getElementById('ventanaPortadaForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        let valor = galeria.valor();
+        if (!subiendo() && (!valor || valor === actual)) { guardada = true; v.cerrar(); return; }
+        if (subiendo() && !editor.listo()) return;
+        const liberar = SkillMatchUI.ocupado(guardar);
+        try {
+            if (subiendo()) valor = await editor.exportar();
+            await guardarImagenEmpresa('portada', valor);
+            imagenesEmpresa.portada = valor;
+            guardada = true;
+            pintarPortadaEmpresa(valor);
+            actualizarPaso('portada', valor !== 'galeria:marca');
+            showNotification('Portada actualizada.');
+            v.cerrar();
+        } catch (error) {
+            liberar();
+            const mensaje = 'No se pudo guardar la portada: ' + escaparHtml(error.message) + '. Intenta de nuevo.';
+            if (subiendo()) editor.error(mensaje); else showNotification(mensaje, 'error');
+        }
+    });
+}
+
 // Nombre, logo, sector y datos de la cabecera
 function pintarCabecera(company) {
     const nombre = company.name || 'Mi empresa';
     document.getElementById('companyName').textContent = nombre;
     document.title = nombre + ' - SkillMatch Cartagena';
 
-    const logo = document.getElementById('companyLogo');
-    if (logo) {
-        if (company.logo) {
-            const img = document.createElement('img');
-            img.src = company.logo;
-            img.alt = '';
-            logo.replaceChildren(img);
-        } else {
-            logo.textContent = companyInitials(nombre);
-        }
-    }
+    pintarLogoEmpresa(nombre, imagenesEmpresa.logo || company.logo);
 
     const industria = document.getElementById('companyIndustry');
     if (industria) industria.textContent = company.industry || '';
@@ -156,6 +379,8 @@ function loadActivityStats() {
         poner('statOfertasActivas', stats.activeJobs || 0);
         poner('statPostulaciones', stats.totalApplications || 0);
         poner('statPorRevisar', stats.pendingApplications || 0);
+        // Solo cuenta como paso si ya alguien se postulo
+        actualizarPaso('respuestas', stats.totalApplications ? !stats.pendingApplications : 'no-aplica');
         // Postulaciones que ya tienen respuesta (aceptadas, revisadas o rechazadas)
         poner('statRespuesta', stats.totalApplications ? Math.round(stats.responseRate || 0) + ' %' : '–');
     })
@@ -167,6 +392,19 @@ function loadActivityStats() {
 // Cargar ofertas desde backend. La promesa queda guardada: quien quiera bajar
 // hasta las postulaciones espera a que las ofertas (que van arriba) ocupen su sitio
 let ofertasCargadas = Promise.resolve();
+let candidatosAbiertos = false;
+let recorridoEmpresaListo = false;
+
+function recorridoMiEmpresa(forzar) {
+    if (!window.SkillMatchUI || !SkillMatchUI.recorrido) return;
+    SkillMatchUI.recorrido({ clave: 'mi-empresa', forzar: forzar === true, pasos: [
+        { objetivo: '.company-header-card', titulo: 'Este es el panel de tu empresa', texto: 'Pon tu logo y elige una portada: así te reconocen las personas en tu perfil público.' },
+        { objetivo: '#primerosPasos', titulo: 'Primeros pasos', texto: 'Lo que falta para que las personas conozcan tu empresa. Toca cada paso para completarlo.' },
+        { objetivo: '#ofertas', titulo: 'Tus ofertas', texto: 'Publica, edita o archiva tus vacantes. En cada una ves cuántas personas se postularon y cómo van.' },
+        { objetivo: '#candidatos', titulo: 'Postulaciones recibidas', texto: 'Revisa, acepta o rechaza. Puedes verlas como lista o como tablero por estado.' },
+        { objetivo: 'header a[href="oportunidades.html"]', titulo: 'Vacantes', texto: 'Aquí ves las vacantes como las ven las personas, y en "Mis vacantes" solo las tuyas.' }
+    ] });
+}
 function loadOffers() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
@@ -219,6 +457,18 @@ function loadOffers() {
         
         currentOffers = offersWithCandidates;
         renderOffers(currentOffers);
+        // "Ver candidatos" en Vacantes llega con ?candidatos=<id de la oferta>
+        const parametros = new URLSearchParams(window.location.search);
+        const pedida = parametros.get('candidatos');
+        if (pedida && !candidatosAbiertos) {
+            candidatosAbiertos = true;
+            viewOfferCandidates(pedida);
+        }
+        // La primera vez, un recorrido por "Mi empresa" (si no se llego a hacer algo puntual)
+        if (!recorridoEmpresaListo && !pedida && !parametros.get('nueva') && !parametros.get('tab')) {
+            recorridoEmpresaListo = true;
+            setTimeout(recorridoMiEmpresa, 900);
+        }
     })
     .catch(error => {
         // Sin las copias del navegador: antes se mostraban como si fueran reales
@@ -231,6 +481,7 @@ function loadOffers() {
 function renderOffers(offers) {
     const offersList = document.getElementById('offersList');
     if (!offersList) return;
+    actualizarPaso('vacantes', offers.length > 0);
     
     if (offers.length === 0) {
         offersList.innerHTML = '<div class="empty-state"><p>Aún no has publicado ofertas.</p><button type="button" class="btn btn-primary" onclick="openNewOfferModal()"><i data-ico="plus"></i> Publicar mi primera oferta</button></div>';
@@ -261,6 +512,7 @@ function renderOffers(offers) {
                     <span class="status-badge ${offer.status === 'active' ? 'active' : 'inactive'}">${offer.status === 'active' ? 'Activa' : 'Archivada'}</span>
                 </div>
             </div>
+            <div class="oferta-cifras" data-cifras="${sanitize(String(offerId))}"></div>
             <div class="offer-card-actions">
                 <button class="btn-offer-action primary" onclick="viewOfferCandidates('${offerId}')">Ver candidatos</button>
                 <button class="btn-offer-action" onclick="editOffer('${offerId}')">Editar</button>
@@ -271,6 +523,39 @@ function renderOffers(offers) {
         </div>
     `;
     }).join('');
+    pintarCifrasOfertas();
+}
+
+// ---- Cifras por vacante ----
+// En cada oferta, como van sus postulaciones: una barra por estado y los
+// numeros. Sale de las postulaciones que la pagina ya trae (sin consultas nuevas)
+// y se actualiza al aceptar, rechazar o mover en el tablero.
+const ESTADOS_CIFRAS = [
+    ['pendiente', 'por revisar', 'por revisar'],
+    ['revisada', 'revisada', 'revisadas'],
+    ['aceptada', 'aceptada', 'aceptadas'],
+    ['rechazada', 'rechazada', 'rechazadas']
+];
+let postulacionesCargadas = false;
+
+function pintarCifrasOfertas() {
+    if (!postulacionesCargadas) return;
+    document.querySelectorAll('[data-cifras]').forEach(caja => {
+        const apps = postulacionesEmpresa.filter(a => String(a.jobId) === caja.dataset.cifras);
+        if (!apps.length) {
+            caja.innerHTML = '<p class="oferta-cifras-vacia">Todavía nadie se ha postulado.</p>';
+            return;
+        }
+        const cuenta = estado => apps.filter(a => estadoPostulacionEmpresa(a) === estado).length;
+        const partes = ESTADOS_CIFRAS.map(([estado, uno, varios]) => ({ estado, n: cuenta(estado), uno, varios })).filter(p => p.n);
+        caja.innerHTML = `
+            <div class="oferta-cifras-barra" role="img" aria-label="${partes.map(p => `${p.n} ${p.n === 1 ? p.uno : p.varios}`).join(', ')}">
+                ${partes.map(p => `<span class="${p.estado}" style="flex-grow:${p.n}"></span>`).join('')}
+            </div>
+            <ul class="oferta-cifras-leyenda" aria-hidden="true">
+                ${partes.map(p => `<li class="${p.estado}"><b>${p.n}</b> ${p.n === 1 ? p.uno : p.varios}</li>`).join('')}
+            </ul>`;
+    });
 }
 
 // ========================================
@@ -289,6 +574,16 @@ function setupEventListeners() {
     // Cambiar contraseña: la ventana es de ui.js (la misma del perfil de persona)
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => SkillMatchUI.cambiarContrasena());
+
+    // "Como funciona": el recorrido por Mi empresa cuando se quiera
+    const botonRecorrido = document.getElementById('recorridoEmpresaBtn');
+    if (botonRecorrido) botonRecorrido.addEventListener('click', () => recorridoMiEmpresa(true));
+
+    // Logo y portada (se guardan en la cuenta de la empresa)
+    const botonLogo = document.getElementById('editCompanyLogoBtn');
+    if (botonLogo) botonLogo.addEventListener('click', abrirLogoEmpresa);
+    const botonPortada = document.getElementById('editCompanyCoverBtn');
+    if (botonPortada) botonPortada.addEventListener('click', abrirPortadaEmpresa);
 
     // Botón Editar "Acerca de"
     const btnEditAbout = document.getElementById('btnEditAbout');
@@ -405,6 +700,7 @@ function openEditAboutModal() {
             
             // Actualizar datos locales
             currentCompanyData.description = newText;
+            actualizarPaso('descripcion', !!newText);
             
             showNotification('Descripción actualizada correctamente');
             closeModal();
@@ -542,6 +838,7 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
     const fechaInicial = guardada && guardada >= hoy && guardada <= tope ? guardada : fechaDentroDe(30);
 
     createModal(isEdit ? 'Editar oferta' : 'Nueva oferta', `
+        <div class="oferta-con-vista">
         <div class="form-grid oferta-form">
             <div class="form-group span-full">
                 <label for="offerTitle">Título de la oferta *</label>
@@ -608,7 +905,13 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
             </div>
             <p class="error-text span-full" id="offerError" role="alert" hidden></p>
         </div>
-    `, () => guardarOferta(isEdit, offerId), isEdit ? 'Guardar cambios' : 'Publicar oferta', { ancho: 760 });
+        <!-- Vista previa: la misma tarjeta de Vacantes, se pinta mientras se escribe -->
+        <aside class="oferta-vista" aria-label="Vista previa de la vacante">
+            <p class="oferta-vista-titulo"><i data-ico="eye"></i> Así la verán las personas en Vacantes</p>
+            <div id="offerPreview"></div>
+        </aside>
+        </div>
+    `, () => guardarOferta(isEdit, offerId), isEdit ? 'Guardar cambios' : 'Publicar oferta', { ancho: 1120 });
 
     // Habilidades como etiquetas (componente de ui.js, el mismo del registro)
     const etiquetas = SkillMatchUI.etiquetas(document.getElementById('offerSkills'), document.getElementById('offerSkillInput'), { iniciales: oferta.skills || [] });
@@ -627,7 +930,77 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
     // El aviso de error se va en cuanto se corrige algo
     document.querySelector('.oferta-form').addEventListener('input', () => { document.getElementById('offerError').hidden = true; });
     vista();
+    // Vista previa: cualquier cambio del formulario o de las habilidades la repinta
+    let cuadro = 0;
+    const repintar = () => { cancelAnimationFrame(cuadro); cuadro = requestAnimationFrame(() => pintarVistaOferta(oferta.postedDate)); };
+    ['input', 'change'].forEach(tipo => document.querySelector('.oferta-form').addEventListener(tipo, repintar));
+    new MutationObserver(repintar).observe(document.getElementById('offerSkills'), { childList: true });
+    pintarVistaOferta(oferta.postedDate);
     document.getElementById('offerTitle').focus();
+}
+
+// ---- Vista previa de la vacante ----
+// La misma tarjeta que ven las personas en Vacantes (mismas clases de app.css),
+// con lo que se va escribiendo. Es solo para mirar: inert la deja fuera del
+// teclado y del lector de pantalla (el formulario ya tiene esos datos).
+const TIPOS_VISTA = { empleo: 'Empleo', practica: 'Práctica', freelance: 'Independiente' };
+const MODALIDADES_VISTA = { presencial: 'Presencial', remoto: 'Remoto', hibrido: 'Híbrido' };
+const EXPERIENCIAS_VISTA = {
+    'sin-experiencia': 'Sin experiencia', junior: 'Hasta 1 año de experiencia',
+    'semi-senior': '1 a 3 años de experiencia', senior: 'Más de 3 años de experiencia'
+};
+
+function pintarVistaOferta(publicada) {
+    const destino = document.getElementById('offerPreview');
+    if (!destino) return;
+    const valor = id => ((document.getElementById(id) || {}).value || '').trim();
+    const falta = texto => `<span class="oferta-vista-falta">${texto}</span>`;
+    const empresa = currentCompanyData.name || currentCompanyData.firstName || 'Tu empresa';
+    const min = Number(valor('offerSalaryMin')) || 0;
+    const max = Number(valor('offerSalaryMax')) || 0;
+    const pesos = v => '$' + v.toLocaleString('es-CO');
+    const salario = min && max ? `${pesos(min)} - ${pesos(max)}` : min ? `Desde ${pesos(min)}` : max ? `Hasta ${pesos(max)}` : 'Salario a convenir';
+    const descripcion = valor('offerDescription');
+    const corta = descripcion.length > 150 ? descripcion.slice(0, 150) + '...' : descripcion;
+    const habilidades = habilidadesDeOferta();
+    const etiquetas = habilidades.length
+        ? habilidades.slice(0, 4).map(h => `<span class="skill">${sanitize(h)}</span>`).join('') +
+          (habilidades.length > 4 ? `<span class="skill skill-mas">+${habilidades.length - 4}</span>` : '')
+        : '<span class="skill">Sin especificar</span>';
+    const fecha = publicada
+        ? new Date(publicada).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
+        : 'Hoy';
+    const limite = valor('offerDeadline');
+    // data-revelado: sin la animacion de entrada de ui.js (se repinta con cada
+    // letra y en el celular quedaba escondida esperando entrar en pantalla)
+    destino.innerHTML = `
+        <div class="opportunity-card" inert data-revelado="1">
+            <div class="card-header-opp">
+                <div class="company-logo-opp">${sanitize(empresa.charAt(0))}</div>
+                <div class="card-info">
+                    <h3 class="job-title"><span class="job-title-link">${valor('offerTitle') ? sanitize(valor('offerTitle')) : falta('Título de la oferta')}</span></h3>
+                    <p class="company-name">${sanitize(empresa)}</p>
+                </div>
+            </div>
+            <div class="card-meta">
+                <span class="meta-item"><i data-ico="pin"></i> ${valor('offerLocation') ? sanitize(valor('offerLocation')) : 'Sin ciudad'}</span>
+                <span class="meta-item"><i data-ico="briefcase"></i> ${TIPOS_VISTA[sinTildesOferta(valor('offerType'))] || 'Empleo'}</span>
+                <span class="meta-item"><i data-ico="desktop"></i> ${MODALIDADES_VISTA[sinTildesOferta(valor('offerModality'))] || 'Presencial'}</span>
+                <span class="meta-item"><i data-ico="cap"></i> ${EXPERIENCIAS_VISTA[valor('offerLevel')] || 'Experiencia a convenir'}</span>
+                <span class="meta-item"><i data-ico="money"></i> ${salario}</span>
+            </div>
+            <p class="card-description">${corta ? sanitize(corta) : falta('Aquí sale el comienzo de la descripción.')}</p>
+            <div class="card-skills">${etiquetas}</div>
+            <div class="card-footer">
+                <span class="post-date"><i data-ico="calendar"></i> ${fecha}</span>
+                <div class="card-actions">
+                    <button type="button" class="btn-ver-detalle" tabindex="-1">Ver detalle</button>
+                    <button type="button" class="btn-apply" tabindex="-1">Postularme</button>
+                </div>
+            </div>
+        </div>
+        ${limite ? `<p class="oferta-vista-nota"><i data-ico="clock"></i> Recibe postulaciones hasta el ${fechaLegible(limite)}.</p>` : ''}
+        <p class="oferta-vista-nota"><i data-ico="eye"></i> Al abrir "Ver detalle" se ven también los requisitos, las responsabilidades y los beneficios.</p>`;
 }
 
 async function guardarOferta(isEdit, offerId) {
@@ -788,6 +1161,7 @@ function createCandidateCard(application, offerId) {
                 </div>` : ''}
             <div class="candidato-acciones">
                 <button type="button" class="btn-candidato" data-id="${escaparHtml(application.userId)}" onclick="viewCandidateProfile(this.dataset.id)">Ver perfil</button>
+                <a class="btn-candidato" href="hoja-de-vida.html?id=${encodeURIComponent(application.userId)}" target="_blank" rel="noopener"><i data-ico="list"></i> Hoja de vida</a>
                 <a class="btn-candidato principal" href="mensajes.html?userId=${encodeURIComponent(application.userId)}"><i data-ico="chat"></i> Mensaje</a>
                 <!-- Nombre y correo en data-: dentro del onclick una comilla en el nombre ejecutaba codigo -->
                 ${correo ? `<button type="button" class="btn-candidato" data-email="${escaparHtml(application.userEmail)}" data-nombre="${escaparHtml(application.userName)}" onclick="contactCandidateByEmail(this.dataset.email, this.dataset.nombre)"><i data-ico="mail"></i> Correo</button>` : ''}
@@ -932,6 +1306,10 @@ const POSTULACIONES_VISIBLES = 5;
 function displayApplications(applications) {
     const applicationsList = document.getElementById('applications-list');
     if (!applicationsList) return;
+    postulacionesEmpresa = [...applications].sort((a, b) => new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0));
+    postulacionesCargadas = true;
+    pintarCifrasOfertas();
+    prepararVistaPostulaciones(applications.length > 0);
 
     if (applications.length === 0) {
         applicationsList.innerHTML = '<div class="empty-state"><p>Aún no has recibido postulaciones. Cuando alguien se postule a tus ofertas, aparecerá aquí.</p></div>';
@@ -967,6 +1345,7 @@ function postulacionDesdeAviso() {
 }
 
 function irAPostulacionPedida() {
+    if (vistaPostulaciones === 'tablero') mostrarVistaPostulaciones('lista', false);
     const pedida = new URLSearchParams(window.location.search).get('postulacion');
     const tarjeta = pedida && [...document.querySelectorAll('#applications-list .application-card')].find(t => t.dataset.applicationId === pedida);
     if (!tarjeta) {
@@ -980,6 +1359,158 @@ function irAPostulacionPedida() {
         if (verTodas) showAllApplications(verTodas);
     }
     SkillMatchUI.resaltar(tarjeta);
+}
+
+// ---- Tablero de postulaciones ----
+// Otra forma de ver las mismas postulaciones: una columna por estado. Se
+// mueven arrastrando la tarjeta (mouse) o con sus botones (teclado y celular).
+// La vista elegida se recuerda en este navegador.
+const COLUMNAS_TABLERO = [
+    { estado: 'pendiente', titulo: 'Pendientes', ico: 'clock' },
+    { estado: 'revisada', titulo: 'Revisadas', ico: 'eye' },
+    { estado: 'aceptada', titulo: 'Aceptadas', ico: 'check' },
+    { estado: 'rechazada', titulo: 'Rechazadas', ico: 'close' }
+];
+// Botones de cada tarjeta segun su columna (arrastrando se puede ir a cualquiera)
+const MOVIMIENTOS_TABLERO = {
+    pendiente: [['revisada', 'Marcar revisada'], ['aceptada', 'Aceptar'], ['rechazada', 'Rechazar']],
+    revisada: [['aceptada', 'Aceptar'], ['rechazada', 'Rechazar']],
+    aceptada: [['revisada', 'Volver a revisadas']],
+    rechazada: [['revisada', 'Volver a revisadas']]
+};
+const VISTA_POSTULACIONES_KEY = 'skillmatch_vista_postulaciones';
+let postulacionesEmpresa = [];
+let vistaPostulaciones = 'lista';
+try { if (localStorage.getItem(VISTA_POSTULACIONES_KEY) === 'tablero') vistaPostulaciones = 'tablero'; } catch (e) { /* sin almacenamiento: lista */ }
+
+const estadoPostulacionEmpresa = app => String(app.status || 'pendiente').toLowerCase();
+
+function tarjetaTablero(app) {
+    const estado = estadoPostulacionEmpresa(app);
+    // Sin el año cuando es del año en curso: la tarjeta es angosta
+    const dia = app.appliedDate ? new Date(app.appliedDate) : null;
+    const fecha = dia ? dia.toLocaleDateString('es-CO', dia.getFullYear() === new Date().getFullYear()
+        ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    return `
+        <li class="tablero-tarjeta" draggable="true" data-id="${escaparHtml(app.id)}">
+            <a class="tablero-nombre" href="perfil-usuario.html?id=${encodeURIComponent(app.userId)}" target="_blank" rel="noopener">${sanitize(app.userName || 'Candidato')}</a>
+            <p class="tablero-vacante">${sanitize(app.jobTitle || 'Oferta sin título')}</p>
+            ${fecha ? `<p class="tablero-fecha">Se postuló el ${fecha}</p>` : ''}
+            <div class="tablero-acciones">
+                ${(MOVIMIENTOS_TABLERO[estado] || []).map(([destino, texto]) =>
+                    `<button type="button" class="tablero-mover${destino === 'aceptada' ? ' aceptar' : ''}" data-mover="${destino}">${texto}</button>`).join('')}
+            </div>
+        </li>`;
+}
+
+function pintarTablero() {
+    const tablero = document.getElementById('applications-board');
+    if (!tablero) return;
+    tablero.innerHTML = COLUMNAS_TABLERO.map(col => {
+        const apps = postulacionesEmpresa.filter(a => estadoPostulacionEmpresa(a) === col.estado);
+        return `
+            <section class="tablero-columna" data-estado="${col.estado}" aria-labelledby="columna-${col.estado}">
+                <h3 id="columna-${col.estado}"><i data-ico="${col.ico}"></i> ${col.titulo} <span class="tablero-cuenta">${apps.length}</span></h3>
+                <ul class="tablero-lista">${apps.map(tarjetaTablero).join('') || '<li class="tablero-vacia">Ninguna por ahora</li>'}</ul>
+            </section>`;
+    }).join('');
+}
+
+// Muestra la lista o el tablero; "recordar" lo guarda para la proxima vez
+function mostrarVistaPostulaciones(vista, recordar) {
+    vistaPostulaciones = vista;
+    const lista = document.getElementById('applications-list');
+    const tablero = document.getElementById('applications-board');
+    if (!lista || !tablero) return;
+    lista.hidden = vista === 'tablero';
+    tablero.hidden = vista !== 'tablero';
+    if (vista === 'tablero') pintarTablero();
+    document.querySelectorAll('#vistaPostulaciones .vista-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.vista === vista ? 'true' : 'false'));
+    if (recordar) {
+        try { localStorage.setItem(VISTA_POSTULACIONES_KEY, vista); } catch (e) { /* sin almacenamiento */ }
+    }
+}
+
+// El selector solo aparece si hay postulaciones; los eventos se conectan una vez
+function prepararVistaPostulaciones(hay) {
+    const selector = document.getElementById('vistaPostulaciones');
+    const tablero = document.getElementById('applications-board');
+    if (!selector || !tablero) return;
+    selector.hidden = !hay;
+    if (!selector.dataset.listo) {
+        selector.dataset.listo = '1';
+        selector.addEventListener('click', e => {
+            const boton = e.target.closest('.vista-btn');
+            if (boton) mostrarVistaPostulaciones(boton.dataset.vista, true);
+        });
+        tablero.addEventListener('click', e => {
+            const boton = e.target.closest('[data-mover]');
+            if (boton) moverPostulacion(boton.closest('.tablero-tarjeta').dataset.id, boton.dataset.mover, true);
+        });
+        tablero.addEventListener('dragstart', e => {
+            const tarjeta = e.target.closest('.tablero-tarjeta');
+            if (!tarjeta) return;
+            e.dataTransfer.setData('text/plain', tarjeta.dataset.id);
+            e.dataTransfer.effectAllowed = 'move';
+            tarjeta.classList.add('arrastrando');
+        });
+        tablero.addEventListener('dragend', e => {
+            const tarjeta = e.target.closest('.tablero-tarjeta');
+            if (tarjeta) tarjeta.classList.remove('arrastrando');
+            tablero.querySelectorAll('.encima').forEach(c => c.classList.remove('encima'));
+        });
+        tablero.addEventListener('dragover', e => {
+            const columna = e.target.closest('.tablero-columna');
+            if (!columna) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            tablero.querySelectorAll('.encima').forEach(c => { if (c !== columna) c.classList.remove('encima'); });
+            columna.classList.add('encima');
+        });
+        tablero.addEventListener('drop', e => {
+            const columna = e.target.closest('.tablero-columna');
+            if (!columna) return;
+            e.preventDefault();
+            columna.classList.remove('encima');
+            moverPostulacion(e.dataTransfer.getData('text/plain'), columna.dataset.estado, false);
+        });
+    }
+    if (!hay) mostrarVistaPostulaciones('lista', false);
+    else if (vistaPostulaciones === 'tablero') mostrarVistaPostulaciones('tablero', false);
+}
+
+// Cambia el estado en el servidor. La tarjeta se mueve al instante y vuelve a
+// su columna si el servidor no responde bien.
+async function moverPostulacion(id, estado, conTeclado) {
+    const app = postulacionesEmpresa.find(a => String(a.id) === String(id));
+    if (!app || estadoPostulacionEmpresa(app) === estado) return;
+    const antes = app.status;
+    const columna = COLUMNAS_TABLERO.find(c => c.estado === estado);
+    app.status = estado;
+    pintarTablero();
+    // Con teclado, el foco sigue a la tarjeta en su nueva columna
+    const enfocar = () => {
+        if (!conTeclado) return;
+        const tarjeta = [...document.querySelectorAll('#applications-board .tablero-tarjeta')].find(t => t.dataset.id === String(id));
+        const destino = tarjeta && (tarjeta.querySelector('[data-mover]') || tarjeta.querySelector('a'));
+        if (destino) destino.focus();
+    };
+    enfocar();
+    try {
+        const params = new URLSearchParams({ status: estado });
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/${encodeURIComponent(id)}/status?${params}`, { method: 'PATCH' });
+        if (!response.ok) throw new Error(`Error ${response.status}`);
+        showNotification(`${sanitize(app.userName || 'La postulación')} pasó a ${columna.titulo.toLowerCase()}.`);
+        // La lista y las cifras de arriba tambien cambian
+        displayApplications(postulacionesEmpresa);
+        enfocar();
+        loadActivityStats();
+    } catch (error) {
+        app.status = antes;
+        pintarTablero();
+        enfocar();
+        showNotification('No se pudo mover la postulación. Intenta de nuevo.', 'error');
+    }
 }
 
 function showAllApplications(boton) {
