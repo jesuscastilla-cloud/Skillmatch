@@ -48,9 +48,15 @@ function avisar(texto, tipo) {
 
 // Cargar oportunidades al iniciar
 document.addEventListener('DOMContentLoaded', function() {
+    // Filtros y orden que traiga la direccion (antes de elegir el orden inicial)
+    leerFiltrosDeDireccion();
     // Las habilidades y las postulaciones se piden a la vez que las vacantes;
     // la lista se pinta una sola vez, ya con el % y "Ya te postulaste"
-    userSkillsReady = Promise.all([loadUserSkills(), loadAppliedJobs(), loadSavedJobs()]);
+    // Sin habilidades con que comparar (visitante, o persona que aun no agrega
+    // ninguna) se ordena por "Más reciente" antes de pintar la lista
+    userSkillsReady = Promise.all([loadUserSkills(), loadAppliedJobs(), loadSavedJobs()]).then(() => {
+        if (!esEmpresa() && !(userSkills && userSkills.size)) sinCompatibilidad();
+    });
     const parametros = new URLSearchParams(window.location.search);
     if (esEmpresa()) prepararVistaEmpresa();
     // Desde "Vacantes guardadas" del perfil se llega con ?guardadas=1
@@ -75,10 +81,87 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     updateFilterBadges();
 
-    // Una notificación de vacante nueva trae ?jobId=: se abre su detalle
+    // Un aviso, la portada, la paleta o un enlace compartido traen ?jobId=: se
+    // abre su detalle. En una llegada nueva la lista queda detras en el
+    // historial, para que "atras" vuelva a Vacantes y no saque del sitio. Al
+    // recargar un detalle (ya tiene su paso en el historial) solo se abre.
+    vigilarVentanasEnHistorial();
     const pedida = new URLSearchParams(window.location.search).get('jobId');
-    if (pedida) abrirDetallePorId(pedida);
+    if (pedida) {
+        const recarga = history.state && history.state.vacante === String(pedida);
+        if (!recarga) history.replaceState(null, '', direccionConVacante(null));
+        abrirDetallePorId(pedida, { sinHistorial: recarga });
+    }
 });
+
+// ---- El detalle y la postulacion en el historial ----
+// Abrir una vacante agrega un paso al historial con ?jobId= en la direccion:
+// "atras" (boton del navegador o gesto del celular) cierra la ventana y deja la
+// lista como estaba, con su busqueda, sus filtros y su posicion. Antes "atras"
+// sacaba de Vacantes.
+const VENTANAS_EN_HISTORIAL = ['jobDetailModal', 'applyModal'];
+
+function direccionConVacante(jobId) {
+    const url = new URL(window.location.href);
+    if (jobId) url.searchParams.set('jobId', jobId); else url.searchParams.delete('jobId');
+    return url;
+}
+
+function ventanaAbierta() {
+    return VENTANAS_EN_HISTORIAL.map(id => document.getElementById(id)).find(v => v && v.classList.contains('active')) || null;
+}
+
+// Un paso nuevo al abrir; si ya habia una ventana de vacante (del detalle a
+// "Postularme"), se reemplaza ese paso: "atras" vuelve a la lista
+function marcarVentanaEnHistorial(jobId) {
+    const estado = { vacante: String(jobId) };
+    if (history.state && history.state.vacante) history.replaceState(estado, '', direccionConVacante(jobId));
+    else history.pushState(estado, '', direccionConVacante(jobId));
+}
+
+function vigilarVentanasEnHistorial() {
+    // Se cierra de cuatro formas (X, "Cerrar", Escape o tocando afuera, estas dos
+    // en ui.js): se vigila la clase en lugar de cada boton. Solo cuenta el paso
+    // de abierta a cerrada, y mientras se vuelve no se vuelve otra vez (otro
+    // cambio de clase antes de que llegue el "atras" lo repetia y sacaba de Vacantes)
+    let habiaVentana = false;
+    let volviendo = false;
+    const alCerrar = new MutationObserver(() => {
+        const hayVentana = !!ventanaAbierta();
+        const seCerro = habiaVentana && !hayVentana;
+        habiaVentana = hayVentana;
+        if (!seCerro || volviendo || !new URLSearchParams(window.location.search).get('jobId')) return;
+        if (history.state && history.state.vacante) {
+            volviendo = true;
+            history.back();
+            setTimeout(() => { volviendo = false; }, 1500); // por si "atras" no llega
+        } else {
+            history.replaceState(null, '', direccionConVacante(null));
+        }
+    });
+    VENTANAS_EN_HISTORIAL.forEach(id => {
+        const ventana = document.getElementById(id);
+        if (ventana) alCerrar.observe(ventana, { attributes: true, attributeFilter: ['class'] });
+    });
+    // "Atras" cierra la ventana; "adelante" la vuelve a abrir
+    window.addEventListener('popstate', () => {
+        volviendo = false;
+        const jobId = new URLSearchParams(window.location.search).get('jobId');
+        const abierta = ventanaAbierta();
+        if (!jobId && abierta) {
+            if (abierta.dataset.cambios === '1' && vacanteAbierta) {
+                // Carta escrita sin enviar: la ventana se queda (se repone su paso
+                // en el historial) mientras la persona decide si la cierra
+                history.pushState({ vacante: String(vacanteAbierta.id) }, '', direccionConVacante(vacanteAbierta.id));
+                puedeCerrarVentana(abierta).then(si => { if (si) abierta.classList.remove('active'); });
+                return;
+            }
+            abierta.classList.remove('active');
+        } else if (jobId && !abierta) {
+            abrirDetallePorId(jobId, { sinHistorial: true });
+        }
+    });
+}
 
 // Cargar la primera página (de la lista general o de la búsqueda)
 async function loadJobs() {
@@ -195,6 +278,18 @@ function getSkillMatch(job) {
     if (!userSkills || userSkills.size === 0 || pedidas.size === 0) return null;
     const tiene = [...pedidas.keys()].filter(s => userSkills.has(s)).length;
     return { pct: Math.round(tiene / pedidas.size * 100), tiene, pedidas: pedidas.size };
+}
+
+// "Mayor compatibilidad" solo ordena si hay habilidades con que comparar. A un
+// visitante, a una empresa o a una persona sin habilidades se le ordena por
+// "Más reciente" y se le quita esa opcion (antes no ordenaba nada).
+function sinCompatibilidad() {
+    const orden = document.getElementById('sortSelect');
+    if (!orden) return;
+    // Si la direccion ya pedia otro orden (por ejemplo "Mejor salario"), se respeta
+    if (orden.value === 'match') orden.value = 'recent';
+    const opcion = orden.querySelector('option[value="match"]');
+    if (opcion) opcion.remove();
 }
 
 // Ordena segun el selector, sobre la lista que se este viendo
@@ -394,7 +489,7 @@ function createJobCard(job) {
 
 // ---- Detalle de la vacante ----
 
-async function abrirDetallePorId(jobId) {
+async function abrirDetallePorId(jobId, opciones = {}) {
     let job = allJobs.find(j => String(j.id) === String(jobId));
     if (!job) {
         // Desde una notificación la vacante puede no estar entre las cargadas
@@ -407,7 +502,7 @@ async function abrirDetallePorId(jobId) {
             return;
         }
     }
-    abrirDetalle(job);
+    abrirDetalle(job, opciones);
 }
 
 function listaDetalle(titulo, items) {
@@ -416,7 +511,25 @@ function listaDetalle(titulo, items) {
     return `<h3>${titulo}</h3><ul class="detalle-lista">${limpios.map(i => `<li>${escaparHtml(i)}</li>`).join('')}</ul>`;
 }
 
-function abrirDetalle(job) {
+// "¿Por qué este match?" (plan, fase 3): de las habilidades que pide la vacante,
+// cuales ya tienes (turquesa, como en las tarjetas) y cuales te faltan (naranja).
+// Asi se sabe que aprender, o que agregar al perfil si ya se sabe.
+function porQueEsteMatch(job) {
+    const pedidas = [...uniqueJobSkills(job)];
+    const tiene = pedidas.filter(([clave]) => userSkills.has(clave)).map(([, nombre]) => nombre);
+    const faltan = pedidas.filter(([clave]) => !userSkills.has(clave)).map(([, nombre]) => nombre);
+    const etiquetas = (lista, clase, icono) =>
+        lista.map(nombre => `<span class="skill ${clase}"><i data-ico="${icono}"></i>${escaparHtml(nombre)}</span>`).join('');
+    return `
+        <h3>¿Por qué este match?</h3>
+        ${tiene.length ? `<p class="match-grupo">Ya tienes</p><div class="card-skills">${etiquetas(tiene, 'is-common', 'check')}</div>` : ''}
+        ${faltan.length
+            ? `<p class="match-grupo">Te faltan</p><div class="card-skills">${etiquetas(faltan, 'skill-falta', 'plus')}</div>
+               <p class="match-consejo">¿Ya sabes alguna? <a href="perfil-usuario.html">Agrégala a tu perfil</a> y tu compatibilidad se actualiza.</p>`
+            : '<p class="match-consejo">Tienes todas las habilidades que pide esta vacante.</p>'}`;
+}
+
+function abrirDetalle(job, { sinHistorial = false } = {}) {
     vacanteAbierta = job;
     const modal = document.getElementById('jobDetailModal');
     const match = getSkillMatch(job);
@@ -441,8 +554,7 @@ function abrirDetalle(job) {
         </ul>
         <h3>Descripción</h3>
         <p class="detalle-texto">${escaparHtml(job.description || 'La empresa no agregó una descripción.')}</p>
-        <h3>Habilidades que pide</h3>
-        <div class="card-skills">${etiquetasHabilidades(job)}</div>
+        ${match ? porQueEsteMatch(job) : `<h3>Habilidades que pide</h3><div class="card-skills">${etiquetasHabilidades(job)}</div>`}
         ${listaDetalle('Requisitos', job.requirements)}
         ${listaDetalle('Responsabilidades', job.responsibilities)}
         ${listaDetalle('Beneficios', job.benefits)}
@@ -451,10 +563,20 @@ function abrirDetalle(job) {
         `<button type="button" class="btn-secondary-modal" onclick="cerrarVentana('jobDetailModal')">Cerrar</button>` + botonesVacante(job);
     modal.classList.add('active');
     modal.querySelector('.modal-body').scrollTop = 0;
+    if (!sinHistorial) marcarVentanaEnHistorial(job.id);
 }
 
 function cerrarVentana(id) {
     document.getElementById(id).classList.remove('active');
+}
+
+// Cierre pedido por la persona: si hay algo escrito sin enviar, primero pregunta
+function puedeCerrarVentana(ventana) {
+    return window.SkillMatchUI && SkillMatchUI.puedeCerrar ? SkillMatchUI.puedeCerrar(ventana) : Promise.resolve(true);
+}
+
+function pedirCerrarVentana(id) {
+    puedeCerrarVentana(document.getElementById(id)).then(si => { if (si) cerrarVentana(id); });
 }
 
 // Repinta tarjetas y detalle después de postularse o guardar
@@ -498,7 +620,10 @@ function postularme(jobId) {
     boton.disabled = false;
     boton.textContent = 'Enviar postulación';
     cerrarVentana('jobDetailModal');
-    document.getElementById('applyModal').classList.add('active');
+    const ventana = document.getElementById('applyModal');
+    ventana.dataset.cambios = ''; // carta nueva: todavia no hay nada escrito
+    ventana.classList.add('active');
+    marcarVentanaEnHistorial(job.id);
     setTimeout(() => carta.focus(), 60);
 }
 
@@ -596,8 +721,9 @@ function setupEventListeners() {
     }
 
     // Ventanas: la × y el contador de la carta
+    // La X y "Cancelar" preguntan si la carta tiene algo escrito (ui.js)
     document.querySelectorAll('[data-cerrar-ventana]').forEach(b =>
-        b.addEventListener('click', () => cerrarVentana(b.dataset.cerrarVentana)));
+        b.addEventListener('click', () => pedirCerrarVentana(b.dataset.cerrarVentana)));
     const carta = document.getElementById('coverLetter');
     if (carta) {
         carta.addEventListener('input', () => {
@@ -661,12 +787,7 @@ async function prepararVistaEmpresa() {
     if (guardadas) guardadas.remove();
     if (mias) mias.hidden = false;
     if (vista) vista.hidden = false;
-    const orden = document.getElementById('sortSelect');
-    if (orden) {
-        orden.value = 'recent';
-        const compatibilidad = orden.querySelector('option[value="match"]');
-        if (compatibilidad) compatibilidad.remove();
-    }
+    sinCompatibilidad();
     const datos = sesion();
     if (!datos.companyId) return;
     try {
@@ -709,6 +830,46 @@ function applyFilters() {
 
     currentFilters = { types, modalities, experienceLevels, maxSalary };
     displayJobs(filtered);
+    guardarFiltrosEnDireccion();
+}
+
+// ---- La busqueda y los filtros en la direccion ----
+// La vista, la busqueda, los filtros y el orden quedan en la direccion, sin
+// sumar pasos al historial: al recargar, al volver desde una empresa o al
+// compartir el enlace, la lista sale igual (antes se perdian).
+const FILTROS_EN_DIRECCION = [['type', 'tipo'], ['modality', 'modalidad'], ['experience', 'experiencia']];
+
+function guardarFiltrosEnDireccion() {
+    const url = new URL(window.location.href);
+    const poner = (clave, valor) => { if (valor) url.searchParams.set(clave, valor); else url.searchParams.delete(clave); };
+    poner('q', paginacion.modo === 'busqueda' ? paginacion.query : '');
+    poner('guardadas', paginacion.modo === 'guardadas' ? '1' : '');
+    poner('mias', paginacion.modo === 'mias' ? '1' : '');
+    FILTROS_EN_DIRECCION.forEach(([nombre, clave]) => poner(clave, getCheckedValues(`input[name="${nombre}"]:checked`).join(',')));
+    const salario = document.getElementById('salaryRange');
+    poner('salario', salario && Number(salario.value) < Number(salario.max) ? salario.value : '');
+    const orden = document.getElementById('sortSelect');
+    poner('orden', orden && orden.options.length && orden.value !== orden.options[0].value ? orden.value : '');
+    if (url.href !== window.location.href) history.replaceState(history.state, '', url);
+}
+
+// Al cargar, antes de pedir las vacantes: la primera lista ya sale filtrada
+function leerFiltrosDeDireccion() {
+    const p = new URLSearchParams(window.location.search);
+    FILTROS_EN_DIRECCION.forEach(([nombre, clave]) => {
+        const valores = (p.get(clave) || '').split(',').filter(Boolean);
+        document.querySelectorAll(`input[name="${nombre}"]`).forEach(c => { c.checked = valores.includes(c.value); });
+    });
+    const salario = document.getElementById('salaryRange');
+    const tope = Number(p.get('salario'));
+    if (salario && tope > 0) {
+        salario.value = String(tope);
+        document.getElementById('maxSalary').textContent = formatCurrency(Number(salario.value));
+    }
+    const orden = document.getElementById('sortSelect');
+    const pedido = p.get('orden');
+    if (orden && pedido && [...orden.options].some(o => o.value === pedido)) orden.value = pedido;
+    updateFilterBadges();
 }
 
 // Limpiar filtros
@@ -731,6 +892,7 @@ function clearFilters() {
 // Ordenar trabajos: reordena lo que se esta viendo
 function sortJobs() {
     displayJobs(shownJobs);
+    guardarFiltrosEnDireccion();
 }
 
 function updateFilterBadges() {

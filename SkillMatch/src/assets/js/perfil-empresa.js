@@ -703,7 +703,7 @@ function openEditAboutModal() {
             actualizarPaso('descripcion', !!newText);
             
             showNotification('Descripción actualizada correctamente');
-            closeModal();
+            closeModal(true);
         })
         .catch(error => {
             alert(`Error al guardar la descripción: ${error.message}`);
@@ -1079,7 +1079,7 @@ async function guardarOferta(isEdit, offerId) {
             const cuerpo = await respuesta.json().catch(() => ({}));
             throw new Error(cuerpo.message || 'El servidor no aceptó la oferta.');
         }
-        closeModal();
+        closeModal(true);
         showNotification(isEdit ? 'Oferta actualizada' : 'Oferta publicada');
         // La lista y las cifras se recargan del servidor (antes se armaba a mano
         // y salían fechas "1969" y el tipo en minúscula)
@@ -1233,26 +1233,26 @@ function createModal(title, content, onSave = null, saveButtonText = 'Guardar', 
         </div>
     `;
     
+    // Las ventanas con "Guardar" (nueva oferta, "Acerca de nosotros") preguntan
+    // antes de cerrarse si se escribio algo (ui.js: data-confirmar-cierre)
+    if (onSave) modal.setAttribute('data-confirmar-cierre', '');
     document.body.appendChild(modal);
-    
+
     if (onSave) {
         document.getElementById('modalSaveBtn').addEventListener('click', onSave);
     }
-    
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
-    
+    // El clic afuera y Escape los maneja ui.js (preguntando si hay algo escrito)
+
     return modal;
 }
 
-function closeModal() {
+// La X y "Cancelar" preguntan si hay algo escrito; al guardar con exito se
+// cierra sin preguntar (closeModal(true))
+async function closeModal(forzar = false) {
     const modal = document.getElementById('genericModal');
-    if (modal) {
-        modal.remove();
-    }
+    if (!modal) return;
+    if (!forzar && window.SkillMatchUI && SkillMatchUI.puedeCerrar && !(await SkillMatchUI.puedeCerrar(modal))) return;
+    modal.remove();
 }
 
 // Avisos de ui.js, los mismos del resto del sitio (antes uno propio con

@@ -158,11 +158,15 @@ async function salario(total) {
 // servidor. Cartagena siempre aparece (en naranja), aunque no este entre las 8.
 async function ciudades(muestra, total) {
     const nombres = new Map();
+    const kDestacada = clave(CIUDAD_DESTACADA);
     muestra.forEach(v => {
         const ciudad = String(v.location || '').split(',')[0].trim();
         if (!ciudad) return;
-        const k = clave(ciudad);
-        const actual = nombres.get(k) || { nombre: ciudad, veces: 0 };
+        // "Cartagena" y "Cartagena de Indias" son una sola fila: el servidor busca la
+        // ciudad como "contiene", asi que "Cartagena" las cuenta todas (antes salian
+        // dos filas con el mismo numero)
+        const k = clave(ciudad).startsWith(kDestacada) ? kDestacada : clave(ciudad);
+        const actual = nombres.get(k) || { nombre: k === kDestacada ? CIUDAD_DESTACADA : ciudad, veces: 0 };
         actual.veces++;
         nombres.set(k, actual);
     });

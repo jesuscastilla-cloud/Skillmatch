@@ -332,6 +332,52 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   una sola fila. En un celular, la columna del nombre quedaba de 0 a 20 px: el nombre y la fecha se partían en
   varias líneas y el cargo se metía debajo de "Mensaje". Ahora, si no caben, los botones bajan a su propia fila y
   en el celular ocupan todo el ancho, mitad y mitad. Solo CSS (`.connection-header`); también aplica a Solicitudes.
+- **Orden de Vacantes sin habilidades con qué comparar (hecho):** un visitante, o una persona que todavía no agrega
+  habilidades, veía "Ordenar por: Mayor compatibilidad", pero ese orden no hacía nada. Ahora ve "Más reciente" y esa
+  opción no aparece, igual que ya pasaba con las empresas (`sinCompatibilidad` en `oportunidades.js`). Quien tiene
+  habilidades sigue viendo primero las que más encajan.
+- **"¿Por qué este match?" en el detalle de la vacante (hecho, del plan, fase 3):** antes decía solo "Tienes 2 de 4
+  habilidades". Ahora muestra cuáles ya tienes (turquesa con palomita, igual que en las tarjetas) y cuáles te faltan
+  (naranja), con un enlace para agregarlas al perfil si ya las sabes (`porQueEsteMatch`). A un visitante o a una
+  empresa se le sigue mostrando "Habilidades que pide".
+- **Cartagena contada dos veces en Indicadores (hecho, visto en Render con las vacantes de ejemplo):** salían dos
+  filas iguales, "Cartagena de Indias: 87" y "Cartagena: 87". Indicadores siempre agrega "Cartagena" para pintarla en
+  naranja, y el servidor busca la ciudad como "contiene". Ahora todas las variantes que empiezan por "Cartagena"
+  son una sola fila, que las cuenta juntas (`ciudades` en `indicadores.js`).
+- **Revisión de navegación (hecho, 15 de octubre de 2026):** se revisó una lista de 8 problemas de navegación.
+  Tres ya no existían (el menú "Innovación", "Ver roadmap completo" y la falta de un inicio para quien tiene
+  sesión) y "Cerrar sesión" sí borra la sesión. Lo que sí era cierto se arregló:
+  - *El detalle de vacante tiene su propia dirección* (`?jobId=`): "atrás" lo cierra (también la ventana de
+    "Postularme") y la lista queda igual. Antes sacaba de Vacantes. Con un enlace directo, "atrás" lleva a la
+    lista. Un vigilante (`MutationObserver`) detecta el cierre por cualquier vía (X, "Cerrar", Escape o tocando
+    afuera).
+  - *La búsqueda, los filtros y el orden quedan en la dirección* (`q`, `tipo`, `modalidad`, `experiencia`,
+    `salario`, `orden`), sin sumar pasos al historial: se conservan al recargar, al volver de una empresa y al
+    compartir el enlace.
+  - *Menú de visitante escrito en el HTML* de Vacantes, Empresas y el perfil público de empresa. Antes traían
+    escrito el de sesión iniciada ("Mi perfil", "Cerrar sesión") y el JavaScript lo corregía después. Con sesión,
+    `ui.js` lo convierte igual que en la portada.
+  - *Enlaces en el registro y en la elección de cuenta*, como en los logins: "¿Ya tienes cuenta? Inicia sesión",
+    "¿Representas a una empresa? Registra tu empresa" y "¿Buscas trabajo? Crea tu perfil".
+  - *Sin el botón de la página en la que se está*: "Iniciar sesión" no sale en los logins ni "Unirse ahora" en
+    los registros (`sinBotonDeEstaPagina` en `ui.js`).
+  - *Preguntar antes de perder lo escrito*: "Nueva/Editar oferta", "Acerca de nosotros" y la carta de
+    "Postularme" preguntan "¿Cerrar sin guardar?" si se escribió algo (`SkillMatchUI.puedeCerrar` y
+    `data-confirmar-cierre` en `ui.js`). Escape ahora cierra la ventana de arriba, no la primera de la página.
+  - No se puso una franja de "← Volver" en todas las páginas: repetía el botón del navegador y el gesto del
+    celular, y las pantallas de esa lista ya tenían cómo salir.
+- **Mensajes más completos (hecho, 15 de octubre de 2026):**
+  - *Archivar y eliminar conversaciones*: un "⋯" en cada conversación y en la cabecera del chat. "Eliminar" es para
+    ti: el backend marca tus mensajes como borrados de tu lado y la otra persona los sigue viendo. "Archivar" las
+    pasa a "Archivadas" (arriba de la lista) y vuelven solas si llega un mensaje nuevo. Por ahora se guarda en el
+    navegador (`localStorage`); para que pase a otros dispositivos hace falta el backend (PENDIENTES 2.11).
+  - *Copiar o eliminar un mensaje*: "⋯" al pasar el mouse, clic derecho, o mantener presionado en el celular.
+  - *Fechas y estado*: separadores "Hoy", "Ayer", "Martes, 6 de octubre" dentro del chat, y una palomita gris
+    (enviado) o dos turquesa (leído). Antes solo salía una, y solo cuando ya lo habían leído.
+  - *"Ver perfil" de empresas* lleva a su perfil público (antes abría un perfil de persona vacío).
+  - De paso: en la lista, las empresas salían como "Caribe Digital Estudio Empresa" (a la expresión le faltaba la
+    barra de `\s`), y la negrita de los avisos no se leía sobre su fondo oscuro.
+  - Las horas en Render salen 5 horas corridas porque el servidor guarda en UTC: es del backend (PENDIENTES 2.10).
 
 ## Orden propuesto (solo frontend)
 

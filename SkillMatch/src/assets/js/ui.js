@@ -90,7 +90,11 @@
         download:  '<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/>',
         desktop:   '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/>',
         sun:       '<circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.2M12 18.8V21M4.2 12H2M22 12h-2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>',
-        moon:      '<path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/>'
+        moon:      '<path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/>',
+        // Mensajes: menu de opciones, archivar y copiar
+        more:      '<circle cx="5.5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18.5" cy="12" r="1.3" fill="currentColor"/>',
+        archive:   '<rect x="3.5" y="4.5" width="17" height="4" rx="1"/><path d="M5 8.5v9.5A1.5 1.5 0 0 0 6.5 19.5h11A1.5 1.5 0 0 0 19 18V8.5M10 12.5h4"/>',
+        copy:      '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/>'
     };
 
     // Un emoji puede no existir en el equipo del usuario y cambia de forma
@@ -271,6 +275,19 @@
             unirse.classList.remove('btn-register');
             unirse.parentElement.after(entrar.parentElement);
         }
+    }
+
+    /** En las paginas para entrar o registrarse sobra el boton que lleva a esa
+     *  misma pagina: "Iniciar sesion" en los logins y "Unirse ahora" en la
+     *  eleccion de cuenta y los registros. Cada una ya tiene sus enlaces para
+     *  cambiar (por ejemplo "¿Ya tienes cuenta? Inicia sesion"). */
+    function sinBotonDeEstaPagina() {
+        const pagina = paginaActual();
+        let selector = '';
+        if (/^login(-usuario|-empresa)?\.html$/.test(pagina)) selector = 'header .nav-links a.btn-login:not([data-cerrar-sesion])';
+        else if (/^(seleccionar-registro|registro-usuario|registro-empresa)\.html$/.test(pagina)) selector = 'header .nav-links a.btn-register';
+        const boton = selector && document.querySelector(selector);
+        if (boton && boton.parentElement) boton.parentElement.hidden = true;
     }
 
     /** Barra inferior en movil: cinco destinos, siempre los mismos. */
@@ -554,18 +571,49 @@
 
     function modalesAccesibles() {
         // Cerrar con Escape y con clic en el fondo, en cualquier modal de la app.
+        // Escape cierra la de arriba (la ultima abierta, por ejemplo una pregunta
+        // encima de un formulario; antes cerraba la primera de la pagina). Las que
+        // tienen algo escrito sin guardar (data-confirmar-cierre) preguntan antes.
         document.addEventListener('keydown', function (e) {
             if (e.key !== 'Escape') return;
-            const abierto = document.querySelector('.modal.active, .modal.is-open');
-            if (abierto) abierto.classList.remove('active', 'is-open');
+            const abiertas = document.querySelectorAll('.modal.active, .modal.is-open');
+            if (abiertas.length) cerrarConPermiso(abiertas[abiertas.length - 1]);
         });
 
         document.addEventListener('click', function (e) {
-            if (e.target.classList && e.target.classList.contains('modal')) {
-                e.target.classList.remove('active', 'is-open');
-            }
+            if (e.target.classList && e.target.classList.contains('modal')) cerrarConPermiso(e.target);
         });
+
+        // Escribir o elegir algo en una ventana que pide confirmacion la marca "con cambios"
+        const marcarCambios = function (e) {
+            const ventana = e.target instanceof Element && e.target.closest('[data-confirmar-cierre]');
+            if (ventana) ventana.dataset.cambios = '1';
+        };
+        document.addEventListener('input', marcarCambios, true);
+        document.addEventListener('change', marcarCambios, true);
     }
+
+    function cerrarConPermiso(ventana) {
+        UI.puedeCerrar(ventana).then(function (si) { if (si) ventana.classList.remove('active', 'is-open'); });
+    }
+
+    /** Antes de cerrar una ventana con algo escrito y sin guardar
+     *  (data-confirmar-cierre + data-cambios), pregunta. Devuelve una promesa:
+     *  true si se puede cerrar. Lo seguro ("Seguir editando") queda con el foco. */
+    UI.puedeCerrar = function (ventana) {
+        if (!ventana || !ventana.hasAttribute('data-confirmar-cierre') || ventana.dataset.cambios !== '1') return Promise.resolve(true);
+        if (document.getElementById('ventanaConfirmar')) return Promise.resolve(false); // ya se esta preguntando
+        return UI.confirmar({
+            titulo: '¿Cerrar sin guardar?',
+            texto: 'Se perderá lo que escribiste en esta ventana.',
+            aceptar: 'Cerrar sin guardar',
+            cancelar: 'Seguir editando',
+            peligro: true
+        }).then(function (si) {
+            if (si) ventana.dataset.cambios = '';
+            return si;
+        });
+    };
 
     /* ---------- 7. Formularios ---------- */
 
@@ -2452,6 +2500,7 @@
         // Primero la barra segun la sesion: para un visitante cambia enlaces (por
         // ejemplo "Mensajes" pasa a "Empresas") y despues se marca el actual
         sesionEnBarra();
+        sinBotonDeEstaPagina();
         marcarNavegacionActiva();
         construirTabbar();
         actualizarNoLeidos();
