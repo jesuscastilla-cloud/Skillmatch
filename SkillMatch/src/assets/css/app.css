@@ -1448,11 +1448,12 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     animation: toast-in .32s var(--ease-out) both;
 }
 .toast.is-leaving { animation: toast-out .24s var(--ease-in-out) both; }
-.toast .ico { margin-top: 2px; }
+/* flex-shrink: 0: con un texto de varias lineas, el texto encogia el icono y la X hasta dejarla como un punto */
+.toast .ico { margin-top: 2px; flex-shrink: 0; }
 .toast-ok    .ico { color: #5BE0A8; }
 .toast-error .ico { color: #FF8A9B; }
 .toast-info  .ico { color: #7EDDE6; }
-.toast button { color: rgba(255,255,255,.6); margin-left: auto; }
+.toast button { color: rgba(255,255,255,.6); margin-left: auto; flex-shrink: 0; }
 .toast button:hover { color: #fff; }
 
 @keyframes toast-in {
@@ -3940,7 +3941,17 @@ a.meta-tag { position: relative; }
 .message-read { color: var(--sea); }
 
 .connection-card, .suggestion-card { padding: var(--s5); }
-.connection-body { display: flex; gap: var(--s4); align-items: flex-start; }
+.connection-body { display: flex; gap: var(--s4); align-items: flex-start; margin-top: var(--s3); }
+/* Tarjeta de conexion o solicitud: foto, datos y botones en una fila solo si
+   caben; si no, los botones bajan a su propia fila. Antes, en el celular, la
+   columna del nombre quedaba de 0 a 20 px y el cargo se metia debajo de "Mensaje". */
+.connection-header { flex-wrap: wrap; }
+.connection-info { flex: 1 1 12rem; }
+.connection-type { max-width: 100%; white-space: normal; }
+@media (max-width: 600px) {
+    .connection-actions { flex: 1 1 100%; }
+    .connection-actions .btn { flex: 1 1 0; justify-content: center; }
+}
 .suggestion-reason {
     font-size: var(--t-sm);
     color: var(--ink-3);
@@ -4006,6 +4017,18 @@ a.meta-tag { position: relative; }
 .ic-nombre { font-size: var(--t-sm); color: var(--ink-3); }
 .indicadores-promedio { margin-top: var(--s3); font-size: var(--t-sm); color: var(--ink-3); }
 .indicadores-promedio:empty { display: none; }
+
+/* Sin vacantes abiertas: un aviso en lugar de las graficas */
+.indicadores-vacio {
+    margin-top: var(--s6);
+    padding: var(--s7) var(--s6);
+    border: 1px dashed var(--hairline);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    text-align: center;
+}
+.indicadores-vacio h2 { font-size: var(--t-lg); }
+.indicadores-vacio p { max-width: 60ch; margin: var(--s2) auto var(--s5); color: var(--ink-3); }
 
 /* Tarjetas con barras */
 .indicadores-grid {

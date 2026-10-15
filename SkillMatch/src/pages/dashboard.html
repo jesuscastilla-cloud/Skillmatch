@@ -75,6 +75,13 @@
                 </ul>
                 <p class="indicadores-promedio" id="indicadoresPromedio"></p>
 
+                <!-- Sin vacantes abiertas: un aviso en lugar de graficas en cero (indicadores.js) -->
+                <div class="indicadores-vacio" id="indicadoresVacio" hidden>
+                    <h2>Todavía no hay vacantes abiertas</h2>
+                    <p>Cuando las empresas publiquen sus vacantes, aquí verás qué tipo de trabajo hay, dónde, cómo, cuánto pagan y qué habilidades piden.</p>
+                    <a class="btn btn-secondary" id="indicadoresVacioAccion" href="registro-empresa.html">¿Tienes una empresa? Publica la primera</a>
+                </div>
+
                 <div class="indicadores-grid">
                     <article class="indicador" aria-labelledby="indTipoTitulo">
                         <h2 id="indTipoTitulo">Tipo de trabajo</h2>

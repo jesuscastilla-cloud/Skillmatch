@@ -39,6 +39,16 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
 - **Arreglo:** quitar `= null`. Al tener un valor, `@RequiredArgsConstructor` lo deja fuera del constructor y Spring
   nunca lo conecta.
 
+### 1.5 Una empresa puede publicar vacantes a nombre de otra
+- **Qué pasa:** `POST /api/jobs` acepta el `companyId` que venga en el cuerpo sin revisar que sea de quien publica.
+  Cualquier cuenta de empresa puede crear una vacante que aparece como de otra empresa (por ejemplo, una oferta falsa
+  para pedir datos o dinero a las personas). Encontrado el 14 de octubre de 2026 al crear datos de prueba locales.
+- **Dónde:** `controller/JobController.java:34-43` (solo pide el rol `EMPRESA`) y `service/JobService.java:40`
+  (`createJob` no recibe quién publica).
+- **Arreglo:** pasar `currentUser.getId()` a `createJob` y rechazar con 403 si `companyId` no es una empresa cuyo
+  `userId` sea ese (salvo ADMIN), igual que ya hace `verifyOwnership` al editar. El frontend siempre manda el
+  `companyId` de la propia sesión, así que no cambia nada.
+
 ---
 
 ## 2. Funciones que el frontend ya espera
@@ -100,6 +110,39 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
 ### 2.7 (Opcional) Conexiones de otra persona
 - No hay forma de saber cuántas conexiones tiene otra persona; por eso ese dato se oculta en su perfil.
 
+### 2.8 Render no tiene vacantes ni empresas
+- **Qué pasa:** el 14 de octubre de 2026 la base de producción (Cluster0) tenía 7 personas y ninguna empresa, vacante
+  ni postulación. Vacantes, Empresas e Indicadores se ven vacíos. El frontend ya lo explica con un mensaje (PR #5),
+  pero así no se puede mostrar el sitio.
+- **No activar `DataSeeder` tal como está en Render:**
+  - crea 190 cuentas con la contraseña `password123`, que está escrita en el repositorio público: cualquiera podría
+    entrar como esas empresas;
+  - crea 300 postulaciones falsas;
+  - solo trae empresas de tecnología con nombres en inglés (ver `docs/GUIA-DE-LENGUAJE.md`, "Para Jesús").
+- **Arreglo propuesto:**
+  1. Lo mejor: empresas reales de Cartagena que se registren y publiquen. El equipo puede conseguir 2 o 3 cada uno.
+  2. Para mostrar el sitio antes de eso, cargar datos de ejemplo **marcados como ejemplo**, para que nadie se postule
+     creyendo que son reales:
+     - "(ejemplo)" en el nombre de cada empresa;
+     - una frase al inicio de cada vacante: "Vacante de ejemplo: no es una oferta real";
+     - contraseñas al azar que no queden en el repositorio;
+     - oficios de muchos sectores.
+  3. Luis tiene un script listo que hace esto por la API, con todo lo anterior: 12 empresas de Cartagena, 100
+     vacantes de muchos oficios que cierran entre 3 y casi 6 meses después, 15 personas de ejemplo que se postulan y
+     postulaciones con estados mezclados. Lo corre él desde su computador cuando tú des el visto bueno.
+  4. Lo que queda para ti, con tu acceso a la base de producción y `mongosh` (Luis te pasa los dos archivos):
+     - `completar-vacantes.js`: pone sector, ciudad y tamaño a esas empresas (la API no deja, ver 2.2) y reparte las
+       fechas de publicación en el último mes (si no, todas dicen "hoy");
+     - `borrar-vacantes.js`: cuando lleguen empresas reales, borra todo lo de ejemplo (solo las cuentas
+       `@skillmatch.test`, sus vacantes y postulaciones).
+  5. El backend permite 20 entradas o registros por minuto por IP (`RateLimitingFilter`); el script espera solo.
+
+### 2.9 Render se duerme
+- **Qué pasa:** en el plan gratis, Render apaga el servidor tras 15 minutos sin visitas. La siguiente visita tarda
+  cerca de un minuto y parece que el sitio no funciona.
+- **Arreglo gratis:** programar en cron-job.org una visita a `https://skillmatch-yz37.onrender.com/api/health` cada
+  10 minutos. Las 750 horas gratis al mes alcanzan para un servicio encendido todo el tiempo.
+
 ---
 
 ## 3. Validaciones y consistencia
@@ -154,8 +197,11 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
 | 1.1 Sugerencias | Conexiones → Sugerencias: siguen saliendo, pero la respuesta ya no trae contraseña, correo ni teléfono |
 | 1.2 Perfil ajeno | `perfil-usuario.html?id=<otra persona>`: la respuesta de `/users/{id}` ya no trae correo ni teléfono |
 | 1.4 Experiencias | Mi perfil muestra las experiencias, el panel de inicio marca "Experiencia" y la hoja de vida trae la sección |
+| 1.5 Vacante ajena | `POST /api/jobs` con el `companyId` de otra empresa responde 403 |
 | 2.1 Notificaciones | Postúlate como persona: la campana de la empresa avisa; acepta como empresa: la campana de la persona avisa |
 | 2.2 Datos de empresa | El directorio (`empresas.html`) y el perfil público muestran sector, ciudad y sitio web de empresas reales |
 | 2.3 Retirada | En la ventana de candidatos aparece "Retirada" en vez de desaparecer |
 | 2.4 Rechazada | En el perfil de quien te rechazó, "Conectar" vuelve a funcionar |
+| 2.8 Vacantes en Render | Vacantes, Empresas e Indicadores de skillmatch-yz37.onrender.com muestran datos en vez del mensaje de vacío |
+| 2.9 Sin dormirse | La primera visita del día abre en segundos, no en un minuto |
 | 3.2 Búsqueda | `GET /api/jobs/search?keyword=(` responde 200 con 0 resultados |

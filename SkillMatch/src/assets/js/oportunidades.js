@@ -266,10 +266,19 @@ function displayJobs(jobs) {
             updateResultsCount(0);
             return;
         }
+        // Sin ninguna vacante en el sitio (no es una busqueda): decirlo tal cual y,
+        // a una empresa o a un visitante, ofrecer publicar la primera
+        const sitioVacio = !porFiltros && paginacion.modo !== 'busqueda';
+        const publicar = !sitioVacio ? ''
+            : esEmpresa() ? '<a class="btn btn-primary" href="perfil-empresa.html?nueva=1"><i data-ico="plus"></i> Publicar una vacante</a>'
+            : !sesion() ? '<a class="btn btn-secondary" href="registro-empresa.html">¿Tienes una empresa? Publica la primera</a>' : '';
         container.innerHTML = `
             <div class="no-results-message">
                 <h3>${porFiltros ? 'Ninguna vacante cumple los filtros' : (paginacion.modo === 'busqueda' ? 'No encontramos vacantes con esa búsqueda' : 'Aún no hay vacantes publicadas')}</h3>
-                <p>${porFiltros ? (paginacion.ultima ? 'Prueba quitando algún filtro.' : 'Prueba quitando algún filtro o carga más vacantes.') : 'Prueba con otra palabra, por ejemplo el nombre del cargo o de la empresa.'}</p>
+                <p>${porFiltros ? (paginacion.ultima ? 'Prueba quitando algún filtro.' : 'Prueba quitando algún filtro o carga más vacantes.')
+                    : sitioVacio ? 'Cuando las empresas publiquen vacantes, aparecerán aquí.'
+                    : 'Prueba con otra palabra, por ejemplo el nombre del cargo o de la empresa.'}</p>
+                ${publicar}
             </div>` + bloqueCargarMas();
         updateResultsCount(0);
         return;
