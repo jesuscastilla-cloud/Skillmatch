@@ -344,6 +344,28 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   filas iguales, "Cartagena de Indias: 87" y "Cartagena: 87". Indicadores siempre agrega "Cartagena" para pintarla en
   naranja, y el servidor busca la ciudad como "contiene". Ahora todas las variantes que empiezan por "Cartagena"
   son una sola fila, que las cuenta juntas (`ciudades` en `indicadores.js`).
+- **Revisión de navegación (hecho, 15 de octubre de 2026):** se revisó una lista de 8 problemas de navegación.
+  Tres ya no existían (el menú "Innovación", "Ver roadmap completo" y la falta de un inicio para quien tiene
+  sesión) y "Cerrar sesión" sí borra la sesión. Lo que sí era cierto se arregló:
+  - *El detalle de vacante tiene su propia dirección* (`?jobId=`): "atrás" lo cierra (también la ventana de
+    "Postularme") y la lista queda igual. Antes sacaba de Vacantes. Con un enlace directo, "atrás" lleva a la
+    lista. Un vigilante (`MutationObserver`) detecta el cierre por cualquier vía (X, "Cerrar", Escape o tocando
+    afuera).
+  - *La búsqueda, los filtros y el orden quedan en la dirección* (`q`, `tipo`, `modalidad`, `experiencia`,
+    `salario`, `orden`), sin sumar pasos al historial: se conservan al recargar, al volver de una empresa y al
+    compartir el enlace.
+  - *Menú de visitante escrito en el HTML* de Vacantes, Empresas y el perfil público de empresa. Antes traían
+    escrito el de sesión iniciada ("Mi perfil", "Cerrar sesión") y el JavaScript lo corregía después. Con sesión,
+    `ui.js` lo convierte igual que en la portada.
+  - *Enlaces en el registro y en la elección de cuenta*, como en los logins: "¿Ya tienes cuenta? Inicia sesión",
+    "¿Representas a una empresa? Registra tu empresa" y "¿Buscas trabajo? Crea tu perfil".
+  - *Sin el botón de la página en la que se está*: "Iniciar sesión" no sale en los logins ni "Unirse ahora" en
+    los registros (`sinBotonDeEstaPagina` en `ui.js`).
+  - *Preguntar antes de perder lo escrito*: "Nueva/Editar oferta", "Acerca de nosotros" y la carta de
+    "Postularme" preguntan "¿Cerrar sin guardar?" si se escribió algo (`SkillMatchUI.puedeCerrar` y
+    `data-confirmar-cierre` en `ui.js`). Escape ahora cierra la ventana de arriba, no la primera de la página.
+  - No se puso una franja de "← Volver" en todas las páginas: repetía el botón del navegador y el gesto del
+    celular, y las pantallas de esa lista ya tenían cómo salir.
 
 ## Orden propuesto (solo frontend)
 
