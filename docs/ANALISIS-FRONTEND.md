@@ -340,6 +340,10 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   habilidades". Ahora muestra cuáles ya tienes (turquesa con palomita, igual que en las tarjetas) y cuáles te faltan
   (naranja), con un enlace para agregarlas al perfil si ya las sabes (`porQueEsteMatch`). A un visitante o a una
   empresa se le sigue mostrando "Habilidades que pide".
+- **Cartagena contada dos veces en Indicadores (hecho, visto en Render con las vacantes de ejemplo):** salían dos
+  filas iguales, "Cartagena de Indias: 87" y "Cartagena: 87". Indicadores siempre agrega "Cartagena" para pintarla en
+  naranja, y el servidor busca la ciudad como "contiene". Ahora todas las variantes que empiezan por "Cartagena"
+  son una sola fila, que las cuenta juntas (`ciudades` en `indicadores.js`).
 
 ## Orden propuesto (solo frontend)
 
