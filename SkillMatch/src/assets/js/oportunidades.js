@@ -48,6 +48,8 @@ function avisar(texto, tipo) {
 
 // Cargar oportunidades al iniciar
 document.addEventListener('DOMContentLoaded', function() {
+    // Filtros y orden que traiga la direccion (antes de elegir el orden inicial)
+    leerFiltrosDeDireccion();
     // Las habilidades y las postulaciones se piden a la vez que las vacantes;
     // la lista se pinta una sola vez, ya con el % y "Ya te postulaste"
     // Sin habilidades con que comparar (visitante, o persona que aun no agrega
@@ -284,7 +286,8 @@ function getSkillMatch(job) {
 function sinCompatibilidad() {
     const orden = document.getElementById('sortSelect');
     if (!orden) return;
-    orden.value = 'recent';
+    // Si la direccion ya pedia otro orden (por ejemplo "Mejor salario"), se respeta
+    if (orden.value === 'match') orden.value = 'recent';
     const opcion = orden.querySelector('option[value="match"]');
     if (opcion) opcion.remove();
 }
@@ -827,6 +830,46 @@ function applyFilters() {
 
     currentFilters = { types, modalities, experienceLevels, maxSalary };
     displayJobs(filtered);
+    guardarFiltrosEnDireccion();
+}
+
+// ---- La busqueda y los filtros en la direccion ----
+// La vista, la busqueda, los filtros y el orden quedan en la direccion, sin
+// sumar pasos al historial: al recargar, al volver desde una empresa o al
+// compartir el enlace, la lista sale igual (antes se perdian).
+const FILTROS_EN_DIRECCION = [['type', 'tipo'], ['modality', 'modalidad'], ['experience', 'experiencia']];
+
+function guardarFiltrosEnDireccion() {
+    const url = new URL(window.location.href);
+    const poner = (clave, valor) => { if (valor) url.searchParams.set(clave, valor); else url.searchParams.delete(clave); };
+    poner('q', paginacion.modo === 'busqueda' ? paginacion.query : '');
+    poner('guardadas', paginacion.modo === 'guardadas' ? '1' : '');
+    poner('mias', paginacion.modo === 'mias' ? '1' : '');
+    FILTROS_EN_DIRECCION.forEach(([nombre, clave]) => poner(clave, getCheckedValues(`input[name="${nombre}"]:checked`).join(',')));
+    const salario = document.getElementById('salaryRange');
+    poner('salario', salario && Number(salario.value) < Number(salario.max) ? salario.value : '');
+    const orden = document.getElementById('sortSelect');
+    poner('orden', orden && orden.options.length && orden.value !== orden.options[0].value ? orden.value : '');
+    if (url.href !== window.location.href) history.replaceState(history.state, '', url);
+}
+
+// Al cargar, antes de pedir las vacantes: la primera lista ya sale filtrada
+function leerFiltrosDeDireccion() {
+    const p = new URLSearchParams(window.location.search);
+    FILTROS_EN_DIRECCION.forEach(([nombre, clave]) => {
+        const valores = (p.get(clave) || '').split(',').filter(Boolean);
+        document.querySelectorAll(`input[name="${nombre}"]`).forEach(c => { c.checked = valores.includes(c.value); });
+    });
+    const salario = document.getElementById('salaryRange');
+    const tope = Number(p.get('salario'));
+    if (salario && tope > 0) {
+        salario.value = String(tope);
+        document.getElementById('maxSalary').textContent = formatCurrency(Number(salario.value));
+    }
+    const orden = document.getElementById('sortSelect');
+    const pedido = p.get('orden');
+    if (orden && pedido && [...orden.options].some(o => o.value === pedido)) orden.value = pedido;
+    updateFilterBadges();
 }
 
 // Limpiar filtros
@@ -849,6 +892,7 @@ function clearFilters() {
 // Ordenar trabajos: reordena lo que se esta viendo
 function sortJobs() {
     displayJobs(shownJobs);
+    guardarFiltrosEnDireccion();
 }
 
 function updateFilterBadges() {
