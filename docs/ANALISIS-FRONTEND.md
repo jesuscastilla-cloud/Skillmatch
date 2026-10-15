@@ -328,6 +328,10 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   (sección 24) muestra el aviso de la marca "Un momento: SkillMatch se está despertando…", y lo quita solo cuando
   responden todas. Con un servidor rápido no aparece nunca. De paso se arregló la X de los avisos largos: un texto de
   varias líneas la encogía hasta dejarla del tamaño de un punto.
+- **Tarjetas de Conexiones en el celular (hecho, visto por Luis en Render):** foto, datos y botones iban siempre en
+  una sola fila. En un celular, la columna del nombre quedaba de 0 a 20 px: el nombre y la fecha se partían en
+  varias líneas y el cargo se metía debajo de "Mensaje". Ahora, si no caben, los botones bajan a su propia fila y
+  en el celular ocupan todo el ancho, mitad y mitad. Solo CSS (`.connection-header`); también aplica a Solicitudes.
 
 ## Orden propuesto (solo frontend)
 

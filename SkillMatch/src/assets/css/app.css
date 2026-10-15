@@ -3941,7 +3941,17 @@ a.meta-tag { position: relative; }
 .message-read { color: var(--sea); }
 
 .connection-card, .suggestion-card { padding: var(--s5); }
-.connection-body { display: flex; gap: var(--s4); align-items: flex-start; }
+.connection-body { display: flex; gap: var(--s4); align-items: flex-start; margin-top: var(--s3); }
+/* Tarjeta de conexion o solicitud: foto, datos y botones en una fila solo si
+   caben; si no, los botones bajan a su propia fila. Antes, en el celular, la
+   columna del nombre quedaba de 0 a 20 px y el cargo se metia debajo de "Mensaje". */
+.connection-header { flex-wrap: wrap; }
+.connection-info { flex: 1 1 12rem; }
+.connection-type { max-width: 100%; white-space: normal; }
+@media (max-width: 600px) {
+    .connection-actions { flex: 1 1 100%; }
+    .connection-actions .btn { flex: 1 1 0; justify-content: center; }
+}
 .suggestion-reason {
     font-size: var(--t-sm);
     color: var(--ink-3);
