@@ -93,6 +93,48 @@ const API_CONFIG = {
 
 const API_BASE_URL = API_CONFIG.BASE_URL;
 
+/* ---------- Servidor dormido ---------- */
+
+// Render (plan gratis) apaga el backend tras 15 minutos sin visitas y la primera
+// respuesta tarda hasta un minuto: sin aviso, la pagina parece rota. Aqui se
+// cuentan las consultas a la API que siguen esperando; si alguna pasa de
+// ESPERA_SERVIDOR_MS, ui.js muestra un aviso y lo quita cuando terminan todas.
+// Va en este archivo porque se carga primero: asi tambien cuenta las consultas
+// que los modulos hacen apenas cargan.
+const ESPERA_SERVIDOR_MS = 4000;
+(function vigilarServidor() {
+    const fetchOriginal = window.fetch;
+    if (!fetchOriginal) return;
+    const estado = { esperando: 0, lento: false };
+    const base = new URL(API_BASE_URL, window.location.href).href;
+    let temporizador = null;
+    const avisar = lento => {
+        estado.lento = lento;
+        window.dispatchEvent(new CustomEvent('skillmatch:servidor', { detail: { lento } }));
+    };
+    window.fetch = function (recurso) {
+        const promesa = fetchOriginal.apply(window, arguments);
+        let url = '';
+        try { url = new URL(recurso instanceof Request ? recurso.url : String(recurso), window.location.href).href; } catch (e) { /* no es una URL */ }
+        if (url.indexOf(base) !== 0) return promesa;
+        estado.esperando++;
+        if (!temporizador && !estado.lento) {
+            temporizador = setTimeout(() => { temporizador = null; if (estado.esperando) avisar(true); }, ESPERA_SERVIDOR_MS);
+        }
+        const terminar = () => {
+            estado.esperando--;
+            if (estado.esperando > 0) return;
+            clearTimeout(temporizador);
+            temporizador = null;
+            if (estado.lento) avisar(false);
+        };
+        promesa.then(terminar, terminar);
+        return promesa;
+    };
+    // ui.js lo lee al arrancar, por si la espera empezo antes de que cargara
+    window.SkillMatchServidor = estado;
+})();
+
 /* ---------- Sesion ---------- */
 
 function saveToken(token) {

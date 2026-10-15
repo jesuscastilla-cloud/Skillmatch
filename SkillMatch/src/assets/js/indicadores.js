@@ -149,7 +149,9 @@ async function salario(total) {
     const sinSalario = total - acumulados[acumulados.length - 1];
     filas.push({ nombre: 'Sin salario publicado', valor: sinSalario });
     // Los rangos sin ninguna vacante no se dibujan (se veian como barras rotas)
-    barras(document.getElementById('indSalario'), filas.filter(f => f.valor > 0), total);
+    const conValor = filas.filter(f => f.valor > 0);
+    if (!conValor.length) return sinDatos(document.getElementById('indSalario'), 'Todavía no hay salarios publicados.');
+    barras(document.getElementById('indSalario'), conValor, total);
 }
 
 // Ciudades: la lista sale de la muestra y cada total se cuenta exacto en el
@@ -238,6 +240,28 @@ async function cargarIndicadores() {
         abiertas = await contar();
     } catch (e) {
         error.hidden = false;
+        seccion.removeAttribute('aria-busy');
+        return;
+    }
+    // Sin vacantes abiertas no hay nada que graficar: un solo aviso, y las cifras
+    // generales (personas, empresas) igual se muestran
+    const vacio = abiertas === 0;
+    document.getElementById('indicadoresVacio').hidden = !vacio;
+    document.querySelector('.indicadores-grid').hidden = vacio;
+    if (vacio) {
+        // El boton depende de quien mira: una empresa publica la suya, una persona
+        // con sesion no tiene nada que publicar, un visitante puede registrar su empresa
+        let datos = null;
+        try { datos = localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null; } catch (e) { /* sin almacenamiento */ }
+        const accion = document.getElementById('indicadoresVacioAccion');
+        if (datos && datos.userType === 'empresa') {
+            accion.href = 'perfil-empresa.html?nueva=1';
+            accion.className = 'btn btn-primary';
+            accion.textContent = 'Publicar una vacante';
+        } else if (datos) {
+            accion.hidden = true;
+        }
+        await pedir('/public/stats').then(stats => cifras(stats, 0)).catch(() => cifras({}, 0));
         seccion.removeAttribute('aria-busy');
         return;
     }

@@ -314,6 +314,24 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   tarjeta), sin animar con movimiento reducido, y no interrumpe si se llega a abrir una ventana (por ejemplo
   "Nueva oferta"). Es `SkillMatchUI.recorrido` (ui.js, sección 23): sirve para cualquier página. Botón visible
   "Cómo funciona" en el panel de inicio (persona y empresa) y en "Mi empresa" para verlo cuando se quiera.
+- **Sitio recién abierto, sin vacantes ni empresas (hecho):** revisando la página en Render, la base de datos de
+  producción todavía no tiene vacantes ni empresas, y tres páginas lo decían mal. Vacantes pedía "Prueba con otra
+  palabra" aunque nadie hubiera buscado: ahora dice "Cuando las empresas publiquen vacantes, aparecerán aquí" y ofrece
+  "Publicar una vacante" (empresa) o "¿Tienes una empresa? Publica la primera" (visitante); con una búsqueda sin
+  resultados sigue sugiriendo otra palabra. Empresas mostraba una lista en blanco: ahora explica que todavía no hay
+  empresas. Indicadores mostraba seis gráficas en cero: ahora muestra las cifras generales y un solo aviso con el mismo
+  botón según quién mira (una persona con sesión no ve botón), y la gráfica de salarios dice "Todavía no hay salarios
+  publicados" si ninguna vacante trae salario.
+- **Aviso cuando el servidor está despertando (hecho):** en el plan gratis, Render apaga el servidor tras 15 minutos
+  sin visitas, y la primera carga tardaba hasta un minuto sin decir nada. `api-config.js` (que se carga primero en
+  todas las páginas) cuenta las consultas a la API que siguen esperando. Si alguna pasa de 4 segundos, `ui.js`
+  (sección 24) muestra el aviso de la marca "Un momento: SkillMatch se está despertando…", y lo quita solo cuando
+  responden todas. Con un servidor rápido no aparece nunca. De paso se arregló la X de los avisos largos: un texto de
+  varias líneas la encogía hasta dejarla del tamaño de un punto.
+- **Tarjetas de Conexiones en el celular (hecho, visto por Luis en Render):** foto, datos y botones iban siempre en
+  una sola fila. En un celular, la columna del nombre quedaba de 0 a 20 px: el nombre y la fecha se partían en
+  varias líneas y el cargo se metía debajo de "Mensaje". Ahora, si no caben, los botones bajan a su propia fila y
+  en el celular ocupan todo el ancho, mitad y mitad. Solo CSS (`.connection-header`); también aplica a Solicitudes.
 
 ## Orden propuesto (solo frontend)
 
