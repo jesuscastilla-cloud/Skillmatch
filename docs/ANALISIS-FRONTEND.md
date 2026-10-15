@@ -332,6 +332,14 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   una sola fila. En un celular, la columna del nombre quedaba de 0 a 20 px: el nombre y la fecha se partían en
   varias líneas y el cargo se metía debajo de "Mensaje". Ahora, si no caben, los botones bajan a su propia fila y
   en el celular ocupan todo el ancho, mitad y mitad. Solo CSS (`.connection-header`); también aplica a Solicitudes.
+- **Orden de Vacantes sin habilidades con qué comparar (hecho):** un visitante, o una persona que todavía no agrega
+  habilidades, veía "Ordenar por: Mayor compatibilidad", pero ese orden no hacía nada. Ahora ve "Más reciente" y esa
+  opción no aparece, igual que ya pasaba con las empresas (`sinCompatibilidad` en `oportunidades.js`). Quien tiene
+  habilidades sigue viendo primero las que más encajan.
+- **"¿Por qué este match?" en el detalle de la vacante (hecho, del plan, fase 3):** antes decía solo "Tienes 2 de 4
+  habilidades". Ahora muestra cuáles ya tienes (turquesa con palomita, igual que en las tarjetas) y cuáles te faltan
+  (naranja), con un enlace para agregarlas al perfil si ya las sabes (`porQueEsteMatch`). A un visitante o a una
+  empresa se le sigue mostrando "Habilidades que pide".
 
 ## Orden propuesto (solo frontend)
 

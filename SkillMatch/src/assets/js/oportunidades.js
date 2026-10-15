@@ -50,7 +50,11 @@ function avisar(texto, tipo) {
 document.addEventListener('DOMContentLoaded', function() {
     // Las habilidades y las postulaciones se piden a la vez que las vacantes;
     // la lista se pinta una sola vez, ya con el % y "Ya te postulaste"
-    userSkillsReady = Promise.all([loadUserSkills(), loadAppliedJobs(), loadSavedJobs()]);
+    // Sin habilidades con que comparar (visitante, o persona que aun no agrega
+    // ninguna) se ordena por "Más reciente" antes de pintar la lista
+    userSkillsReady = Promise.all([loadUserSkills(), loadAppliedJobs(), loadSavedJobs()]).then(() => {
+        if (!esEmpresa() && !(userSkills && userSkills.size)) sinCompatibilidad();
+    });
     const parametros = new URLSearchParams(window.location.search);
     if (esEmpresa()) prepararVistaEmpresa();
     // Desde "Vacantes guardadas" del perfil se llega con ?guardadas=1
@@ -195,6 +199,17 @@ function getSkillMatch(job) {
     if (!userSkills || userSkills.size === 0 || pedidas.size === 0) return null;
     const tiene = [...pedidas.keys()].filter(s => userSkills.has(s)).length;
     return { pct: Math.round(tiene / pedidas.size * 100), tiene, pedidas: pedidas.size };
+}
+
+// "Mayor compatibilidad" solo ordena si hay habilidades con que comparar. A un
+// visitante, a una empresa o a una persona sin habilidades se le ordena por
+// "Más reciente" y se le quita esa opcion (antes no ordenaba nada).
+function sinCompatibilidad() {
+    const orden = document.getElementById('sortSelect');
+    if (!orden) return;
+    orden.value = 'recent';
+    const opcion = orden.querySelector('option[value="match"]');
+    if (opcion) opcion.remove();
 }
 
 // Ordena segun el selector, sobre la lista que se este viendo
@@ -416,6 +431,24 @@ function listaDetalle(titulo, items) {
     return `<h3>${titulo}</h3><ul class="detalle-lista">${limpios.map(i => `<li>${escaparHtml(i)}</li>`).join('')}</ul>`;
 }
 
+// "¿Por qué este match?" (plan, fase 3): de las habilidades que pide la vacante,
+// cuales ya tienes (turquesa, como en las tarjetas) y cuales te faltan (naranja).
+// Asi se sabe que aprender, o que agregar al perfil si ya se sabe.
+function porQueEsteMatch(job) {
+    const pedidas = [...uniqueJobSkills(job)];
+    const tiene = pedidas.filter(([clave]) => userSkills.has(clave)).map(([, nombre]) => nombre);
+    const faltan = pedidas.filter(([clave]) => !userSkills.has(clave)).map(([, nombre]) => nombre);
+    const etiquetas = (lista, clase, icono) =>
+        lista.map(nombre => `<span class="skill ${clase}"><i data-ico="${icono}"></i>${escaparHtml(nombre)}</span>`).join('');
+    return `
+        <h3>¿Por qué este match?</h3>
+        ${tiene.length ? `<p class="match-grupo">Ya tienes</p><div class="card-skills">${etiquetas(tiene, 'is-common', 'check')}</div>` : ''}
+        ${faltan.length
+            ? `<p class="match-grupo">Te faltan</p><div class="card-skills">${etiquetas(faltan, 'skill-falta', 'plus')}</div>
+               <p class="match-consejo">¿Ya sabes alguna? <a href="perfil-usuario.html">Agrégala a tu perfil</a> y tu compatibilidad se actualiza.</p>`
+            : '<p class="match-consejo">Tienes todas las habilidades que pide esta vacante.</p>'}`;
+}
+
 function abrirDetalle(job) {
     vacanteAbierta = job;
     const modal = document.getElementById('jobDetailModal');
@@ -441,8 +474,7 @@ function abrirDetalle(job) {
         </ul>
         <h3>Descripción</h3>
         <p class="detalle-texto">${escaparHtml(job.description || 'La empresa no agregó una descripción.')}</p>
-        <h3>Habilidades que pide</h3>
-        <div class="card-skills">${etiquetasHabilidades(job)}</div>
+        ${match ? porQueEsteMatch(job) : `<h3>Habilidades que pide</h3><div class="card-skills">${etiquetasHabilidades(job)}</div>`}
         ${listaDetalle('Requisitos', job.requirements)}
         ${listaDetalle('Responsabilidades', job.responsibilities)}
         ${listaDetalle('Beneficios', job.benefits)}
@@ -661,12 +693,7 @@ async function prepararVistaEmpresa() {
     if (guardadas) guardadas.remove();
     if (mias) mias.hidden = false;
     if (vista) vista.hidden = false;
-    const orden = document.getElementById('sortSelect');
-    if (orden) {
-        orden.value = 'recent';
-        const compatibilidad = orden.querySelector('option[value="match"]');
-        if (compatibilidad) compatibilidad.remove();
-    }
+    sinCompatibilidad();
     const datos = sesion();
     if (!datos.companyId) return;
     try {

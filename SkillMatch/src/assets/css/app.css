@@ -6072,6 +6072,16 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     border-color: transparent;
 }
 .card-skills .skill.is-common .ico { width: 13px; height: 13px; }
+/* "¿Por qué este match?" en el detalle de la vacante: las que te faltan en naranja */
+.card-skills .skill.skill-falta {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--naranja-soft); color: var(--naranja-texto);
+    border-color: transparent;
+}
+.card-skills .skill.skill-falta .ico { width: 13px; height: 13px; }
+.match-grupo { margin: var(--s3) 0 6px; font-size: var(--t-sm); font-weight: 600; color: var(--ink-3); }
+.match-consejo { margin: var(--s3) 0 0; font-size: var(--t-sm); color: var(--ink-3); }
+.match-consejo a { color: var(--sea-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 /* Los botones siempre abajo, aunque una tarjeta tenga menos datos */
 .suggestion-actions { margin-top: auto; padding-top: var(--s1); }
 .suggestion-actions .btn:disabled { opacity: .75; }
