@@ -12,6 +12,8 @@ let currentMessages = [];
 let firmaMensajes = '';      // para repintar solo cuando algo cambió
 let personas = undefined;    // tus conexiones para "Nuevo mensaje" (null = no cargaron)
 let enviando = false;
+let vistaArchivadas = false; // la lista muestra las archivadas en lugar de las demas
+let perfilConversacion = ''; // a donde lleva "Ver perfil" (persona o empresa)
 
 document.addEventListener('DOMContentLoaded', async function() {
 
@@ -77,15 +79,82 @@ function setupEventListeners() {
 
     document.querySelectorAll('[data-cerrar-modal]').forEach(b => b.addEventListener('click', cerrarNuevoMensaje));
 
-    // Ver perfil
+    // Ver perfil: el de la persona o, si es una empresa, su perfil publico
+    // (antes abria un perfil de persona vacio)
     const viewProfileBtn = document.getElementById('viewProfileBtn');
     if (viewProfileBtn) {
         viewProfileBtn.addEventListener('click', () => {
             if (currentConversationUserId) {
-                window.location.href = `perfil-usuario.html?id=${encodeURIComponent(currentConversationUserId)}`;
+                window.location.href = perfilConversacion || `perfil-usuario.html?id=${encodeURIComponent(currentConversationUserId)}`;
             }
         });
     }
+
+    // "⋯" de la cabecera: archivar o eliminar la conversacion abierta
+    const chatMenuBtn = document.getElementById('chatMenuBtn');
+    if (chatMenuBtn) {
+        chatMenuBtn.addEventListener('click', () => {
+            const conv = conversations.find(c => String(c.otherUserId) === String(currentConversationUserId));
+            if (!conv) {
+                SkillMatchUI.aviso('Todavía no hay mensajes en esta conversación.', 'info', 2600);
+                return;
+            }
+            abrirMenu(chatMenuBtn, opcionesConversacion(conv));
+        });
+    }
+
+    // Lista: abrir una conversacion, su "⋯" o la pestaña de archivadas
+    const lista = document.getElementById('conversationsList');
+    if (lista) {
+        lista.addEventListener('click', (e) => {
+            const menu = e.target.closest('.conv-menu');
+            if (menu) {
+                const conv = conversations.find(c => String(c.otherUserId) === menu.dataset.userId);
+                if (conv) abrirMenu(menu, opcionesConversacion(conv));
+                return;
+            }
+            const archivadas = e.target.closest('[data-ver-archivadas]');
+            if (archivadas) { verArchivadas(archivadas.dataset.verArchivadas === '1'); return; }
+            const item = e.target.closest('.conversation-item');
+            if (item) openConversation(item.dataset.userId);
+        });
+    }
+
+    // Mensajes: "⋯" de cada uno, clic derecho o mantener presionado (celular)
+    const chat = document.getElementById('chatMessages');
+    if (chat) {
+        chat.addEventListener('click', (e) => {
+            const boton = e.target.closest('.mensaje-menu');
+            if (boton) abrirMenuMensaje(boton.closest('.message'), boton);
+        });
+        chat.addEventListener('contextmenu', (e) => {
+            const burbuja = e.target.closest('.message-content');
+            if (!burbuja) return;
+            e.preventDefault();
+            abrirMenuMensaje(burbuja.closest('.message'), null, { x: e.clientX, y: e.clientY });
+        });
+        let presion = null;
+        chat.addEventListener('pointerdown', (e) => {
+            const burbuja = e.pointerType === 'touch' && e.target.closest('.message-content');
+            if (!burbuja) return;
+            const inicio = { x: e.clientX, y: e.clientY };
+            presion = { inicio, temporizador: setTimeout(() => { presion = null; abrirMenuMensaje(burbuja.closest('.message'), null, inicio); }, 550) };
+        });
+        const soltar = () => { if (presion) { clearTimeout(presion.temporizador); presion = null; } };
+        chat.addEventListener('pointerup', soltar);
+        chat.addEventListener('pointercancel', soltar);
+        chat.addEventListener('pointermove', (e) => {
+            if (presion && Math.hypot(e.clientX - presion.inicio.x, e.clientY - presion.inicio.y) > 10) soltar();
+        });
+        chat.addEventListener('scroll', () => { soltar(); cerrarMenu(); });
+    }
+
+    // El menu de acciones se cierra al tocar afuera, con Escape o al cambiar el tamaño
+    document.addEventListener('click', (e) => {
+        if (menuAbierto && !menuAbierto.menu.contains(e.target) && !(menuAbierto.ancla && menuAbierto.ancla.contains(e.target))) cerrarMenu();
+    });
+    document.addEventListener('keydown', teclasDelMenu);
+    window.addEventListener('resize', () => cerrarMenu());
 
     // En celular: volver de un chat a la lista
     const volver = document.getElementById('backToListBtn');
@@ -129,7 +198,8 @@ async function obtenerConversaciones() {
         return {
             otherUserId: otro,
             // Las empresas se registran con apellido "Empresa": se muestra solo su nombre
-            otherUserName: ((yoEnvie ? m.receiverName : m.senderName) || 'Usuario').replace(/s+Empresa$/, ''),
+            // (la expresion habia perdido la barra de \s: "Caribe Digital Estudio Empresa")
+            otherUserName: ((yoEnvie ? m.receiverName : m.senderName) || 'Usuario').replace(/\s+Empresa$/, ''),
             lastMessageContent: (yoEnvie ? 'Tú: ' : '') + (m.content || ''),
             lastMessageDate: m.sentAt,
             unreadCount: Number(noLeidos[otro] || 0)
@@ -161,9 +231,10 @@ async function refrescarLista() {
 }
 
 // Mostrar conversaciones
-function displayConversations(conversationsList) {
+function displayConversations(conversationsList, numArchivadas = 0, archivadas = {}) {
     const container = document.getElementById('conversationsList');
     document.querySelector('.messages-container').classList.toggle('tiene-lista', conversations.length > 0);
+    if (menuAbierto && container.contains(menuAbierto.ancla)) cerrarMenu(false);
 
     if (conversations.length === 0) {
         // Lista vacia: un texto corto aqui y la invitacion grande a la derecha
@@ -181,28 +252,38 @@ function displayConversations(conversationsList) {
         return;
     }
 
+    // Arriba de la lista: la entrada a "Archivadas" o, dentro, la vuelta
+    const fila = vistaArchivadas
+        ? '<button type="button" class="conv-archivadas" data-ver-archivadas="0"><i data-ico="arrow"></i><span>Archivadas</span><small>Volver a tus conversaciones</small></button>'
+        : (numArchivadas ? `<button type="button" class="conv-archivadas" data-ver-archivadas="1"><i data-ico="archive"></i><span>Archivadas</span><small>${numArchivadas}</small></button>` : '');
+
     if (conversationsList.length === 0) {
-        container.innerHTML = '<p class="conversations-vacio">Ninguna conversación coincide con tu búsqueda.</p>';
+        container.innerHTML = fila + '<p class="conversations-vacio">' +
+            (vistaArchivadas ? 'No tienes conversaciones archivadas.' : 'Ninguna conversación coincide con tu búsqueda.') + '</p>';
         return;
     }
 
-    container.innerHTML = conversationsList.map(conv => {
+    container.innerHTML = fila + conversationsList.map(conv => {
         const isUnread = conv.unreadCount > 0;
         const unreadClass = isUnread ? 'unread' : '';
         const activa = String(conv.otherUserId) === String(currentConversationUserId) ? ' active' : '';
         const unreadBadge = isUnread ? `<span class="unread-badge">${conv.unreadCount}</span>` : '';
+        const nombre = escaparHtml(conv.otherUserName || 'Usuario');
+        // Al buscar se ven tambien las archivadas: llevan su etiqueta
+        const etiqueta = !vistaArchivadas && estaArchivada(conv, archivadas) ? '<span class="conv-etiqueta">Archivada</span>' : '';
 
         return `
-            <div class="conversation-item ${unreadClass}${activa}" data-user-id="${escaparHtml(conv.otherUserId)}" onclick="openConversation(this.dataset.userId)">
+            <div class="conversation-item ${unreadClass}${activa}" data-user-id="${escaparHtml(conv.otherUserId)}">
                 <div class="conversation-avatar">${conv.otherUserName ? escaparHtml(conv.otherUserName.charAt(0)) : '<i data-ico="user"></i>'}</div>
                 <div class="conversation-info">
                     <div class="conversation-header">
-                        <h2>${escaparHtml(conv.otherUserName || 'Usuario')}</h2>
+                        <h2>${nombre}</h2>
                         <span class="conversation-time">${formatDate(conv.lastMessageDate, true)}</span>
                     </div>
-                    <p class="conversation-preview">${escaparHtml(truncateText(conv.lastMessageContent || '', 50))}</p>
+                    <p class="conversation-preview">${etiqueta}${escaparHtml(truncateText(conv.lastMessageContent || '', 50))}</p>
                 </div>
                 ${unreadBadge}
+                <button type="button" class="conv-menu" data-user-id="${escaparHtml(conv.otherUserId)}" aria-label="Opciones de la conversación con ${nombre}" aria-haspopup="menu" aria-expanded="false"><i data-ico="more"></i></button>
             </div>
         `;
     }).join('');
@@ -217,6 +298,8 @@ async function openConversation(userId) {
     currentConversationUserId = userId;
     currentMessages = [];
     firmaMensajes = '';
+    perfilConversacion = '';
+    cerrarMenu(false);
 
     // Marcar como activa
     document.querySelectorAll('.conversation-item').forEach(item => {
@@ -264,9 +347,46 @@ async function pintarCabecera(userId) {
         const esEmpresa = persona.lastName === 'Empresa';
         poner(nombreVisible(persona.firstName, persona.lastName) || (conv && conv.otherUserName),
               esEmpresa ? 'Empresa' : (persona.headline || ''));
+        if (esEmpresa) buscarPerfilDeEmpresa(userId, persona.firstName);
     } catch (error) {
         if (!conv) poner('Usuario', '');
     }
+}
+
+// La conversacion es con la cuenta de la empresa: su perfil publico se busca
+// por el nombre y se confirma con el userId
+async function buscarPerfilDeEmpresa(userId, nombre) {
+    try {
+        const respuesta = await fetchWithAuth(`${API_BASE_URL}/companies/search?keyword=${encodeURIComponent(textoParaBuscar(nombre || ''))}`);
+        if (!respuesta.ok) return;
+        const datos = await respuesta.json();
+        const empresa = (Array.isArray(datos) ? datos : (datos.content || [])).find(c => String(c.userId) === String(userId));
+        if (empresa && String(userId) === String(currentConversationUserId)) {
+            perfilConversacion = 'empresa.html?id=' + encodeURIComponent(empresa.id);
+            document.getElementById('viewProfileBtn').title = 'Ver perfil de la empresa';
+        }
+    } catch (error) { /* se queda el perfil de la cuenta */ }
+}
+
+// "Hoy", "Ayer", "Lunes, 13 de octubre" o, de otro año, "13 de octubre de 2025"
+function etiquetaDia(fecha) {
+    const d = new Date(fecha);
+    if (Number.isNaN(d.getTime())) return '';
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const dia = new Date(d); dia.setHours(0, 0, 0, 0);
+    const dias = Math.round((hoy - dia) / 86400000);
+    if (dias === 0) return 'Hoy';
+    if (dias === 1) return 'Ayer';
+    const opciones = dia.getFullYear() === hoy.getFullYear()
+        ? { weekday: 'long', day: 'numeric', month: 'long' }
+        : { day: 'numeric', month: 'long', year: 'numeric' };
+    const texto = d.toLocaleDateString('es-CO', opciones);
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function horaMensaje(fecha) {
+    const d = new Date(fecha);
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
 }
 
 // Cargar mensajes de una conversación. Con "silencioso" (la revisión de
@@ -302,6 +422,8 @@ function displayMessages(messages) {
     const container = document.getElementById('chatMessages');
     const userData = getUserData() || {};
     const myUserId = userData.id;
+    // Al repintar el chat, el menu de un mensaje queda suelto: se cierra
+    if (menuAbierto && menuAbierto.deMensaje) cerrarMenu(false);
 
     if (messages.length === 0) {
         const nombre = document.getElementById('chatUserName').textContent;
@@ -311,19 +433,30 @@ function displayMessages(messages) {
         return;
     }
 
+    let diaAnterior = '';
     container.innerHTML = messages.map(msg => {
         const isMyMessage = String(msg.senderId) === String(myUserId);
         const messageClass = isMyMessage ? 'message-sent' : 'message-received';
+        // Un separador cada vez que cambia el dia ("Hoy", "Ayer", "Lunes, 13 de octubre")
+        const dia = etiquetaDia(msg.sentAt);
+        const separador = dia && dia !== diaAnterior ? `<div class="chat-dia" role="separator"><span>${dia}</span></div>` : '';
+        if (dia) diaAnterior = dia;
+        // Tus mensajes: una palomita al enviarlo y dos turquesa cuando lo leen
+        // (antes solo salia una, y solo cuando ya lo habian leido)
+        const estado = !isMyMessage ? '' : msg.isRead
+            ? '<span class="message-estado es-leido" role="img" aria-label="Leído" title="Leído"><i data-ico="check"></i><i data-ico="check"></i></span>'
+            : '<span class="message-estado" role="img" aria-label="Enviado" title="Enviado"><i data-ico="check"></i></span>';
 
-        return `
-            <div class="message ${messageClass}">
+        return `${separador}
+            <div class="message ${messageClass}" data-id="${escaparHtml(msg.id)}">
                 <div class="message-content">
                     <p>${escaparHtml(msg.content)}</p>
                     ${msg.attachmentUrl ? `<a href="${urlSegura(msg.attachmentUrl)}" target="_blank" rel="noopener" class="message-attachment"><i data-ico="clip"></i> Adjunto</a>` : ''}
                 </div>
                 <div class="message-info">
-                    <span class="message-time">${formatDate(msg.sentAt, true)}</span>
-                    ${isMyMessage && msg.isRead ? '<span class="message-read" title="Leído"><i data-ico="check"></i></span>' : ''}
+                    <span class="message-time">${horaMensaje(msg.sentAt)}</span>
+                    ${estado}
+                    <button type="button" class="mensaje-menu" aria-label="Opciones del mensaje" aria-haspopup="menu" aria-expanded="false"><i data-ico="more"></i></button>
                 </div>
             </div>
         `;
@@ -401,17 +534,250 @@ async function refreshCurrentConversation() {
     }
 }
 
-// Filtrar conversaciones (también repinta la lista con el filtro puesto)
+// Filtrar conversaciones (también repinta la lista con el filtro puesto).
+// Las archivadas van aparte: en su propia vista, o al buscar.
 function filterConversations() {
     const campo = document.getElementById('searchConversations');
     const searchTerm = sinTildes(campo ? campo.value.trim() : '');
+    const archivadas = limpiarArchivadas();
+    const enArchivo = conversations.filter(c => estaArchivada(c, archivadas));
+    if (vistaArchivadas && !enArchivo.length) vistaArchivadas = false;
 
-    const filtered = !searchTerm ? conversations : conversations.filter(conv =>
+    // Buscando se ven todas (las archivadas tambien); si no, las de la vista actual
+    const base = searchTerm ? conversations : conversations.filter(c => estaArchivada(c, archivadas) === vistaArchivadas);
+    const filtered = !searchTerm ? base : base.filter(conv =>
         sinTildes(conv.otherUserName).includes(searchTerm) ||
         sinTildes(conv.lastMessageContent).includes(searchTerm)
     );
 
-    displayConversations(filtered);
+    displayConversations(filtered, searchTerm ? 0 : enArchivo.length, archivadas);
+}
+
+// ---- Archivadas ----
+// El backend todavia no guarda chats archivados: se recuerdan en este
+// navegador, por cuenta, con la fecha del ultimo mensaje al archivar. Si llega
+// uno nuevo (la fecha cambia), la conversacion vuelve sola a la lista.
+function claveArchivadas() {
+    return 'skillmatch_archivadas_' + ((getUserData() || {}).id || '');
+}
+
+function leerArchivadas() {
+    try { return JSON.parse(localStorage.getItem(claveArchivadas()) || '{}') || {}; } catch (e) { return {}; }
+}
+
+function guardarArchivadas(archivadas) {
+    try { localStorage.setItem(claveArchivadas(), JSON.stringify(archivadas)); } catch (e) { /* sin almacenamiento */ }
+}
+
+function estaArchivada(conv, archivadas) {
+    return !!conv && archivadas[conv.otherUserId] === String(conv.lastMessageDate);
+}
+
+// Quita las que ya no corresponden: con mensajes nuevos o que ya no existen
+function limpiarArchivadas() {
+    const archivadas = leerArchivadas();
+    let cambio = false;
+    Object.keys(archivadas).forEach(id => {
+        const conv = conversations.find(c => String(c.otherUserId) === id);
+        if (!conv || archivadas[id] !== String(conv.lastMessageDate)) { delete archivadas[id]; cambio = true; }
+    });
+    if (cambio) guardarArchivadas(archivadas);
+    return archivadas;
+}
+
+function verArchivadas(si) {
+    vistaArchivadas = si;
+    filterConversations();
+    const primero = document.querySelector('#conversationsList [data-ver-archivadas], #conversationsList .conversation-item');
+    if (primero && primero.matches('[data-ver-archivadas]')) primero.focus();
+}
+
+function archivarConversacion(conv, archivar) {
+    const archivadas = leerArchivadas();
+    if (archivar) archivadas[conv.otherUserId] = String(conv.lastMessageDate);
+    else delete archivadas[conv.otherUserId];
+    guardarArchivadas(archivadas);
+    const nombre = escaparHtml(conv.otherUserName || 'esta persona');
+    if (archivar && String(conv.otherUserId) === String(currentConversationUserId)) cerrarChat();
+    filterConversations();
+    SkillMatchUI.aviso(archivar
+        ? `Archivaste la conversación con <strong>${nombre}</strong>. Vuelve a tu lista si te escribe de nuevo.`
+        : `La conversación con <strong>${nombre}</strong> volvió a tu lista.`, 'ok');
+}
+
+// "Eliminar" es para ti: el backend marca cada mensaje como borrado de tu
+// lado (la otra persona los sigue viendo; si los dos los borran, desaparecen)
+async function eliminarConversacion(conv) {
+    const nombre = conv.otherUserName || 'esta persona';
+    const si = await SkillMatchUI.confirmar({
+        titulo: '¿Eliminar la conversación?',
+        texto: `Se borra solo de tus mensajes: ${nombre} la seguirá viendo. Si te vuelve a escribir, aparecerá de nuevo con los mensajes nuevos.`,
+        aceptar: 'Eliminar',
+        peligro: true
+    });
+    if (!si) return;
+    try {
+        const respuesta = await fetchWithAuth(`${API_BASE_URL}/messages/conversation/${encodeURIComponent(conv.otherUserId)}`);
+        if (!respuesta.ok) throw new Error();
+        const mensajes = await respuesta.json();
+        let fallas = 0;
+        // De cinco en cinco, para no llenar el servidor de pedidos a la vez
+        for (let i = 0; i < mensajes.length; i += 5) {
+            const resultados = await Promise.all(mensajes.slice(i, i + 5).map(m =>
+                fetchWithAuth(`${API_BASE_URL}/messages/${encodeURIComponent(m.id)}`, { method: 'DELETE' }).then(r => r.ok).catch(() => false)));
+            fallas += resultados.filter(ok => !ok).length;
+        }
+        if (fallas) throw new Error();
+        const archivadas = leerArchivadas();
+        delete archivadas[conv.otherUserId];
+        guardarArchivadas(archivadas);
+        if (String(conv.otherUserId) === String(currentConversationUserId)) cerrarChat();
+        SkillMatchUI.aviso(`Eliminaste la conversación con <strong>${escaparHtml(nombre)}</strong>.`, 'ok');
+    } catch (error) {
+        SkillMatchUI.aviso('No pudimos eliminar toda la conversación. Intenta de nuevo.', 'error');
+    }
+    await loadConversations();
+}
+
+function opcionesConversacion(conv) {
+    const archivada = estaArchivada(conv, leerArchivadas());
+    return [
+        { texto: archivada ? 'Desarchivar' : 'Archivar', icono: 'archive', accion: () => archivarConversacion(conv, !archivada) },
+        { texto: 'Eliminar conversación', icono: 'trash', peligro: true, accion: () => eliminarConversacion(conv) }
+    ];
+}
+
+// Cerrar el chat abierto y volver a "Selecciona una conversación"
+function cerrarChat() {
+    currentConversationUserId = null;
+    currentMessages = [];
+    firmaMensajes = '';
+    document.getElementById('chatActive').classList.add('hidden');
+    document.getElementById('chatActive').style.display = '';
+    document.getElementById('chatEmpty').style.display = '';
+    document.querySelector('.messages-container').classList.remove('viendo-chat');
+    document.querySelectorAll('.conversation-item.active').forEach(item => item.classList.remove('active'));
+    history.replaceState(null, '', 'mensajes.html');
+}
+
+// ---- Copiar o eliminar un mensaje ----
+function abrirMenuMensaje(mensajeEl, ancla, punto) {
+    if (!mensajeEl) return;
+    const mensaje = currentMessages.find(m => String(m.id) === mensajeEl.dataset.id);
+    if (!mensaje) return;
+    abrirMenu(ancla || mensajeEl.querySelector('.message-content'), [
+        { texto: 'Copiar', icono: 'copy', accion: () => copiarMensaje(mensaje.content || '') },
+        { texto: 'Eliminar para mí', icono: 'trash', peligro: true, accion: () => eliminarMensaje(mensaje) }
+    ], punto);
+    if (menuAbierto) menuAbierto.deMensaje = true;
+}
+
+function copiarMensaje(texto) {
+    const listo = () => SkillMatchUI.aviso('Mensaje copiado.', 'ok', 1800);
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(texto).then(listo, () => copiarALaAntigua(texto) && listo());
+    } else if (copiarALaAntigua(texto)) {
+        listo();
+    }
+}
+
+// Sin permiso del portapapeles (por ejemplo en http desde el celular)
+function copiarALaAntigua(texto) {
+    const area = document.createElement('textarea');
+    area.value = texto;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    area.remove();
+    if (!ok) SkillMatchUI.aviso('No se pudo copiar. Selecciona el texto y cópialo a mano.', 'error');
+    return ok;
+}
+
+async function eliminarMensaje(mensaje) {
+    const si = await SkillMatchUI.confirmar({
+        titulo: '¿Eliminar este mensaje?',
+        texto: 'Se borra solo para ti: la otra persona lo seguirá viendo.',
+        aceptar: 'Eliminar',
+        peligro: true
+    });
+    if (!si) return;
+    try {
+        const respuesta = await fetchWithAuth(`${API_BASE_URL}/messages/${encodeURIComponent(mensaje.id)}`, { method: 'DELETE' });
+        if (!respuesta.ok) throw new Error();
+        firmaMensajes = '';
+        await loadMessages(currentConversationUserId, true);
+        refrescarLista(); // si era el ultimo, cambia lo que se ve en la lista
+    } catch (error) {
+        SkillMatchUI.aviso('No pudimos eliminar el mensaje. Intenta de nuevo.', 'error');
+    }
+}
+
+// ---- Menu de acciones (de una conversacion o de un mensaje) ----
+let menuAbierto = null;
+
+function abrirMenu(ancla, opciones, punto) {
+    cerrarMenu(false);
+    const menu = document.createElement('div');
+    menu.className = 'menu-acciones';
+    menu.setAttribute('role', 'menu');
+    menu.innerHTML = opciones.map((o, i) =>
+        `<button type="button" role="menuitem" data-i="${i}"${o.peligro ? ' class="es-peligro"' : ''}>${SkillMatchUI.icono(o.icono)}<span>${escaparHtml(o.texto)}</span></button>`).join('');
+    document.body.appendChild(menu);
+
+    // Junto al boton (o donde se toco), sin salirse de la pantalla
+    const caja = menu.getBoundingClientRect();
+    const r = punto ? { left: punto.x, right: punto.x, top: punto.y, bottom: punto.y } : ancla.getBoundingClientRect();
+    let x = punto ? r.left : r.right - caja.width;
+    let y = r.bottom + 6;
+    if (y + caja.height > window.innerHeight - 8) y = r.top - caja.height - 6;
+    x = Math.max(8, Math.min(x, window.innerWidth - caja.width - 8));
+    y = Math.max(8, y);
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+
+    menu.addEventListener('click', (e) => {
+        const boton = e.target.closest('[data-i]');
+        if (!boton) return;
+        cerrarMenu(false);
+        opciones[Number(boton.dataset.i)].accion();
+    });
+    menuAbierto = { menu, ancla: punto ? null : ancla, desde: Date.now() };
+    if (ancla && !punto) ancla.setAttribute('aria-expanded', 'true');
+    menu.querySelector('button').focus();
+}
+
+function cerrarMenu(devolverFoco) {
+    if (!menuAbierto) return;
+    const { menu, ancla } = menuAbierto;
+    // Recien abierto con el dedo: el toque que lo abrio no lo cierra
+    if (devolverFoco === undefined && Date.now() - menuAbierto.desde < 400) return;
+    menu.remove();
+    if (ancla) {
+        ancla.setAttribute('aria-expanded', 'false');
+        if (devolverFoco && document.body.contains(ancla)) ancla.focus();
+    }
+    menuAbierto = null;
+}
+
+// Escape cierra; flechas arriba y abajo recorren las opciones
+function teclasDelMenu(e) {
+    if (!menuAbierto) return;
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        cerrarMenu(true);
+        return;
+    }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const botones = [...menuAbierto.menu.querySelectorAll('button')];
+    const actual = botones.indexOf(document.activeElement);
+    e.preventDefault();
+    const siguiente = (actual + (e.key === 'ArrowDown' ? 1 : -1) + botones.length) % botones.length;
+    botones[siguiente].focus();
 }
 
 // ---- Nuevo mensaje ----
