@@ -366,6 +366,18 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
     `data-confirmar-cierre` en `ui.js`). Escape ahora cierra la ventana de arriba, no la primera de la página.
   - No se puso una franja de "← Volver" en todas las páginas: repetía el botón del navegador y el gesto del
     celular, y las pantallas de esa lista ya tenían cómo salir.
+- **Mensajes más completos (hecho, 15 de octubre de 2026):**
+  - *Archivar y eliminar conversaciones*: un "⋯" en cada conversación y en la cabecera del chat. "Eliminar" es para
+    ti: el backend marca tus mensajes como borrados de tu lado y la otra persona los sigue viendo. "Archivar" las
+    pasa a "Archivadas" (arriba de la lista) y vuelven solas si llega un mensaje nuevo. Por ahora se guarda en el
+    navegador (`localStorage`); para que pase a otros dispositivos hace falta el backend (PENDIENTES 2.11).
+  - *Copiar o eliminar un mensaje*: "⋯" al pasar el mouse, clic derecho, o mantener presionado en el celular.
+  - *Fechas y estado*: separadores "Hoy", "Ayer", "Martes, 6 de octubre" dentro del chat, y una palomita gris
+    (enviado) o dos turquesa (leído). Antes solo salía una, y solo cuando ya lo habían leído.
+  - *"Ver perfil" de empresas* lleva a su perfil público (antes abría un perfil de persona vacío).
+  - De paso: en la lista, las empresas salían como "Caribe Digital Estudio Empresa" (a la expresión le faltaba la
+    barra de `\s`), y la negrita de los avisos no se leía sobre su fondo oscuro.
+  - Las horas en Render salen 5 horas corridas porque el servidor guarda en UTC: es del backend (PENDIENTES 2.10).
 
 ## Orden propuesto (solo frontend)
 

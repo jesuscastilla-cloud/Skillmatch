@@ -137,6 +137,24 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
        `@skillmatch.test`, sus vacantes y postulaciones).
   5. El backend permite 20 entradas o registros por minuto por IP (`RateLimitingFilter`); el script espera solo.
 
+### 2.10 Las horas en Render salen 5 horas corridas
+- **Qué pasa:** el servidor de Render guarda las fechas en hora UTC, sin decir la zona
+  (`LocalDateTime.now()` en un contenedor UTC). El navegador las lee como hora de Colombia. Comprobado el 15 de
+  octubre de 2026: las vacantes de ejemplo se crearon a las 10:53 p. m. y la base dice `03:53`. Por eso un mensaje
+  enviado a las 10:21 p. m. sale como "03:21 a. m." del día siguiente, y de noche "Publicada hoy" puede caer en el
+  día equivocado.
+- **Arreglo:** poner la zona del servidor en Colombia: variable de entorno `TZ=America/Bogota` en Render (o
+  `-Duser.timezone=America/Bogota` al arrancar Java en el `Dockerfile`). Lo que ya está guardado quedó en UTC: se
+  puede dejar así o restarle 5 horas una sola vez.
+
+### 2.11 (Opcional) Archivar y eliminar conversaciones desde el servidor
+- **Hoy:** "Eliminar conversación" (Mensajes) borra de tu lado mensaje por mensaje con `DELETE /api/messages/{id}`.
+  "Archivar" se guarda solo en el navegador (`localStorage`), así que no pasa al celular ni a otro computador.
+- **Arreglo propuesto:** `DELETE /api/messages/conversation/{otherUserId}` (marca todos como borrados para quien
+  pide) y archivar por cuenta, por ejemplo `PATCH /api/messages/conversation/{otherUserId}/archive` y un campo
+  `archived` en `/api/messages/conversations`. Si llega un mensaje nuevo, la conversación vuelve a la lista. El
+  frontend ya funciona así; solo cambiaría de dónde lee y guarda.
+
 ### 2.9 Render se duerme
 - **Qué pasa:** en el plan gratis, Render apaga el servidor tras 15 minutos sin visitas. La siguiente visita tarda
   cerca de un minuto y parece que el sitio no funciona.
@@ -204,4 +222,6 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
 | 2.4 Rechazada | En el perfil de quien te rechazó, "Conectar" vuelve a funcionar |
 | 2.8 Vacantes en Render | Vacantes, Empresas e Indicadores de skillmatch-yz37.onrender.com muestran datos en vez del mensaje de vacío |
 | 2.9 Sin dormirse | La primera visita del día abre en segundos, no en un minuto |
+| 2.10 Hora de Colombia | Un mensaje enviado ahora sale en Mensajes con la hora del reloj, no 5 horas después |
+| 2.11 Archivar en el servidor | Una conversación archivada en el computador también sale archivada en el celular |
 | 3.2 Búsqueda | `GET /api/jobs/search?keyword=(` responde 200 con 0 resultados |
