@@ -79,10 +79,77 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     updateFilterBadges();
 
-    // Una notificación de vacante nueva trae ?jobId=: se abre su detalle
+    // Un aviso, la portada, la paleta o un enlace compartido traen ?jobId=: se
+    // abre su detalle. En una llegada nueva la lista queda detras en el
+    // historial, para que "atras" vuelva a Vacantes y no saque del sitio. Al
+    // recargar un detalle (ya tiene su paso en el historial) solo se abre.
+    vigilarVentanasEnHistorial();
     const pedida = new URLSearchParams(window.location.search).get('jobId');
-    if (pedida) abrirDetallePorId(pedida);
+    if (pedida) {
+        const recarga = history.state && history.state.vacante === String(pedida);
+        if (!recarga) history.replaceState(null, '', direccionConVacante(null));
+        abrirDetallePorId(pedida, { sinHistorial: recarga });
+    }
 });
+
+// ---- El detalle y la postulacion en el historial ----
+// Abrir una vacante agrega un paso al historial con ?jobId= en la direccion:
+// "atras" (boton del navegador o gesto del celular) cierra la ventana y deja la
+// lista como estaba, con su busqueda, sus filtros y su posicion. Antes "atras"
+// sacaba de Vacantes.
+const VENTANAS_EN_HISTORIAL = ['jobDetailModal', 'applyModal'];
+
+function direccionConVacante(jobId) {
+    const url = new URL(window.location.href);
+    if (jobId) url.searchParams.set('jobId', jobId); else url.searchParams.delete('jobId');
+    return url;
+}
+
+function ventanaAbierta() {
+    return VENTANAS_EN_HISTORIAL.map(id => document.getElementById(id)).find(v => v && v.classList.contains('active')) || null;
+}
+
+// Un paso nuevo al abrir; si ya habia una ventana de vacante (del detalle a
+// "Postularme"), se reemplaza ese paso: "atras" vuelve a la lista
+function marcarVentanaEnHistorial(jobId) {
+    const estado = { vacante: String(jobId) };
+    if (history.state && history.state.vacante) history.replaceState(estado, '', direccionConVacante(jobId));
+    else history.pushState(estado, '', direccionConVacante(jobId));
+}
+
+function vigilarVentanasEnHistorial() {
+    // Se cierra de cuatro formas (X, "Cerrar", Escape o tocando afuera, estas dos
+    // en ui.js): se vigila la clase en lugar de cada boton. Solo cuenta el paso
+    // de abierta a cerrada, y mientras se vuelve no se vuelve otra vez (otro
+    // cambio de clase antes de que llegue el "atras" lo repetia y sacaba de Vacantes)
+    let habiaVentana = false;
+    let volviendo = false;
+    const alCerrar = new MutationObserver(() => {
+        const hayVentana = !!ventanaAbierta();
+        const seCerro = habiaVentana && !hayVentana;
+        habiaVentana = hayVentana;
+        if (!seCerro || volviendo || !new URLSearchParams(window.location.search).get('jobId')) return;
+        if (history.state && history.state.vacante) {
+            volviendo = true;
+            history.back();
+            setTimeout(() => { volviendo = false; }, 1500); // por si "atras" no llega
+        } else {
+            history.replaceState(null, '', direccionConVacante(null));
+        }
+    });
+    VENTANAS_EN_HISTORIAL.forEach(id => {
+        const ventana = document.getElementById(id);
+        if (ventana) alCerrar.observe(ventana, { attributes: true, attributeFilter: ['class'] });
+    });
+    // "Atras" cierra la ventana; "adelante" la vuelve a abrir
+    window.addEventListener('popstate', () => {
+        volviendo = false;
+        const jobId = new URLSearchParams(window.location.search).get('jobId');
+        const abierta = ventanaAbierta();
+        if (!jobId && abierta) abierta.classList.remove('active');
+        else if (jobId && !abierta) abrirDetallePorId(jobId, { sinHistorial: true });
+    });
+}
 
 // Cargar la primera página (de la lista general o de la búsqueda)
 async function loadJobs() {
@@ -409,7 +476,7 @@ function createJobCard(job) {
 
 // ---- Detalle de la vacante ----
 
-async function abrirDetallePorId(jobId) {
+async function abrirDetallePorId(jobId, opciones = {}) {
     let job = allJobs.find(j => String(j.id) === String(jobId));
     if (!job) {
         // Desde una notificación la vacante puede no estar entre las cargadas
@@ -422,7 +489,7 @@ async function abrirDetallePorId(jobId) {
             return;
         }
     }
-    abrirDetalle(job);
+    abrirDetalle(job, opciones);
 }
 
 function listaDetalle(titulo, items) {
@@ -449,7 +516,7 @@ function porQueEsteMatch(job) {
             : '<p class="match-consejo">Tienes todas las habilidades que pide esta vacante.</p>'}`;
 }
 
-function abrirDetalle(job) {
+function abrirDetalle(job, { sinHistorial = false } = {}) {
     vacanteAbierta = job;
     const modal = document.getElementById('jobDetailModal');
     const match = getSkillMatch(job);
@@ -483,6 +550,7 @@ function abrirDetalle(job) {
         `<button type="button" class="btn-secondary-modal" onclick="cerrarVentana('jobDetailModal')">Cerrar</button>` + botonesVacante(job);
     modal.classList.add('active');
     modal.querySelector('.modal-body').scrollTop = 0;
+    if (!sinHistorial) marcarVentanaEnHistorial(job.id);
 }
 
 function cerrarVentana(id) {
@@ -531,6 +599,7 @@ function postularme(jobId) {
     boton.textContent = 'Enviar postulación';
     cerrarVentana('jobDetailModal');
     document.getElementById('applyModal').classList.add('active');
+    marcarVentanaEnHistorial(job.id);
     setTimeout(() => carta.focus(), 60);
 }
 
