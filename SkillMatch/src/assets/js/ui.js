@@ -2421,9 +2421,29 @@
         requestAnimationFrame(function () { raiz.classList.add('visible'); });
     };
 
+    /* ---------- 24. Servidor despertando ---------- */
+
+    // api-config.js avisa (evento skillmatch:servidor) cuando una consulta lleva
+    // mas de 4 segundos esperando: en Render gratis es el servidor arrancando.
+    // Es un aviso de la marca que se queda mientras espera y se va solo al responder.
+    function avisoServidorDormido() {
+        let cerrar = null;
+        const mostrar = function (lento) {
+            if (lento && !cerrar) {
+                cerrar = UI.aviso('Un momento: SkillMatch se está despertando. Si nadie había entrado en un rato, la primera carga puede tardar hasta un minuto.', 'info', 120000);
+            } else if (!lento && cerrar) {
+                cerrar();
+                cerrar = null;
+            }
+        };
+        window.addEventListener('skillmatch:servidor', function (e) { mostrar(e.detail.lento); });
+        if (window.SkillMatchServidor && window.SkillMatchServidor.lento) mostrar(true);
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
+        avisoServidorDormido();
         construirPie();
         registrarApp();
         botonInstalar();

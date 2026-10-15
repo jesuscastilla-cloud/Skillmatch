@@ -1448,11 +1448,12 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     animation: toast-in .32s var(--ease-out) both;
 }
 .toast.is-leaving { animation: toast-out .24s var(--ease-in-out) both; }
-.toast .ico { margin-top: 2px; }
+/* flex-shrink: 0: con un texto de varias lineas, el texto encogia el icono y la X hasta dejarla como un punto */
+.toast .ico { margin-top: 2px; flex-shrink: 0; }
 .toast-ok    .ico { color: #5BE0A8; }
 .toast-error .ico { color: #FF8A9B; }
 .toast-info  .ico { color: #7EDDE6; }
-.toast button { color: rgba(255,255,255,.6); margin-left: auto; }
+.toast button { color: rgba(255,255,255,.6); margin-left: auto; flex-shrink: 0; }
 .toast button:hover { color: #fff; }
 
 @keyframes toast-in {

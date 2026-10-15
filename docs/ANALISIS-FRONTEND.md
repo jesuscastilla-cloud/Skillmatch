@@ -322,6 +322,12 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   empresas. Indicadores mostraba seis gráficas en cero: ahora muestra las cifras generales y un solo aviso con el mismo
   botón según quién mira (una persona con sesión no ve botón), y la gráfica de salarios dice "Todavía no hay salarios
   publicados" si ninguna vacante trae salario.
+- **Aviso cuando el servidor está despertando (hecho):** en el plan gratis, Render apaga el servidor tras 15 minutos
+  sin visitas, y la primera carga tardaba hasta un minuto sin decir nada. `api-config.js` (que se carga primero en
+  todas las páginas) cuenta las consultas a la API que siguen esperando. Si alguna pasa de 4 segundos, `ui.js`
+  (sección 24) muestra el aviso de la marca "Un momento: SkillMatch se está despertando…", y lo quita solo cuando
+  responden todas. Con un servidor rápido no aparece nunca. De paso se arregló la X de los avisos largos: un texto de
+  varias líneas la encogía hasta dejarla del tamaño de un punto.
 
 ## Orden propuesto (solo frontend)
 
