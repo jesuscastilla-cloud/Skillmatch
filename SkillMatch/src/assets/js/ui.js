@@ -567,18 +567,49 @@
 
     function modalesAccesibles() {
         // Cerrar con Escape y con clic en el fondo, en cualquier modal de la app.
+        // Escape cierra la de arriba (la ultima abierta, por ejemplo una pregunta
+        // encima de un formulario; antes cerraba la primera de la pagina). Las que
+        // tienen algo escrito sin guardar (data-confirmar-cierre) preguntan antes.
         document.addEventListener('keydown', function (e) {
             if (e.key !== 'Escape') return;
-            const abierto = document.querySelector('.modal.active, .modal.is-open');
-            if (abierto) abierto.classList.remove('active', 'is-open');
+            const abiertas = document.querySelectorAll('.modal.active, .modal.is-open');
+            if (abiertas.length) cerrarConPermiso(abiertas[abiertas.length - 1]);
         });
 
         document.addEventListener('click', function (e) {
-            if (e.target.classList && e.target.classList.contains('modal')) {
-                e.target.classList.remove('active', 'is-open');
-            }
+            if (e.target.classList && e.target.classList.contains('modal')) cerrarConPermiso(e.target);
         });
+
+        // Escribir o elegir algo en una ventana que pide confirmacion la marca "con cambios"
+        const marcarCambios = function (e) {
+            const ventana = e.target instanceof Element && e.target.closest('[data-confirmar-cierre]');
+            if (ventana) ventana.dataset.cambios = '1';
+        };
+        document.addEventListener('input', marcarCambios, true);
+        document.addEventListener('change', marcarCambios, true);
     }
+
+    function cerrarConPermiso(ventana) {
+        UI.puedeCerrar(ventana).then(function (si) { if (si) ventana.classList.remove('active', 'is-open'); });
+    }
+
+    /** Antes de cerrar una ventana con algo escrito y sin guardar
+     *  (data-confirmar-cierre + data-cambios), pregunta. Devuelve una promesa:
+     *  true si se puede cerrar. Lo seguro ("Seguir editando") queda con el foco. */
+    UI.puedeCerrar = function (ventana) {
+        if (!ventana || !ventana.hasAttribute('data-confirmar-cierre') || ventana.dataset.cambios !== '1') return Promise.resolve(true);
+        if (document.getElementById('ventanaConfirmar')) return Promise.resolve(false); // ya se esta preguntando
+        return UI.confirmar({
+            titulo: '¿Cerrar sin guardar?',
+            texto: 'Se perderá lo que escribiste en esta ventana.',
+            aceptar: 'Cerrar sin guardar',
+            cancelar: 'Seguir editando',
+            peligro: true
+        }).then(function (si) {
+            if (si) ventana.dataset.cambios = '';
+            return si;
+        });
+    };
 
     /* ---------- 7. Formularios ---------- */
 

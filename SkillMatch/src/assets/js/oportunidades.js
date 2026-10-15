@@ -146,8 +146,18 @@ function vigilarVentanasEnHistorial() {
         volviendo = false;
         const jobId = new URLSearchParams(window.location.search).get('jobId');
         const abierta = ventanaAbierta();
-        if (!jobId && abierta) abierta.classList.remove('active');
-        else if (jobId && !abierta) abrirDetallePorId(jobId, { sinHistorial: true });
+        if (!jobId && abierta) {
+            if (abierta.dataset.cambios === '1' && vacanteAbierta) {
+                // Carta escrita sin enviar: la ventana se queda (se repone su paso
+                // en el historial) mientras la persona decide si la cierra
+                history.pushState({ vacante: String(vacanteAbierta.id) }, '', direccionConVacante(vacanteAbierta.id));
+                puedeCerrarVentana(abierta).then(si => { if (si) abierta.classList.remove('active'); });
+                return;
+            }
+            abierta.classList.remove('active');
+        } else if (jobId && !abierta) {
+            abrirDetallePorId(jobId, { sinHistorial: true });
+        }
     });
 }
 
@@ -557,6 +567,15 @@ function cerrarVentana(id) {
     document.getElementById(id).classList.remove('active');
 }
 
+// Cierre pedido por la persona: si hay algo escrito sin enviar, primero pregunta
+function puedeCerrarVentana(ventana) {
+    return window.SkillMatchUI && SkillMatchUI.puedeCerrar ? SkillMatchUI.puedeCerrar(ventana) : Promise.resolve(true);
+}
+
+function pedirCerrarVentana(id) {
+    puedeCerrarVentana(document.getElementById(id)).then(si => { if (si) cerrarVentana(id); });
+}
+
 // Repinta tarjetas y detalle después de postularse o guardar
 function repintar() {
     // Con los filtros puestos (antes, si no quedaba ninguna visible, volvía a
@@ -598,7 +617,9 @@ function postularme(jobId) {
     boton.disabled = false;
     boton.textContent = 'Enviar postulación';
     cerrarVentana('jobDetailModal');
-    document.getElementById('applyModal').classList.add('active');
+    const ventana = document.getElementById('applyModal');
+    ventana.dataset.cambios = ''; // carta nueva: todavia no hay nada escrito
+    ventana.classList.add('active');
     marcarVentanaEnHistorial(job.id);
     setTimeout(() => carta.focus(), 60);
 }
@@ -697,8 +718,9 @@ function setupEventListeners() {
     }
 
     // Ventanas: la × y el contador de la carta
+    // La X y "Cancelar" preguntan si la carta tiene algo escrito (ui.js)
     document.querySelectorAll('[data-cerrar-ventana]').forEach(b =>
-        b.addEventListener('click', () => cerrarVentana(b.dataset.cerrarVentana)));
+        b.addEventListener('click', () => pedirCerrarVentana(b.dataset.cerrarVentana)));
     const carta = document.getElementById('coverLetter');
     if (carta) {
         carta.addEventListener('input', () => {
