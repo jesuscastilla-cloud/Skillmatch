@@ -2665,7 +2665,9 @@ footer.pie > .container { position: relative; z-index: 1; }
 }
 .auth-eyebrow .ico { width: 16px; height: 16px; }
 .form-group .forgot-password { display: block; width: fit-content; margin: var(--s1) 0 0 auto; }
-.auth-switch { margin-top: var(--s5); text-align: center; font-size: var(--t-sm); color: var(--ink-3); }
+/* max-width: none: el limite de 72ch de los parrafos lo dejaba corrido a la izquierda bajo el registro */
+.auth-switch { margin-top: var(--s5); max-width: none; text-align: center; font-size: var(--t-sm); color: var(--ink-3); }
+.auth-switch + .auth-switch { margin-top: var(--s2); }
 .auth-switch a { font-weight: 600; }
 
 /* ---- Login: personajes que miran (idea de Luis, seccion 1 del plan) ----

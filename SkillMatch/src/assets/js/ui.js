@@ -273,6 +273,19 @@
         }
     }
 
+    /** En las paginas para entrar o registrarse sobra el boton que lleva a esa
+     *  misma pagina: "Iniciar sesion" en los logins y "Unirse ahora" en la
+     *  eleccion de cuenta y los registros. Cada una ya tiene sus enlaces para
+     *  cambiar (por ejemplo "¿Ya tienes cuenta? Inicia sesion"). */
+    function sinBotonDeEstaPagina() {
+        const pagina = paginaActual();
+        let selector = '';
+        if (/^login(-usuario|-empresa)?\.html$/.test(pagina)) selector = 'header .nav-links a.btn-login:not([data-cerrar-sesion])';
+        else if (/^(seleccionar-registro|registro-usuario|registro-empresa)\.html$/.test(pagina)) selector = 'header .nav-links a.btn-register';
+        const boton = selector && document.querySelector(selector);
+        if (boton && boton.parentElement) boton.parentElement.hidden = true;
+    }
+
     /** Barra inferior en movil: cinco destinos, siempre los mismos. */
     function construirTabbar() {
         if (document.querySelector('.tabbar')) return;
@@ -2452,6 +2465,7 @@
         // Primero la barra segun la sesion: para un visitante cambia enlaces (por
         // ejemplo "Mensajes" pasa a "Empresas") y despues se marca el actual
         sesionEnBarra();
+        sinBotonDeEstaPagina();
         marcarNavegacionActiva();
         construirTabbar();
         actualizarNoLeidos();
