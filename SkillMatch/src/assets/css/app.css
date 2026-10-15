@@ -1454,6 +1454,9 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .toast-error .ico { color: #FF8A9B; }
 .toast-info  .ico { color: #7EDDE6; }
 .toast button { color: rgba(255,255,255,.6); margin-left: auto; flex-shrink: 0; }
+/* La negrita general es azul oscuro: sobre el fondo oscuro del aviso no se leia
+   (por ejemplo el nombre en "Postulacion enviada a ...") */
+.toast strong, .toast b { color: inherit; }
 .toast button:hover { color: #fff; }
 
 @keyframes toast-in {
@@ -5983,6 +5986,105 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 .message-content p { margin: 0; max-width: none; white-space: pre-wrap; overflow-wrap: anywhere; }
 .message-time { font-size: var(--t-xs); color: var(--ink-muted); }
 .chat-primer-mensaje p { margin-inline: auto; }
+
+/* ---- Mensajes: archivar, eliminar, copiar, fechas y estado (mensajes.js) ---- */
+/* "⋯" de cada conversacion: con el mouse encima, con el foco o en la abierta.
+   Va encima de la esquina de abajo a la derecha (sobre el final del texto), asi
+   no le quita espacio al nombre; en pantallas tactiles, en su lugar y siempre a
+   la vista, del tamano de un dedo */
+.conversation-item { position: relative; }
+.conv-menu {
+    position: absolute; right: var(--s2); bottom: 6px;
+    display: grid; place-items: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--surface-sunk);
+    color: var(--ink-muted);
+    opacity: 0;
+    transition: opacity .15s var(--ease), background-color .15s var(--ease);
+}
+.conversation-item.active .conv-menu { background: var(--sea-light); }
+.conv-menu .ico { width: 20px; height: 20px; }
+.conversation-item:hover .conv-menu, .conversation-item.active .conv-menu,
+.conv-menu:focus-visible, .conv-menu[aria-expanded="true"] { opacity: 1; }
+.conv-menu:hover, .conversation-item.active .conv-menu:hover { background: var(--hairline-soft); color: var(--ink); }
+@media (hover: none) {
+    .conv-menu { opacity: 1; width: 40px; height: 40px; right: 4px; bottom: 2px; background: transparent; }
+    .conversation-item.active .conv-menu { background: transparent; }
+    /* El texto del ultimo mensaje se corta antes del boton */
+    .conversation-item .conversation-preview { padding-right: 36px; }
+}
+
+/* Entrada a "Archivadas" (y la vuelta) arriba de la lista */
+.conv-archivadas {
+    display: flex; align-items: center; gap: var(--s3);
+    width: 100%; min-height: 48px; padding: var(--s2) var(--s4);
+    border-radius: var(--r-md); text-align: left;
+    color: var(--ink-2); font-size: var(--t-sm); font-weight: 600;
+    transition: background-color .14s var(--ease);
+}
+.conv-archivadas:hover { background: var(--surface-sunk); }
+.conv-archivadas .ico { width: 20px; height: 20px; color: var(--sea-deep); }
+.conv-archivadas[data-ver-archivadas="0"] .ico { transform: rotate(180deg); }
+.conv-archivadas small { margin-left: auto; color: var(--ink-muted); font-size: var(--t-xs); font-weight: 500; }
+.conv-etiqueta {
+    display: inline-block; margin-right: 6px; padding: 0 7px;
+    border-radius: var(--r-pill); background: var(--hairline-soft);
+    color: var(--ink-3); font-size: var(--t-xs); font-weight: 600;
+}
+
+/* Menu de acciones: encima de la barra, debajo de las ventanas (250) */
+.menu-acciones {
+    position: fixed; z-index: 240;
+    min-width: 210px; padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-4);
+    animation: menu-entra .14s var(--ease-out) both;
+}
+.menu-acciones button {
+    display: flex; align-items: center; gap: var(--s2);
+    width: 100%; min-height: 42px; padding: var(--s2) var(--s3);
+    border-radius: var(--r-sm); text-align: left;
+    color: var(--ink-2); font-size: var(--t-sm); font-weight: 500;
+}
+.menu-acciones button:hover, .menu-acciones button:focus-visible { background: var(--surface-sunk); color: var(--ink); }
+.menu-acciones .ico { width: 18px; height: 18px; flex: 0 0 auto; }
+.menu-acciones .es-peligro { color: var(--rojo); }
+.menu-acciones .es-peligro:hover, .menu-acciones .es-peligro:focus-visible { background: var(--rojo-soft); color: var(--rojo); }
+@keyframes menu-entra { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .menu-acciones { animation: none; } }
+
+/* Separador de dia dentro del chat */
+.chat-dia { display: flex; justify-content: center; margin: var(--s2) 0; }
+.chat-dia span {
+    padding: 3px 12px; border-radius: var(--r-pill);
+    background: var(--surface); border: 1px solid var(--hairline-soft);
+    color: var(--ink-3); font-size: var(--t-xs); font-weight: 600;
+}
+
+/* Estado de tus mensajes: una palomita gris (enviado) o dos turquesa (leido) */
+.message-estado { display: inline-flex; align-items: center; color: var(--ink-muted); }
+.message-estado .ico { width: 15px; height: 15px; }
+.message-estado .ico + .ico { margin-left: -10px; }
+.message-estado.es-leido { color: var(--sea); }
+
+/* "⋯" de cada mensaje: con el mouse encima o con el foco. En pantallas
+   tactiles se mantiene presionado el mensaje (y no se selecciona el texto) */
+.mensaje-menu {
+    display: grid; place-items: center;
+    width: 28px; height: 22px; border-radius: var(--r-sm);
+    color: var(--ink-muted);
+    opacity: 0;
+    transition: opacity .15s var(--ease), background-color .15s var(--ease);
+}
+.mensaje-menu .ico { width: 18px; height: 18px; }
+.message:hover .mensaje-menu, .mensaje-menu:focus-visible, .mensaje-menu[aria-expanded="true"] { opacity: 1; }
+.mensaje-menu:hover { background: var(--hairline-soft); color: var(--ink); }
+@media (hover: none) {
+    .mensaje-menu { display: none; }
+    .message-content { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+}
 
 /* Volver a la lista: solo en celular, donde el chat reemplaza a la lista */
 .btn-volver-chat { display: none; }
