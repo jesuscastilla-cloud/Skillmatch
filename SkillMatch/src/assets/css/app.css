@@ -4637,7 +4637,8 @@ a.meta-tag { position: relative; }
     transition-delay: var(--reveal-delay, 0ms);
 }
 /* Baraja (vacantes): cada carta empieza escondida bajo la de arriba, un poco
-   mas pequena y girada, y se desliza a su sitio con un rebote suave. Las
+   mas pequena y girada, y se desliza a su sitio frenando suave (sin rebote:
+   el rebote se ve anticuado, segun la revision con impeccable). Las
    cartas que salen van debajo (z-index negativo, ui.js pone --baraja-z);
    la lista aisla esas capas para que no se vayan detras del fondo. */
 .opportunities-list { isolation: isolate; }
@@ -4649,7 +4650,7 @@ a.meta-tag { position: relative; }
 }
 .reveal.baraja.is-visible {
     transform: none;
-    transition: opacity 280ms var(--ease-out), transform 640ms cubic-bezier(.2, 1.15, .35, 1);
+    transition: opacity 280ms var(--ease-out), transform 640ms var(--ease-out);
     transition-delay: var(--reveal-delay, 0ms);
 }
 /* Sin JavaScript nada se queda escondido */
