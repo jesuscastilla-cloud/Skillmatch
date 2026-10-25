@@ -2192,6 +2192,11 @@
         const boton = form.querySelector('[type="submit"]');
         function problema(texto) { error.textContent = texto || ''; error.hidden = !texto; }
         function listo() { boton.disabled = false; boton.textContent = 'Cambiar contraseña'; }
+        ojoDeClave(form.querySelector('#claveActual'));
+        UI.claveNueva(form.querySelector('#claveNueva'), form.querySelector('#claveNueva2'), function () {
+            return [datos.firstName, datos.lastName, String(datos.email || '').split('@')[0], datos.companyName]
+                .join(' ').split(/[\s._-]+/).filter(Boolean);
+        });
         form.querySelector('[data-cancelar]').addEventListener('click', v.cerrar);
         form.addEventListener('submit', function (e) {
             e.preventDefault();
@@ -2488,6 +2493,169 @@
         if (window.SkillMatchServidor && window.SkillMatchServidor.lento) mostrar(true);
     }
 
+    /* ---------- 26. Contrasena nueva: verla, lo que se pide y su fuerza ---------- */
+
+    // Donde se crea una contrasena (los registros y "Cambiar contrasena"): un
+    // boton para verla, lo que se pide marcado mientras se escribe, la fuerza
+    // en palabras y, al repetirla, si coinciden. Solo los 8 caracteres son
+    // obligatorios, porque es lo que exige el backend; lo demas se recomienda
+    // sin bloquear. El boton del ojo es el mismo del login (.campo-clave).
+    const REGLAS_CLAVE = [
+        ['largo', '8 caracteres o más', function (v) { return v.length >= 8; }],
+        ['letras', 'Mayúsculas y minúsculas', function (v) { return /\p{Ll}/u.test(v) && /\p{Lu}/u.test(v); }],
+        ['numero', 'Un número', function (v) { return /\p{N}/u.test(v); }],
+        ['simbolo', 'Un símbolo, como ! # o @', function (v) { return /[^\p{L}\p{N}\s]/u.test(v); }]
+    ];
+    // Palabras que cualquiera prueba primero
+    const CLAVES_COMUNES = ['password', 'contrasena', 'skillmatch', 'cartagena', 'colombia', 'qwerty', 'admin', 'iloveyou', 'teamo'];
+    const sinTildes = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+
+    /** Que tan dificil de adivinar es: { nivel 0-3, texto, cumple: {regla: bool} }.
+     *  personales: palabras de la persona (nombre, correo) que no deberia usar. */
+    UI.fuerzaClave = function (clave, personales) {
+        const cumple = {};
+        REGLAS_CLAVE.forEach(function (r) { cumple[r[0]] = r[2](clave); });
+        if (!clave) return { nivel: 0, texto: '', cumple: cumple };
+        if (!cumple.largo) {
+            const faltan = 8 - Array.from(clave).length;
+            return { nivel: 0, texto: faltan === 1 ? 'Falta 1 carácter' : 'Faltan ' + faltan + ' caracteres', cumple: cumple };
+        }
+        const plana = sinTildes(clave);
+        if ((personales || []).some(function (p) { return p.length >= 4 && plana.includes(p); })) {
+            return { nivel: 1, texto: 'Débil, porque incluye tu nombre o tu correo', cumple: cumple };
+        }
+        if (/^(.)\1+$/.test(clave) || CLAVES_COMUNES.some(function (c) { return plana.includes(c); })) {
+            return { nivel: 1, texto: 'Débil, porque es muy fácil de adivinar', cumple: cumple };
+        }
+        let puntos = ['letras', 'numero', 'simbolo'].filter(function (k) { return cumple[k]; }).length + (clave.length >= 12 ? 1 : 0);
+        if (/0123|1234|2345|3456|4567|5678|6789|abcd|qwer|asdf/.test(plana)) puntos--;
+        if (puntos >= 3) return { nivel: 3, texto: 'Fuerte', cumple: cumple };
+        if (puntos >= 2) return { nivel: 2, texto: 'Aceptable', cumple: cumple };
+        return { nivel: 1, texto: 'Débil', cumple: cumple };
+    };
+
+    /** El ojo para ver lo escrito. Al enviar se vuelve a ocultar, para que el
+     *  navegador la guarde como contrasena. */
+    function ojoDeClave(campo) {
+        if (!campo || campo.closest('.campo-clave')) return;
+        const envoltura = document.createElement('div');
+        envoltura.className = 'campo-clave';
+        campo.parentNode.insertBefore(envoltura, campo);
+        envoltura.appendChild(campo);
+        const ver = document.createElement('button');
+        ver.type = 'button';
+        ver.className = 'campo-clave-ver';
+        ver.setAttribute('aria-pressed', 'false');
+        ver.setAttribute('aria-controls', campo.id);
+        ver.innerHTML = svgIcon('eye') + svgIcon('eye-off');
+        envoltura.appendChild(ver);
+        const mostrar = function (si) {
+            campo.type = si ? 'text' : 'password';
+            ver.setAttribute('aria-pressed', String(si));
+            ver.setAttribute('aria-label', si ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            ver.dataset.tooltip = si ? 'Ocultar contraseña' : 'Mostrar contraseña';
+        };
+        mostrar(false);
+        // Con el mouse, el foco no sale del campo al tocar el boton
+        ver.addEventListener('mousedown', function (e) { e.preventDefault(); });
+        ver.addEventListener('click', function () {
+            mostrar(campo.type === 'password');
+            campo.focus();
+            campo.setSelectionRange(campo.value.length, campo.value.length);
+        });
+        if (campo.form) campo.form.addEventListener('submit', function () { mostrar(false); });
+    }
+
+    /** campo: la contrasena nueva; repetir: donde se escribe otra vez (opcional);
+     *  personales(): palabras de la persona que no deberia usar. */
+    UI.claveNueva = function (campo, repetir, personales) {
+        if (!campo || campo.dataset.claveNueva) return;
+        campo.dataset.claveNueva = '1';
+        [campo, repetir].forEach(ojoDeClave);
+
+        const grupo = campo.closest('.form-group') || campo.parentNode;
+        // "Minimo 8 caracteres" ya va en la lista
+        const ayuda = grupo.querySelector('.input-help');
+        if (ayuda && /8 caracteres/.test(ayuda.textContent)) ayuda.hidden = true;
+        const medidor = document.createElement('div');
+        medidor.className = 'clave-medidor';
+        medidor.dataset.nivel = '0';
+        const idReglas = campo.id + '-reglas';
+        medidor.innerHTML =
+            '<div class="clave-barra" aria-hidden="true"><span></span></div>' +
+            '<p class="clave-fuerza" aria-hidden="true"></p>' +
+            '<p class="sr-only" aria-live="polite" data-anuncio></p>' +
+            '<ul class="clave-reglas" id="' + idReglas + '">' + REGLAS_CLAVE.map(function (r, i) {
+                return '<li data-regla="' + r[0] + '">' + svgIcon('check') + '<span>' + r[1] +
+                    (i === 0 ? ' <small>(obligatorio)</small>' : '') + '</span><span class="sr-only" data-estado>: falta</span></li>';
+            }).join('') + '</ul>';
+        grupo.appendChild(medidor);
+        campo.setAttribute('aria-describedby', ((campo.getAttribute('aria-describedby') || '') + ' ' + idReglas).trim());
+
+        const barra = medidor.querySelector('.clave-barra > span');
+        const fuerza = medidor.querySelector('.clave-fuerza');
+        const anuncio = medidor.querySelector('[data-anuncio]');
+        let espera = 0;
+        const revisar = function () {
+            const palabras = personales ? personales().map(sinTildes).filter(Boolean) : [];
+            const r = UI.fuerzaClave(campo.value, palabras);
+            const largo = Array.from(campo.value).length;
+            medidor.dataset.nivel = String(r.nivel);
+            // Mientras faltan caracteres la barra avanza hacia el primer tercio
+            barra.style.transform = 'scaleX(' + (r.nivel ? r.nivel / 3 : Math.min(largo / 8, 1) / 3) + ')';
+            fuerza.textContent = r.texto ? (r.nivel ? 'Fuerza: ' + r.texto : r.texto) : '';
+            medidor.querySelectorAll('[data-regla]').forEach(function (li) {
+                const ok = r.cumple[li.dataset.regla];
+                li.classList.toggle('cumple', ok);
+                li.querySelector('[data-estado]').textContent = ok ? ': cumplido' : ': falta';
+            });
+            // El lector de pantalla oye la fuerza cuando se deja de escribir, no en cada tecla
+            clearTimeout(espera);
+            espera = setTimeout(function () { anuncio.textContent = fuerza.textContent; }, 900);
+        };
+        campo.addEventListener('input', revisar);
+        revisar();
+
+        if (!repetir) return;
+        const grupoRepetir = repetir.closest('.form-group') || repetir.parentNode;
+        const coinciden = document.createElement('p');
+        coinciden.className = 'clave-coinciden';
+        coinciden.setAttribute('aria-live', 'polite');
+        grupoRepetir.appendChild(coinciden);
+        // Que coinciden se dice al momento; que no, al salir del campo (o si ya
+        // se escribio de mas): mientras se escribe todavia no es un error
+        const comparar = function (alSalir) {
+            const a = campo.value;
+            const b = repetir.value;
+            let estado = '';
+            if (b && a === b) estado = 'si';
+            else if (b && (alSalir || b.length >= a.length || !a.startsWith(b))) estado = 'no';
+            coinciden.dataset.estado = estado;
+            coinciden.innerHTML = estado === 'si' ? svgIcon('check') + 'Las contraseñas coinciden'
+                : estado === 'no' ? 'Las contraseñas no coinciden' : '';
+        };
+        repetir.addEventListener('input', function () { comparar(false); });
+        repetir.addEventListener('blur', function () { comparar(true); });
+        campo.addEventListener('input', function () { if (repetir.value) comparar(false); });
+    };
+
+    // En los registros: el primer campo de contrasena nueva de cada formulario y
+    // el segundo para repetirla. Las palabras propias salen del mismo formulario.
+    function clavesNuevas() {
+        document.querySelectorAll('form').forEach(function (form) {
+            const campos = form.querySelectorAll('input[autocomplete="new-password"]');
+            if (!campos.length) return;
+            UI.claveNueva(campos[0], campos[1], function () {
+                const palabras = [];
+                form.querySelectorAll('input[autocomplete="given-name"], input[autocomplete="family-name"], input[autocomplete="organization"], input[type="email"]').forEach(function (c) {
+                    const v = c.type === 'email' ? c.value.split('@')[0] : c.value;
+                    v.split(/[\s._-]+/).forEach(function (p) { if (p) palabras.push(p); });
+                });
+                return palabras;
+            });
+        });
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -2518,6 +2686,7 @@
         observadorNuevos.observe(document.body, { childList: true, subtree: true });
         modalesAccesibles();
         validacionVisible();
+        clavesNuevas();
         listas(document);
         anillos(document);
         setInterval(function () { anillos(document); }, 1200);

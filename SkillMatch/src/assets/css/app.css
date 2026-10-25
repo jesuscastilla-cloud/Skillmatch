@@ -2796,6 +2796,35 @@ footer.pie > .container { position: relative; z-index: 1; }
 .campo-clave-ver[aria-pressed="true"] .ico:first-child { display: none; }
 .campo-clave-ver:focus-visible { outline-offset: -4px; }
 
+/* Contrasena nueva (ui.js, seccion 26): fuerza en palabras, lo que se pide y si
+   coinciden. El color nunca va solo: siempre hay texto o palomita. */
+.clave-medidor { margin-top: var(--s2); }
+.clave-barra { height: 6px; border-radius: var(--r-pill); background: var(--hairline-soft); overflow: hidden; }
+.clave-barra > span {
+    display: block; height: 100%;
+    border-radius: inherit;
+    background: var(--rojo);
+    transform-origin: left center;
+    transform: scaleX(0);
+}
+@media (prefers-reduced-motion: no-preference) { .clave-barra > span { transition: transform .3s var(--ease-out); } }
+.clave-medidor[data-nivel="2"] .clave-barra > span { background: var(--sol); }
+.clave-medidor[data-nivel="3"] .clave-barra > span { background: var(--verde); }
+.clave-fuerza { min-height: 1.5em; margin: 6px 0 0; font-size: var(--t-sm); font-weight: 600; color: var(--rojo); }
+.clave-medidor[data-nivel="2"] .clave-fuerza { color: var(--sol-deep); }
+.clave-medidor[data-nivel="3"] .clave-fuerza { color: var(--verde-texto); }
+.clave-reglas { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px var(--s4); font-size: var(--t-sm); color: var(--ink-3); }
+.clave-reglas li { display: inline-flex; align-items: center; gap: 6px; }
+.clave-reglas small { color: var(--ink-muted); font-size: var(--t-xs); }
+/* La palomita solo se ve cuando se cumple; antes, un circulo vacio */
+.clave-reglas .ico { width: 16px; height: 16px; padding: 2px; border: 1.5px solid var(--hairline); border-radius: 50%; color: transparent; }
+.clave-reglas li.cumple { color: var(--verde-texto); }
+.clave-reglas li.cumple .ico { border-color: var(--verde); background: var(--verde); color: #fff; }
+.clave-coinciden { display: flex; align-items: center; gap: 6px; min-height: 1.5em; margin: 6px 0 0; font-size: var(--t-sm); font-weight: 600; }
+.clave-coinciden .ico { width: 16px; height: 16px; }
+.clave-coinciden[data-estado="si"] { color: var(--verde-texto); }
+.clave-coinciden[data-estado="no"] { color: var(--rojo); }
+
 /* Aviso de Bloq Mayus (lo agrega login-personajes.js): flota en la fila de
    la etiqueta "Contrasena", a la derecha. Ese lugar esta libre en los tres
    logins (debajo del campo a veces hay un enlace o el boton) y no mueve
