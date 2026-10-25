@@ -1431,12 +1431,60 @@ function mostrarVistaPostulaciones(vista, recordar) {
     }
 }
 
+// ---- Descargar las postulaciones para Excel ----
+// Un CSV con punto y coma y BOM: asi Excel en espanol lo abre en columnas y con
+// tildes. Un nombre o mensaje que empiece con = + - @ se guarda con un apostrofe
+// delante, para que Excel no lo ejecute como formula (inyeccion de formulas).
+const ESTADOS_EXCEL = { pendiente: 'Pendiente', revisada: 'Revisada', aceptada: 'Aceptada', rechazada: 'Rechazada' };
+
+function celdaExcel(valor) {
+    let texto = valor === null || valor === undefined ? '' : String(valor);
+    if (/^[=+\-@\t\r]/.test(texto)) texto = "'" + texto;
+    return '"' + texto.replace(/"/g, '""') + '"';
+}
+
+function exportarPostulaciones() {
+    if (!postulacionesEmpresa.length) return;
+    const fecha = f => {
+        const d = new Date(f);
+        return f && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+    };
+    const filas = [['Vacante', 'Nombre', 'Correo', 'Teléfono', 'Ciudad', 'Titular', 'Estado', 'Fecha de postulación', 'Mensaje']];
+    postulacionesEmpresa.forEach(app => {
+        const estado = estadoPostulacionEmpresa(app);
+        filas.push([app.jobTitle, app.userName, app.userEmail, app.userPhone, app.userLocation, app.userHeadline,
+            ESTADOS_EXCEL[estado] || estado, fecha(app.appliedDate), app.coverLetter]);
+    });
+    const csv = '﻿' + filas.map(f => f.map(celdaExcel).join(';')).join('\r\n');
+    const empresa = (JSON.parse(localStorage.getItem('userData') || '{}').firstName || 'empresa')
+        .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const hoy = new Date();
+    const nombre = `postulaciones-${empresa}-${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}.csv`;
+    const enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    enlace.download = nombre;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+    const n = postulacionesEmpresa.length;
+    showNotification(`Descargaste ${n} ${n === 1 ? 'postulación' : 'postulaciones'} en <strong>${escaparHtml(nombre)}</strong>.`, 'ok');
+}
+
 // El selector solo aparece si hay postulaciones; los eventos se conectan una vez
 function prepararVistaPostulaciones(hay) {
     const selector = document.getElementById('vistaPostulaciones');
     const tablero = document.getElementById('applications-board');
     if (!selector || !tablero) return;
     selector.hidden = !hay;
+    const exportar = document.getElementById('exportarPostulaciones');
+    if (exportar) {
+        exportar.hidden = !hay;
+        if (!exportar.dataset.listo) {
+            exportar.dataset.listo = '1';
+            exportar.addEventListener('click', exportarPostulaciones);
+        }
+    }
     if (!selector.dataset.listo) {
         selector.dataset.listo = '1';
         selector.addEventListener('click', e => {

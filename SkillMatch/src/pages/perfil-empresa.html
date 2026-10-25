@@ -146,10 +146,14 @@
                     <div class="content-section-card" id="candidatos">
                         <div class="section-card-header">
                             <h2>Postulaciones recibidas</h2>
-                            <!-- Lista o tablero por estado (perfil-empresa.js) -->
-                            <div class="vista-postulaciones" id="vistaPostulaciones" role="group" aria-label="Cómo ver las postulaciones" hidden>
-                                <button type="button" class="vista-btn" data-vista="lista" aria-pressed="true"><i data-ico="list"></i> Lista</button>
-                                <button type="button" class="vista-btn" data-vista="tablero" aria-pressed="false"><i data-ico="columnas"></i> Tablero</button>
+                            <div class="postulaciones-herramientas">
+                                <!-- Lista o tablero por estado (perfil-empresa.js) -->
+                                <div class="vista-postulaciones" id="vistaPostulaciones" role="group" aria-label="Cómo ver las postulaciones" hidden>
+                                    <button type="button" class="vista-btn" data-vista="lista" aria-pressed="true"><i data-ico="list"></i> Lista</button>
+                                    <button type="button" class="vista-btn" data-vista="tablero" aria-pressed="false"><i data-ico="columnas"></i> Tablero</button>
+                                </div>
+                                <!-- Todas las postulaciones en un archivo para Excel (perfil-empresa.js) -->
+                                <button type="button" class="btn btn-secondary btn-small" id="exportarPostulaciones" hidden><i data-ico="download"></i> Descargar en Excel</button>
                             </div>
                         </div>
                         <div class="section-card-body">

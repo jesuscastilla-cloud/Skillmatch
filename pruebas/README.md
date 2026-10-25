@@ -35,13 +35,14 @@ npx playwright test --project=celular
 |---|---|
 | `casos/humo.spec.js` | Que cada página abra sin errores para visitante, persona y empresa, y que el frontend solo llame a direcciones que existen en el backend |
 | `casos/navegacion.spec.js` | Menú según quién mira, botones de entrar y registrarse, enlaces del registro, cerrar sesión |
-| `casos/vacantes.spec.js` | Orden, "¿Por qué este match?", el detalle en el historial ("atrás" lo cierra), filtros en la dirección, postularse y "¿Cerrar sin guardar?" |
+| `casos/vacantes.spec.js` | Orden, "¿Por qué este match?", el trabajo del match, etiquetas "Nueva" y "Cierra pronto", conteos en los filtros, el detalle en el historial ("atrás" lo cierra), filtros en la dirección, postularse y "¿Cerrar sin guardar?" |
 | `casos/mensajes.spec.js` | Lista, fechas y palomitas, "Ver perfil" de empresas, archivar, eliminar, copiar, teclado y celular |
 | `casos/empresa.spec.js` | "Nueva oferta" y "Acerca de nosotros" (preguntar antes de perder lo escrito), ventana de candidatos |
 | `casos/avisos.spec.js` | "SkillMatch se está despertando" y la negrita de los avisos |
 | `casos/indicadores.spec.js` | Cartagena una sola vez y los mensajes con el sitio vacío |
 | `casos/conexiones.spec.js` | Las tarjetas no se enciman en el celular |
 | `casos/inicio.spec.js` | Panel de inicio de la persona |
+| `casos/exportar.spec.js` | "Descargar en Excel" en Mi empresa: columnas, tildes, nada se vuelve fórmula |
 
 | Apoyo | Para qué |
 |---|---|
