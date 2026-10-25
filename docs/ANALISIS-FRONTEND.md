@@ -378,6 +378,78 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   - De paso: en la lista, las empresas salían como "Caribe Digital Estudio Empresa" (a la expresión le faltaba la
     barra de `\s`), y la negrita de los avisos no se leía sobre su fondo oscuro.
   - Las horas en Render salen 5 horas corridas porque el servidor guarda en UTC: es del backend (PENDIENTES 2.10).
+- **Ideas de los videos de Instagram y TikTok (hecho, 24 de octubre de 2026):**
+  - *Baraja de Vacantes sin rebote* y *"el trabajo del match"*: el aviso dice con cifras reales qué se comparó
+    ("Comparamos tus 3 habilidades… De las 9 que ves, 2 piden alguna").
+  - *Etiquetas "Nueva" y "Cierra pronto"* en cada vacante y *cuántas hay de cada opción* en los filtros; las
+    opciones sin resultados se atenúan con color (con opacidad bajaban de 4.5:1).
+  - *Descargar las postulaciones en Excel* (Mi empresa): un CSV con tildes que Excel abre bien, y nada de lo que
+    escribe una persona se vuelve fórmula (una celda que empieza por `=`, `+`, `-` o `@` lleva un `'` delante).
+  - *Cerrar una vacante sabiendo qué pasa*: deja de verse, cuántas personas se postularon y quiénes esperan
+    respuesta (sin aviso, porque el backend no avisa). Se les puede responder en el mismo paso. Reabrir con la
+    fecha vencida pide cambiarla primero: si no, el backend la cerraría esa misma noche (PENDIENTES 2.12).
+  - *Detalle de cada gráfica en Indicadores*: crece desde su tarjeta (FLIP, solo `transform` y `opacity`), con
+    una tabla y las vacantes nuevas de esta semana frente a la anterior. Solo compara si las 200 vacantes más
+    recientes alcanzan a cubrir las dos semanas; si no, lo dice en lugar de inventar.
+- **Revisión de diseño con la skill ui-ux-pro-max (hecho, 24 de octubre de 2026):** se siguieron sus 119 reglas y
+  su lista de chequeo con un script que mide 138 vistas (`pruebas/auditoria.js`: teléfono de 375 px, de lado,
+  letra muy grande, escritorio; claro y oscuro). Pasó de 45 problemas a 5, y los 5 que quedan son decisiones:
+  - *Arreglado*: las conversaciones de Mensajes no se abrían con el teclado (ahora el nombre es un botón); los
+    buscadores de la portada y de Vacantes no mostraban dónde estaba el foco; la barra de pestañas del celular
+    tapaba lo que recibía el foco (`scroll-padding-bottom`); los contadores naranjas tenían texto blanco (2.7:1);
+    «Cerrada» casi no se leía (2.09:1); en iPhone, tocar un campo con letra de 15 px agrandaba la página; títulos
+    que saltaban de nivel (Conexiones) o un chat sin `h1` en el celular; la contraseña del login sin
+    `autocomplete`; filas del perfil con la mano del mouse aunque no se abrían; enlaces de menos de 24 px.
+  - *Se quedan así a propósito*: los pasos atenuados de "Cómo funciona" en la portada (se leen al llegar a ellos;
+    con "más contraste" en el sistema se ven completos) y títulos de tarjetas de 25 px en el celular (pasan el
+    mínimo de 24 px; la acción principal de cada tarjeta mide 44 px).
+  - Las pruebas de `pruebas/casos/accesibilidad.spec.js` cuidan que no vuelva a pasar.
+- **Ideas de los videos de Facebook (hecho, 24 de octubre de 2026):**
+  - *Contraseña nueva* (registros y "Cambiar contraseña"): ojo para verla, lo que se pide marcado mientras se
+    escribe, la fuerza en palabras ("Débil, porque incluye tu nombre o tu correo") y si coinciden. Solo los 8
+    caracteres son obligatorios, porque es lo que exige el backend; lo demás se recomienda sin bloquear
+    (`ui.js`, sección 26).
+  - *El menú marca la sección* en la que se está al hacer scroll ("Cómo funciona" en la portada, "Mis ofertas"
+    y "Candidatos" en Mi empresa) y su *línea se desliza* con el mouse. Esto último es solo con mouse y sin
+    movimiento reducido (`ui.js`, sección 27).
+- **Llenar el perfil con la hoja de vida en PDF (hecho, 24 de octubre de 2026):** idea del video "Lectora". El PDF
+  se lee en el navegador con pdf.js 6.4.299 (`vendor/pdfjs`), sin subirlo a ningún lado. Propone teléfono, ciudad,
+  titular, presentación, habilidades, estudios y experiencia; lo dudoso queda en ámbar y sin marcar, lo que el
+  perfil ya tiene distinto no se reemplaza solo, las referencias no se traen y nada se guarda sin confirmar
+  (`leer-hoja-de-vida.js`). Lee hojas de una y de dos columnas. Las experiencias se habilitan solas cuando el
+  backend arregle el punto 1.4.
+- **Cambio de página con la marca que viaja (hecho, 24 de octubre de 2026):** pedido de Luis, idea del video
+  «Modern Responsive Navbar». Al hacer clic, la línea del menú (computador) o una pastilla en la barra de
+  pestañas (celular) se desliza hasta el destino mientras carga la página siguiente, también desde enlaces del
+  contenido ("Ver vacantes abiertas"). Hallazgos al medirlo: el navegador toma la foto de la página nueva antes
+  de que corra `ui.js`, así que la línea y la barra de abajo no pueden "viajar" con la View Transition; por eso
+  la marca se adelanta en la página que sale, la barra de abajo de la página anterior se queda quieta hasta el
+  final y la línea no vuelve a crecer. Con "reducir movimiento" la página ya no cambia de golpe: se funde sin
+  desplazarse. En Firefox no hay transición entre páginas, pero la marca sí se desliza. En el celular simulado
+  de Playwright la transición entre páginas nunca corre (en una ventana angosta sin simular sí): es de la
+  simulación, no del sitio.
+- **El viaje se ve y la página se desliza (hecho, 25 de octubre de 2026):** pedido de Luis, que no veía
+  el deslizamiento. Medido: la pastilla recorría el 67 % del camino en 57 ms y la página siguiente cargaba
+  enseguida, así que parecía un salto. Ahora la marca viaja en 0,36 s con una curva que arranca y frena suave
+  (`--dur-viaje`, `--ease-viaje`) y la página cambia cuando llega (`irCuandoLlegue` en `ui.js`; si la línea ya
+  estaba bajo el mouse no se espera). La dirección queda en `sessionStorage` (`skillmatch_deslizar`) y el guion
+  del `<head>` de las 18 páginas la vuelve un tipo de la transición (`ir-derecha` / `ir-izquierda`) en
+  `pagereveal`, y una clase en `<html>` (`entra-derecha` / `entra-izquierda`) que se quita sola a los 1,4 s.
+  Se probó de lado (carrusel) y en vertical como el scroll del video; Luis eligió horizontal "que parezca que
+  entran las cosas": la vieja se corre un 30 % y se apaga, la nueva se corre un 30 % desde el lado de la
+  opción, y sus bloques (los hijos de cada `.container` de las secciones principales: título, buscador,
+  pestañas, tarjetas) llegan en fila desde ese lado, 60 ms uno tras otro y 180 ms después los de la segunda
+  sección. Las barras se quedan quietas.
+  Sin dirección (atrás, recargar, un enlace fuera del menú) queda el fundido de siempre, y con "reducir
+  movimiento" no hay viaje ni espera. Hallazgo al grabarlo: en 10 de las 18 páginas el guion del `<head>` iba
+  antes de las hojas de estilo y el navegador podía pintar un primer cuadro sin `app.css` (donde está
+  `@view-transition`), así que se saltaba la transición ("ViewTransition opt-in disabled"), también el fundido
+  de antes; con el guion después de las hojas pasó de 2 de 4 cambios con transición a 8 de 8. La barra de
+  arriba de la página nueva sale de visitante hasta que `ui.js` pone la sesión: durante la transición se ve
+  la de la página anterior, quieta. Al deslizar, la barra de abajo nueva (`ui.js` la arma en plena
+  transición) y la barra de progreso cruzaban la pantalla con la página: la primera se esconde hasta el final
+  y la segunda se esconde en `pageswap`. Con el computador muy ocupado (pruebas en paralelo) el navegador igual
+  puede saltarse alguna: por eso las pruebas revisan la dirección y el guion por separado.
 
 ## Orden propuesto (solo frontend)
 
