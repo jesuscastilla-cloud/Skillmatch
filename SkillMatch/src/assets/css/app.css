@@ -804,6 +804,20 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
 }
 
 .checkbox-text { font-size: var(--t-base); color: var(--ink-2); line-height: 1.5; }
+/* Cuantas vacantes cargadas quedarian con cada opcion (oportunidades.js, contarOpciones) */
+.opcion-cuenta { margin-left: auto; padding-left: var(--s2); font-size: var(--t-xs); color: var(--ink-muted); font-variant-numeric: tabular-nums; line-height: 1.5; padding-top: 2px; }
+.checkbox-label.sin-resultados .checkbox-text, .checkbox-label.sin-resultados .opcion-cuenta { opacity: .5; }
+
+/* Etiquetas de la tarjeta de vacante: "Nueva" y "Cierra en N dias" */
+.etiquetas-vacante { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.etiqueta-vacante {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 9px; border-radius: var(--r-pill);
+    font-size: var(--t-xs); font-weight: 600; line-height: 1.5;
+}
+.etiqueta-vacante .ico { width: 13px; height: 13px; }
+.etiqueta-vacante.es-nueva { background: var(--sea-light); color: var(--sea-deep); }
+.etiqueta-vacante.es-cierra { background: var(--sol-soft); color: var(--sol-deep); }
 /* Icono y texto del filtro en la misma linea (el reset pone los svg en bloque) */
 .checkbox-text:has(.ico) { display: inline-flex; align-items: center; gap: var(--s2); }
 .checkbox-text .ico { color: var(--ink-muted); }

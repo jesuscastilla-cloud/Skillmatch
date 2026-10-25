@@ -231,3 +231,42 @@ test('cada tarjeta muestra el nombre de su empresa con enlace a su perfil', asyn
     await expect(tarjeta.locator('.enlace-empresa')).toHaveText('Hotel Puerta del Mar');
     await expect(tarjeta.locator('.enlace-empresa')).toHaveAttribute('href', 'empresa.html?id=c-hotel');
 });
+
+test.describe('etiquetas y conteos', () => {
+    const cuenta = (page, grupo, valor) => page.locator(`.filter-card input[name="${grupo}"][value="${valor}"]`).locator('xpath=ancestor::label').locator('.opcion-cuenta');
+
+    test('cada opción del filtro dice cuántas vacantes quedarían', async ({ page, context, api }) => {
+        await entrarComo(context, 'visitante');
+        await page.goto('oportunidades.html');
+        await page.locator('.btn-ver-detalle').first().waitFor();
+        await expect(cuenta(page, 'type', 'empleo')).toHaveText('6');
+        await expect(cuenta(page, 'type', 'practica')).toHaveText('2');
+        await expect(cuenta(page, 'type', 'freelance')).toHaveText('1');
+        // Con "Empleo" marcado, las modalidades cuentan solo entre los empleos
+        await page.locator('input[name="type"][value="empleo"]').check();
+        await expect(cuenta(page, 'modality', 'presencial')).toHaveText('3');
+        await expect(cuenta(page, 'modality', 'remoto')).toHaveText('2');
+        await expect(cuenta(page, 'modality', 'hibrido')).toHaveText('1');
+    });
+
+    test('las opciones que darían 0 se ven atenuadas', async ({ page, context, api }) => {
+        await entrarComo(context, 'visitante');
+        await page.goto('oportunidades.html');
+        await page.locator('input[name="type"][value="freelance"]').check();
+        // El unico independiente es presencial: remoto e hibrido quedan en 0
+        await expect(cuenta(page, 'modality', 'remoto')).toHaveText('0');
+        await expect(page.locator('input[name="modality"][value="remoto"]').locator('xpath=ancestor::label')).toHaveClass(/sin-resultados/);
+    });
+
+    test('las tarjetas dicen "Nueva" y "Cierra en N días"', async ({ page, context, api }) => {
+        await entrarComo(context, 'visitante');
+        await page.goto('oportunidades.html');
+        await page.locator('.btn-ver-detalle').first().waitFor();
+        const tarjeta = titulo => page.locator('.opportunity-card', { hasText: titulo });
+        await expect(tarjeta('Recepcionista bilingüe').locator('.etiqueta-vacante')).toHaveText(['Nueva', 'Cierra en 3 días']);
+        await expect(tarjeta('Mesero o mesera').locator('.etiqueta-vacante')).toHaveText(['Nueva']);
+        await expect(tarjeta('Práctica en desarrollo de software').locator('.etiqueta-vacante')).toHaveText(['Cierra en 5 días']);
+        await expect(tarjeta('Auxiliar de cocina').locator('.etiqueta-vacante')).toHaveCount(0);
+        await expect(page.locator('.etiqueta-vacante.es-nueva')).toHaveCount(3);
+    });
+});
