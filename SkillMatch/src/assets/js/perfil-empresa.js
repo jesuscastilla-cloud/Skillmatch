@@ -451,6 +451,8 @@ function loadOffers() {
                 location: job.location,
                 publishDate: fecha ? new Date(fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
                 candidates: candidateCount,
+                // Hasta cuándo recibe postulaciones (AAAA-MM-DD): al reabrir se revisa
+                vence: job.expirationDate ? String(job.expirationDate).slice(0, 10) : '',
                 status: (job.status?.toLowerCase() === 'abierta' || job.active) ? 'active' : 'archived'
             };
         }));
@@ -509,7 +511,7 @@ function renderOffers(offers) {
                 </div>
                 <div class="offer-info-row">
                     <span class="info-label">Estado:</span>
-                    <span class="status-badge ${offer.status === 'active' ? 'active' : 'inactive'}">${offer.status === 'active' ? 'Activa' : 'Archivada'}</span>
+                    <span class="status-badge ${offer.status === 'active' ? 'active' : 'inactive'}">${offer.status === 'active' ? 'Activa' : 'Cerrada'}</span>
                 </div>
             </div>
             <div class="oferta-cifras" data-cifras="${sanitize(String(offerId))}"></div>
@@ -517,7 +519,7 @@ function renderOffers(offers) {
                 <button class="btn-offer-action primary" onclick="viewOfferCandidates('${offerId}')">Ver candidatos</button>
                 <button class="btn-offer-action" onclick="editOffer('${offerId}')">Editar</button>
                 <button class="btn-offer-action ${offer.status === 'active' ? '' : 'success'}" onclick="toggleOfferStatus('${offerId}')">
-                    ${offer.status === 'active' ? 'Archivar' : 'Reabrir'}
+                    ${offer.status === 'active' ? 'Cerrar' : 'Reabrir'}
                 </button>
             </div>
         </div>
@@ -603,7 +605,7 @@ function setupEventListeners() {
 // ========================================
 
 // (El botón "⋮" solo ofrecía eliminar, y en el backend eliminar no borra: cierra la
-// oferta igual que "Archivar", que además se puede deshacer con "Reabrir".)
+// oferta igual que "Cerrar", que además se puede deshacer con "Reabrir".)
 
 function viewOfferCandidates(offerId) {
     const offer = currentOffers.find((o, i) => (o.id || i) === offerId);
@@ -619,30 +621,133 @@ function editOffer(offerId) {
     }
 }
 
+// ---- Cerrar y reabrir una vacante ----
+// Antes de cerrar, la empresa ve qué pasa: la vacante deja de verse, cuántas
+// personas se postularon y que a quienes esperan respuesta no les llega ningún
+// aviso (el backend no toca sus postulaciones). Puede responderles en el mismo paso.
+const ESPERAN_RESPUESTA = ['pendiente', 'revisada'];
+
 function toggleOfferStatus(offerId) {
-    const offerIndex = currentOffers.findIndex((o, i) => (o.id || i) === offerId);
-    if (offerIndex === -1) return;
+    const offer = currentOffers.find((o, i) => (o.id || i) === offerId);
+    if (!offer) return;
+    if (offer.status === 'active') abrirCierreVacante(offer);
+    else reabrirVacante(offer);
+}
 
-    const currentStatus = currentOffers[offerIndex].status;
-    const backendStatus = currentStatus === 'active' ? 'CERRADA' : 'ABIERTA';
-    const newLocalStatus = currentStatus === 'active' ? 'archived' : 'active';
-
-    fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}/status?status=${backendStatus}`, { method: 'PATCH' })
+function cambiarEstadoOferta(offer, abrir) {
+    const params = new URLSearchParams({ status: abrir ? 'ABIERTA' : 'CERRADA' });
+    return fetchWithAuth(`${API_BASE_URL}/jobs/${encodeURIComponent(offer.id)}/status?${params}`, { method: 'PATCH' })
     .then(async response => {
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
             throw new Error(err.message || `Error ${response.status}`);
         }
-        return response.json();
-    })
-    .then(() => {
-        currentOffers[offerIndex].status = newLocalStatus;
+        offer.status = abrir ? 'active' : 'archived';
         renderOffers(currentOffers);
-        showNotification(newLocalStatus === 'active' ? 'Oferta reabierta' : 'Oferta archivada');
-    })
-    .catch(error => {
-        alert('Error al cambiar el estado de la oferta: ' + error.message);
+        loadActivityStats();
     });
+}
+
+// "Ana", "Ana y Luis", "Ana, Luis y Sara", "Ana, Luis, Sara y 2 más"
+function listaDeNombres(nombres) {
+    const n = nombres.map(nombre => sanitize(nombre || 'Una persona'));
+    if (n.length > 4) return `${n.slice(0, 3).join(', ')} y ${n.length - 3} más`;
+    return n.length > 1 ? `${n.slice(0, -1).join(', ')} y ${n[n.length - 1]}` : (n[0] || '');
+}
+
+function abrirCierreVacante(offer) {
+    const apps = postulacionesCargadas ? postulacionesEmpresa.filter(a => String(a.jobId) === String(offer.id)) : [];
+    const esperan = apps.filter(a => ESPERAN_RESPUESTA.includes(estadoPostulacionEmpresa(a)));
+    const aceptadas = apps.filter(a => estadoPostulacionEmpresa(a) === 'aceptada').length;
+    const total = postulacionesCargadas ? apps.length : (offer.candidates || 0);
+    const partes = [];
+    if (aceptadas) partes.push(`${aceptadas} ${aceptadas === 1 ? 'aceptada' : 'aceptadas'}`);
+    if (esperan.length) partes.push(`${esperan.length} ${esperan.length === 1 ? 'espera' : 'esperan'} respuesta`);
+    const postulados = !total ? 'Nadie se había postulado todavía.'
+        : `Se ${total === 1 ? 'postuló 1 persona' : `postularon ${total} personas`}${partes.length ? ': ' + partes.join(', ') : ''}.`;
+    const uno = esperan.length === 1;
+
+    const v = SkillMatchUI.ventana({
+        id: 'ventanaCerrarVacante',
+        titulo: 'Cerrar la vacante',
+        icono: 'alert',
+        cuerpo: `
+            <p class="confirmar-texto">Vas a cerrar <strong>${sanitize(offer.title)}</strong>. Esto pasa:</p>
+            <ul class="cierre-consecuencias">
+                <li><i data-ico="eye-off"></i> Deja de aparecer en Vacantes y nadie más puede postularse.</li>
+                <li><i data-ico="users"></i> ${postulados}</li>
+                <li><i data-ico="refresh"></i> Puedes reabrirla cuando quieras con «Reabrir».</li>
+            </ul>
+            ${esperan.length ? `
+            <div class="cierre-esperan">
+                <p><strong>${listaDeNombres(esperan.map(a => a.userName))}</strong> ${uno ? 'espera' : 'esperan'} tu respuesta.
+                Al cerrar no ${uno ? 'le' : 'les'} llega ningún aviso: ${uno ? 'seguirá' : 'seguirán'} viendo su postulación en proceso.</p>
+                <label class="checkbox-label"><input type="checkbox" id="cierreResponder"> ${uno ? 'Responderle' : 'Responderles'} ahora: ${uno ? 'su postulación pasa' : 'sus postulaciones pasan'} a «Rechazada»</label>
+            </div>` : ''}
+            <p class="error-text" role="alert" hidden></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary-modal" data-cancelar>Cancelar</button>
+                <button type="button" class="btn-primary-modal" data-cerrar-vacante>Cerrar vacante</button>
+            </div>`
+    });
+    const boton = v.cuerpo.querySelector('[data-cerrar-vacante]');
+    const error = v.cuerpo.querySelector('.error-text');
+    v.cuerpo.querySelector('[data-cancelar]').addEventListener('click', v.cerrar);
+    v.cuerpo.querySelector('[data-cancelar]').focus();
+    boton.addEventListener('click', async () => {
+        const responder = !!v.cuerpo.querySelector('#cierreResponder:checked');
+        boton.disabled = true;
+        boton.textContent = 'Cerrando…';
+        error.hidden = true;
+        try {
+            await cambiarEstadoOferta(offer, false);
+        } catch (e) {
+            error.textContent = 'No se pudo cerrar la vacante: ' + e.message;
+            error.hidden = false;
+            boton.disabled = false;
+            boton.textContent = 'Cerrar vacante';
+            return;
+        }
+        let respondidas = 0;
+        if (responder) {
+            const resultados = await Promise.allSettled(esperan.map(async app => {
+                const params = new URLSearchParams({ status: 'rechazada' });
+                const response = await fetchWithAuth(`${API_BASE_URL}/applications/${encodeURIComponent(app.id)}/status?${params}`, { method: 'PATCH' });
+                if (!response.ok) throw new Error(`Error ${response.status}`);
+                app.status = 'rechazada';
+            }));
+            respondidas = resultados.filter(r => r.status === 'fulfilled').length;
+            if (respondidas) {
+                displayApplications(postulacionesEmpresa);
+                pintarCifrasOfertas();
+            }
+        }
+        v.cerrar();
+        const titulo = `<strong>${sanitize(offer.title)}</strong>`;
+        const fallidas = responder ? esperan.length - respondidas : 0;
+        if (fallidas) {
+            showNotification(`Cerraste ${titulo}, pero no se pudo responder a ${fallidas === 1 ? '1 persona' : `${fallidas} personas`}. Hazlo desde «Postulaciones recibidas».`, 'error');
+        } else {
+            showNotification(`Cerraste ${titulo}.${respondidas ? ` Respondiste a ${respondidas === 1 ? '1 persona' : `${respondidas} personas`}.` : ''}`);
+        }
+    });
+}
+
+// Si la fecha límite ya pasó, el backend la vuelve a cerrar esa misma noche
+// (closeExpiredJobs, 2 a. m.): primero hay que poner una fecha nueva.
+async function reabrirVacante(offer) {
+    if (offer.vence && offer.vence < fechaLocal(new Date())) {
+        const cambiar = await SkillMatchUI.confirmar({
+            titulo: 'Primero cambia la fecha',
+            texto: `Esta vacante recibía postulaciones hasta el ${fechaLegible(offer.vence)}. Si la reabres así, esta misma noche se vuelve a cerrar sola. Pon una fecha nueva y luego reábrela.`,
+            aceptar: 'Cambiar la fecha'
+        });
+        if (cambiar) editOffer(offer.id);
+        return;
+    }
+    cambiarEstadoOferta(offer, true)
+    .then(() => showNotification(`Reabriste <strong>${sanitize(offer.title)}</strong>: vuelve a aparecer en Vacantes.`))
+    .catch(error => showNotification('No se pudo reabrir la vacante: ' + error.message, 'error'));
 }
 
 // ========================================

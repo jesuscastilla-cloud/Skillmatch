@@ -502,6 +502,18 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .btn-primary-modal.btn-peligro:hover { filter: none; opacity: .92; }
 [data-theme="dark"] .btn-primary-modal.btn-peligro { color: var(--surface-inverse); }
 .confirmar-texto { margin-bottom: var(--s5); color: var(--ink-2); line-height: 1.6; }
+/* Cerrar una vacante: lo que pasa, antes de confirmar (perfil-empresa.js) */
+.cierre-consecuencias { list-style: none; margin: calc(var(--s3) * -1) 0 var(--s5); padding: 0; display: grid; gap: var(--s3); }
+.cierre-consecuencias li { display: flex; gap: var(--s3); align-items: flex-start; color: var(--ink-2); line-height: 1.5; }
+.cierre-consecuencias .ico { flex: 0 0 auto; margin-top: 2px; color: var(--sea-deep); }
+.cierre-esperan {
+    margin-bottom: var(--s5); padding: var(--s4);
+    border-radius: var(--r-md); background: var(--sol-soft);
+    color: var(--ink); line-height: 1.55;
+}
+.cierre-esperan p { margin: 0 0 var(--s2); }
+.cierre-esperan .checkbox-label { margin: 0; padding: 6px 0; font-weight: 600; }
+.cierre-esperan .checkbox-label:hover { background: none; }
 
 /* El naranja se reserva para la accion decisiva de cada pantalla.
    Texto en azul marino: el blanco sobre este naranja no se lee bien (2.7:1). */

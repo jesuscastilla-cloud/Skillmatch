@@ -161,6 +161,17 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
 - **Arreglo gratis:** programar en cron-job.org una visita a `https://skillmatch-yz37.onrender.com/api/health` cada
   10 minutos. Las 750 horas gratis al mes alcanzan para un servicio encendido todo el tiempo.
 
+### 2.12 (Opcional) Que la persona sepa que la vacante se cerró
+- **Hoy:** al cerrar una vacante (`JobService.changeStatus`), sus postulaciones no cambian y nadie recibe aviso: la
+  persona sigue viendo su postulación en proceso en "Mis postulaciones". En "Mi empresa", la ventana de cerrar lo
+  explica y deja responder a quienes esperan (pasan a «Rechazada» con `PATCH /api/applications/{id}/status`).
+- **Arreglo propuesto:** agregar `jobStatus` a `ApplicationResponse` para que "Mis postulaciones" muestre "Vacante
+  cerrada". Con 2.1 arreglado, la persona además recibe un aviso cuando le responden.
+- **Opcional:** guardar por qué se cerró (contrató por SkillMatch, por otro medio, ya no la necesita), por ejemplo con
+  `PATCH /api/jobs/{id}/status?status=CERRADA&reason=...`. Serviría en Indicadores ("vacantes cubiertas gracias a
+  SkillMatch"). El frontend preguntaría el motivo en la misma ventana; hoy no lo pregunta porque no habría dónde
+  guardarlo.
+
 ---
 
 ## 3. Validaciones y consistencia

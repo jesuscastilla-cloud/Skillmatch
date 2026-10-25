@@ -43,6 +43,7 @@ npx playwright test --project=celular
 | `casos/conexiones.spec.js` | Las tarjetas no se enciman en el celular |
 | `casos/inicio.spec.js` | Panel de inicio de la persona |
 | `casos/exportar.spec.js` | "Descargar en Excel" en Mi empresa: columnas, tildes, nada se vuelve fórmula |
+| `casos/cerrar-vacante.spec.js` | Cerrar una vacante (qué pasa, responder a quienes esperan) y reabrirla (fecha vencida) |
 
 | Apoyo | Para qué |
 |---|---|
