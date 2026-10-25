@@ -39,7 +39,7 @@ npx playwright test --project=celular
 | `casos/mensajes.spec.js` | Lista, fechas y palomitas, "Ver perfil" de empresas, archivar, eliminar, copiar, abrir una conversación con el teclado y celular |
 | `casos/empresa.spec.js` | "Nueva oferta" y "Acerca de nosotros" (preguntar antes de perder lo escrito), ventana de candidatos |
 | `casos/avisos.spec.js` | "SkillMatch se está despertando" y la negrita de los avisos |
-| `casos/indicadores.spec.js` | Cartagena una sola vez y los mensajes con el sitio vacío |
+| `casos/indicadores.spec.js` | Cartagena una sola vez, "Ver detalle" (crece desde la tarjeta, esta semana contra la anterior, sin inventar si faltan datos) y los mensajes con el sitio vacío |
 | `casos/conexiones.spec.js` | Las tarjetas no se enciman en el celular |
 | `casos/inicio.spec.js` | Panel de inicio de la persona |
 | `casos/exportar.spec.js` | "Descargar en Excel" en Mi empresa: columnas, tildes, nada se vuelve fórmula |

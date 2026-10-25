@@ -4103,8 +4103,34 @@ a.meta-tag { position: relative; }
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5);
     margin-top: var(--s6);
 }
-.indicador { padding: var(--s5) var(--s6) var(--s6); }
+.indicador { padding: var(--s5) var(--s6) var(--s6); display: flex; flex-direction: column; }
 .indicador h2 { font-size: var(--t-lg); }
+/* "Ver detalle" queda abajo en todas las tarjetas de una misma fila */
+.indicador-abrir { align-self: flex-start; margin-top: auto; padding: var(--s4) 0 0; }
+
+/* Detalle de una gráfica (indicadores.js): crece desde su tarjeta */
+.detalle-resumen { margin-bottom: var(--s4); color: var(--ink-2); line-height: 1.6; }
+.detalle-tabla-marco { overflow-x: auto; }
+.detalle-tabla { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+.detalle-tabla th, .detalle-tabla td { padding: 10px var(--s2); border-bottom: 1px solid var(--hairline-soft); text-align: left; vertical-align: baseline; }
+.detalle-tabla thead th, .detalle-tabla thead .num { font-size: var(--t-xs); font-weight: 700; color: var(--ink-muted); }
+#ventanaIndicador .modal-content:focus { outline: none; }
+.detalle-tabla tbody th { font-weight: 600; color: var(--ink-2); overflow-wrap: anywhere; }
+.detalle-tabla .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink); }
+.detalle-tabla td small { margin-left: 6px; font-size: var(--t-xs); color: var(--ink-muted); }
+.detalle-tabla tr.destacada th { color: var(--naranja-texto); }
+.detalle-tabla a { color: inherit; text-decoration: underline; text-decoration-color: var(--hairline); text-underline-offset: 3px; padding-block: 2px; }
+.detalle-tabla a:hover { color: var(--sea-deep); text-decoration-color: currentColor; }
+.cambio {
+    display: inline-block; min-width: 2.2em; margin-left: 6px; padding: 1px 6px;
+    border-radius: var(--r-pill);
+    font-size: var(--t-xs); font-weight: 700; text-align: center;
+}
+.cambio.sube { background: var(--verde-soft); color: var(--verde-texto); }
+.cambio.baja { background: var(--hairline-soft); color: var(--ink-3); }
+.cambio.igual { background: var(--hairline-soft); color: var(--ink-muted); }
+.detalle-leyenda, .detalle-fuente { margin-top: var(--s3); font-size: var(--t-xs); color: var(--ink-muted); line-height: 1.5; }
+.detalle-leyenda .cambio { margin: 0 4px 0 0; }
 .indicador-nota { margin-top: 4px; font-size: var(--t-sm); color: var(--ink-3); }
 
 .ib-lista { list-style: none; margin: var(--s5) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s4); }
