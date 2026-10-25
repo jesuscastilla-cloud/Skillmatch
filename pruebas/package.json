@@ -1,0 +1,13 @@
+{
+  "name": "skillmatch-pruebas",
+  "private": true,
+  "description": "Pruebas del frontend de SkillMatch con Playwright y una API falsa (no necesitan backend ni base de datos)",
+  "scripts": {
+    "test": "playwright test",
+    "test:ver": "playwright test --headed --workers=1",
+    "informe": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}
