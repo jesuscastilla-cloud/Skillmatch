@@ -97,7 +97,7 @@ function hideEditButtons() {
     
     // Ocultar botón de editar perfil, la portada, la foto y los "+ Agregar"
     // (no tienen onclick y el selector de arriba no los encontraba)
-    ['editProfileBtn', 'changePasswordBtn', 'editCoverBtn', 'editAvatarBtn', 'addSkillBtn', 'addExperienceBtn', 'addEducationBtn'].forEach(id => {
+    ['editProfileBtn', 'changePasswordBtn', 'importarCvBtn', 'editCoverBtn', 'editAvatarBtn', 'addSkillBtn', 'addExperienceBtn', 'addEducationBtn'].forEach(id => {
         const boton = document.getElementById(id);
         if (boton) boton.style.display = 'none';
     });

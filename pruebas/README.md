@@ -44,6 +44,9 @@ npx playwright test --project=celular
 | `casos/inicio.spec.js` | Panel de inicio de la persona |
 | `casos/exportar.spec.js` | "Descargar en Excel" en Mi empresa: columnas, tildes, nada se vuelve fórmula |
 | `casos/cerrar-vacante.spec.js` | Cerrar una vacante (qué pasa, responder a quienes esperan) y reabrirla (fecha vencida) |
+| `casos/contrasena.spec.js` | Contraseña nueva: el ojo, lo que se pide, la fuerza en palabras y si coinciden (registros y "Cambiar contraseña") |
+| `casos/menu.spec.js` | El menú marca la sección al hacer scroll y su línea se desliza con el mouse (no con movimiento reducido) |
+| `casos/hoja-de-vida-pdf.spec.js` | Llenar el perfil con la hoja de vida en PDF: lo que propone, lo dudoso sin marcar, dos columnas y nada se guarda sin confirmar |
 | `casos/accesibilidad.spec.js` | Lo que encontró la auditoría y no debe volver: foco en buscadores y login, contadores legibles, títulos en orden, la barra de pestañas no tapa el foco |
 
 | Apoyo | Para qué |
@@ -51,6 +54,7 @@ npx playwright test --project=celular
 | `apoyo/datos.js` | Personas, empresas, vacantes, postulaciones, conexiones y mensajes inventados (fechas relativas a hoy) |
 | `apoyo/api-falsa.js` | La API falsa. Si el frontend llama a una dirección que no tiene, la prueba de humo falla y la nombra |
 | `apoyo/prueba.js` | `entrarComo(context, 'persona' \| 'empresa' \| 'visitante')` y la conexión de la API falsa |
+| `apoyo/pdf.js` | Arma PDFs pequeños con texto para las pruebas de la hoja de vida (sin guardar archivos en el repositorio) |
 | `servidor.mjs` | Sirve `SkillMatch/src` en http://localhost:5510 (Playwright lo enciende solo) |
 | `captura.js` | Foto de una página con la API falsa: `node captura.js oportunidades.html persona 390 oscuro` (queda en `capturas/`) |
 | `auditoria.js` | Revisa todas las páginas (celular, de lado, letra muy grande, escritorio; claro y oscuro): contraste, tamaño de lo que se toca, foco con Tab, títulos, campos. `node auditoria.js` (unos 6 minutos) o `node auditoria.js mensajes` |

@@ -38,6 +38,8 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
   `private final ExperienceService experienceService = null;`
 - **Arreglo:** quitar `= null`. Al tener un valor, `@RequiredArgsConstructor` lo deja fuera del constructor y Spring
   nunca lo conecta.
+- **Frontend listo:** "Llenar con mi hoja de vida" (perfil) ya encuentra las experiencias en el PDF, pero no deja
+  agregarlas mientras `GET /experiences` falle. Con el arreglo se habilitan solas, sin tocar el frontend.
 
 ### 1.5 Una empresa puede publicar vacantes a nombre de otra
 - **Qué pasa:** `POST /api/jobs` acepta el `companyId` que venga en el cuerpo sin revisar que sea de quien publica.

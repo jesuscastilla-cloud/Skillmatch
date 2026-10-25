@@ -1640,6 +1640,49 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .editor-soltar > span { font-size: var(--t-sm); color: var(--ink-3); }
 .editor-enlace { color: var(--sea-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .editor-soltar small { margin-top: 4px; font-size: var(--t-xs); color: var(--ink-muted); }
+/* ---------- Llenar el perfil con la hoja de vida (leer-hoja-de-vida.js) ----------
+   Lo dudoso va en ambar con la etiqueta "Revisa" (el color nunca va solo) */
+.lector-intro { color: var(--ink-2); line-height: 1.6; }
+.lector-soltar { margin-top: var(--s4); }
+.lector-privado { display: flex; align-items: flex-start; gap: var(--s2); margin-top: var(--s4); font-size: var(--t-sm); color: var(--ink-3); }
+.lector-privado .ico { flex: 0 0 auto; margin-top: 2px; color: var(--sea-deep); }
+.lector-leyendo { padding: var(--s5) 0; text-align: center; color: var(--ink-2); }
+.lector-aviso { margin-top: var(--s4); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--sol-soft); color: var(--ink); font-size: var(--t-sm); line-height: 1.5; }
+.lector-nota { margin-top: 6px; font-size: var(--t-sm); color: var(--ink-3); line-height: 1.5; }
+.lector-grupo { min-width: 0; margin: var(--s5) 0 0; padding: 0; border: 0; }
+.lector-grupo legend { padding: 0; margin-bottom: var(--s2); font-family: var(--font-display); font-size: var(--t-md); font-weight: 700; color: var(--ink); }
+.lector-item {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s3);
+    margin-top: var(--s2); padding: var(--s3) var(--s4);
+    border: 1px solid var(--hairline-soft); border-radius: var(--r-md);
+}
+.lector-item.revisa { border-color: var(--sol); border-left-width: 4px; }
+.lector-nombre { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); font-weight: 600; color: var(--ink); cursor: pointer; }
+.lector-etiqueta { padding: 1px 8px; border-radius: var(--r-pill); background: var(--sol-soft); color: var(--sol-deep); font-size: var(--t-xs); font-weight: 700; }
+.lector-campo { margin-top: var(--s2); }
+.lector-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2) var(--s3); margin-top: var(--s2); }
+.lector-campos > label { display: flex; flex-direction: column; gap: 4px; font-size: var(--t-xs); font-weight: 600; color: var(--ink-3); }
+/* El campo no hereda la negrita de su etiqueta (el tamaño lo deja como esta: 16 px en celular) */
+.lector-campos :is(input, textarea) { font-weight: 400; color: var(--ink); }
+.lector-campos .lector-ancho { grid-column: 1 / -1; }
+.lector-campos .lector-actual { flex-direction: row; align-items: center; margin: 0; font-size: var(--t-sm); font-weight: 500; }
+.lector-chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.lector-chip {
+    display: inline-flex; align-items: center; gap: var(--s2);
+    min-height: 40px; padding: 6px var(--s3);
+    border: 1px solid var(--hairline); border-radius: var(--r-pill);
+    font-size: var(--t-sm); color: var(--ink-2); cursor: pointer;
+}
+.lector-chip:has(input:checked) { border-color: var(--sea); background: var(--sea-light); color: var(--ink); }
+.lector-chip.revisa { border-style: dashed; border-color: var(--sol); }
+.lector-chip input[type="checkbox"] { margin: 0; }
+.lector-nivel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); margin-top: var(--s4); font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); }
+.lector-nivel select { width: auto; min-width: 12rem; }
+/* Los botones quedan siempre a la vista al bajar por la lista */
+.lector-acciones { position: sticky; bottom: calc(var(--s5) * -1); flex-wrap: wrap; align-items: center; margin: var(--s5) calc(var(--s5) * -1) calc(var(--s5) * -1); }
+.lector-cuenta { margin-right: auto; font-size: var(--t-sm); color: var(--ink-3); }
+@media (max-width: 600px) { .lector-campos { grid-template-columns: minmax(0, 1fr); } }
+
 /* Encuadre: la foto se mueve dentro del marco (solo transform) */
 .editor-encuadre { display: flex; flex-direction: column; gap: var(--s3); }
 .editor-marco {
