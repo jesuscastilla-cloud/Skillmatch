@@ -2656,6 +2656,86 @@
         });
     }
 
+    /* ---------- 27. El menu sigue la seccion y su linea se desliza ---------- */
+
+    // En las paginas con enlaces a sus propias secciones ("Como funciona" en la
+    // portada, "Mis ofertas" y "Candidatos" en Mi empresa), al hacer scroll se
+    // marca la seccion que se esta viendo; fuera de ellas, la pagina. Es solo
+    // visual: aria-current="page" sigue en la pagina, que es lo correcto.
+    function seccionEnMenu() {
+        if (!('IntersectionObserver' in window)) return;
+        // El de la pagina no cuenta como seccion aunque apunte a #main ("Inicio" en la portada)
+        const enlaces = Array.from(document.querySelectorAll('header .nav-left .nav-links a[href^="#"]:not([aria-current="page"])')).filter(function (a) {
+            return a.getAttribute('href').length > 1 && document.getElementById(a.getAttribute('href').slice(1));
+        });
+        if (!enlaces.length) return;
+        const pagina = document.querySelector('header .nav-left .nav-links a[aria-current="page"]');
+        const visibles = new Set();
+        const marcar = function () {
+            // Si dos cruzan la franja, gana la que va primero en la pagina
+            const activo = enlaces.filter(function (a) { return visibles.has(a.getAttribute('href').slice(1)); })
+                .sort(function (a, b) {
+                    const ea = document.getElementById(a.getAttribute('href').slice(1));
+                    const eb = document.getElementById(b.getAttribute('href').slice(1));
+                    return ea.compareDocumentPosition(eb) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+                })[0] || null;
+            enlaces.forEach(function (a) { a.classList.toggle('active-nav', a === activo); });
+            if (pagina) pagina.classList.toggle('active-nav', !activo);
+            document.dispatchEvent(new CustomEvent('skillmatch:menu'));
+        };
+        // Una franja entre el 30 % y el 40 % de la pantalla: la seccion que la cruza es la actual
+        const observador = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (e) {
+                if (e.isIntersecting) visibles.add(e.target.id); else visibles.delete(e.target.id);
+            });
+            marcar();
+        }, { rootMargin: '-30% 0px -60% 0px' });
+        enlaces.forEach(function (a) { observador.observe(document.getElementById(a.getAttribute('href').slice(1))); });
+    }
+
+    // Una sola linea bajo el menu que se desliza (transform) hasta el enlace
+    // activo, o hasta el que tiene el mouse encima. Sigue al mouse: solo con
+    // mouse y sin "reducir movimiento"; si no, queda la linea fija de cada enlace.
+    function lineaDelMenu() {
+        const lista = document.querySelector('header .nav-left .nav-links');
+        const marco = lista && lista.closest('.nav-left');
+        if (!marco || reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        // Va en el contenedor del menu y no en la lista: un <ul> solo lleva <li>
+        const linea = document.createElement('span');
+        linea.className = 'nav-linea';
+        linea.setAttribute('aria-hidden', 'true');
+        marco.appendChild(linea);
+        lista.classList.add('con-linea');
+        let sobre = null;
+        // Mide sin animar la primera vez, para que no entre volando desde la izquierda
+        let primera = true;
+        const ubicar = function () {
+            const destino = sobre || lista.querySelector('a.active-nav, a.active');
+            if (!destino || !destino.offsetWidth) { linea.style.opacity = '0'; return; }
+            const caja = marco.getBoundingClientRect();
+            const r = destino.getBoundingClientRect();
+            const margen = parseFloat(getComputedStyle(destino).paddingLeft) || 0;
+            // Igual que la linea fija: debajo del enlace, sin su relleno a los lados
+            const x = r.left - caja.left + margen;
+            const y = r.bottom - caja.top + 18 - 2.5;
+            const ancho = Math.max(r.width - margen * 2, 0);
+            if (primera) linea.style.transition = 'none';
+            linea.style.transform = 'translate(' + x + 'px, ' + y + 'px) scaleX(' + (ancho / 100) + ')';
+            linea.style.opacity = '1';
+            if (primera) { linea.getBoundingClientRect(); linea.style.transition = ''; primera = false; }
+        };
+        lista.addEventListener('mouseover', function (e) {
+            const a = e.target instanceof Element && e.target.closest('a');
+            if (a && lista.contains(a) && a !== sobre) { sobre = a; ubicar(); }
+        });
+        lista.addEventListener('mouseleave', function () { sobre = null; ubicar(); });
+        document.addEventListener('skillmatch:menu', ubicar);
+        let espera = 0;
+        window.addEventListener('resize', function () { clearTimeout(espera); espera = setTimeout(ubicar, 120); });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(ubicar);
+        ubicar();
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -2670,6 +2750,8 @@
         sesionEnBarra();
         sinBotonDeEstaPagina();
         marcarNavegacionActiva();
+        seccionEnMenu();
+        lineaDelMenu();
         construirTabbar();
         actualizarNoLeidos();
         document.addEventListener('visibilitychange', function () { if (!document.hidden) actualizarNoLeidos(); });

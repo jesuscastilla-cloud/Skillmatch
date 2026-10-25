@@ -346,6 +346,23 @@ header .logo img { translate: 0 -15%; }
     to   { transform: scaleX(1); opacity: 1; }
 }
 
+/* Linea que se desliza bajo el menu (ui.js, seccion 27). Solo con mouse y sin
+   "reducir movimiento"; entonces la linea fija de cada enlace no se dibuja.
+   Mide 100 px y el JS la estira con scaleX hasta el ancho del enlace. */
+.nav-left:has(.con-linea) { position: relative; }
+.nav-links.con-linea a.active-nav::after,
+.nav-links.con-linea a.active::after { display: none; }
+.nav-linea {
+    position: absolute; left: 0; top: 0;
+    width: 100px; height: 2.5px;
+    border-radius: var(--r-pill);
+    background: var(--sea);
+    transform-origin: left center;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .35s var(--ease-out), opacity .2s var(--ease);
+}
+
 /* Interruptor de tema — lo inyecta ui.js dentro de la barra */
 .theme-toggle {
     display: inline-flex;
