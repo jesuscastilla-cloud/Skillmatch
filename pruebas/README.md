@@ -41,6 +41,7 @@ npx playwright test --project=celular
 | `casos/avisos.spec.js` | "SkillMatch se está despertando" y la negrita de los avisos |
 | `casos/indicadores.spec.js` | Cartagena una sola vez y los mensajes con el sitio vacío |
 | `casos/conexiones.spec.js` | Las tarjetas no se enciman en el celular |
+| `casos/inicio.spec.js` | Panel de inicio de la persona |
 
 | Apoyo | Para qué |
 |---|---|
@@ -48,6 +49,7 @@ npx playwright test --project=celular
 | `apoyo/api-falsa.js` | La API falsa. Si el frontend llama a una dirección que no tiene, la prueba de humo falla y la nombra |
 | `apoyo/prueba.js` | `entrarComo(context, 'persona' \| 'empresa' \| 'visitante')` y la conexión de la API falsa |
 | `servidor.mjs` | Sirve `SkillMatch/src` en http://localhost:5510 (Playwright lo enciende solo) |
+| `captura.js` | Foto de una página con la API falsa: `node captura.js oportunidades.html persona 390 oscuro` (queda en `capturas/`) |
 
 ## Agregar una prueba
 

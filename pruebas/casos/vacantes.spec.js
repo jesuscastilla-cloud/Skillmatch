@@ -199,3 +199,35 @@ test('las tarjetas entran en baraja sin rebote', async ({ page, context, api }, 
     expect(curva).toContain('cubic-bezier');
     expect(curva).not.toContain('1.15');
 });
+
+test.describe('el trabajo del match', () => {
+    test('a una persona le dice qué se comparó y cuántas piden alguna de sus habilidades', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('oportunidades.html');
+        const resumen = page.locator('.match-resumen');
+        await expect(resumen).toContainText('Comparamos tus 3 habilidades (Atención al cliente, Inglés básico y Manejo de bandeja) con cada vacante.');
+        await expect(resumen).toContainText('De las 9 que ves, 3 piden alguna. Las que más encajan van primero.');
+    });
+
+    test('con un filtro, las cifras siguen a lo que se ve', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('oportunidades.html');
+        await page.locator('input[name="type"][value="práctica"], input[name="type"][value="practica"]').first().check();
+        await expect(page.locator('.match-resumen')).toContainText('De las 2 que ves, 1 pide alguna.');
+    });
+
+    test('a un visitante no se le muestra (no hay habilidades con qué comparar)', async ({ page, context, api }) => {
+        await entrarComo(context, 'visitante');
+        await page.goto('oportunidades.html');
+        await page.locator('.btn-ver-detalle').first().waitFor();
+        await expect(page.locator('.match-resumen')).toHaveCount(0);
+    });
+});
+
+test('cada tarjeta muestra el nombre de su empresa con enlace a su perfil', async ({ page, context, api }) => {
+    await entrarComo(context, 'visitante');
+    await page.goto('oportunidades.html');
+    const tarjeta = page.locator('.opportunity-card', { hasText: 'Mesero o mesera' });
+    await expect(tarjeta.locator('.enlace-empresa')).toHaveText('Hotel Puerta del Mar');
+    await expect(tarjeta.locator('.enlace-empresa')).toHaveAttribute('href', 'empresa.html?id=c-hotel');
+});

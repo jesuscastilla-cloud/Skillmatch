@@ -3407,6 +3407,15 @@ footer.pie > .container { position: relative; z-index: 1; }
 }
 .recommend-hint .ico { flex: 0 0 auto; color: var(--sol-deep); margin-top: 2px; }
 .recommend-hint a { color: var(--sea-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+/* "Comparamos tus 3 habilidades con cada vacante...": el trabajo del match, con cifras reales */
+.match-resumen {
+    display: flex; gap: var(--s2); align-items: flex-start;
+    margin-bottom: var(--s3); padding: var(--s3);
+    border-radius: var(--r-md); background: var(--sea-light);
+    color: var(--ink-2); font-size: var(--t-sm); max-width: none;
+}
+.match-resumen .ico { flex: 0 0 auto; color: var(--sea-deep); margin-top: 2px; }
+.match-resumen strong { color: var(--sea-deep); }
 /* Estrellas del nivel de cada habilidad, rellenas con el naranja del logo */
 .skill-level .ico { fill: currentColor; color: var(--naranja-texto); }
 

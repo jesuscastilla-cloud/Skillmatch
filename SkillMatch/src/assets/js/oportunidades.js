@@ -22,6 +22,7 @@ let vacanteAbierta = null;   // la del detalle o la de la postulación
 // Habilidades de quien inicio sesion (nombres normalizados). null = no se
 // sabe (sin sesion, empresa o fallo la carga): entonces no se muestra %.
 let userSkills = null;
+let nombresHabilidades = []; // como las escribio la persona (para mostrarlas)
 let userSkillsReady = Promise.resolve();
 
 function debounce(fn, delay) {
@@ -241,7 +242,9 @@ async function loadUserSkills() {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${datos.id}/skills`);
         if (response.ok) {
-            userSkills = new Set((await response.json()).map(s => normalizeStr(s.name).trim()));
+            const lista = await response.json();
+            userSkills = new Set(lista.map(s => normalizeStr(s.name).trim()));
+            nombresHabilidades = lista.map(s => String(s.name || '').trim()).filter(Boolean);
         }
     } catch (error) {
         // Sin habilidades no hay %: las tarjetas salen sin anillo
@@ -317,7 +320,22 @@ function matchHint() {
     if (datos.userType !== 'empresa' && userSkills && userSkills.size === 0) {
         return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="perfil-usuario.html">Agrega tus habilidades</a> y te mostramos qué tanto encajas con cada vacante.</span></p>';
     }
+    if (datos.userType !== 'empresa' && userSkills && userSkills.size) return resumenDelMatch();
     return '';
+}
+
+// "Mostrar el trabajo": que se comparo y que salio, con cifras reales (la gente
+// confia mas cuando ve lo que hizo el sistema). Nada de esperas ni barras falsas.
+function resumenDelMatch() {
+    const n = nombresHabilidades.length;
+    const nombres = nombresHabilidades.slice(0, 3).map(escaparHtml);
+    const lista = nombres.length > 1 ? `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}` : nombres[0];
+    const resto = n > 3 ? ` y ${n - 3} más` : '';
+    const vistas = shownJobs.length;
+    const conAlguna = shownJobs.filter(j => { const m = getSkillMatch(j); return m && m.tiene > 0; }).length;
+    const orden = document.getElementById('sortSelect')?.value === 'match' ? ' Las que más encajan van primero.' : '';
+    return `<p class="match-resumen"><i data-ico="target"></i> <span>Comparamos ${n === 1 ? 'tu habilidad' : `tus ${n} habilidades`} (${lista}${resto}) con cada vacante.
+        De ${vistas === 1 ? 'la que ves' : `las ${vistas.toLocaleString('es-CO')} que ves`}, <strong>${conAlguna.toLocaleString('es-CO')}</strong> ${conAlguna === 1 ? 'pide' : 'piden'} alguna.${orden}</span></p>`;
 }
 
 function hayFiltros() {
