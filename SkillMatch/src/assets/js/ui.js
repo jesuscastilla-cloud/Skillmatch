@@ -310,6 +310,51 @@
 
         document.body.appendChild(nav);
         document.body.classList.add('has-tabbar');
+        pastillaDeLaBarra(nav);
+    }
+
+    /** Si el clic va a otra pagina (no la misma, ni otra pestana): asi la marca
+     *  del menu solo se adelanta cuando de verdad se va a cambiar de pagina. */
+    function vaAOtraPagina(e, a) {
+        return !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey &&
+            (!a.target || a.target === '_self') && !a.hasAttribute('download') &&
+            a.origin === location.origin && a.pathname !== location.pathname;
+    }
+
+    /** La pastilla de la pestana activa: al tocar otra se desliza hasta ella
+     *  mientras carga la pagina siguiente (que ya la trae en su sitio). */
+    function pastillaDeLaBarra(nav) {
+        const enlaces = Array.from(nav.querySelectorAll('a'));
+        const marca = document.createElement('span');
+        marca.className = 'tabbar-marca';
+        marca.setAttribute('aria-hidden', 'true');
+        // Antes de la lista: asi las pestanas (position: relative) quedan encima
+        nav.insertBefore(marca, nav.firstChild);
+        nav.style.setProperty('--pestanas', enlaces.length);
+        nav.classList.add('con-marca');
+        const ponerEn = function (a, sinAnimar) {
+            const i = enlaces.indexOf(a);
+            if (sinAnimar) marca.style.transition = 'none';
+            marca.style.setProperty('--i', Math.max(i, 0));
+            marca.style.opacity = i < 0 ? '0' : '1';
+            if (sinAnimar) { marca.getBoundingClientRect(); marca.style.transition = ''; }
+        };
+        ponerEn(nav.querySelector('a.is-active'), true);
+        nav.addEventListener('click', function (e) {
+            const a = e.target instanceof Element && e.target.closest('a');
+            if (!a || !vaAOtraPagina(e, a)) return;
+            enlaces.forEach(function (x) { x.classList.toggle('es-destino', x === a); });
+            // Si no habia ninguna activa, aparece en la tocada sin cruzar la barra
+            ponerEn(a, marca.style.opacity === '0');
+        });
+        // Justo antes de la foto de salida: la pastilla, ya en la pestana elegida
+        window.addEventListener('pageswap', function () { marca.style.transition = 'none'; });
+        // Al volver con "atras" (la pagina sale tal cual de la memoria): a su sitio
+        window.addEventListener('pageshow', function (e) {
+            if (!e.persisted) return;
+            enlaces.forEach(function (x) { x.classList.remove('es-destino'); });
+            ponerEn(nav.querySelector('a.is-active'), true);
+        });
     }
 
     /** Tema oscuro: el <head> de cada pagina ya deja [data-theme] puesto
@@ -2707,10 +2752,12 @@
         marco.appendChild(linea);
         lista.classList.add('con-linea');
         let sobre = null;
+        // La pagina a la que se va tras un clic: manda mientras carga la siguiente
+        let elegido = null;
         // Mide sin animar la primera vez, para que no entre volando desde la izquierda
         let primera = true;
         const ubicar = function () {
-            const destino = sobre || lista.querySelector('a.active-nav, a.active');
+            const destino = elegido || sobre || lista.querySelector('a.active-nav, a.active');
             if (!destino || !destino.offsetWidth) { linea.style.opacity = '0'; return; }
             const caja = marco.getBoundingClientRect();
             const r = destino.getBoundingClientRect();
@@ -2729,6 +2776,27 @@
             if (a && lista.contains(a) && a !== sobre) { sobre = a; ubicar(); }
         });
         lista.addEventListener('mouseleave', function () { sobre = null; ubicar(); });
+        // Un clic que lleva a una pagina del menu, este en el menu o en cualquier
+        // parte ("Ver vacantes" en la portada): la linea se va de una vez hasta
+        // ella. Gana el enlace identico ("Como funciona" lleva ancla) y si no,
+        // el de la misma pagina sin ancla (una busqueda en Vacantes cuenta).
+        document.addEventListener('click', function (e) {
+            const a = e.target instanceof Element && e.target.closest('a[href]');
+            if (!a || !vaAOtraPagina(e, a)) return;
+            const delMenu = Array.from(lista.querySelectorAll('a'));
+            const destino = delMenu.find(function (n) { return n.href === a.href; }) ||
+                delMenu.find(function (n) { return !n.hash && n.pathname === a.pathname; });
+            if (destino) { elegido = destino; ubicar(); }
+        });
+        // Justo antes de la foto de salida: la linea, ya en su destino
+        window.addEventListener('pageswap', function () { linea.style.transition = 'none'; });
+        // Al volver con "atras" (la pagina sale tal cual de la memoria): a su sitio
+        window.addEventListener('pageshow', function (e) {
+            if (!e.persisted) return;
+            elegido = null;
+            primera = true;
+            ubicar();
+        });
         document.addEventListener('skillmatch:menu', ubicar);
         let espera = 0;
         window.addEventListener('resize', function () { clearTimeout(espera); espera = setTimeout(ubicar, 120); });

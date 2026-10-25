@@ -453,6 +453,25 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .tabbar a.is-active { color: var(--sea-deep); background: var(--sea-light); }
 .tabbar a:active { transform: scale(.94); }
 
+/* Una sola pastilla bajo la pestana activa (ui.js, construirTabbar): al
+   tocar otra se desliza hasta ella mientras carga la pagina siguiente, como
+   la linea del menu en el escritorio. Las pestanas son columnas iguales:
+   --i dice en cual va y se mueve con transform. */
+.tabbar-marca {
+    position: absolute;
+    top: var(--s2); left: var(--s2);
+    bottom: calc(var(--s2) + env(safe-area-inset-bottom));
+    width: calc((100% - 2 * var(--s2) - (var(--pestanas) - 1) * var(--s1)) / var(--pestanas));
+    border-radius: var(--r-md);
+    background: var(--sea-light);
+    transform: translateX(calc(var(--i, 0) * (100% + var(--s1))));
+    transition: transform .3s var(--ease-out), opacity .2s var(--ease);
+    pointer-events: none;
+}
+.tabbar.con-marca a.is-active { background: transparent; }
+.tabbar.con-marca a.es-destino { color: var(--sea-deep); }
+.tabbar.con-marca:has(a.es-destino) a.is-active:not(.es-destino) { color: var(--ink-muted); }
+
 /* ---------- 8. Botones ---------- */
 
 /* Solo .btn: si se escribe a.btn, gana a las variantes (.btn-outline,
@@ -4861,6 +4880,13 @@ body > header { view-transition-name: barra-superior; } /* el nombre debe ser un
 @keyframes vt-entrada { from { opacity: 0; transform: translateY(12px); } }
 /* Con transiciones entre paginas, la barra ya no "cae" en cada visita */
 @supports (view-transition-name: none) { .page-enter > header { animation: none; } }
+/* ui.js arma la barra de abajo cuando la foto de la pagina nueva ya se tomo:
+   la de la pagina anterior se queda quieta hasta el final, en vez de
+   apagarse y volver (ya trae la pastilla en la pestana elegida) */
+::view-transition-old(barra-inferior) { animation: none; }
+/* La linea del menu ya estaba en su sitio: en la pagina nueva no vuelve a crecer */
+html:active-view-transition .nav-links a.active-nav::after,
+html:active-view-transition .nav-links a.active::after { animation: none; }
 
 /* Cambio de tema (ui.js): la foto nueva se revela en circulo desde el boton
    sobre la vieja. Sin el fundido de las paginas, sin mezclar colores y con
@@ -4890,9 +4916,16 @@ html.tema-cambiando .tabbar { view-transition-name: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+    /* Sin movimiento no es sin transicion: nada se desplaza ni cambia de
+       tamano y la pagina solo se funde con la siguiente (como "Reducir
+       movimiento" del celular, que cambia los deslizamientos por fundidos) */
+    ::view-transition-group(*) { animation: none !important; }
+    ::view-transition-old(root) { animation: vt-desvanecer var(--dur-1) var(--ease) both; }
+    ::view-transition-new(root) { animation: vt-aparecer var(--dur-2) var(--ease) both; }
     .ripple { display: none; }
 }
+@keyframes vt-desvanecer { to   { opacity: 0; } }
+@keyframes vt-aparecer   { from { opacity: 0; } }
 
 /* ---------- 25d. Iconos animados ----------
    Cada icono hace su propio gesto cuando el mouse entra en el boton, enlace u

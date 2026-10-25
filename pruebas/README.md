@@ -46,6 +46,7 @@ npx playwright test --project=celular
 | `casos/cerrar-vacante.spec.js` | Cerrar una vacante (qué pasa, responder a quienes esperan) y reabrirla (fecha vencida) |
 | `casos/contrasena.spec.js` | Contraseña nueva: el ojo, lo que se pide, la fuerza en palabras y si coinciden (registros y "Cambiar contraseña") |
 | `casos/menu.spec.js` | El menú marca la sección al hacer scroll y su línea se desliza con el mouse (no con movimiento reducido) |
+| `casos/cambio-de-pagina.spec.js` | Al cambiar de página, la línea del menú y la pastilla de la barra de pestañas se van al destino mientras carga; la página se funde (sin desplazarse con movimiento reducido) |
 | `casos/hoja-de-vida-pdf.spec.js` | Llenar el perfil con la hoja de vida en PDF: lo que propone, lo dudoso sin marcar, dos columnas y nada se guarda sin confirmar |
 | `casos/accesibilidad.spec.js` | Lo que encontró la auditoría y no debe volver: foco en buscadores y login, contadores legibles, títulos en orden, la barra de pestañas no tapa el foco |
 
