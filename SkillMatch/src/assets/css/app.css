@@ -674,6 +674,11 @@ select, textarea {
     color: var(--ink);
     transition: border-color .16s var(--ease), box-shadow .16s var(--ease), background-color .16s var(--ease);
 }
+/* En iPhone, tocar un campo con letra de menos de 16 px agranda toda la página */
+@media (pointer: coarse) {
+    :is(input[type="text"], input[type="email"], input[type="password"], input[type="tel"], input[type="url"],
+        input[type="number"], input[type="date"], input[type="search"], input[type="month"], select, textarea) { font-size: max(16px, var(--t-base)); }
+}
 /* Edge dibuja su propio ojo dentro de las contrasenas: junto al boton de la
    pagina salian dos ojos (captura de Luis en login-usuario) */
 input::-ms-reveal, input::-ms-clear { display: none; }
@@ -818,7 +823,8 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
 .checkbox-text { font-size: var(--t-base); color: var(--ink-2); line-height: 1.5; }
 /* Cuantas vacantes cargadas quedarian con cada opcion (oportunidades.js, contarOpciones) */
 .opcion-cuenta { margin-left: auto; padding-left: var(--s2); font-size: var(--t-xs); color: var(--ink-muted); font-variant-numeric: tabular-nums; line-height: 1.5; padding-top: 2px; }
-.checkbox-label.sin-resultados .checkbox-text, .checkbox-label.sin-resultados .opcion-cuenta { opacity: .5; }
+/* Sin resultados: texto atenuado con color (con opacidad bajaba de 4.5:1) */
+.checkbox-label.sin-resultados .checkbox-text { color: var(--ink-muted); }
 
 /* Etiquetas de la tarjeta de vacante: "Nueva" y "Cierra en N dias" */
 .etiquetas-vacante { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -835,7 +841,7 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
 .checkbox-text .ico { color: var(--ink-muted); }
 
 /* Deslizador (salario): color de marca y zona tactil comoda */
-input[type="range"] { accent-color: var(--sea); cursor: pointer; }
+input[type="range"] { accent-color: var(--sea); cursor: pointer; min-height: 24px; }
 @media (pointer: coarse) { input[type="range"] { min-height: 44px; } }
 
 /* Buscador principal */
@@ -857,6 +863,10 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     padding-left: var(--s5) !important;
 }
 .search-input-main:focus { box-shadow: none !important; }
+/* El campo va dentro de la cápsula y no lleva anillo propio: con el foco, el
+   anillo lo lleva la cápsula entera (antes no se veía dónde estaba el foco) */
+.search-bar-main:has(.search-input-main:focus),
+.search-box:has(.search-input:focus) { box-shadow: 0 0 0 2px var(--sea), 0 0 0 6px var(--sea-light), var(--sh-3); }
 .btn-search-main {
     padding: 11px var(--s6);
     border-radius: var(--r-pill);
@@ -965,6 +975,9 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 
 /* ---- Vacantes: detalle, postulacion y "cargar mas" ---- */
 .job-title-link { all: unset; cursor: pointer; }
+/* Títulos que son enlaces: 2 px de relleno arriba y abajo los llevan a 24 px de
+   alto (WCAG 2.5.8); el margen negativo evita que la línea crezca */
+.job-title-link, .empresa-vacante h3 a, .panel-vacante h3 a, .panel-postulacion h3 a { padding-block: 2px; margin-block: -2px; }
 .job-title-link:hover { color: var(--sea-deep); text-decoration: underline; text-underline-offset: 3px; }
 .job-title-link:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; border-radius: 4px; }
 .btn-ver-detalle {
@@ -1018,6 +1031,8 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     .btn-small, .btn-mini-action, .btn-offer-action { min-height: 44px; }
     /* Barra superior: logo y botones de sesion; campo para subir archivos */
     .logo a, .btn-login, .btn-register, input[type="file"] { min-height: 44px; }
+    /* "Ver detalle" de cada vacante */
+    .btn-ver-detalle { min-height: 44px; }
     .btn-remove-skill, .project-link { position: relative; }
     .btn-remove-skill::after, .project-link::after { content: ""; position: absolute; inset: -12px; }
 }
@@ -1208,7 +1223,7 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .status-badge.cerrada                  { background: var(--hairline-soft); color: var(--ink-muted); }
 /* Las ofertas del perfil de empresa usan .active/.inactive ("Activa" salía gris) */
 .status-badge.active   { background: var(--verde-soft); color: var(--verde-texto); }
-.status-badge.inactive { background: var(--hairline-soft); color: var(--ink-muted); }
+.status-badge.inactive { background: var(--hairline-soft); color: var(--ink-muted); opacity: 1; } /* sin el .inactive generico (opacidad .55): "Cerrada" no se leia */
 
 .role-tag { background: var(--sea-light); color: var(--sea-deep); }
 
@@ -1235,6 +1250,7 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .btn-remove-skill {
     display: inline-flex;
     align-items: center;
+    min-height: 24px;
     margin-left: 5px;
     color: var(--ink-muted);
     transition: color .15s var(--ease);
@@ -1249,8 +1265,8 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     padding: 0 5px;
     border-radius: var(--r-pill);
     background: var(--naranja);
-    color: #fff;
-    font-size: 11px;
+    color: var(--surface-inverse); /* azul marino: el blanco sobre naranja queda en 2.7:1 */
+    font-size: 12px;
     font-weight: 700;
     line-height: 1;
 }
@@ -2172,6 +2188,9 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .cf-paso h3 { font-size: var(--t-xl); margin: var(--s2) 0 var(--s3); }
 .cf-paso p { font-size: var(--t-md); color: var(--ink-3); max-width: 46ch; }
 .cf-layout.js-scroll .cf-paso:not(.is-activo) { opacity: .35; }
+/* Atenuados quedan por debajo de 4.5:1 (a propósito: se leen al llegar a ellos).
+   Quien pidió más contraste en su sistema los ve todos completos. */
+@media (prefers-contrast: more) { .cf-layout.js-scroll .cf-paso:not(.is-activo) { opacity: 1; } }
 
 @media (max-width: 1080px) {
     .cf-layout { grid-template-columns: 1fr; gap: 0; }
@@ -3409,8 +3428,9 @@ footer.pie > .container { position: relative; z-index: 1; }
 
 /* Vacantes guardadas (perfil): el titulo abre la vacante y la X la quita */
 .guardada-item { cursor: default; align-items: flex-start; }
-.guardada-item h3 a { color: inherit; text-decoration: none; overflow-wrap: break-word; }
-.guardada-item h3 a:hover { color: var(--sea-deep); text-decoration: underline; }
+/* El título lleva a la vacante (guardadas y postulaciones) */
+.company-info-compact h3 a { color: inherit; text-decoration: none; overflow-wrap: break-word; padding-block: 2px; }
+.company-info-compact h3 a:hover { color: var(--sea-deep); text-decoration: underline; }
 .guardada-item .company-info-compact p { font-size: var(--t-sm); color: var(--ink-muted); }
 .btn-quitar-guardada {
     flex: 0 0 auto;
@@ -3578,8 +3598,8 @@ footer.pie > .container { position: relative; z-index: 1; }
     min-width: 19px; height: 19px;
     padding: 0 5px;
     border-radius: var(--r-pill);
-    background: var(--naranja); color: #fff;
-    font-size: 11px; font-weight: 700; line-height: 1;
+    background: var(--naranja); color: var(--surface-inverse); /* el blanco no se leia (2.7:1) */
+    font-size: 12px; font-weight: 700; line-height: 1;
     font-variant-numeric: tabular-nums;
     animation: badge-in .3s var(--ease-out) both;
 }
@@ -3926,13 +3946,15 @@ a.meta-tag { position: relative; }
     gap: var(--s3);
     padding: var(--s3) var(--s4);
     border-radius: var(--r-md);
-    cursor: pointer;
-    transition: background-color .14s var(--ease);
 }
-.conversation-item:hover, .company-item-compact:hover, .opportunity-item-compact:hover {
-    background: var(--surface-sunk);
-}
+/* La mano y el fondo al pasar solo donde la fila entera se abre (Mensajes). En
+   el perfil, postulaciones, guardadas y recomendadas se abren con su enlace:
+   la mano en toda la fila hacía creer que se podía tocar */
+.conversation-item { cursor: pointer; transition: background-color .14s var(--ease); }
+.conversation-item:hover { background: var(--surface-sunk); }
 .conversation-item.active { background: var(--sea-light); }
+/* Sobre el turquesa claro, el gris de la hora y la vista previa bajaba de 4.5:1 */
+.conversation-item.active :is(.conversation-time, .conversation-preview) { color: var(--ink-2); }
 /* Vacante recomendada (perfil): una debajo de otra, no todo en una fila;
    en fila se salia de la pantalla del celular */
 .opportunity-item-compact { flex-direction: column; align-items: stretch; gap: 4px; }
@@ -3990,6 +4012,9 @@ a.meta-tag { position: relative; }
    columna del nombre quedaba de 0 a 20 px y el cargo se metia debajo de "Mensaje". */
 .connection-header { flex-wrap: wrap; }
 .connection-info { flex: 1 1 12rem; }
+/* Nombre de cada persona: h2 bajo el h1 "Tu red de contactos" (era h3 y saltaba
+   un nivel), con el tamaño que tenía */
+.connection-info h2 { font-size: var(--t-lg); letter-spacing: -0.015em; }
 .connection-type { max-width: 100%; white-space: normal; }
 @media (max-width: 600px) {
     .connection-actions { flex: 1 1 100%; }
@@ -4180,6 +4205,7 @@ a.meta-tag { position: relative; }
     color: var(--ink);
 }
 .directorio-buscar input:focus { outline: none; border-color: var(--sea); box-shadow: 0 0 0 3px var(--sea-light); }
+@media (pointer: coarse) { .directorio-buscar input { font-size: max(16px, var(--t-base)); } } /* sin zoom en iPhone */
 
 .directorio { padding: var(--s6) 0 var(--s9); }
 .directorio-bloque + .directorio-bloque { margin-top: var(--s7); }
@@ -4422,6 +4448,7 @@ a.meta-tag { position: relative; }
 .panel-bloque-titulo a .ico { width: 15px; height: 15px; }
 .panel-bloque-titulo a:hover { text-decoration: underline; }
 [data-theme="dark"] .panel-bloque-titulo a { color: var(--sea); }
+@media (pointer: coarse) { .panel-bloque-titulo a { min-height: 44px; } }
 .panel-nota { margin-top: var(--s2); font-size: var(--t-sm); color: var(--ink-3); }
 .panel-nota a { color: var(--sea-deep); font-weight: 600; }
 .panel-lista { list-style: none; margin: var(--s3) 0 0; padding: 0; }
@@ -5175,6 +5202,9 @@ kbd {
     header > nav > .nav-links li:not(:last-child) { display: none; }
 
     body.has-tabbar { padding-bottom: 76px; }
+    /* Lo que recibe el foco con el teclado (o se busca con Ctrl+F) queda arriba
+       de la barra de pestañas y no debajo de ella (WCAG 2.4.11) */
+    html:has(> body.has-tabbar) { scroll-padding-bottom: calc(76px + var(--s4) + env(safe-area-inset-bottom)); }
     .tabbar { display: block; }
 
     .form-grid { grid-template-columns: 1fr; }
@@ -5354,7 +5384,7 @@ kbd {
     border-radius: 50%; animation: spin .7s linear infinite;
 }
 .link-view-all, .btn-view-all {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: center; gap: 6px; min-height: 24px;
     font-size: var(--t-sm); font-weight: 600; color: var(--sea-deep);
 }
 .link-view-all:hover, .btn-view-all:hover { text-decoration: underline; }
@@ -5543,7 +5573,7 @@ kbd {
     .lista-limpiar { width: 40px; height: 40px; }
 }
 /* En el iPhone un campo con letra menor de 16 px hace zoom al tocarlo */
-@media (max-width: 700px) { .lista-campo input { font-size: 16px; } }
+@media (max-width: 700px), (pointer: coarse) { .lista-campo input { font-size: 16px; } }
 .filter-salary-group, .salary-range { display: flex; flex-direction: column; gap: 6px; }
 .range-display { display: flex; justify-content: space-between; font-size: var(--t-sm); }
 .range-label { color: var(--ink-muted); }
@@ -5980,7 +6010,8 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 .chat-user-details { min-width: 0; }
 .chat-user-status { display: block; font-size: var(--t-xs); color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-user-status:empty { display: none; }
-.chat-user-details h3 { font-size: var(--t-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-titulo-celular { display: none; }
+.chat-user-details h2 { font-size: var(--t-md); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-actions { display: flex; gap: var(--s1); }
 .chat-messages {
     flex: 1; overflow-y: auto;
@@ -6032,7 +6063,14 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    no le quita espacio al nombre; en pantallas tactiles, en su lugar y siempre a
    la vista, del tamano de un dedo */
 .conversation-item { position: relative; }
+/* El nombre es un botón y su ::after cubre la conversación: se abre con clic
+   en cualquier parte y también con el teclado (antes solo con el mouse) */
+.conv-abrir { all: unset; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.conv-abrir::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.conv-abrir:focus-visible { outline: none; }
+.conversation-item:has(.conv-abrir:focus-visible) { outline: 2.5px solid var(--sea); outline-offset: -3px; }
 .conv-menu {
+    z-index: 1; /* encima del ::after de .conv-abrir */
     position: absolute; right: var(--s2); bottom: 6px;
     display: grid; place-items: center;
     width: 30px; height: 30px; border-radius: 50%;
@@ -6202,7 +6240,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 .suggestion-card { display: flex; flex-direction: column; gap: var(--s3); }
 .suggestion-header { justify-content: flex-start; align-items: center; }
 .suggestion-info { flex: 1; min-width: 0; }
-.suggestion-info h3 { font-size: var(--t-md); overflow-wrap: anywhere; }
+.suggestion-info h2 { font-size: var(--t-md); letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .suggestion-headline { font-size: var(--t-sm); color: var(--sea-deep); font-weight: 600; margin-top: 2px; }
 /* Por que se sugiere: misma ciudad, habilidades en comun */
 .suggestion-card .suggestion-reason { display: flex; flex-wrap: wrap; gap: 4px var(--s4); }
@@ -6299,6 +6337,8 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     /* Mensajes: con un chat abierto se ve solo el chat (con boton para volver);
        sin chat abierto, solo la lista (si hay conversaciones) */
     .messages-container.viendo-chat .conversations-sidebar { display: none; }
+    /* Con la lista oculta, el h1 "Mensajes" se iba con ella: este lo reemplaza para el lector de pantalla */
+    .messages-container.viendo-chat .chat-titulo-celular { display: block; }
     .messages-container.tiene-lista:not(.viendo-chat) .chat-area { display: none; }
     .messages-container.viendo-chat .chat-area { height: calc(100dvh - var(--app-bar-h) - 150px); min-height: 380px; }
     .messages-container.viendo-chat .btn-volver-chat { display: inline-grid; place-items: center; }

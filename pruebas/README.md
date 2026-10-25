@@ -36,7 +36,7 @@ npx playwright test --project=celular
 | `casos/humo.spec.js` | Que cada página abra sin errores para visitante, persona y empresa, y que el frontend solo llame a direcciones que existen en el backend |
 | `casos/navegacion.spec.js` | Menú según quién mira, botones de entrar y registrarse, enlaces del registro, cerrar sesión |
 | `casos/vacantes.spec.js` | Orden, "¿Por qué este match?", el trabajo del match, etiquetas "Nueva" y "Cierra pronto", conteos en los filtros, el detalle en el historial ("atrás" lo cierra), filtros en la dirección, postularse y "¿Cerrar sin guardar?" |
-| `casos/mensajes.spec.js` | Lista, fechas y palomitas, "Ver perfil" de empresas, archivar, eliminar, copiar, teclado y celular |
+| `casos/mensajes.spec.js` | Lista, fechas y palomitas, "Ver perfil" de empresas, archivar, eliminar, copiar, abrir una conversación con el teclado y celular |
 | `casos/empresa.spec.js` | "Nueva oferta" y "Acerca de nosotros" (preguntar antes de perder lo escrito), ventana de candidatos |
 | `casos/avisos.spec.js` | "SkillMatch se está despertando" y la negrita de los avisos |
 | `casos/indicadores.spec.js` | Cartagena una sola vez y los mensajes con el sitio vacío |
@@ -44,6 +44,7 @@ npx playwright test --project=celular
 | `casos/inicio.spec.js` | Panel de inicio de la persona |
 | `casos/exportar.spec.js` | "Descargar en Excel" en Mi empresa: columnas, tildes, nada se vuelve fórmula |
 | `casos/cerrar-vacante.spec.js` | Cerrar una vacante (qué pasa, responder a quienes esperan) y reabrirla (fecha vencida) |
+| `casos/accesibilidad.spec.js` | Lo que encontró la auditoría y no debe volver: foco en buscadores y login, contadores legibles, títulos en orden, la barra de pestañas no tapa el foco |
 
 | Apoyo | Para qué |
 |---|---|
@@ -52,6 +53,7 @@ npx playwright test --project=celular
 | `apoyo/prueba.js` | `entrarComo(context, 'persona' \| 'empresa' \| 'visitante')` y la conexión de la API falsa |
 | `servidor.mjs` | Sirve `SkillMatch/src` en http://localhost:5510 (Playwright lo enciende solo) |
 | `captura.js` | Foto de una página con la API falsa: `node captura.js oportunidades.html persona 390 oscuro` (queda en `capturas/`) |
+| `auditoria.js` | Revisa todas las páginas (celular, de lado, letra muy grande, escritorio; claro y oscuro): contraste, tamaño de lo que se toca, foco con Tab, títulos, campos. `node auditoria.js` (unos 6 minutos) o `node auditoria.js mensajes` |
 
 ## Agregar una prueba
 

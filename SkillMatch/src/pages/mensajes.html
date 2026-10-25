@@ -58,6 +58,8 @@
 
                 <!-- Chat actual -->
                 <div class="chat-area">
+                    <!-- Solo en el celular con un chat abierto (la lista y su h1 se ocultan) -->
+                    <h1 class="sr-only chat-titulo-celular">Mensajes</h1>
                     <div class="chat-empty" id="chatEmpty">
                         <div class="empty-state">
                             <h2><i data-ico="chat"></i> Selecciona una conversación</h2>
@@ -72,7 +74,7 @@
                                 <button class="btn-icon btn-volver-chat" id="backToListBtn" type="button" aria-label="Volver a las conversaciones"><i data-ico="arrow"></i></button>
                                 <div class="chat-avatar" id="chatAvatar"><i data-ico="user"></i></div>
                                 <div class="chat-user-details">
-                                    <h3 id="chatUserName">Usuario</h3>
+                                    <h2 id="chatUserName">Usuario</h2>
                                     <span class="chat-user-status" id="chatUserStatus"></span>
                                 </div>
                             </div>

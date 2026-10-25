@@ -18,9 +18,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (successMessage) successMessage.style.display = 'none';
 
         if (!email || !password) {
-            const msg = 'Por favor, completa todos los campos';
+            // Dice qué falta y lleva el foco ahí, como el registro
+            const msg = !email && !password ? 'Escribe tu correo y tu contraseña.' : (!email ? 'Escribe tu correo.' : 'Escribe tu contraseña.');
             if (errorMessage) { errorMessage.textContent = msg; errorMessage.style.display = 'block'; }
             else alert(msg);
+            document.getElementById(!email ? 'email' : 'password').focus();
             return;
         }
 

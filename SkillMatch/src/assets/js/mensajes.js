@@ -263,21 +263,22 @@ function displayConversations(conversationsList, numArchivadas = 0, archivadas =
         return;
     }
 
-    container.innerHTML = fila + conversationsList.map(conv => {
+    container.innerHTML = fila + conversationsList.map((conv, i) => {
         const isUnread = conv.unreadCount > 0;
         const unreadClass = isUnread ? 'unread' : '';
         const activa = String(conv.otherUserId) === String(currentConversationUserId) ? ' active' : '';
-        const unreadBadge = isUnread ? `<span class="unread-badge">${conv.unreadCount}</span>` : '';
+        // El lector de pantalla lo lee junto al nombre: "1 sin leer", no un número suelto
+        const unreadBadge = isUnread ? `<span class="unread-badge" id="sinLeer${i}">${conv.unreadCount}<span class="sr-only"> sin leer</span></span>` : '';
         const nombre = escaparHtml(conv.otherUserName || 'Usuario');
         // Al buscar se ven tambien las archivadas: llevan su etiqueta
         const etiqueta = !vistaArchivadas && estaArchivada(conv, archivadas) ? '<span class="conv-etiqueta">Archivada</span>' : '';
 
         return `
             <div class="conversation-item ${unreadClass}${activa}" data-user-id="${escaparHtml(conv.otherUserId)}">
-                <div class="conversation-avatar">${conv.otherUserName ? escaparHtml(conv.otherUserName.charAt(0)) : '<i data-ico="user"></i>'}</div>
+                <div class="conversation-avatar" aria-hidden="true">${conv.otherUserName ? escaparHtml(conv.otherUserName.charAt(0)) : '<i data-ico="user"></i>'}</div>
                 <div class="conversation-info">
                     <div class="conversation-header">
-                        <h2>${nombre}</h2>
+                        <h2><button type="button" class="conv-abrir"${activa ? ' aria-current="true"' : ''}${isUnread ? ` aria-describedby="sinLeer${i}"` : ''}>${nombre}</button></h2>
                         <span class="conversation-time">${formatDate(conv.lastMessageDate, true)}</span>
                     </div>
                     <p class="conversation-preview">${etiqueta}${escaparHtml(truncateText(conv.lastMessageContent || '', 50))}</p>
@@ -303,7 +304,12 @@ async function openConversation(userId) {
 
     // Marcar como activa
     document.querySelectorAll('.conversation-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.userId === String(userId));
+        const es = item.dataset.userId === String(userId);
+        item.classList.toggle('active', es);
+        const boton = item.querySelector('.conv-abrir');
+        // Vacío, aria-current significa "no": tiene que decir "true"
+        if (boton && es) boton.setAttribute('aria-current', 'true');
+        else if (boton) boton.removeAttribute('aria-current');
     });
 
     // Mostrar área de chat (en celular reemplaza a la lista)
@@ -657,6 +663,7 @@ function cerrarChat() {
     document.getElementById('chatEmpty').style.display = '';
     document.querySelector('.messages-container').classList.remove('viendo-chat');
     document.querySelectorAll('.conversation-item.active').forEach(item => item.classList.remove('active'));
+    document.querySelectorAll('.conv-abrir[aria-current]').forEach(boton => boton.removeAttribute('aria-current'));
     history.replaceState(null, '', 'mensajes.html');
 }
 

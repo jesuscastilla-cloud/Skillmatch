@@ -142,7 +142,7 @@ function displayConnections(connections) {
                 <div class="connection-header">
                     ${avatarCircle(name)}
                     <div class="connection-info">
-                        <h3>${escaparHtml(name || 'Usuario')}</h3>
+                        <h2>${escaparHtml(name || 'Usuario')}</h2>
                         <p class="connection-type">${escaparHtml(headline)}</p>
                         <p class="connection-time">${since ? 'Desde ' + since : 'Conectado'}</p>
                     </div>
@@ -195,7 +195,7 @@ function displayRequests(requests) {
                 <div class="connection-header">
                     ${avatarCircle(req.userName)}
                     <div class="connection-info">
-                        <h3>${escaparHtml(req.userName || 'Usuario')}</h3>
+                        <h2>${escaparHtml(req.userName || 'Usuario')}</h2>
                         <p class="connection-type">${escaparHtml(req.userHeadline)}</p>
                         <p class="connection-time">${date}</p>
                     </div>
@@ -319,7 +319,7 @@ function displaySuggestions(suggestions, yo = { ciudad: '', habilidades: new Set
                 <div class="suggestion-header">
                     ${avatarCircle(user.firstName)}
                     <div class="suggestion-info">
-                        <h3>${escaparHtml(name || 'Usuario')}</h3>
+                        <h2>${escaparHtml(name || 'Usuario')}</h2>
                         ${user.headline ? `<p class="suggestion-headline">${escaparHtml(user.headline)}</p>` : ''}
                     </div>
                 </div>

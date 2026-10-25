@@ -897,7 +897,7 @@ async function loadInterestedCompanies() {
                     <div class="company-item-compact">
                         <div class="company-logo-compact">${escaparHtml((company.name || '?').charAt(0))}</div>
                         <div class="company-info-compact">
-                            <h3>${escaparHtml(company.job || company.name)}</h3>
+                            <h3>${company.jobId ? `<a href="oportunidades.html?jobId=${encodeURIComponent(company.jobId)}">${escaparHtml(company.job || company.name)}</a>` : escaparHtml(company.job || company.name)}</h3>
                             <p>${company.job ? escaparHtml(company.name) + ' · ' : ''}${cuando}</p>
                             <p class="status-badge ${clave.toLowerCase()}"><i data-ico="${estado.ico}"></i> ${estado.texto}</p>
                         </div>

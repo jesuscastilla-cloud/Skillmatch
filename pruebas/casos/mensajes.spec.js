@@ -108,6 +108,18 @@ test('copiar un mensaje lo deja en el portapapeles', async ({ page, context, api
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('Hola, vi la vacante de desarrollador web.');
 });
 
+test('una conversación se abre con el teclado y dice cuántos mensajes hay sin leer', async ({ page, api }) => {
+    await page.goto('mensajes.html');
+    const andres = page.locator('.conversation-item[data-user-id="u-andres"] .conv-abrir');
+    // El lector de pantalla oye "Andrés Julio" y "1 sin leer", no un número suelto
+    await expect(andres).toHaveAccessibleName('Andrés Julio');
+    await expect(andres).toHaveAccessibleDescription('1 sin leer');
+    await andres.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#chatActive')).toBeVisible();
+    await expect(andres).toHaveAttribute('aria-current', 'true');
+});
+
 test('el menú se maneja con el teclado', async ({ page, api }) => {
     await page.goto('mensajes.html');
     await page.locator('.conversation-item[data-user-id="u-digital"] .conv-menu').click();
