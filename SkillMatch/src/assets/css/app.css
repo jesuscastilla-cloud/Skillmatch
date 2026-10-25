@@ -465,7 +465,7 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
     border-radius: var(--r-md);
     background: var(--sea-light);
     transform: translateX(calc(var(--i, 0) * (100% + var(--s1))));
-    transition: transform .3s var(--ease-out), opacity .2s var(--ease);
+    transition: transform var(--dur-viaje) var(--ease-viaje), opacity .2s var(--ease);
     pointer-events: none;
 }
 .tabbar.con-marca a.is-active { background: transparent; }
@@ -4866,6 +4866,10 @@ a.meta-tag { position: relative; }
     --dur-2: 260ms;  /* cambios de estado */
     --dur-3: 480ms;  /* entradas al hacer scroll */
     --stagger: 40ms; /* separacion entre tarjetas de una lista */
+    /* Cambio de seccion: la marca del menu viaja y la pagina se desliza.
+       Arranca suave y frena suave, para que el recorrido se vea entero */
+    --dur-viaje: 360ms;
+    --ease-viaje: cubic-bezier(.4, 0, .2, 1);
 }
 
 /* Transiciones entre paginas (View Transitions API). La barra superior y
@@ -4884,9 +4888,59 @@ body > header { view-transition-name: barra-superior; } /* el nombre debe ser un
    la de la pagina anterior se queda quieta hasta el final, en vez de
    apagarse y volver (ya trae la pastilla en la pestana elegida) */
 ::view-transition-old(barra-inferior) { animation: none; }
+/* Lo mismo arriba: la barra de la pagina nueva sale como la de un visitante
+   ("Unirse ahora") hasta que ui.js pone la de la sesion. Durante la
+   transicion se ve la de la pagina anterior, quieta, y al terminar la nueva
+   ya esta lista */
+::view-transition-old(barra-superior) { animation: none; }
+::view-transition-new(barra-superior) { animation: none; opacity: 0; }
 /* La linea del menu ya estaba en su sitio: en la pagina nueva no vuelve a crecer */
 html:active-view-transition .nav-links a.active-nav::after,
 html:active-view-transition .nav-links a.active::after { animation: none; }
+/* Al ir a otra seccion del menu, las cosas entran desde ese lado: ui.js
+   anota la direccion y el guion del <head> la vuelve un tipo de la
+   transicion y una clase en <html> (entra-derecha / entra-izquierda) que se
+   quita sola a los 1,4 s. La pagina vieja se corre un poco hacia el otro
+   lado y se apaga; la nueva se corre un poco desde el lado de la opcion
+   (hacia la derecha, entra por la derecha; hacia la izquierda, al reves).
+   Las barras de arriba y de abajo tienen su propio nombre: se quedan
+   quietas. Sin direccion (atras, un enlace fuera del menu) queda el
+   fundido de siempre. */
+@media (prefers-reduced-motion: no-preference) {
+    html:active-view-transition-type(ir-derecha)::view-transition-old(root)   { animation: vt-sale-izquierda var(--dur-viaje) var(--ease-viaje) both; mix-blend-mode: normal; }
+    html:active-view-transition-type(ir-derecha)::view-transition-new(root)   { animation: vt-entra-derecha var(--dur-viaje) var(--ease-viaje) both; mix-blend-mode: normal; }
+    html:active-view-transition-type(ir-izquierda)::view-transition-old(root) { animation: vt-sale-derecha var(--dur-viaje) var(--ease-viaje) both; mix-blend-mode: normal; }
+    html:active-view-transition-type(ir-izquierda)::view-transition-new(root) { animation: vt-entra-izquierda var(--dur-viaje) var(--ease-viaje) both; mix-blend-mode: normal; }
+
+    /* Dentro de la pagina nueva, los bloques (titulo, buscador, pestanas,
+       tarjetas: los hijos de cada .container de las secciones principales)
+       llegan en fila, 60 ms uno tras otro; los de la segunda seccion, 180 ms
+       despues. Sin tocar el HTML de cada pagina */
+    html:is(.entra-derecha, .entra-izquierda) body > :is(section, main) > .container > *,
+    html:is(.entra-derecha, .entra-izquierda) body > :is(section, main) > :not(.container) > .container > * {
+        animation: bloque-entra .42s var(--ease-viaje) both;
+        animation-delay: calc(60ms + var(--desfase, 0ms) + var(--orden, 0) * 60ms);
+    }
+    html.entra-izquierda { --desde: -48px; }
+    body > :is(section, main) ~ :is(section, main),
+    body > :is(section, main) > * + .container { --desfase: 180ms; }
+    body > :is(section, main) .container > :nth-child(2) { --orden: 1; }
+    body > :is(section, main) .container > :nth-child(3) { --orden: 2; }
+    body > :is(section, main) .container > :nth-child(4) { --orden: 3; }
+    body > :is(section, main) .container > :nth-child(5) { --orden: 4; }
+    body > :is(section, main) .container > :nth-child(n+6) { --orden: 5; }
+}
+@keyframes bloque-entra { from { transform: translateX(var(--desde, 48px)); opacity: 0; } }
+@keyframes vt-sale-izquierda  { to   { transform: translateX(-30%); opacity: 0; } }
+@keyframes vt-entra-derecha   { from { transform: translateX(30%); opacity: 0; } }
+@keyframes vt-sale-derecha    { to   { transform: translateX(30%); opacity: 0; } }
+@keyframes vt-entra-izquierda { from { transform: translateX(-30%); opacity: 0; } }
+/* ui.js arma la barra de abajo de la pagina nueva en plena transicion y
+   saldria dentro de la pagina que se desliza: se esconde hasta el final;
+   mientras, se ve la anterior, quieta. Los tipos solo existen en la pagina
+   nueva: la foto de salida no cambia */
+html:active-view-transition-type(ir-derecha) .tabbar,
+html:active-view-transition-type(ir-izquierda) .tabbar { visibility: hidden; }
 
 /* Cambio de tema (ui.js): la foto nueva se revela en circulo desde el boton
    sobre la vieja. Sin el fundido de las paginas, sin mezclar colores y con

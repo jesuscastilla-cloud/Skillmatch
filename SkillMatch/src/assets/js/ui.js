@@ -317,8 +317,35 @@
      *  del menu solo se adelanta cuando de verdad se va a cambiar de pagina. */
     function vaAOtraPagina(e, a) {
         return !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey &&
-            (!a.target || a.target === '_self') && !a.hasAttribute('download') &&
+            (!a.target || a.target === '_self') && !a.hasAttribute('download') && !a.hasAttribute('data-cerrar-sesion') &&
             a.origin === location.origin && a.pathname !== location.pathname;
+    }
+
+    // El viaje de la marca se ve completo: la pagina cambia cuando la marca
+    // llega (antes la siguiente cargaba antes de que recorriera el camino).
+    // La direccion queda anotada para la pagina nueva: el guion del <head> de
+    // cada pagina la lee en "pagereveal" y la pagina se desliza de ese lado.
+    let viajePendiente = 0;
+
+    /** Anota hacia que lado del menu queda el destino (desde y hasta: posiciones en el menu). */
+    function anotarDireccion(a, desde, hasta) {
+        if (desde < 0 || hasta < 0 || desde === hasta) return;
+        try {
+            sessionStorage.setItem('skillmatch_deslizar', JSON.stringify({
+                a: a.pathname, dir: hasta > desde ? 'derecha' : 'izquierda', t: Date.now()
+            }));
+        } catch (err) { /* sin almacenamiento: la pagina solo se funde */ }
+    }
+
+    /** Cambia de pagina cuando la marca termina de deslizarse. Con "reducir
+     *  movimiento" no hay viaje que esperar: el enlace sigue enseguida. */
+    function irCuandoLlegue(e, a, marca) {
+        if (reduceMotion) return;
+        e.preventDefault();
+        clearTimeout(viajePendiente);
+        // "0.36s, 0.2s": la primera es la de transform
+        const duracion = parseFloat(getComputedStyle(marca).transitionDuration) || 0;
+        viajePendiente = setTimeout(function () { UI.irA(a.href); }, duracion * 1000);
     }
 
     /** La pastilla de la pestana activa: al tocar otra se desliza hasta ella
@@ -344,8 +371,12 @@
             const a = e.target instanceof Element && e.target.closest('a');
             if (!a || !vaAOtraPagina(e, a)) return;
             enlaces.forEach(function (x) { x.classList.toggle('es-destino', x === a); });
-            // Si no habia ninguna activa, aparece en la tocada sin cruzar la barra
-            ponerEn(a, marca.style.opacity === '0');
+            anotarDireccion(a, enlaces.indexOf(nav.querySelector('a.is-active')), enlaces.indexOf(a));
+            // Si no habia ninguna activa, aparece en la tocada sin cruzar la
+            // barra: no hay viaje que esperar
+            const sinViaje = marca.style.opacity === '0';
+            ponerEn(a, sinViaje);
+            if (!sinViaje) irCuandoLlegue(e, a, marca);
         });
         // Justo antes de la foto de salida: la pastilla, ya en la pestana elegida
         window.addEventListener('pageswap', function () { marca.style.transition = 'none'; });
@@ -468,8 +499,12 @@
             window.SkillMatchUI_progress();
         });
 
+        // Justo antes de la foto de salida la pagina nueva ya llego: sin
+        // esconderla, la barra se iria con la pagina que se desliza
+        window.addEventListener('pageswap', function () { barra.style.visibility = 'hidden'; });
         window.addEventListener('pageshow', function () {
             barra.style.width = '0';
+            barra.style.visibility = '';
             activa = false;
         });
     }
@@ -539,6 +574,10 @@
     /* ---------- 4. Estados de carga ---------- */
 
     const UI = {
+        /** Cambia de pagina. Las pruebas lo reemplazan para quedarse en la
+         *  pagina y revisar lo que paso antes de irse. */
+        irA: function (url) { window.location.href = url; },
+
         /** Dibuja n tarjetas fantasma dentro de un contenedor mientras llegan los datos. */
         skeletons: function (contenedor, n) {
             const destino = typeof contenedor === 'string' ? document.querySelector(contenedor) : contenedor;
@@ -2786,7 +2825,14 @@
             const delMenu = Array.from(lista.querySelectorAll('a'));
             const destino = delMenu.find(function (n) { return n.href === a.href; }) ||
                 delMenu.find(function (n) { return !n.hash && n.pathname === a.pathname; });
-            if (destino) { elegido = destino; ubicar(); }
+            if (!destino) return;
+            const activo = lista.querySelector('a.active-nav, a.active');
+            // Con el mouse encima, la linea ya llego al enlace: nada que esperar
+            const sinViaje = linea.style.opacity !== '1' || (elegido || sobre || activo) === destino;
+            elegido = destino;
+            ubicar();
+            anotarDireccion(a, delMenu.indexOf(activo), delMenu.indexOf(destino));
+            if (!sinViaje) irCuandoLlegue(e, a, linea);
         });
         // Justo antes de la foto de salida: la linea, ya en su destino
         window.addEventListener('pageswap', function () { linea.style.transition = 'none'; });
