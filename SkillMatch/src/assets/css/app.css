@@ -5961,6 +5961,9 @@ kbd {
 .sort-select { min-width: 180px; }
 .results-section { padding: var(--s7) 0 var(--s9); }
 .results-info { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s3); margin-bottom: var(--s5); }
+/* En Vacantes la cuenta va en la barra junto a "Ordenar por", centrada: el margen de abajo (el de los
+   resultados de Inicio) la subia 12 px */
+.opportunities-toolbar .results-info { margin-bottom: 0; }
 .results-count { font-size: var(--t-base); color: var(--ink-muted); }
 .results-count strong { color: var(--ink); }
 

@@ -144,6 +144,18 @@ test('Vacantes es de vidrio: repisa arriba, filtros y vacantes de tinte, y las p
     }
 });
 
+test('en Vacantes la cuenta de vacantes va a la misma altura que "Ordenar por"', async ({ page, context, api }, info) => {
+    // En el celular van en dos filas: ahi no hay altura que comparar
+    test.skip(info.project.name === 'celular', 'en el celular la cuenta y el orden van en filas distintas');
+    await entrarComo(context, 'persona');
+    await page.goto('oportunidades.html');
+    await expect(page.locator('#resultsCount')).toContainText('vacantes');
+    // Antes iba 12 px mas arriba: le quedaba el margen de abajo de los resultados de Inicio
+    const centros = await page.evaluate(() => [document.getElementById('resultsCount'), document.getElementById('sortSelect')]
+        .map(el => { const r = el.getBoundingClientRect(); return (r.top + r.bottom) / 2; }));
+    expect(Math.abs(centros[0] - centros[1])).toBeLessThan(1);
+});
+
 test('Empresas y Conexiones son de vidrio, con los títulos de sección sobre una repisa', async ({ page, context, api }) => {
     await entrarComo(context, 'persona');
     await page.goto('empresas.html');
