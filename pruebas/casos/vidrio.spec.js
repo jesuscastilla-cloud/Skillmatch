@@ -227,8 +227,8 @@ test('Inicio es de vidrio: repisas y tarjetas de tinte, y la portada oscura sigu
 // Con una repisa por seccion (cada una con su brillo y su raya) y la franja de las cifras sin vidrio,
 // Inicio se veia en franjas horizontales de bordes duros
 test('Inicio es una sola lámina de vidrio: el mismo tinte en todas las secciones, sin rayas entre ellas ni costura bajo la ola', async ({ page, context, api }) => {
-    const secciones = ['.search-section', '.impact-stats', '.como-funciona', '.benefits-section', '.cartagena-section',
-        '.mapa-section', '.innovation-section'];
+    const secciones = ['.search-section', '.impact-stats', '.como-funciona', '.benefits-section',
+        '.innovation-section'];
     const leer = lista => page.evaluate(lista => lista.map(s => {
         const cs = getComputedStyle(document.querySelector(s));
         return { s, fondo: cs.backgroundColor, bordes: [cs.borderTopWidth, cs.borderBottomWidth] };

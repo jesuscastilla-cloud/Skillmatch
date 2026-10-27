@@ -179,7 +179,7 @@ function medir(celular) {
         if (getComputedStyle(el).cursor !== 'pointer') return;
         if (el.parentElement && getComputedStyle(el.parentElement).cursor === 'pointer') return;
         if (el.matches(enfocable) || el.closest(enfocable) || !visible(el)) return;
-        // Dentro de una imagen (role="img", como el mapa de la portada) lo que se toca
+        // Dentro de una imagen (role="img", como el anillo de compatibilidad) lo que se toca
         // repite controles que están fuera de ella
         if (el.closest('[role="img"]')) return;
         const clave = firma(el);
