@@ -156,6 +156,28 @@ test('en Vacantes la cuenta de vacantes va a la misma altura que "Ordenar por"',
     expect(Math.abs(centros[0] - centros[1])).toBeLessThan(1);
 });
 
+test('el anillo de compatibilidad es un aro hueco: sin el círculo blanco del centro y con la pista translúcida', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('oportunidades.html');
+    await expect(page.locator('.opportunity-card').first()).toBeVisible();
+    // 0 de 3: sobre el recuadro turquesa del detalle se veia un disco blanco con el "0%"
+    await page.evaluate(() => abrirDetallePorId('j-web'));
+    const anillo = page.locator('.modal.active .detalle-match .match-ring');
+    await expect(anillo.locator('span')).toHaveText('0%');
+    const estilo = await anillo.evaluate(el => {
+        const a = getComputedStyle(el), b = getComputedStyle(el, '::before');
+        return { fondo: a.backgroundImage, mascara: b.maskImage || b.webkitMaskImage, aro: b.backgroundImage };
+    });
+    expect(estilo.fondo, 'el anillo no pinta nada detras del numero').toBe('none');
+    expect(estilo.mascara, 'el centro del aro es hueco').toContain('radial-gradient');
+    expect(estilo.aro, 'la pista es translucida').toContain('rgba(8, 32, 60, 0.08)');
+    // El aro dibuja el porcentaje del anillo: --pct no se hereda solo (@property) y el ::before lo toma a proposito
+    await page.evaluate(() => abrirDetallePorId('j-practica-hotel'));
+    const otro = page.locator('.modal.active .detalle-match .match-ring');
+    await expect(otro.locator('span')).toHaveText('50%');
+    await expect.poll(() => otro.evaluate(el => getComputedStyle(el, '::before').backgroundImage)).toContain(' 50%');
+});
+
 test('Empresas y Conexiones son de vidrio, con los títulos de sección sobre una repisa', async ({ page, context, api }) => {
     await entrarComo(context, 'persona');
     await page.goto('empresas.html');

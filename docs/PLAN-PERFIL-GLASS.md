@@ -613,3 +613,20 @@ Luis mira en Live Server y commit con su permiso.
   - **Lección:** nada de `:has()` sobre el `<body>` que dependa de atributos que cambian seguido (el
     `style`); con clases es más liviano.
 - **Suite completa:** 300 pasan, 0 fallan.
+
+### Ajustes tras la revisión de Luis (27 de octubre, mañana)
+
+- **Inicio se veía en franjas.** Cada sección era una repisa de vidrio aparte, con su brillo arriba y su raya
+  abajo, y la franja de las cifras no tenía vidrio: ahí las manchas se veían fuertes. Ahora es **una sola
+  lámina** con el mismo tinte, de la ola de la portada a la invitación del final (con sesión, desde la
+  franja oscura del panel).
+  - **Lección:** las repisas sirven para una franja de cabecera (Vacantes, Empresas, Conexiones). Cuando
+    una página entera va hecha de secciones seguidas, una repisa por sección se lee como rayas: mejor una
+    lámina continua, sin brillo ni rayas entre secciones.
+  - **La costura bajo la ola:** la ola es de color sólido y pinta sobre la portada; el vidrio que sigue es
+    translúcido. Para que no quede una línea recta, el vidrio nace del mismo color de la ola y se funde en
+    140 px (solo con la portada a la vista).
+- **Anillo de compatibilidad hueco.** Un círculo blanco sólido en el centro se ve como un parche sobre el
+  vidrio. El aro va en `::before` con una máscara radial y la pista es translúcida (`--ring-pista`).
+  - **Ojo:** `--pct` está registrado con `@property` sin herencia; el `::before` necesita `--pct: inherit`.
+- **Vacantes:** la cuenta de vacantes quedaba 12 px más arriba que "Ordenar por" por un margen heredado.

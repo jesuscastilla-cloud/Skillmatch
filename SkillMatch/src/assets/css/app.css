@@ -17,6 +17,7 @@
     --ink-muted:      #587089; /* 4.5:1 sobre --bg y 5.1:1 sobre blanco */
     --hairline:       #DCE6F0;
     --hairline-soft:  #EBF1F7;
+    --ring-pista:     rgba(8, 32, 60, .08); /* pista del anillo de compatibilidad: translucida, va sobre cualquier fondo */
 
     --bg:             #EDF2F8;
     --bg-deep:        #061A31;
@@ -1176,18 +1177,24 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: conic-gradient(
-        var(--ring-color, var(--sea)) calc(var(--pct) * 1%),
-        var(--hairline-soft) 0
-    );
     animation: ring-draw .9s var(--ease-out) both;
 }
+/* El aro va en ::before con el centro hueco (mascara): se ve lo que hay detras, sea una tarjeta de
+   vidrio o el recuadro turquesa del detalle. Antes era un disco con un circulo blanco encima, que
+   sobre el vidrio se veia como un parche blanco. La pista es translucida para cualquier fondo.
+   --pct esta registrado sin herencia (@property, abajo): el ::before lo hereda a proposito */
 .match-ring::before {
     content: "";
     position: absolute;
-    inset: 5px;
+    inset: 0;
+    --pct: inherit;
     border-radius: 50%;
-    background: var(--surface);
+    background: conic-gradient(
+        var(--ring-color, var(--sea)) calc(var(--pct) * 1%),
+        var(--ring-pista) 0
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5.5px), #000 calc(100% - 5px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 5.5px), #000 calc(100% - 5px));
 }
 .match-ring > span {
     position: relative;
@@ -5625,6 +5632,7 @@ kbd {
     --ink-muted:      #7D93AB;
     --hairline:       #24384F;
     --hairline-soft:  #1A2A3E;
+    --ring-pista:     rgba(255, 255, 255, .1);
 
     --bg:             #0B1B2C;
     --surface:        #112238;

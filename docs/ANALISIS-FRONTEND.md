@@ -541,6 +541,16 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   - **En oscuro:** la etiqueta "Busco trabajo" / "Portal de empresas" va en turquesa claro (quedaba en 3.6).
   - **Resultado:** con esto, todo el sitio usa el vidrio salvo la hoja de vida (es para imprimir), "Sin
     conexión" y la política de datos (un documento de texto), que solo tienen la barra de vidrio.
+- **Ajustes tras la revisión de Luis (27 de octubre de 2026):**
+  - **Inicio sin franjas:** cada sección era una repisa aparte (brillo arriba, raya abajo) y la franja de
+    las cifras no tenía vidrio; se veían bandas horizontales de bordes duros. Ahora, de la ola de la portada
+    a la invitación del final, es una sola lámina con el mismo tinte, también bajo el panel de inicio con
+    sesión. Bajo la ola, el vidrio nace del color de la ola y se funde en 140 px, sin costura.
+  - **Vacantes:** la cuenta de vacantes iba 12 px más arriba que "Ordenar por" (un margen de abajo heredado
+    de los resultados de Inicio). Ahora van a la misma altura.
+  - **Anillo de compatibilidad hueco:** era un disco con un círculo blanco encima, que sobre el vidrio y el
+    recuadro turquesa del detalle se veía como un parche blanco. Ahora el aro tiene el centro hueco y la
+    pista translúcida.
 
 ## Orden propuesto (solo frontend)
 
