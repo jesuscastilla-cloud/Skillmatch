@@ -4,8 +4,10 @@ import com.skillmatch.backend.dto.ChatMessageResponse;
 import com.skillmatch.backend.dto.MessageRequest;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.exception.UnauthorizedException;
+import com.skillmatch.backend.model.ConnectionStatus;
 import com.skillmatch.backend.model.Message;
 import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.repository.ConnectionRepository;
 import com.skillmatch.backend.repository.MessageRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.*;
 class MessageServiceTest {
 
     @Mock private MessageRepository messageRepository;
+    @Mock private ConnectionRepository connectionRepository;
     @Mock private UserRepository userRepository;
     @Mock private NotificationService notificationService;
     @Mock private MongoTemplate mongoTemplate;
@@ -78,6 +81,20 @@ class MessageServiceTest {
 
         assertThat(response.getSenderId()).isEqualTo("user-id-1");
         assertThat(response.getReceiverId()).isEqualTo("user-id-2");
+    }
+
+    @Test
+    void sendMessage_conBloqueo_noGuardaNiNotifica() {
+        MessageRequest req = new MessageRequest("user-id-2", "Hola!", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(sender));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
+        when(connectionRepository.existsBetween("user-id-1", "user-id-2", ConnectionStatus.BLOCKED)).thenReturn(true);
+
+        assertThatThrownBy(() -> messageService.sendMessage("user-id-1", req))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("No puedes enviar mensajes a esta persona");
+        verify(messageRepository, never()).save(any());
+        verifyNoInteractions(notificationService);
     }
 
     @Test

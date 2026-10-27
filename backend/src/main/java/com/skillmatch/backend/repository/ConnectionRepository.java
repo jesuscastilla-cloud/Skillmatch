@@ -16,4 +16,10 @@ public interface ConnectionRepository extends MongoRepository<Connection, String
     List<Connection> findByConnectedUserIdAndStatus(String connectedUserId, ConnectionStatus status);
 
     Optional<Connection> findByUserIdAndConnectedUserId(String userId, String connectedUserId);
+
+    /** ¿Hay una conexión con este estado entre las dos personas, en cualquier sentido? */
+    default boolean existsBetween(String userA, String userB, ConnectionStatus status) {
+        return findByUserIdAndConnectedUserId(userA, userB).filter(c -> c.getStatus() == status).isPresent()
+                || findByUserIdAndConnectedUserId(userB, userA).filter(c -> c.getStatus() == status).isPresent();
+    }
 }

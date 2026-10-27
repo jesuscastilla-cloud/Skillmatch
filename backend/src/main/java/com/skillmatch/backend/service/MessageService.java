@@ -4,8 +4,10 @@ import com.skillmatch.backend.dto.ChatMessageResponse;
 import com.skillmatch.backend.dto.MessageRequest;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.exception.UnauthorizedException;
+import com.skillmatch.backend.model.ConnectionStatus;
 import com.skillmatch.backend.model.Message;
 import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.repository.ConnectionRepository;
 import com.skillmatch.backend.repository.MessageRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 public class MessageService {
 
     private final MessageRepository messageRepository;
+    private final ConnectionRepository connectionRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final MongoTemplate mongoTemplate;
@@ -48,6 +51,12 @@ public class MessageService {
                 .orElseThrow(() -> new ResourceNotFoundException("Remitente no encontrado"));
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Destinatario no encontrado"));
+
+        // Bloquear sirve de algo: no llegan mensajes (ni notificaciones) entre las dos personas.
+        // El texto no dice quién bloqueó a quién.
+        if (connectionRepository.existsBetween(senderId, receiverId, ConnectionStatus.BLOCKED)) {
+            throw new UnauthorizedException("No puedes enviar mensajes a esta persona");
+        }
 
         Message message = new Message();
         message.setSenderId(senderId);

@@ -3,10 +3,13 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.ChatMessageResponse;
 import com.skillmatch.backend.dto.MessageRequest;
 import com.skillmatch.backend.dto.MessageResponse;
+import com.skillmatch.backend.exception.TooManyAttemptsException;
+import com.skillmatch.backend.exception.UnauthorizedException;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,6 +33,10 @@ public class MessageController {
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             return ResponseEntity.ok(messageService.sendMessage(requireUser(currentUser), request));
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
+        } catch (TooManyAttemptsException e) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new MessageResponse(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
