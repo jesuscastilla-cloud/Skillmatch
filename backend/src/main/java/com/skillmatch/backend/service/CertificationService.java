@@ -5,6 +5,7 @@ import com.skillmatch.backend.dto.CertificationResponse;
 import com.skillmatch.backend.model.Certification;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.validation.EntradaSegura;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -39,8 +40,11 @@ public class CertificationService {
     }
 
     public CertificationResponse addCertification(String userId, CertificationRequest request) {
-        userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        if (user.getCertifications() != null && user.getCertifications().size() >= EntradaSegura.MAX_POR_SECCION) {
+            throw new IllegalArgumentException("Puedes tener máximo " + EntradaSegura.MAX_POR_SECCION + " certificaciones");
+        }
 
         Certification certification = new Certification();
         certification.setId(new ObjectId().toString());

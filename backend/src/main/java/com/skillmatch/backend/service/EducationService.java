@@ -5,6 +5,7 @@ import com.skillmatch.backend.dto.EducationResponse;
 import com.skillmatch.backend.model.Education;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.validation.EntradaSegura;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -39,8 +40,11 @@ public class EducationService {
     }
 
     public EducationResponse addEducation(String userId, EducationRequest request) {
-        userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        if (user.getEducations() != null && user.getEducations().size() >= EntradaSegura.MAX_POR_SECCION) {
+            throw new IllegalArgumentException("Puedes tener máximo " + EntradaSegura.MAX_POR_SECCION + " estudios");
+        }
 
         Education education = new Education();
         education.setId(new ObjectId().toString());

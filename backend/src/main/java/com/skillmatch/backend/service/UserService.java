@@ -6,6 +6,7 @@ import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.validation.EntradaSegura;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -72,6 +73,9 @@ public class UserService {
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("La URL de la imagen de perfil es obligatoria");
         }
+        if (!EntradaSegura.esImagenValida(imageUrl)) {
+            throw new IllegalArgumentException("La imagen no es válida. Súbela de nuevo desde el editor de foto.");
+        }
         User user = getUserById(userId);
         user.setProfileImageUrl(imageUrl);
         user.setUpdatedAt(LocalDateTime.now());
@@ -83,6 +87,9 @@ public class UserService {
     public User updateCoverImage(String userId, String imageUrl) {
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("La URL de la imagen de portada es obligatoria");
+        }
+        if (!EntradaSegura.esImagenValida(imageUrl)) {
+            throw new IllegalArgumentException("La portada no es válida. Elige otra desde el editor.");
         }
         User user = getUserById(userId);
         user.setCoverImageUrl(imageUrl);

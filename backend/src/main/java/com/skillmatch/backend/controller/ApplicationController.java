@@ -127,6 +127,9 @@ public class ApplicationController {
             @RequestParam String status,
             @RequestParam(required = false) String notes,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        if (notes != null && notes.length() > 1000) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Las notas no pueden tener más de 1000 caracteres"));
+        }
         try {
             return ResponseEntity.ok(applicationService.updateStatus(id, status, notes, requireUser(currentUser)));
         } catch (AccessDeniedException e) {

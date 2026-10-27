@@ -84,6 +84,25 @@ class UserServiceTest {
     }
 
     @Test
+    void updateProfileImage_rechazaJavascript() {
+        assertThatThrownBy(() -> userService.updateProfileImage("user-id-1", "javascript:alert(1)"))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateProfileImage_aceptaLaDelEditor() {
+        User user = new User();
+        user.setId("user-id-1");
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User saved = userService.updateProfileImage("user-id-1", "data:image/webp;base64,UklGRiQ=");
+
+        assertThat(saved.getProfileImageUrl()).startsWith("data:image/webp");
+    }
+
+    @Test
     void getUserStatistics_sinVistasInventadas() {
         User user = new User();
         user.setId("user-id-1");

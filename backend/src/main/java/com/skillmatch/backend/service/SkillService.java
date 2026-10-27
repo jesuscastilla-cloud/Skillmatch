@@ -4,6 +4,7 @@ import com.skillmatch.backend.dto.SkillRequest;
 import com.skillmatch.backend.model.Skill;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.validation.EntradaSegura;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -47,6 +48,9 @@ public class SkillService {
                 .anyMatch(s -> s.getName().equalsIgnoreCase(request.getName()));
         if (skillExists) {
             throw new IllegalArgumentException("Esta habilidad ya existe en tu perfil");
+        }
+        if (user.getSkills() != null && user.getSkills().size() >= EntradaSegura.MAX_POR_SECCION) {
+            throw new IllegalArgumentException("Puedes tener máximo " + EntradaSegura.MAX_POR_SECCION + " habilidades");
         }
 
         Skill skill = new Skill();

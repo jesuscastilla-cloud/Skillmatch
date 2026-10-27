@@ -5,6 +5,7 @@ import com.skillmatch.backend.dto.ExperienceResponse;
 import com.skillmatch.backend.model.Experience;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.validation.EntradaSegura;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -42,8 +43,11 @@ public class ExperienceService {
         if (userId == null) {
             throw new IllegalArgumentException("El ID de usuario no puede ser nulo");
         }
-        userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        if (user.getExperiences() != null && user.getExperiences().size() >= EntradaSegura.MAX_POR_SECCION) {
+            throw new IllegalArgumentException("Puedes tener máximo " + EntradaSegura.MAX_POR_SECCION + " experiencias");
+        }
 
         Experience experience = new Experience();
         experience.setId(new ObjectId().toString());
