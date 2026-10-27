@@ -6889,8 +6889,10 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 /* Movimiento reducido: quietas en su lugar */
 @media (prefers-reduced-motion: reduce) { .fondo-vivo > span { animation: none; } }
 
-/* ---- Vidrio de tinte: tarjetas (normal) y cabecera del perfil (grueso) ---- */
-.pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card) {
+/* ---- Vidrio de tinte: tarjetas (normal) y cabeceras (grueso). Fase 1: Mi perfil; fase 3: Mi empresa
+   (secciones, laterales y vacantes) y el perfil publico de empresa (bloques) ---- */
+.pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card,
+    .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza) {
     isolation: isolate;
     background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte);
     border: 1px solid;
@@ -6899,26 +6901,40 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     box-shadow: var(--vidrio-grosor), var(--vidrio-sombra);
     -webkit-backdrop-filter: none; backdrop-filter: none;
 }
-.pagina-vidrio .profile-header-card {
+.pagina-vidrio :is(.profile-header-card, .company-header-card, .empresa-cabeza) {
     background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte-grueso);
     border-radius: 28px;
     box-shadow: var(--vidrio-grosor), var(--vidrio-sombra-grueso);
 }
-/* Las tarjetas suben un poco con el mouse (Luis, 7 de octubre); los botones no se mueven */
-.pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card) { transition: transform .24s var(--ease-out); }
+/* "Primeros pasos" (Mi empresa) conserva su filo turquesa sobre el vidrio: es la que llama a actuar */
+.pagina-vidrio .primeros-pasos { border-color: var(--sea); }
+/* Las tarjetas suben un poco con el mouse (Luis, 7 de octubre); los botones no se mueven. Las secciones
+   grandes de Mi empresa no: adentro se arrastran las tarjetas del tablero de postulaciones */
+.pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .sidebar-widget, .empresa-bloque) { transition: transform .24s var(--ease-out); }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card):hover { transform: translateY(-2px); }
+    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .sidebar-widget, .empresa-bloque):hover { transform: translateY(-2px); }
 }
 
 /* ---- Vidrio fino: lo que va dentro de una tarjeta (tampoco desenfoca) ----
    :where() no suma fuerza: asi el color de cada uno al pasar el mouse sigue mandando */
 .pagina-vidrio :where(.apps-summary, #recommendedJobs .opportunity-item-compact, .cifra-progreso .progress-step,
-    #userSkills .skill-tag, .btn-edit-profile, .btn-add-skill, .profile-section .section-header .btn-icon) {
+    #userSkills .skill-tag, .btn-edit-profile, .btn-add-skill, .profile-section .section-header .btn-icon,
+    .tablero-tarjeta, .primeros-pasos-boton) {
     background: var(--vidrio-tinte-fino);
     border-color: var(--vidrio-borde-fino);
     box-shadow: var(--vidrio-brillo-fino);
 }
+/* Columnas del tablero: solo el fondo. Su borde punteado es transparente y se vuelve turquesa cuando
+   se arrastra una tarjeta encima (.encima); con el borde del vidrio se veria punteado siempre */
+.pagina-vidrio :where(.tablero-columna) { background: var(--vidrio-tinte-fino); }
 .pagina-vidrio .apps-summary > div + div { border-left-color: var(--vidrio-borde-fino); }
+
+/* ---- El logo de la empresa con aro de vidrio real, como la foto del perfil ---- */
+.pagina-vidrio :is(.company-logo-img, .empresa-cabeza.con-portada .empresa-avatar.grande) {
+    border-color: var(--vidrio-tinte-grueso);
+    -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%);
+    box-shadow: var(--vidrio-grosor), 0 12px 28px -10px rgba(8, 32, 60, .35);
+}
 
 /* ---- La foto con un aro de vidrio real: atras esta la portada, que si tiene detalle ---- */
 .pagina-vidrio .profile-avatar {
@@ -6993,13 +7009,25 @@ body > header, [data-theme="dark"] body > header {
     .profile-section .section-header .btn-icon, .btn-add-skill) { color: var(--sea-luz); }
 /* Sobre su propio fondo turquesa (insignias "1 de 3", inicial de la empresa) hace falta aun mas
    claro: con --sea-luz quedaban en 4.35 y 4.46. Las insignias naranja y gris conservan su color */
-[data-theme="dark"] .pagina-vidrio :is(.match-badge-small:not(.match-excellent, .match-fair), .company-logo-compact) { color: #A3ECF3; }
+[data-theme="dark"] .pagina-vidrio :is(.match-badge-small:not(.match-excellent, .match-fair), .company-logo-compact,
+    .company-logo-opp, .empresa-cuenta, .primeros-pasos-cuenta) { color: #A3ECF3; } /* fase 3: "4", "2 de 5" y "H" quedaban en 3.8 a 4.4 */
+[data-theme="dark"] .pagina-vidrio .meta-tag.es-verificada { color: #7FE3B8; } /* "Empresa verificada": con #3FCB93 quedaba en 4.36 */
 [data-theme="dark"] .pagina-vidrio .match-badge-small.match-excellent { color: #FFC896; } /* el naranja de siempre quedaba en 3.7 */
+
+/* ---- Texto suelto sobre las manchas (sin tarjeta debajo): una pastilla de vidrio fino. El enlace
+   "Todas las empresas" del perfil publico quedaba entre 3.9 y 4.5 segun la mancha que pasara ---- */
+.pagina-vidrio .empresa-volver {
+    padding-inline: var(--s4);
+    border: 1px solid var(--vidrio-borde-fino); border-radius: var(--r-pill);
+    background: var(--vidrio-tinte-fino); box-shadow: var(--vidrio-brillo-fino);
+}
+[data-theme="dark"] .pagina-vidrio .empresa-volver { background: var(--vidrio-tinte); color: var(--sea-luz); }
 
 /* ---- Quien pide menos transparencia, alto contraste o imprime: solido y sin manchas ---- */
 @media (prefers-reduced-transparency: reduce) {
     .pagina-vidrio .fondo-vivo { display: none; }
-    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card, .skeleton-card),
+    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card, .skeleton-card,
+        .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza),
     :is(.menu-acciones, .notifications-dropdown, .lista-panel, .modal-content, .modal-content-small, .cmdk-panel, .recorrido-tarjeta) {
         background: var(--surface); border-color: var(--hairline); -webkit-backdrop-filter: none; backdrop-filter: none;
     }

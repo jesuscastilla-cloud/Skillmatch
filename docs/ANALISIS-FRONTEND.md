@@ -501,6 +501,15 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   - **Contraste de antes, encontrado con píxeles:** el número naranja del anillo de match (2.7) y el pie
     "Getsemaní" (3.2).
   - **Medido:** 21 páginas y 8 piezas abiertas, claro y oscuro, computador y celular: ningún texto bajo AA.
+- **Vidrio, fase 3: Mi empresa y el perfil público de empresa (hecho, 26 de octubre de 2026):** las dos
+  páginas son de vidrio, como Mi perfil: fondo vivo de manchas y tarjetas de vidrio de tinte.
+  - **Mi empresa:** la cabecera con el logo (grueso), las secciones, las laterales y las vacantes.
+  - **Perfil público:** la cabecera con portada y los bloques.
+  - **"Primeros pasos"** conserva su filo turquesa.
+  - **Tablero de postulaciones:** las columnas solo cambian el fondo, porque su borde punteado se vuelve
+    turquesa al arrastrar encima; las tarjetas van en vidrio fino. Las secciones grandes no suben con el
+    mouse (adentro se arrastra).
+  - **El logo** lleva aro de vidrio real.
 
 ## Orden propuesto (solo frontend)
 

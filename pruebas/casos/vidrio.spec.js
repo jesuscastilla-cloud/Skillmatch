@@ -101,3 +101,34 @@ test('con "reducir transparencia" la capa de controles vuelve a ser sólida', as
     await page.evaluate(() => SkillMatchUI.aviso('Listo', 'ok'));
     expect(await deVidrio(page.locator('.toast').first())).toEqual({ translucido: false, desenfoca: false });
 });
+
+// Fase 3: Mi empresa y el perfil publico de empresa son paginas de vidrio (fondo vivo y tarjetas de tinte)
+test('Mi empresa es de vidrio: tarjetas de tinte, "Primeros pasos" con su filo turquesa y el tablero con su borde punteado oculto', async ({ page, context, api }) => {
+    await entrarComo(context, 'empresa');
+    await page.goto('perfil-empresa.html');
+    await expect(page.locator('body')).toHaveClass(/pagina-vidrio/);
+    await expect(page.locator('.fondo-vivo')).toBeVisible();
+    for (const s of ['.company-header-card', '.content-section-card', '.sidebar-widget']) {
+        expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
+    }
+    const pasos = page.locator('.primeros-pasos');
+    await expect(pasos).toBeVisible();
+    const [filo, mar] = await pasos.evaluate(el => [getComputedStyle(el).borderTopColor, getComputedStyle(document.documentElement).getPropertyValue('--sea').trim()]);
+    expect(filo).toBe(mar.replace(/^#(..)(..)(..)$/, (_, r, g, b) => `rgb(${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)})`));
+    const columna = page.locator('.tablero-columna').first();
+    if (await columna.count()) {
+        expect(await columna.evaluate(el => getComputedStyle(el).borderTopColor)).toBe('rgba(0, 0, 0, 0)');
+    }
+});
+
+test('el perfil público de empresa es de vidrio, con el logo en un aro de vidrio', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('empresa.html?id=c-hotel');
+    await expect(page.locator('.empresa-cabeza h1')).toContainText('Hotel');
+    await expect(page.locator('.fondo-vivo')).toBeVisible();
+    for (const s of ['.empresa-cabeza', '.empresa-bloque']) {
+        expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
+    }
+    const logo = page.locator('.empresa-cabeza.con-portada .empresa-avatar.grande');
+    if (await logo.count()) expect((await deVidrio(logo)).desenfoca, 'aro del logo').toBe(true);
+});

@@ -491,7 +491,7 @@ Luis mira en Live Server y commit con su permiso.
 | **0** | Los 5 commits pendientes (15 a 19) y la decisión del backend. **Commits hechos** (`253dbe0` a `be05c0f`); falta la decisión del backend | Que quede una base guardada a la cual volver |
 | **1** | El sistema y "Mi perfil" como piloto (fases 2 a 5 de este plan). **Hecho el 26 de octubre**, aprobado por Luis | Es la prueba de fuego del sistema |
 | **2** | Piezas que están en todas las páginas: barra de arriba, pestañas, menús, ventanas (las de `UI.ventana` y las viejas), avisos, paleta Ctrl+K, recorrido guiado, esqueletos de carga. **Hecho el 26 de octubre** | Se prueban en todas las páginas, no solo en una |
-| **3** | Mi empresa y perfil público de empresa | Tablero de postulaciones (columnas), vista previa de la oferta, Excel |
+| **3** | Mi empresa y perfil público de empresa. **Hecho el 26 de octubre** | Tablero de postulaciones (columnas), vista previa de la oferta, Excel |
 | **4** | Vacantes, Empresas, Conexiones y Mensajes | Listas largas: solo vidrio de tinte. En el chat, burbujas que se lean bien |
 | **5** | Inicio (portada del visitante y panel de la persona) e Indicadores | El carrusel 3D va sin `backdrop-filter` (en 3D se rompe); el mapa de Cartagena y las barras de las gráficas sobre vidrio |
 | **6** | Entrar, registrarse y elegir registro | Ya tienen diseño propio (personajes, columna oscura): el vidrio va solo en la tarjeta del formulario |
@@ -543,3 +543,15 @@ Luis mira en Live Server y commit con su permiso.
   los avisos solo existen cuando se abren.
 - **La medición también encontró problemas de antes del vidrio:** el número naranja del anillo y el pie
   de la foto de Getsemaní. Se arreglaron en su propio commit.
+
+### Lo que se aprendió en la fase 3
+
+- **Ningún texto suelto sobre las manchas.** Lo que va directo sobre el fondo vivo (como "Todas las
+  empresas") cambia de contraste según la mancha que pasa: quedaba entre 3.9 y 4.5. Se le da una
+  pastilla de vidrio fino, igual que todo lo demás va sobre una tarjeta. En las fases 4 a 6 hay que
+  buscar estos textos sueltos desde el principio.
+- **En oscuro, las insignias turquesa** ("4", "2 de 5", la inicial de la empresa) necesitan el
+  turquesa claro `#A3ECF3`, como en la fase 1. La regla ya las agrupa: a cada página nueva se le
+  suman las suyas.
+- **La vista previa de la oferta**, dentro de la ventana de Nueva oferta, ya se ve de vidrio porque la
+  tarjeta de vacante lo es en las páginas de vidrio. Va a coincidir con Vacantes en la fase 4.
