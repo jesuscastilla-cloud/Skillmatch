@@ -56,8 +56,9 @@ public class SecurityConfig {
     @Bean
     public RateLimitingFilter rateLimitingFilter(
             @Value("${app.rate-limit.enabled:true}") boolean enabled,
-            @Value("${app.rate-limit.max-requests:20}") int maxRequests) {
-        return new RateLimitingFilter(enabled, maxRequests);
+            @Value("${app.rate-limit.max-requests:20}") int maxRequests,
+            @Value("${app.rate-limit.trusted-proxies:1}") int trustedProxies) {
+        return new RateLimitingFilter(enabled, maxRequests, trustedProxies);
     }
 
     /*
