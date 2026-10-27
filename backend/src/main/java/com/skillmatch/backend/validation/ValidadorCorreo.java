@@ -1,6 +1,8 @@
 package com.skillmatch.backend.validation;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +46,16 @@ public class ValidadorCorreo {
     private record Respuesta(boolean existe, Instant hasta) {}
 
     public ValidadorCorreo() {
-        this(cargarDesechables(), ValidadorCorreo::consultarDns);
+        this(true);
+    }
+
+    /**
+     * verificarDominio=false (app.correo.verificar-dominio) solo en las pruebas: no
+     * dependen del DNS de internet. La lista de desechables se revisa igual.
+     */
+    @Autowired
+    public ValidadorCorreo(@Value("${app.correo.verificar-dominio:true}") boolean verificarDominio) {
+        this(cargarDesechables(), verificarDominio ? ValidadorCorreo::consultarDns : dominio -> true);
     }
 
     /** Para las pruebas: lista y consulta DNS propias (sin red). */
