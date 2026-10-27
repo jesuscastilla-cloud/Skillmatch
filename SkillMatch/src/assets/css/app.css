@@ -1194,10 +1194,12 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     font-family: var(--font-display);
     font-size: var(--t-sm);
     font-weight: 700;
-    color: var(--ring-color, var(--sea-deep));
+    color: var(--ring-texto, var(--ring-color, var(--sea-deep)));
     letter-spacing: -0.03em;
 }
-.match-ring[data-level="alto"] { --ring-color: var(--naranja); }
+/* El anillo de los matches altos sigue naranja brillante; el numero, en el naranja para texto: con
+   #FF7618 sobre blanco quedaba en 2.7 a 1 (lo encontro la medicion con pixeles) */
+.match-ring[data-level="alto"] { --ring-color: var(--naranja); --ring-texto: var(--naranja-texto); }
 .match-ring[data-level="medio"] { --ring-color: var(--sea); }
 .match-ring[data-level="bajo"] { --ring-color: var(--ink-muted); }
 .match-ring-sm { width: 44px; height: 44px; }
@@ -6017,7 +6019,8 @@ kbd {
     position: absolute;
     left: 0; right: 0; bottom: 0;
     padding: var(--s5) var(--s4) var(--s3);
-    background: linear-gradient(to top, rgba(6,26,49,.78), transparent);
+    /* Mas oscuro donde va el texto: sobre los amarillos de Getsemani quedaba en 3.2 a 1 */
+    background: linear-gradient(to top, rgba(6, 26, 49, .9) 0%, rgba(6, 26, 49, .72) 50%, transparent 100%);
     color: #fff;
     font-family: var(--font-display);
     font-weight: 700;
