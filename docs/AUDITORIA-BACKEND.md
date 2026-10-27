@@ -28,7 +28,15 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 | 6. Mensajes y conexiones | Hecha | M8: el bloqueo impide escribir (en los dos sentidos); 20 mensajes/min y 500/día, 30 solicitudes/día por cuenta; la conversación devuelve los 1000 mensajes más recientes. Pendientes 2.4: una solicitud rechazada se puede reenviar a los 30 días (quien rechazó, de inmediato). Se mantiene que cualquiera puede escribir a cualquiera (así está diseñado el frontend). El frontend todavía no tiene botón "Bloquear". Si una conversación pasara de 1000 mensajes, "Eliminar conversación" dejaría los más viejos: la solución es un `DELETE /api/messages/conversation/{id}` (pendientes 2.11) |
 | 7. Datos personales | Hecha (backend) | Prueba del consentimiento (`User.consentimientos`, exigible con `PRIVACIDAD_EXIGIR_CONSENTIMIENTO`), `GET /api/users/me/export`, `DELETE /api/users/me` (borra todos los mensajes; empresa anónima), notificaciones 90 días (TTL), postulaciones 12 meses tras cerrar la vacante (tarea diaria), `lastLoginAt`. Pendiente: borrado de cuentas inactivas 24 meses (necesita correo, fase 8) y los botones y la política en el frontend (`docs/CAMBIOS-FRONTEND.md`, F6 a F9) |
 | 8. Correo | Hecha (backend) | Envío con Brevo (`CorreoService`, modo prueba en local). Correos válidos: MX real y lista de desechables. Códigos de 6 dígitos (15 min, 5 intentos, huella SHA-256). "Olvidé mi contraseña". Registro con código sin cuentas a medias y sin enumeración (interruptor `REGISTRO_VERIFICAR_CORREO`). Aviso y borrado de cuentas inactivas (24 meses). Pendiente: crear la cuenta de Brevo y el frontend (F10, F11). Teléfono (SMS/WhatsApp) va en la fase 9 y es de pago; Google en la 10 |
-| 9 a 11 | Pendientes | — |
+| 9. Teléfono | Hecha (backend) | Teléfono validado con libphonenumber, guardado en E.164 y único (con migración). Servicio de SMS/WhatsApp con Twilio (`MensajeTelefonoService`), apagado. El token identifica por ID de cuenta (los viejos con correo siguen sirviendo; cambiar el correo ya no cierra la sesión). Correo opcional en la base (índices únicos parciales). Registro y entrada con código por teléfono y agregar teléfono a la cuenta, detrás de `TELEFONO_HABILITADO`. Pendiente: proveedor de pago y frontend (F12). Las cuentas de solo teléfono no reciben aviso de inactividad (sería por SMS) y por eso no se borran por inactividad |
+| 10 y 11 | Pendientes | — |
+
+**Para activar el teléfono (fase 9), cuando haya presupuesto:**
+1. Crear la cuenta de Twilio, comprar un número (SMS) y/o activar el remitente de WhatsApp.
+2. En Render: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` (y `TWILIO_WHATSAPP_FROM` si se usa
+   WhatsApp), `TELEFONO_CANAL` (`sms` o `whatsapp`).
+3. Cuando el frontend tenga los botones (F12): `TELEFONO_HABILITADO=true`.
+4. Nunca `SMS_MODO_PRUEBA=true` en Render.
 
 **Para activar la fase 8 en Render:**
 1. Crear la cuenta en Brevo, verificar el remitente (el correo o dominio desde el que se envía) y sacar la
