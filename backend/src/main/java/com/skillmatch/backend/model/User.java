@@ -38,7 +38,11 @@ public class User implements UserDetails {
 
     private String lastName;
 
+    // Formato internacional E.164 ("+573001234567"), único entre cuentas (ver Telefonos)
     private String phone;
+
+    // true cuando confirmó el número con un código por SMS o WhatsApp (fase 9)
+    private Boolean phoneVerified;
 
     private String headline;
 

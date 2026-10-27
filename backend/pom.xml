@@ -48,6 +48,13 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Validar y normalizar teléfonos (librería de Google, licencia Apache) -->
+        <dependency>
+            <groupId>com.googlecode.libphonenumber</groupId>
+            <artifactId>libphonenumber</artifactId>
+            <version>8.13.40</version>
+        </dependency>
+
         <!-- Envío de correos (códigos de verificación y recuperación), vía SMTP de Brevo -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -13,6 +13,7 @@ import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.validation.Credenciales;
+import com.skillmatch.backend.validation.Telefonos;
 import com.skillmatch.backend.validation.ValidadorCorreo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +69,7 @@ public class RegistrationService {
         if (!validadorCorreo.puedeRecibir(registerRequest.getEmail())) {
             throw new IllegalArgumentException(ValidadorCorreo.MENSAJE);
         }
+        registerRequest.setPhone(telefonoLibre(registerRequest.getPhone()));
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             log.warn("Intento de registro con email duplicado: {}", registerRequest.getEmail());
             throw new DuplicateResourceException("El email ya está registrado");
@@ -130,6 +132,7 @@ public class RegistrationService {
         }
         String roleName = "EMPRESA".equalsIgnoreCase(request.getUserType()) ? "EMPRESA" : "USER";
         List<Consentimiento> consentimientos = consentimientos(request, "USER".equals(roleName));
+        request.setPhone(telefonoLibre(request.getPhone()));
 
         if (userRepository.existsByEmail(request.getEmail())) {
             // El "código" solo sirve para no avisar más de una vez por minuto
@@ -198,6 +201,15 @@ public class RegistrationService {
                 correo.enviar(email, "Tu código para crear tu cuenta en SkillMatch",
                         "Hola " + nombre + ",\n\nTu código es: " + codigo + "\n\n"
                         + "Vence en 15 minutos. Si no estás creando una cuenta en SkillMatch, ignora este correo."));
+    }
+
+    /** Teléfono en formato internacional (o null si no se escribió); error si es inválido o ya está en otra cuenta. */
+    private String telefonoLibre(String telefono) {
+        String normalizado = Telefonos.normalizarOpcional(telefono);
+        if (normalizado != null && userRepository.existsByPhone(normalizado)) {
+            throw new IllegalArgumentException("Ese número ya está en otra cuenta.");
+        }
+        return normalizado;
     }
 
     /**

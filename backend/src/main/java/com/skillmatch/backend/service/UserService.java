@@ -8,6 +8,7 @@ import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.validation.Credenciales;
 import com.skillmatch.backend.validation.EntradaSegura;
+import com.skillmatch.backend.validation.Telefonos;
 import com.skillmatch.backend.validation.ValidadorCorreo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +65,15 @@ public class UserService {
             user.setEmail(request.getEmail());
             companyService.syncOwnerEmail(userId, request.getEmail());
         }
-        if (request.getPhone() != null) user.setPhone(request.getPhone());
+        if (request.getPhone() != null) {
+            // Vacío lo quita; si cambia, deja de estar verificado y no puede ser el de otra cuenta
+            String telefono = Telefonos.normalizarOpcional(request.getPhone());
+            if (telefono != null && userRepository.existsByPhoneAndIdNot(telefono, userId)) {
+                throw new IllegalArgumentException("Ese número ya está en otra cuenta.");
+            }
+            if (telefono == null || !telefono.equals(user.getPhone())) user.setPhoneVerified(null);
+            user.setPhone(telefono);
+        }
         if (request.getHeadline() != null) user.setHeadline(request.getHeadline());
         if (request.getLocation() != null) user.setLocation(request.getLocation());
         if (request.getBio() != null) user.setBio(request.getBio());

@@ -272,4 +272,33 @@ class RegistrationServiceTest {
         verify(registrosPendientes).deleteById("user@test.com");
         verifyNoInteractions(authenticationManager);
     }
+
+    // ─── Teléfono ─────────────────────────────────────────────────────────────
+
+    @Test
+    void register_guardaElTelefonoEnFormatoInternacional() {
+        userRequest.setPhone("300 123 4567");
+        ArgumentCaptor<User> guardado = registrarYCapturar();
+
+        assertThat(guardado.getValue().getPhone()).isEqualTo("+573001234567");
+    }
+
+    @Test
+    void register_telefonoDeOtraCuenta_seRechaza() {
+        when(userRepository.existsByPhone("+573001234567")).thenReturn(true);
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("otra cuenta");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_telefonoInvalido_seRechaza() {
+        userRequest.setPhone("12345");
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(userRepository, never()).save(any());
+    }
 }

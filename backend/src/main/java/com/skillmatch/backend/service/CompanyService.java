@@ -7,6 +7,7 @@ import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.validation.Telefonos;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -226,7 +227,8 @@ public class CompanyService {
         company.setLogo(request.getLogo());
         company.setWebsite(request.getWebsite());
         company.setEmail(request.getEmail());
-        company.setPhone(request.getPhone());
+        // Se valida igual, pero puede repetirse: la empresa puede usar el número de quien la registró
+        company.setPhone(Telefonos.normalizarOpcional(request.getPhone()));
         company.setFoundedYear(request.getFoundedYear());
         company.setBenefits(request.getBenefits());
         return company;
