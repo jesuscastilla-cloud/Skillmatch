@@ -6,6 +6,7 @@ set -e
 export MONGODB_URI="${MONGODB_URI:-mongodb://localhost:27017/skillmatch}"
 export JWT_SECRET="${JWT_SECRET:-skillmatch-clave-local-de-desarrollo-no-usar-en-produccion-2026}"
 export SWAGGER_ENABLED="${SWAGGER_ENABLED:-true}"
+export CORREO_MODO_PRUEBA="${CORREO_MODO_PRUEBA:-true}"
 export SEED_ENABLED="${SEED_ENABLED:-false}"
 
 echo "Iniciando backend SkillMatch en http://localhost:8080 ..."
