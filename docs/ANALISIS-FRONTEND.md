@@ -491,6 +491,16 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
       tampoco en el perfil de otra persona.
     - 144 fps quieta y más de 270 bajando, también en celular con el procesador frenado 4 veces.
     - Auditoría del perfil: 0 problemas.
+- **Vidrio, fase 2: la capa de controles en todo el sitio (hecho, 26 de octubre de 2026):** como en Liquid
+  Glass, lo que flota sobre el contenido es de vidrio en todas las páginas. Las tarjetas de cada página llegan
+  en las fases 3 a 6.
+  - **Qué piezas:** barra de arriba, pestañas del celular, menús ("⋯", "Más"), campana, listas desplegables,
+    ventanas nuevas y viejas, paleta Ctrl+K, avisos, tarjeta del recorrido y esqueletos de carga.
+  - **Tinte de la barra y las pestañas:** aguanta el peor caso de lo que pasa por detrás. Con menos, sobre el
+    papel blanco de la hoja de vida, los enlaces de la barra oscura quedaban en 2.0.
+  - **Contraste de antes, encontrado con píxeles:** el número naranja del anillo de match (2.7) y el pie
+    "Getsemaní" (3.2).
+  - **Medido:** 21 páginas y 8 piezas abiertas, claro y oscuro, computador y celular: ningún texto bajo AA.
 
 ## Orden propuesto (solo frontend)
 

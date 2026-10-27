@@ -6,7 +6,10 @@
 // letra es grande). Con la tarjeta de video real (Edge sin ventana + Direct3D 11).
 // Uso (desde pruebas/):
 //   node contraste-vidrio.js                          (Mi perfil, persona: claro/oscuro, computador/celular)
-//   node contraste-vidrio.js perfil-usuario.html?id=u-andres persona
+//   node contraste-vidrio.js "perfil-usuario.html?id=u-andres" persona
+// Con algo abierto (ventana, menu, aviso...): CONTRASTE_ANTES abre la pieza y CONTRASTE_DENTRO mide
+// solo el texto de adentro (lo de atras esta oscurecido a proposito); se mide donde quedo la pagina:
+//   CONTRASTE_ANTES="SkillMatchUI.cambiarContrasena()" CONTRASTE_DENTRO=".modal.active .modal-content" node contraste-vidrio.js
 // Sale con error si algun texto queda bajo AA.
 const { chromium } = require('@playwright/test');
 const { spawn } = require('node:child_process');
@@ -14,6 +17,8 @@ const { crearApi, tokenPara } = require('./apoyo/api-falsa');
 const { CUENTAS } = require('./apoyo/prueba');
 
 const [pagina = 'perfil-usuario.html', quien = 'persona'] = process.argv.slice(2);
+const ANTES = process.env.CONTRASTE_ANTES || '';
+const DENTRO = process.env.CONTRASTE_DENTRO || '';
 const PUERTO = 5510;
 const MOMENTOS = 8;
 const DISPOSITIVOS = {
@@ -26,21 +31,26 @@ async function servidorListo() {
 }
 
 // Corre dentro de la pagina: textos visibles con su color, antes de esconderlos
-function anotarTextos() {
+function anotarTextos(dentro) {
     window.__textos = [];
     const caminante = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n; (n = caminante.nextNode());) {
         const el = n.parentElement;
         if (!n.textContent.trim() || !el || el.closest('script, style, .fondo-vivo, [hidden], [aria-hidden="true"]')) continue;
+        if (dentro && !el.closest(dentro)) continue;
         const cs = getComputedStyle(el);
         if (cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) === 0 || !el.getClientRects().length) continue;
+        // Solo para lectores de pantalla (.sr-only: recortado a 1x1 px), no se ve
+        const caja = el.getBoundingClientRect();
+        if (cs.clip === 'rect(0px, 0px, 0px, 0px)' || caja.width <= 1 || caja.height <= 1) continue;
         const tam = parseFloat(cs.fontSize), peso = Number(cs.fontWeight);
         window.__textos.push({ nodo: n, texto: n.textContent.trim().replace(/\s+/g, ' ').slice(0, 40), color: cs.color, grande: tam >= 24 || (tam >= 18.66 && peso >= 700) });
     }
     const s = document.createElement('style');
     // Sin transiciones: los botones y enlaces con "transition: all" tardaban en esconder su texto y
-    // la primera foto lo medía contra sí mismo (salía 1.5 en "En tus conexiones")
-    s.textContent = '* { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; caret-color: transparent !important; transition: none !important; }';
+    // la primera foto lo medía contra sí mismo (salía 1.5 en "En tus conexiones"). Y las líneas que
+    // tachan o subrayan con su propio color (los pasos hechos de "Primeros pasos") tambien se esconden
+    s.textContent = '* { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; caret-color: transparent !important; text-decoration-color: transparent !important; transition: none !important; }';
     document.head.appendChild(s);
 }
 
@@ -56,10 +66,20 @@ async function medirFoto(b64) {
     const salida = [];
     for (const tx of window.__textos) {
         const dentroDeBarra = tx.nodo.parentElement.closest('body > header, .tabbar');
+        // Lo que se ve del texto: lo recortan los que tienen overflow (el "..." de una vista previa,
+        // una lista con scroll). Sin esto se median letras escondidas contra lo que hay al lado
+        let vx0 = 0, vy0 = 0, vx1 = img.width, vy1 = img.height;
+        for (let a = tx.nodo.parentElement; a && a !== document.body; a = a.parentElement) {
+            const ca = getComputedStyle(a);
+            if (ca.overflowX !== 'visible' || ca.overflowY !== 'visible') {
+                const ra = a.getBoundingClientRect();
+                vx0 = Math.max(vx0, ra.left); vy0 = Math.max(vy0, ra.top); vx1 = Math.min(vx1, ra.right); vy1 = Math.min(vy1, ra.bottom);
+            }
+        }
         const rango = document.createRange(); rango.selectNodeContents(tx.nodo);
         for (const r of rango.getClientRects()) {
-            const x0 = Math.max(0, Math.floor(r.left)), y0 = Math.max(0, Math.floor(r.top));
-            const x1 = Math.min(img.width, Math.ceil(r.right)), y1 = Math.min(img.height, Math.ceil(r.bottom));
+            const x0 = Math.max(0, Math.floor(Math.max(r.left, vx0))), y0 = Math.max(0, Math.floor(Math.max(r.top, vy0)));
+            const x1 = Math.min(img.width, Math.ceil(Math.min(r.right, vx1))), y1 = Math.min(img.height, Math.ceil(Math.min(r.bottom, vy1)));
             if (x1 - x0 < 2 || y1 - y0 < 2) continue;
             // Tapado por la barra o las pestanas, o bajo su sombra (al bajar, la barra echa una sombra
             // suave sobre lo que pasa justo debajo: un instante del scroll, no un texto que se lea mal)
@@ -98,13 +118,22 @@ async function medirFoto(b64) {
             await page.goto(`http://localhost:${PUERTO}/pages/${pagina}`);
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1200);
-            await page.evaluate(anotarTextos);
+            if (ANTES) {
+                try { await page.evaluate(ANTES); } catch (e) {
+                    console.log(`${tema.padEnd(6)} ${nombre.padEnd(10)} no se pudo abrir: ${e.message.split(/\r?\n/)[0]}`);
+                    await contexto.close();
+                    continue;
+                }
+                await page.waitForTimeout(700);
+            }
+            await page.evaluate(anotarTextos, DENTRO);
             const peores = new Map();
             const alto = await page.evaluate(() => document.documentElement.scrollHeight);
             const vista = disp.viewport.height;
             const momentos = await page.evaluate(() => !!document.querySelector('.pagina-vidrio .fondo-vivo')) ? MOMENTOS : 1;
-            for (const y of [...new Set([0, Math.max(0, Math.round((alto - vista) / 2)), Math.max(0, alto - vista)])]) {
-                await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), y);
+            const alturas = DENTRO ? [await page.evaluate(() => scrollY)] : [0, Math.max(0, Math.round((alto - vista) / 2)), Math.max(0, alto - vista)];
+            for (const y of [...new Set(alturas)]) {
+                if (!DENTRO) await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), y);
                 for (let k = 0; k < momentos; k++) {
                     await page.evaluate(ms => { const f = document.querySelector('.fondo-vivo'); if (f) f.getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = ms; }); }, k * 11000);
                     await page.waitForTimeout(120);

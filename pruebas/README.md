@@ -49,6 +49,7 @@ npx playwright test --project=celular
 | `casos/menu.spec.js` | El menú marca la sección al hacer scroll y su línea se desliza con el mouse (no con movimiento reducido) |
 | `casos/cambio-de-pagina.spec.js` | Al cambiar de página, la línea del menú y la pastilla de la barra de pestañas viajan al destino y la página cambia cuando llegan; las cosas de la nueva entran en fila desde el lado de la opción (sin viaje ni espera con movimiento reducido: solo se funde); el guion del `<head>` va después de las hojas de estilo |
 | `casos/hoja-de-vida-pdf.spec.js` | Llenar el perfil con la hoja de vida en PDF: lo que propone, lo dudoso sin marcar, dos columnas y nada se guarda sin confirmar |
+| `casos/vidrio.spec.js` | La capa de vidrio de todo el sitio: la barra de arriba (y las pestañas en el celular) en varias páginas, las ventanas nuevas y viejas con los campos sólidos y la franja de botones que desenfoca, la paleta, el menú "Más", la campana, los avisos, el recorrido y las listas desplegables; con "reducir transparencia", todo sólido |
 | `casos/accesibilidad.spec.js` | Lo que encontró la auditoría y no debe volver: foco en buscadores y login, contadores legibles, títulos en orden, la barra de pestañas no tapa el foco |
 
 | Apoyo | Para qué |
@@ -60,7 +61,7 @@ npx playwright test --project=celular
 | `apoyo/xlsx.js` | Lee un `.xlsx` sin librerías (revisa la huella de cada archivo del zip) para las pruebas de "Descargar en Excel" |
 | `servidor.mjs` | Sirve `SkillMatch/src` en http://localhost:5510 (Playwright lo enciende solo) |
 | `captura.js` | Foto de una página con la API falsa: `node captura.js oportunidades.html persona 390 oscuro` (queda en `capturas/`) |
-| `contraste-vidrio.js` | Contraste de verdad sobre el vidrio: esconde el texto, detiene las manchas del fondo en 8 momentos y, con la foto, busca bajo cada texto el fondo más desfavorable (claro y oscuro, computador y celular). `node contraste-vidrio.js` (Mi perfil) o `node contraste-vidrio.js "perfil-usuario.html?id=u-andres" persona`. Sale con error si algún texto queda bajo AA |
+| `contraste-vidrio.js` | Contraste de verdad sobre el vidrio: esconde el texto, detiene las manchas del fondo en 8 momentos y, con la foto, busca bajo cada texto el fondo más desfavorable (claro y oscuro, computador y celular). `node contraste-vidrio.js` (Mi perfil) o `node contraste-vidrio.js "perfil-usuario.html?id=u-andres" persona`. Con algo abierto: `CONTRASTE_ANTES` lo abre y `CONTRASTE_DENTRO` mide solo lo de adentro (por ejemplo `CONTRASTE_ANTES="SkillMatchUI.cambiarContrasena()" CONTRASTE_DENTRO=".modal.active .modal-content"`). Sale con error si algún texto queda bajo AA |
 | `auditoria.js` | Revisa todas las páginas (celular, de lado, letra muy grande, escritorio; claro y oscuro): contraste, tamaño de lo que se toca, foco con Tab, títulos, campos. `node auditoria.js` (unos 6 minutos) o `node auditoria.js mensajes` |
 
 ## Agregar una prueba

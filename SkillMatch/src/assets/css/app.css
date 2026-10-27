@@ -6786,8 +6786,10 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
      y en oscuro (pruebas/contraste-vidrio.js): ningun texto bajo 4.5 a 1.
    ===================================================================== */
 
-/* ---- Tokens: claro ---- */
-.pagina-vidrio {
+/* ---- Tokens del material (fase 2: en todo el sitio, porque la barra, las
+   pestanas, los menus, las ventanas y los avisos son de vidrio en todas las
+   paginas). Claro: ---- */
+:root {
     --vidrio-base: #EAF0F6;
     --vidrio-tinte: rgba(255, 255, 255, .56);
     --vidrio-tinte-grueso: rgba(255, 255, 255, .64);
@@ -6800,18 +6802,26 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     --vidrio-reflejo: rgba(255, 255, 255, .34);
     --vidrio-sombra: 0 14px 34px -16px rgba(8, 32, 60, .26), 0 2px 6px -2px rgba(8, 32, 60, .07);
     --vidrio-sombra-grueso: 0 28px 64px -24px rgba(8, 32, 60, .36), 0 6px 14px -6px rgba(8, 32, 60, .1);
-    /* Barra y pestanas: con .62 y .80, la portada oscura pasando por detras dejaba "Inicio" en 4.0 */
-    --vidrio-barra: rgba(255, 255, 255, .74);
+    /* Barra y pestanas: por detras puede pasar de todo (la portada azul de Inicio, el papel blanco
+       de la hoja de vida, el pie oscuro), asi que el tinte aguanta el peor caso. Con .74 los enlaces
+       de la barra quedaban en 4.1 sobre la portada; el calculo pide .81 o mas */
+    --vidrio-barra: rgba(255, 255, 255, .84);
     --vidrio-pestanas: rgba(255, 255, 255, .86);
+    /* Menus y ventanas: mas tinte que las tarjetas (van sobre contenido con detalle o sobre el
+       fondo oscurecido de la ventana, y llevan texto chico y formularios) */
+    --vidrio-menu: rgba(255, 255, 255, .8);
+    --vidrio-hoja: rgba(255, 255, 255, .86);
+    --vidrio-pie: rgba(246, 249, 252, .78);     /* franja de botones de las ventanas */
+    --vidrio-aviso: rgba(8, 32, 60, .84);       /* los avisos son azul marino en los dos temas */
+    --vidrio-esqueleto: rgba(8, 32, 60, .07);
     --vidrio-grano: .035;
-    /* Texto sobre vidrio: el gris, un poco mas oscuro (el vidrio deja pasar el color de las manchas) */
-    --ink-muted: #4C6480;
-    background-color: var(--vidrio-base);
+    /* Texto gris sobre vidrio: un poco mas oscuro (el vidrio deja pasar el color de atras) */
+    --vidrio-gris: #4C6480;
 }
-/* ---- Tokens: oscuro. Se separa con luz, no con sombra (en oscuro la sombra
-   casi no se ve), y el tinte sube lo necesario: con .50 una mancha turquesa
-   detras aclaraba el vidrio y 11 textos bajaban de 4.5 ---- */
-[data-theme="dark"] .pagina-vidrio {
+/* ---- Oscuro. Se separa con luz, no con sombra (en oscuro la sombra casi no
+   se ve), y el tinte sube lo necesario: con .50 una mancha turquesa detras
+   aclaraba el vidrio y 11 textos bajaban de 4.5 ---- */
+[data-theme="dark"] {
     --vidrio-base: #0A1522;
     --vidrio-tinte: rgba(18, 36, 60, .62);
     --vidrio-tinte-grueso: rgba(20, 40, 66, .68);
@@ -6824,12 +6834,19 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     --vidrio-reflejo: rgba(255, 255, 255, .06);
     --vidrio-sombra: 0 18px 40px -18px rgba(0, 0, 0, .6);
     --vidrio-sombra-grueso: 0 30px 70px -24px rgba(0, 0, 0, .72);
-    --vidrio-barra: rgba(10, 21, 34, .6);
+    --vidrio-barra: rgba(10, 21, 34, .84);       /* con .60, sobre el papel blanco de la hoja de vida los enlaces quedaban en 2.0 */
     --vidrio-pestanas: rgba(10, 21, 34, .82);
+    --vidrio-menu: rgba(20, 40, 66, .8);
+    --vidrio-hoja: rgba(17, 34, 56, .88);
+    --vidrio-pie: rgba(13, 29, 48, .8);
+    --vidrio-aviso: rgba(8, 32, 60, .86);
+    --vidrio-esqueleto: rgba(255, 255, 255, .07);
     --vidrio-grano: .05;
-    --ink-3: #BFCDDD;
-    --ink-muted: #B2C3D6;
+    --vidrio-gris: #B2C3D6;
 }
+/* ---- Pagina de vidrio (fondo vivo y tarjetas de vidrio): su fondo y el gris del texto ---- */
+.pagina-vidrio { --ink-muted: var(--vidrio-gris); background-color: var(--vidrio-base); }
+[data-theme="dark"] .pagina-vidrio { --ink-3: #BFCDDD; }
 
 /* ---- Fondo vivo: manchas de la marca que se mueven lento por toda la pantalla ----
    Va en el HTML de la pagina (asi esta desde el primer cuadro, sin parpadeo).
@@ -6910,15 +6927,65 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     box-shadow: var(--vidrio-grosor), 0 12px 28px -10px rgba(8, 32, 60, .35);
 }
 
-/* ---- Vidrio real: la barra de arriba, la de pestanas y los menus (por detras pasa contenido) ---- */
-.pagina-vidrio > header, [data-theme="dark"] .pagina-vidrio > header { background: var(--vidrio-barra); }
-.pagina-vidrio .tabbar { background: var(--vidrio-pestanas); }
-.pagina-vidrio .menu-acciones {
-    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte-grueso);
+/* ---- Vidrio real en TODO el sitio (fase 2): la capa de controles que flota sobre el
+   contenido, como en Liquid Glass. Las tarjetas de cada pagina llegan en las fases 3 a 6 ---- */
+/* Barra de arriba y pestanas del celular: por debajo pasa todo el contenido al bajar
+   (antes: 82 % y 94 % de blanco con 16 px de desenfoque) */
+/* Etiquetas de las pestanas: con su gris de siempre (--ink-muted) el tinte tendria que ser 94 % (casi
+   solido) para aguantar el pie oscuro pasando por detras; con --ink-3, como los enlaces de la barra, basta 86 % */
+.tabbar a:not(.is-active) { color: var(--ink-3); }
+body > header, [data-theme="dark"] body > header {
+    background: var(--vidrio-barra);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+}
+.tabbar, [data-theme="dark"] .tabbar {
+    background: var(--vidrio-pestanas);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+}
+/* Menus: el "..." de Mensajes y el "Mas" del perfil, la campana y las listas desplegables de la
+   marca (filtros de Vacantes...). Pasan sobre contenido con detalle: vidrio grueso real */
+:is(.menu-acciones, .notifications-dropdown, .lista-panel) {
+    --ink-muted: var(--vidrio-gris);
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-menu);
     border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
-    border-radius: 18px;
     box-shadow: var(--vidrio-grosor), var(--vidrio-sombra-grueso);
     -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
+}
+.menu-acciones { border-radius: 18px; }
+/* Al pasar el mouse, un velo y no un gris solido (sobre el vidrio se veia como un parche) */
+:root { --vidrio-hover: rgba(8, 32, 60, .06); }
+[data-theme="dark"] { --vidrio-hover: rgba(255, 255, 255, .07); }
+.menu-acciones button:hover, .menu-acciones button:focus-visible, .notification-item:not(.unread):hover { background: var(--vidrio-hover); }
+
+/* Ventanas (las de UI.ventana y las viejas del perfil), la paleta Ctrl+K y la tarjeta del
+   recorrido guiado: van sobre el fondo oscurecido y llevan formularios, asi que el tinte es alto
+   (86 %). Los campos para escribir siguen solidos */
+:is(.modal-content, .modal-content-small, .cmdk-panel, .recorrido-tarjeta) {
+    --ink-muted: var(--vidrio-gris);
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-hoja);
+    border: 1px solid;
+    border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
+    box-shadow: var(--vidrio-grosor), var(--vidrio-sombra-grueso);
+    -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%);
+}
+/* La franja de botones de abajo: lo que pasa por debajo al hacer scroll se desenfoca (con un
+   tinte solo, el formulario se veria a traves) */
+.modal-actions {
+    background: var(--vidrio-pie);
+    -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+}
+/* Avisos: azul marino translucido en los dos temas, con la letra blanca de siempre */
+.toast {
+    background: linear-gradient(160deg, rgba(255, 255, 255, .1), transparent 42%), var(--vidrio-aviso);
+    border: 1px solid;
+    border-color: rgba(255, 255, 255, .22) rgba(255, 255, 255, .06) rgba(255, 255, 255, .06) rgba(255, 255, 255, .22);
+    -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+}
+/* Esqueletos de carga dentro del vidrio: un velo, no un gris solido */
+.pagina-vidrio .skeleton { background: var(--vidrio-esqueleto); }
+.pagina-vidrio .skeleton-card {
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte);
+    border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
 }
 
 /* ---- Turquesa como texto en oscuro: sobre el vidrio, el luminoso (con #2BB6C6 bajaba a 4.1) ---- */
@@ -6932,9 +6999,13 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 /* ---- Quien pide menos transparencia, alto contraste o imprime: solido y sin manchas ---- */
 @media (prefers-reduced-transparency: reduce) {
     .pagina-vidrio .fondo-vivo { display: none; }
-    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card, .menu-acciones) {
+    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card, .skeleton-card),
+    :is(.menu-acciones, .notifications-dropdown, .lista-panel, .modal-content, .modal-content-small, .cmdk-panel, .recorrido-tarjeta) {
         background: var(--surface); border-color: var(--hairline); -webkit-backdrop-filter: none; backdrop-filter: none;
     }
+    body > header, [data-theme="dark"] body > header, .tabbar, [data-theme="dark"] .tabbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .modal-actions { background: var(--surface-sunk); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .toast { background: var(--surface-inverse); border-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @media (forced-colors: active) { .pagina-vidrio .fondo-vivo { display: none; } }
 @media print { .fondo-vivo { display: none !important; } .pagina-vidrio { background: #fff; } }

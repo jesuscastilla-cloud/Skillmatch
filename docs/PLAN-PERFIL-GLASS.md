@@ -490,7 +490,7 @@ Luis mira en Live Server y commit con su permiso.
 |---|---|---|
 | **0** | Los 5 commits pendientes (15 a 19) y la decisión del backend. **Commits hechos** (`253dbe0` a `be05c0f`); falta la decisión del backend | Que quede una base guardada a la cual volver |
 | **1** | El sistema y "Mi perfil" como piloto (fases 2 a 5 de este plan). **Hecho el 26 de octubre**, aprobado por Luis | Es la prueba de fuego del sistema |
-| **2** | Piezas que están en todas las páginas: barra de arriba, pestañas, menús, ventanas (las de `UI.ventana` y las viejas), avisos, paleta Ctrl+K, recorrido guiado, esqueletos de carga | Se prueban en todas las páginas, no solo en una |
+| **2** | Piezas que están en todas las páginas: barra de arriba, pestañas, menús, ventanas (las de `UI.ventana` y las viejas), avisos, paleta Ctrl+K, recorrido guiado, esqueletos de carga. **Hecho el 26 de octubre** | Se prueban en todas las páginas, no solo en una |
 | **3** | Mi empresa y perfil público de empresa | Tablero de postulaciones (columnas), vista previa de la oferta, Excel |
 | **4** | Vacantes, Empresas, Conexiones y Mensajes | Listas largas: solo vidrio de tinte. En el chat, burbujas que se lean bien |
 | **5** | Inicio (portada del visitante y panel de la persona) e Indicadores | El carrusel 3D va sin `backdrop-filter` (en 3D se rompe); el mapa de Cartagena y las barras de las gráficas sobre vidrio |
@@ -523,3 +523,23 @@ Luis mira en Live Server y commit con su permiso.
   saltar la sombra de la barra.
 - **Barra y pestañas en claro:** tinte `.74` y `.86`. Con `.62` y `.80`, la portada oscura pasando por
   detrás dejaba "Inicio" en 4.0.
+
+### Lo que se aprendió en la fase 2
+
+- **Barra y pestañas: el tinte depende del peor caso de lo que pasa por detrás**, no del promedio. En
+  SkillMatch el peor caso es la portada azul de Inicio (para la barra clara) y el papel blanco de la hoja
+  de vida (para la barra oscura). Se calcula el tinte mínimo con el color del texto y se deja margen:
+  quedó en 84 %.
+  - Apple lo resuelve cambiando el tinte según lo que hay detrás; aquí un tinte fijo que aguanta todo es
+    más simple y no falla.
+- **Si el tinte tendría que ser casi sólido, se cambia el color del texto.** Las etiquetas de las
+  pestañas pasaron a `--ink-3` y el vidrio se quedó en 86 % en lugar de 94 %.
+- **La medición con píxeles necesita saber lo que se ve:**
+  - Saltar lo que es solo para lectores de pantalla (`.sr-only`).
+  - Recortar el texto a lo que deja ver su caja (el "…" de una vista previa, una lista con scroll).
+  - Esconder también las líneas de tachado o subrayado que tienen su propio color.
+  - Sin esto, cuatro "fallas" eran falsas.
+- **Medir con las piezas abiertas** (`CONTRASTE_ANTES` y `CONTRASTE_DENTRO`). Las ventanas, los menús y
+  los avisos solo existen cuando se abren.
+- **La medición también encontró problemas de antes del vidrio:** el número naranja del anillo y el pie
+  de la foto de Getsemaní. Se arreglaron en su propio commit.

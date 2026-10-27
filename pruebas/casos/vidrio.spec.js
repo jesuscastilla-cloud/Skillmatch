@@ -1,0 +1,103 @@
+// La capa de controles de vidrio en todo el sitio (fase 2 de docs/PLAN-PERFIL-GLASS.md y app.css,
+// seccion 30): barra de arriba, pestanas, menus, ventanas, paleta, avisos y recorrido
+const { test, expect, entrarComo } = require('../apoyo/prueba');
+
+// Translucido (alfa del color de fondo menor que 1) y con desenfoque de verdad
+async function deVidrio(locator) {
+    return locator.evaluate(el => {
+        const cs = getComputedStyle(el);
+        const partes = cs.backgroundColor.match(/[\d.]+/g).map(Number);
+        return { translucido: (partes.length > 3 ? partes[3] : 1) < 1, desenfoca: cs.backdropFilter.includes('blur') };
+    });
+}
+
+// entrarComo deja la sesion para toda la prueba: cada prueba entra una sola vez
+test('en todas las páginas la barra de arriba es de vidrio (y en el celular también las pestañas)', async ({ page, context, api }, info) => {
+    await entrarComo(context, 'persona');
+    for (const pagina of ['index.html', 'oportunidades.html', 'mensajes.html', 'empresas.html', 'dashboard.html']) {
+        await page.goto(pagina);
+        expect(await deVidrio(page.locator('body > header')), pagina).toEqual({ translucido: true, desenfoca: true });
+        if (info.project.name === 'celular') {
+            await expect(page.locator('.tabbar')).toBeVisible();
+            expect(await deVidrio(page.locator('.tabbar')), pagina + ' pestañas').toEqual({ translucido: true, desenfoca: true });
+        }
+    }
+});
+
+test('las ventanas nuevas y viejas y la paleta son de vidrio; los campos siguen sólidos y la franja de botones desenfoca', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('perfil-usuario.html');
+    await expect(page.locator('#cifraHabilidades')).toHaveText('3');
+    // Nueva (UI.ventana)
+    await page.evaluate(() => SkillMatchUI.cambiarContrasena());
+    const nueva = page.locator('#ventanaContrasena .modal-content');
+    await expect(nueva).toBeVisible();
+    expect(await deVidrio(nueva)).toEqual({ translucido: true, desenfoca: true });
+    expect(await deVidrio(page.locator('#claveActual')), 'el campo para escribir').toEqual({ translucido: false, desenfoca: false });
+    expect(await deVidrio(page.locator('#ventanaContrasena .modal-actions'))).toEqual({ translucido: true, desenfoca: true });
+    await page.keyboard.press('Escape');
+    await expect(nueva).toBeHidden();
+    // Vieja (las del perfil se abren con style.display)
+    await page.locator('#cifraAgregarHabilidad').click();
+    const vieja = page.locator('#addSkillModal .modal-content-small');
+    await expect(vieja).toBeVisible();
+    expect(await deVidrio(vieja)).toEqual({ translucido: true, desenfoca: true });
+    await page.locator('#addSkillModal .btn-close-modal').click();
+    await expect(vieja).toBeHidden();
+    // Paleta Ctrl+K
+    await page.evaluate(() => SkillMatchUI.paleta.abrir());
+    await expect(page.locator('.cmdk-panel')).toBeVisible();
+    expect(await deVidrio(page.locator('.cmdk-panel'))).toEqual({ translucido: true, desenfoca: true });
+});
+
+test('los menús, la campana, los avisos y el recorrido son de vidrio', async ({ page, context, api }, info) => {
+    await entrarComo(context, 'persona');
+    await page.goto('perfil-usuario.html');
+    await page.locator('#perfilMasBtn').click();
+    await expect(page.locator('#perfilMasMenu')).toBeVisible();
+    expect(await deVidrio(page.locator('#perfilMasMenu')), 'menú Más').toEqual({ translucido: true, desenfoca: true });
+    await page.keyboard.press('Escape');
+
+    await page.evaluate(() => SkillMatchUI.aviso('Vacante guardada en tus guardadas', 'ok'));
+    const aviso = page.locator('.toast').first();
+    await expect(aviso).toBeVisible();
+    expect(await deVidrio(aviso), 'aviso').toEqual({ translucido: true, desenfoca: true });
+    expect(await aviso.evaluate(el => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
+
+    const campana = page.locator('#notificationsBtn');
+    if (await campana.isVisible()) {
+        await campana.click();
+        await expect(page.locator('#notificationsDropdown')).toBeVisible();
+        expect(await deVidrio(page.locator('#notificationsDropdown')), 'campana').toEqual({ translucido: true, desenfoca: true });
+    }
+
+    await page.goto('index.html');
+    await page.evaluate(() => SkillMatchUI.recorrido({ clave: 'prueba-vidrio', forzar: true, pasos: [{ objetivo: '#panelSaludo', titulo: 'Este es tu inicio', texto: 'Prueba del vidrio' }] }));
+    await expect(page.locator('.recorrido-tarjeta')).toBeVisible();
+    expect(await deVidrio(page.locator('.recorrido-tarjeta')), 'recorrido').toEqual({ translucido: true, desenfoca: true });
+});
+
+test('las listas desplegables de la marca son de vidrio', async ({ page, context, api }) => {
+    await entrarComo(context, 'visitante');
+    await page.goto('index.html');
+    const lista = page.locator('.lista-boton').first();
+    await lista.scrollIntoViewIfNeeded();
+    await lista.click();
+    const panel = page.locator('.lista-panel:not([hidden])').first();
+    await expect(panel).toBeVisible();
+    expect(await deVidrio(panel), 'lista desplegable').toEqual({ translucido: true, desenfoca: true });
+});
+
+test('con "reducir transparencia" la capa de controles vuelve a ser sólida', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('perfil-usuario.html');
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }] });
+    expect(await deVidrio(page.locator('body > header'))).toEqual({ translucido: false, desenfoca: false });
+    await page.evaluate(() => SkillMatchUI.cambiarContrasena());
+    await expect(page.locator('#ventanaContrasena .modal-content')).toBeVisible();
+    expect(await deVidrio(page.locator('#ventanaContrasena .modal-content'))).toEqual({ translucido: false, desenfoca: false });
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => SkillMatchUI.aviso('Listo', 'ok'));
+    expect(await deVidrio(page.locator('.toast').first())).toEqual({ translucido: false, desenfoca: false });
+});
