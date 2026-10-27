@@ -5,6 +5,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.security.AuthCookieService;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
+import com.skillmatch.backend.service.DatosPersonalesService;
 import com.skillmatch.backend.service.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,6 +54,9 @@ class UserControllerTest {
 
     @MockitoBean
     private AuthCookieService authCookieService;
+
+    @MockitoBean
+    private DatosPersonalesService datosPersonalesService;
 
     @AfterEach
     void clearSecurityContext() {
@@ -132,6 +137,19 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.token").value("token-nuevo"));
 
         verify(authCookieService).setAuthCookie(any(), eq("token-nuevo"));
+    }
+
+    @Test
+    void exportarMisDatos_soloDeLaSesion_yComoArchivo() throws Exception {
+        loginAs("yo-id", "USER");
+        when(datosPersonalesService.exportar("yo-id")).thenReturn(Map.of("perfil", Map.of("id", "yo-id")));
+
+        mockMvc.perform(get("/api/users/me/export"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"mis-datos-skillmatch.json\""))
+                .andExpect(jsonPath("$.perfil.id").value("yo-id"));
+
+        verify(datosPersonalesService).exportar("yo-id");
     }
 
     private void loginAs(String userId, String role) {

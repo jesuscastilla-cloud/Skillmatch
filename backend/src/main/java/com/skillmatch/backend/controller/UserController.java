@@ -7,6 +7,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.security.AuthCookieService;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
+import com.skillmatch.backend.service.DatosPersonalesService;
 import com.skillmatch.backend.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -27,12 +28,26 @@ public class UserController {
     private final UserService userService;
     private final JwtTokenProvider tokenProvider;
     private final AuthCookieService authCookieService;
+    private final DatosPersonalesService datosPersonalesService;
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) return ResponseEntity.status(401).body(new MessageResponse("Usuario no autenticado"));
         return ResponseEntity.ok(userService.getUserProfile(user.getId()));
+    }
+
+    /**
+     * "Descargar mis datos" (derecho a conocer, Ley 1581). Solo la cuenta de la
+     * sesión: no hay ID en la ruta que se pueda cambiar.
+     */
+    @GetMapping("/me/export")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> exportMyData(@AuthenticationPrincipal UserDetailsImpl currentUser) {
+        if (currentUser == null) return ResponseEntity.status(401).body(new MessageResponse("Usuario no autenticado"));
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"mis-datos-skillmatch.json\"")
+                .body(datosPersonalesService.exportar(currentUser.getId()));
     }
 
     @GetMapping("/{id}")

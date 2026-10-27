@@ -68,3 +68,14 @@ Estado: ⬜ pendiente · ✅ hecho
   aceptar es imposible (hoy el backend no lo exige para no romper el registro actual).
 - **Si cambia la política:** subir la versión en `pages/politica-datos.html` ("Versión 0.1") **y** en Render
   (`PRIVACIDAD_VERSION_POLITICA`).
+
+### ⬜ F7. Botón "Descargar mis datos"
+- **Backend:** `GET /api/users/me/export` (con sesión) devuelve un JSON con todo lo de la persona: perfil,
+  habilidades, experiencia, estudios, certificaciones, consentimientos, postulaciones, vacantes guardadas, conexiones,
+  mensajes, notificaciones y, si es empresa, la empresa. Trae `Content-Disposition: attachment;
+  filename="mis-datos-skillmatch.json"`.
+- **Dónde:** en "Mi perfil" (`pages/perfil-usuario.html`, menú "Más" junto a "Cambiar contraseña", `assets/js/profile.js`)
+  y en "Mi empresa" (`pages/perfil-empresa.html`, `assets/js/perfil-empresa.js`). Enlazarlo también desde
+  `pages/politica-datos.html`, en la parte de los derechos.
+- **Qué hacer:** `fetchWithAuth('/users/me/export')`, convertir la respuesta en `Blob` y descargarla con un `<a download>`
+  (un enlace directo no manda el token mientras exista F4).
