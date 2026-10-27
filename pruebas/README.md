@@ -42,7 +42,7 @@ npx playwright test --project=celular
 | `casos/indicadores.spec.js` | Cartagena una sola vez, "Ver detalle" (crece desde la tarjeta, esta semana contra la anterior, sin inventar si faltan datos) y los mensajes con el sitio vacío |
 | `casos/conexiones.spec.js` | Las tarjetas no se enciman en el celular |
 | `casos/inicio.spec.js` | Panel de inicio de la persona |
-| `casos/perfil.spec.js` | Cabecera del perfil de persona: la foto (152 px, 112 en el celular) montada justo a la mitad de la portada, los botones en una fila al lado del nombre y el menú "Más" (teclado, clic afuera, no aparece en el perfil de otra persona); el panel: cifras de arriba, dos columnas, "Ver todas (N)" y sin cifras en el perfil de otra persona |
+| `casos/perfil.spec.js` | Cabecera del perfil de persona: la foto (152 px, 112 en el celular) montada justo a la mitad de la portada, los botones en una fila al lado del nombre y el menú "Más" (teclado, clic afuera, no aparece en el perfil de otra persona); el panel: cifras de arriba, dos columnas, "Ver todas (N)" y sin cifras en el perfil de otra persona; el vidrio: manchas que se mueven solo con `transform` y arrancan según la hora, tarjetas sin desenfoque y barra y menú con desenfoque, pausa con una ventana abierta, quietas con movimiento reducido, sólido con alto contraste o menos transparencia, iniciales con colores de la marca, secciones vacías con su botón y listas parejas |
 | `casos/exportar.spec.js` | "Descargar en Excel" en Mi empresa: un `.xlsx` de verdad con sus columnas, tildes, la fecha como fecha, títulos fijos con filtros y nada se vuelve fórmula |
 | `casos/cerrar-vacante.spec.js` | Cerrar una vacante (qué pasa, responder a quienes esperan) y reabrirla (fecha vencida) |
 | `casos/contrasena.spec.js` | Contraseña nueva: el ojo, lo que se pide, la fuerza en palabras y si coinciden (registros y "Cambiar contraseña"); la ventana abre sin error en el primer campo y con los botones de borde a borde |
@@ -60,6 +60,7 @@ npx playwright test --project=celular
 | `apoyo/xlsx.js` | Lee un `.xlsx` sin librerías (revisa la huella de cada archivo del zip) para las pruebas de "Descargar en Excel" |
 | `servidor.mjs` | Sirve `SkillMatch/src` en http://localhost:5510 (Playwright lo enciende solo) |
 | `captura.js` | Foto de una página con la API falsa: `node captura.js oportunidades.html persona 390 oscuro` (queda en `capturas/`) |
+| `contraste-vidrio.js` | Contraste de verdad sobre el vidrio: esconde el texto, detiene las manchas del fondo en 8 momentos y, con la foto, busca bajo cada texto el fondo más desfavorable (claro y oscuro, computador y celular). `node contraste-vidrio.js` (Mi perfil) o `node contraste-vidrio.js "perfil-usuario.html?id=u-andres" persona`. Sale con error si algún texto queda bajo AA |
 | `auditoria.js` | Revisa todas las páginas (celular, de lado, letra muy grande, escritorio; claro y oscuro): contraste, tamaño de lo que se toca, foco con Tab, títulos, campos. `node auditoria.js` (unos 6 minutos) o `node auditoria.js mensajes` |
 
 ## Agregar una prueba

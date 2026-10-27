@@ -204,7 +204,10 @@ function esPerfilAjeno() {
     try { return String(id) !== String(JSON.parse(localStorage.getItem('userData')).id); } catch (e) { return true; }
 }
 
-const AVATAR_COLORS = ['#0369a1','#0891b2','#0d9488','#059669','#7c3aed','#9333ea','#c026d3','#e11d48','#b45309'];
+// Colores de la marca para la foto con iniciales: azul marino, azules, turquesas y naranja
+// oscuro, todos con las letras blancas a 4.7:1 o mas. Antes 4 de 9 eran morado, fucsia o
+// rosado (fuera de la marca; el magenta se cambio por el naranja del logo)
+const AVATAR_COLORS = ['#08203C', '#12365E', '#1F4E8C', '#096670', '#0B7E8C', '#2B66E0', '#A34600'];
 
 function setProfileAvatar(profileImageUrl, fullName) {
     const img = document.getElementById('profileImage');
@@ -558,13 +561,30 @@ async function loadUserExperiences() {
     }
 }
 
+/** Sección vacía del perfil propio: qué falta, por qué sirve y el botón que abre su
+ *  formulario (el mismo de "+ Agregar"; el clic lo escucha data-abre, al cargar la página) */
+function estadoVacio(icono, titulo, porque, abre, accion) {
+    return `<div class="estado-vacio">
+        <span class="estado-vacio-icono"><i data-ico="${icono}"></i></span>
+        <div>
+            <p class="estado-vacio-titulo">${titulo}</p>
+            <p class="estado-vacio-texto">${porque}</p>
+            <button type="button" class="btn btn-primary btn-small" data-abre="${abre}"><i data-ico="plus"></i> ${accion}</button>
+        </div>
+    </div>`;
+}
+
 // Mostrar experiencias
 function displayExperiences(experiences) {
     const container = document.getElementById('experienceContainer');
     
     const ajeno = esPerfilAjeno();
     if (!experiences || experiences.length === 0) {
-        container.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado experiencia laboral' : 'Aún no has agregado experiencia laboral'}</p>`;
+        container.innerHTML = ajeno
+            ? '<p class="empty-text">Esta persona aún no ha agregado experiencia laboral</p>'
+            : estadoVacio('briefcase', 'Aún no has agregado experiencia laboral',
+                'Las empresas ven primero los perfiles con experiencia. Cuenta también los trabajos informales y las prácticas.',
+                'addExperienceBtn', 'Agregar experiencia');
         limitarLista(container);
         updateProfileChecklist('experience', false);
         return;
@@ -698,7 +718,11 @@ function displayEducations(educations) {
     
     const ajeno = esPerfilAjeno();
     if (!educations || educations.length === 0) {
-        container.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado estudios' : 'Aún no has agregado información educativa'}</p>`;
+        container.innerHTML = ajeno
+            ? '<p class="empty-text">Esta persona aún no ha agregado estudios</p>'
+            : estadoVacio('cap', 'Aún no has agregado información educativa',
+                'Bachillerato, técnico, cursos o la carrera que estudias: todo cuenta para las vacantes que piden formación.',
+                'addEducationBtn', 'Agregar educación');
         limitarLista(container);
         updateProfileChecklist('education', false);
         return;
@@ -1498,6 +1522,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // El mismo formulario desde la cifra de habilidades de arriba
     const cifraHabilidad = document.getElementById('cifraAgregarHabilidad');
     if (cifraHabilidad) cifraHabilidad.addEventListener('click', openAddSkillModal);
+    // Botones de las secciones vacías: hacen clic en su "+ Agregar" (estadoVacio)
+    document.addEventListener('click', e => {
+        const boton = e.target.closest('[data-abre]');
+        const destino = boton && document.getElementById(boton.dataset.abre);
+        if (destino) destino.click();
+    });
 
     // Form agregar skill
     const addSkillForm = document.getElementById('addSkillForm');

@@ -471,6 +471,26 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   "Ver todas (N)". Estilo glassy (fondo de colores de la marca difuminados y tarjetas de vidrio), más liviano en
   el celular y sólido con "reducir transparencia". Ideas de los reels "Inventory Management Dashboard" y
   "Glassy Dashboard V2".
+- **Vidrio Liquid Glass, fase 1: el sistema y Mi perfil (hecho, 26 de octubre de 2026):** Luis eligió en un
+  prototipo el vidrio "B" (líquido: borde de luz, grosor y reflejo quieto) sobre manchas de la marca que se
+  mueven lento, en claro y oscuro, para todo el sitio. Plan, mediciones y fases en `docs/PLAN-PERFIL-GLASS.md`.
+  - **El sistema** (`app.css`, sección 30): todo bajo `<body class="pagina-vidrio">`.
+    - Tarjetas y listas de vidrio "de tinte", sin `backdrop-filter`: sobre las manchas no se nota y no cuesta.
+    - Vidrio real solo en la barra, las pestañas y los menús.
+    - Fondo vivo en el HTML. Sus manchas arrancan según la hora (`--reloj`, en el guion del `<head>` de las
+      18 páginas), así no vuelven a empezar al cambiar de página.
+    - Se pausa con una ventana abierta, queda quieto con movimiento reducido y se va con alto contraste,
+      menos transparencia o al imprimir.
+  - **Mi perfil:**
+    - Iniciales con colores de la marca (antes podían salir moradas).
+    - Postulaciones y guardadas con la misma letra y alineadas.
+    - Experiencia y educación vacías explican por qué sirven y traen su botón.
+    - Anillo de progreso naranja (es un logro).
+  - **Medido:**
+    - `pruebas/contraste-vidrio.js`: ningún texto bajo AA en claro ni oscuro, en computador ni celular,
+      tampoco en el perfil de otra persona.
+    - 144 fps quieta y más de 270 bajando, también en celular con el procesador frenado 4 veces.
+    - Auditoría del perfil: 0 problemas.
 
 ## Orden propuesto (solo frontend)
 
