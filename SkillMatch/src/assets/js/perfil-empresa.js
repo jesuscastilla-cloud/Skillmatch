@@ -1536,37 +1536,36 @@ function mostrarVistaPostulaciones(vista, recordar) {
     }
 }
 
-// ---- Descargar las postulaciones para Excel ----
-// Un CSV con punto y coma y BOM: asi Excel en espanol lo abre en columnas y con
-// tildes. Un nombre o mensaje que empiece con = + - @ se guarda con un apostrofe
-// delante, para que Excel no lo ejecute como formula (inyeccion de formulas).
+// ---- Descargar las postulaciones en Excel ----
+// Un .xlsx de verdad (hoja-excel.js). Antes era un CSV con punto y coma y en un
+// Windows que separa con coma (espanol de Mexico, ingles) salia todo en la
+// columna A. Los textos van como texto: un nombre que empiece con = + - @ no
+// se ejecuta como formula. La fecha va como fecha, para ordenar y filtrar.
 const ESTADOS_EXCEL = { pendiente: 'Pendiente', revisada: 'Revisada', aceptada: 'Aceptada', rechazada: 'Rechazada' };
-
-function celdaExcel(valor) {
-    let texto = valor === null || valor === undefined ? '' : String(valor);
-    if (/^[=+\-@\t\r]/.test(texto)) texto = "'" + texto;
-    return '"' + texto.replace(/"/g, '""') + '"';
-}
+const COLUMNAS_EXCEL = [
+    { titulo: 'Vacante', ancho: 28 }, { titulo: 'Nombre', ancho: 26 }, { titulo: 'Correo', ancho: 30 },
+    { titulo: 'Teléfono', ancho: 18 }, { titulo: 'Ciudad', ancho: 16 }, { titulo: 'Titular', ancho: 26 },
+    { titulo: 'Estado', ancho: 12 }, { titulo: 'Fecha de postulación', ancho: 20 }, { titulo: 'Mensaje', ancho: 70 }
+];
 
 function exportarPostulaciones() {
-    if (!postulacionesEmpresa.length) return;
+    if (!postulacionesEmpresa.length || !window.SkillMatchExcel) return;
     const fecha = f => {
         const d = new Date(f);
-        return f && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+        return f && !Number.isNaN(d.getTime()) ? d : null;
     };
-    const filas = [['Vacante', 'Nombre', 'Correo', 'Teléfono', 'Ciudad', 'Titular', 'Estado', 'Fecha de postulación', 'Mensaje']];
-    postulacionesEmpresa.forEach(app => {
+    const filas = postulacionesEmpresa.map(app => {
         const estado = estadoPostulacionEmpresa(app);
-        filas.push([app.jobTitle, app.userName, app.userEmail, app.userPhone, app.userLocation, app.userHeadline,
-            ESTADOS_EXCEL[estado] || estado, fecha(app.appliedDate), app.coverLetter]);
+        return [app.jobTitle, app.userName, app.userEmail, app.userPhone, app.userLocation, app.userHeadline,
+            ESTADOS_EXCEL[estado] || estado, fecha(app.appliedDate), app.coverLetter];
     });
-    const csv = '﻿' + filas.map(f => f.map(celdaExcel).join(';')).join('\r\n');
+    const archivo = SkillMatchExcel.libro({ hoja: 'Postulaciones', columnas: COLUMNAS_EXCEL, filas });
     const empresa = (JSON.parse(localStorage.getItem('userData') || '{}').firstName || 'empresa')
         .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const hoy = new Date();
-    const nombre = `postulaciones-${empresa}-${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}.csv`;
+    const nombre = `postulaciones-${empresa}-${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}.xlsx`;
     const enlace = document.createElement('a');
-    enlace.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    enlace.href = URL.createObjectURL(archivo);
     enlace.download = nombre;
     document.body.appendChild(enlace);
     enlace.click();

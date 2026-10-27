@@ -383,8 +383,11 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
     ("Comparamos tus 3 habilidades… De las 9 que ves, 2 piden alguna").
   - *Etiquetas "Nueva" y "Cierra pronto"* en cada vacante y *cuántas hay de cada opción* en los filtros; las
     opciones sin resultados se atenúan con color (con opacidad bajaban de 4.5:1).
-  - *Descargar las postulaciones en Excel* (Mi empresa): un CSV con tildes que Excel abre bien, y nada de lo que
-    escribe una persona se vuelve fórmula (una celda que empieza por `=`, `+`, `-` o `@` lleva un `'` delante).
+  - *Descargar las postulaciones en Excel* (Mi empresa): primero fue un CSV con punto y coma, pero en un Windows
+    que separa con coma (Luis, español de México) salía todo en la columna A. Ahora es un `.xlsx` de verdad armado
+    en el navegador sin librerías (`hoja-excel.js`: los XML del libro en un zip sin comprimir): columnas en
+    cualquier computador, tildes, títulos en negrita fijos al bajar, filtros, anchos y la fecha como fecha. Los
+    textos van como texto, así que nada de lo que escribe una persona se vuelve fórmula.
   - *Cerrar una vacante sabiendo qué pasa*: deja de verse, cuántas personas se postularon y quiénes esperan
     respuesta (sin aviso, porque el backend no avisa). Se les puede responder en el mismo paso. Reabrir con la
     fecha vencida pide cambiarla primero: si no, el backend la cerraría esa misma noche (PENDIENTES 2.12).
