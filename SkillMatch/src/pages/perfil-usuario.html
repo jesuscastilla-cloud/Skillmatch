@@ -73,11 +73,19 @@
                             <button type="button" class="btn-edit-profile" id="editProfileBtn">
                                 Editar perfil
                             </button>
-                            <button type="button" class="btn-edit-profile" id="changePasswordBtn"><i data-ico="lock"></i> Cambiar contraseña</button>
-                            <!-- Llenar el perfil leyendo la hoja de vida en PDF (leer-hoja-de-vida.js) -->
-                            <button type="button" class="btn-edit-profile" id="importarCvBtn"><i data-ico="upload"></i> Llenar con mi hoja de vida</button>
                             <!-- Hoja de vida en PDF: la propia o, en el perfil de otra persona, la suya (profile.js) -->
                             <a class="btn-edit-profile" id="cvBtn" href="hoja-de-vida.html"><i data-ico="download"></i> Hoja de vida en PDF</a>
+                            <!-- "Más": las acciones de uso ocasional, para que los botones quepan en
+                                 una fila al lado del nombre (menú de ui.js, sección 29). Los botones
+                                 conservan sus id: profile.js y leer-hoja-de-vida.js los buscan así -->
+                            <div class="perfil-mas" id="perfilMas">
+                                <button type="button" class="btn-edit-profile" id="perfilMasBtn" data-menu="perfilMasMenu" aria-haspopup="menu" aria-expanded="false" aria-controls="perfilMasMenu"><i data-ico="more"></i> Más</button>
+                                <div class="menu-acciones" id="perfilMasMenu" role="menu" aria-label="Más opciones del perfil" hidden>
+                                    <button type="button" role="menuitem" id="changePasswordBtn"><i data-ico="lock"></i><span>Cambiar contraseña</span></button>
+                                    <!-- Llenar el perfil leyendo la hoja de vida en PDF (leer-hoja-de-vida.js) -->
+                                    <button type="button" role="menuitem" id="importarCvBtn"><i data-ico="upload"></i><span>Llenar con mi hoja de vida</span></button>
+                                </div>
+                            </div>
                             <!-- Solo en el perfil de otra persona: profile.js pone el estado de
                                  la conexion (Conectar, Solicitud enviada, Aceptar o En tus conexiones) y el enlace del mensaje -->
                             <button type="button" class="btn btn-primary btn-small" id="connectUserBtn" hidden><i data-ico="handshake"></i> Conectar</button>

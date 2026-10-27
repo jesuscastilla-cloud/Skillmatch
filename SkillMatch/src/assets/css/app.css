@@ -5956,7 +5956,7 @@ kbd {
    cuadrados) y la foto o las iniciales lo llenan, centradas. */
 .profile-avatar {
     position: relative;
-    width: 128px; height: 128px;
+    width: 152px; height: 152px;
     padding: 4px;
     border-radius: 50%;
     background: var(--surface);
@@ -5971,7 +5971,7 @@ kbd {
 .profile-avatar-initials {
     display: flex; align-items: center; justify-content: center; /* profile.js lo muestra con display:flex */
     background: var(--surface-inverse); color: #fff;
-    font-family: var(--font-display); font-size: 2.6rem; font-weight: 700;
+    font-family: var(--font-display); font-size: 3.1rem; font-weight: 700;
     letter-spacing: .02em; line-height: 1;
     /* luz arriba y sombra abajo para que el color plano no se vea como un
        parche (sombra interior: profile.js pisa "background" en linea) */
@@ -5979,15 +5979,36 @@ kbd {
 }
 /* La foto queda con su centro justo en el borde de la portada. Antes la fila
    alineaba todo abajo (flex-end), eso anulaba el margen negativo y la foto
-   apenas tocaba la portada (22 px de 112). */
+   apenas tocaba la portada (22 px de 112). Mide 152 px (Luis la pidio un
+   poco mas grande): sube la mitad, 76 px. Solo la de persona: el logo de
+   "Mi empresa" sigue con su margen. */
 .profile-header-content { align-items: flex-start; padding-inline: var(--s4); }
-.profile-avatar-section { align-self: flex-start; }
+.profile-avatar-section { align-self: flex-start; margin-top: -76px; }
 /* El nombre ocupa el espacio libre, con aire bajo la portada, y "Editar
    perfil" se va al borde derecho */
 .profile-info-header {
     flex: 1 1 320px; min-width: 0;
     align-items: center; justify-content: space-between;
     padding-top: var(--s4);
+}
+/* En pantalla ancha los botones se quedan a la derecha del nombre, como en
+   el sitio publicado. Con cuatro ya no cabian en una fila y bajaban debajo
+   del nombre: el texto se alargaba y la foto parecia mas alta que todo. Si
+   no caben, se acomodan en dos filas ahi mismo */
+@media (min-width: 1081px) {
+    .profile-info-header { flex-wrap: nowrap; }
+    .profile-name-section { flex: 0 0 auto; max-width: calc(100% - 300px); }
+    .profile-info-header .perfil-acciones { flex: 1 1 0; min-width: 260px; justify-content: flex-end; }
+}
+/* "Mas" (ui.js, seccion 29): "Cambiar contrasena" y "Llenar con mi hoja de
+   vida" van en un menu para que los botones quepan en una fila. El menu es el
+   de Mensajes, pero debajo del boton y alineado a su derecha; la cabecera
+   queda por encima de las tarjetas de abajo para que no lo tapen */
+.profile-hero-new { position: relative; z-index: 3; }
+.perfil-mas { position: relative; }
+.perfil-mas .menu-acciones { position: absolute; top: calc(100% + 6px); right: 0; z-index: 5; white-space: nowrap; }
+@media (max-width: 760px) {
+    .perfil-mas .menu-acciones { right: auto; left: 0; }
 }
 .profile-name-section { min-width: 0; }
 .profile-name-section h1, .company-title-section h1 { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem); }
@@ -6570,9 +6591,9 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     .quick-filters { grid-template-columns: 1fr; }
     .profile-avatar-section, .company-logo-wrapper { margin-top: -44px; }
     .company-logo-img, .profile-avatar-img { width: 84px; height: 84px; font-size: 1.6rem; }
-    .profile-avatar { width: 96px; height: 96px; }
-    .profile-avatar-section { margin-top: -48px; }
-    .profile-avatar-initials { font-size: 2rem; }
+    .profile-avatar { width: 112px; height: 112px; }
+    .profile-avatar-section { margin-top: -56px; }
+    .profile-avatar-initials { font-size: 2.3rem; }
     .features-grid, .why-grid, .roadmap-grid, .choice-split { grid-template-columns: 1fr; }
     .conversations-sidebar.chat-active { display: none; }
     /* Mensajes: con un chat abierto se ve solo el chat (con boton para volver);

@@ -2958,6 +2958,61 @@
         });
     }
 
+    /* ---------- 29. Menu de un boton ("Mas") ---------- */
+
+    // Un boton con data-menu="<id del menu>" abre y cierra ese menu (role=menu,
+    // con hidden; el estilo es el de .menu-acciones de Mensajes). Igual que
+    // alla: las flechas recorren las opciones, Escape cierra y devuelve el
+    // foco al boton, un clic afuera o en una opcion lo cierra. Cada opcion
+    // hace lo suyo con su propio oyente (sus id no cambian).
+    function menusDeBoton() {
+        let abierto = null;
+        const opciones = function (menu) {
+            return Array.from(menu.querySelectorAll('[role="menuitem"]')).filter(function (o) { return o.offsetParent !== null; });
+        };
+        const cerrar = function (devolverFoco) {
+            if (!abierto) return;
+            abierto.menu.hidden = true;
+            abierto.boton.setAttribute('aria-expanded', 'false');
+            if (devolverFoco) abierto.boton.focus();
+            abierto = null;
+        };
+        document.addEventListener('click', function (e) {
+            const boton = e.target instanceof Element && e.target.closest('[data-menu]');
+            if (boton) {
+                const menu = document.getElementById(boton.dataset.menu);
+                if (!menu) return;
+                const eraEste = !!abierto && abierto.menu === menu;
+                cerrar(false);
+                if (eraEste) return;
+                menu.hidden = false;
+                boton.setAttribute('aria-expanded', 'true');
+                abierto = { boton: boton, menu: menu };
+                const primera = opciones(menu)[0];
+                if (primera) primera.focus();
+                return;
+            }
+            if (!abierto) return;
+            if (abierto.menu.contains(e.target) && !e.target.closest('[role="menuitem"]')) return;
+            cerrar(false);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (!abierto) return;
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cerrar(true); return; }
+            if (e.key === 'Tab') { cerrar(false); return; }
+            if (['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(e.key) < 0) return;
+            const lista = opciones(abierto.menu);
+            if (!lista.length) return;
+            e.preventDefault();
+            const actual = lista.indexOf(document.activeElement);
+            const siguiente = e.key === 'Home' ? 0 : e.key === 'End' ? lista.length - 1
+                : (actual + (e.key === 'ArrowDown' ? 1 : -1) + lista.length) % lista.length;
+            lista[siguiente].focus();
+        }, true);
+        // Al volver con "atras" (pagina sacada de la memoria), cerrado
+        window.addEventListener('pageshow', function () { cerrar(false); });
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -2991,6 +3046,7 @@
         observadorNuevos.observe(document.body, { childList: true, subtree: true });
         modalesAccesibles();
         validacionVisible();
+        menusDeBoton();
         clavesNuevas();
         listas(document);
         anillos(document);

@@ -31,6 +31,8 @@ const hojaDeValentina = () => hacerPdf(columna([
 ]));
 
 async function subir(page, pdf, nombre = 'hoja-de-vida.pdf', tipo = 'application/pdf') {
+    // "Llenar con mi hoja de vida" está en el menú "Más" de la cabecera
+    await page.locator('#perfilMasBtn').click();
     await page.locator('#importarCvBtn').click();
     await page.locator('#ventanaLector [data-archivo]').setInputFiles({ name: nombre, mimeType: tipo, buffer: pdf });
 }
@@ -170,4 +172,5 @@ test('en el perfil de otra persona no aparece el botón', async ({ page, api }) 
     await page.goto('perfil-usuario.html?id=u-andres');
     await expect(page.locator('#userName')).toContainText('Andrés');
     await expect(page.locator('#importarCvBtn')).toBeHidden();
+    await expect(page.locator('#perfilMasBtn')).toBeHidden();
 });
