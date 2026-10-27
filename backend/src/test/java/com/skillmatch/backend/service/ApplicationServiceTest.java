@@ -304,6 +304,27 @@ class ApplicationServiceTest {
         verify(applicationRepository, never()).save(any());
     }
 
+    // ─── Conteo por vacante: solo su empresa o un ADMIN ───────────────────────
+
+    @Test
+    void countApplicationsByJob_otraEmpresa_rechaza() {
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
+
+        assertThatThrownBy(() -> applicationService.countApplicationsByJob("job-id-5", "user-id-99", false))
+                .isInstanceOf(AccessDeniedException.class);
+        verify(applicationRepository, never()).countByJobId(any());
+    }
+
+    @Test
+    void countApplicationsByJob_dueno_cuenta() {
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
+        when(applicationRepository.countByJobId("job-id-5")).thenReturn(4L);
+
+        assertThat(applicationService.countApplicationsByJob("job-id-5", "user-id-2", false)).isEqualTo(4L);
+    }
+
     // ─── Mis postulaciones: sin notas internas ───────────────────────────────
 
     @Test

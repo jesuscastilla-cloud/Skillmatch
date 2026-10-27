@@ -138,8 +138,7 @@ public class CompanyController {
      */
     private CompanyResponse ocultarContacto(CompanyResponse company, UserDetailsImpl currentUser) {
         boolean puedeVerContacto = currentUser != null
-                && (currentUser.getId().equals(company.getUserId())
-                    || currentUser.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
+                && (currentUser.getId().equals(company.getUserId()) || isAdmin(currentUser));
         if (!puedeVerContacto) {
             company.setEmail(null);
             company.setPhone(null);
@@ -147,9 +146,20 @@ public class CompanyController {
         return company;
     }
 
+    private boolean isAdmin(UserDetailsImpl user) {
+        return user != null
+                && user.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
     @GetMapping("/{id}/statistics")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getCompanyStatistics(@PathVariable String id) {
+    public ResponseEntity<?> getCompanyStatistics(@PathVariable String id,
+                                                  @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        // Cifras internas: solo el dueño de la empresa o un ADMIN
+        if (!isAdmin(currentUser) && !companyService.isOwner(id, currentUser.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new MessageResponse("No tienes permiso para ver estas estadísticas"));
+        }
         try {
             return ResponseEntity.ok(companyService.getCompanyStatistics(id));
         } catch (Exception e) {

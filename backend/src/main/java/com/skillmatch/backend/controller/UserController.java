@@ -121,6 +121,9 @@ public class UserController {
     public ResponseEntity<?> getUserStatistics(@PathVariable String id,
                                                 @AuthenticationPrincipal UserDetailsImpl currentUser) {
         if (currentUser == null) return ResponseEntity.status(401).body(new MessageResponse("Usuario no autenticado"));
+        if (!currentUser.getId().equals(id) && !isAdmin(currentUser)) {
+            return ResponseEntity.status(403).body(new MessageResponse("No tienes permiso para ver estas estadísticas"));
+        }
         try {
             return ResponseEntity.ok(userService.getUserStatistics(id));
         } catch (Exception e) {

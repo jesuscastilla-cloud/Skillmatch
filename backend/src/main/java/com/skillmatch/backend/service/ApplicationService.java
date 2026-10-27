@@ -204,7 +204,11 @@ public class ApplicationService {
                 Application.class);
     }
 
-    public long countApplicationsByJob(String jobId) {
+    /** Solo la empresa dueña de la vacante, o un ADMIN, sabe cuántos se postularon. */
+    public long countApplicationsByJob(String jobId, String requesterId, boolean isAdmin) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado con ID: " + jobId));
+        if (!isAdmin) verifyJobOwnership(job, requesterId);
         long total = applicationRepository.countByJobId(jobId);
         log.debug("Total de postulaciones para job {}: {}", jobId, total);
         return total;

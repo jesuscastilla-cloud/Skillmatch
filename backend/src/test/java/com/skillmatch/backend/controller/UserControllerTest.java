@@ -85,6 +85,26 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.email").value("otra@test.com"));
     }
 
+    @Test
+    void getUserStatistics_deOtraPersona_responde403() throws Exception {
+        loginAs("yo-id", "USER");
+
+        mockMvc.perform(get("/api/users/otra-id/statistics"))
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).getUserStatistics(anyString());
+    }
+
+    @Test
+    void getUserStatistics_propias_responde200() throws Exception {
+        loginAs("yo-id", "USER");
+        when(userService.getUserStatistics("yo-id")).thenReturn(Map.of("applicationsCount", 3L));
+
+        mockMvc.perform(get("/api/users/yo-id/statistics"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.applicationsCount").value(3));
+    }
+
     private void loginAs(String userId, String role) {
         User u = new User();
         u.setId(userId);

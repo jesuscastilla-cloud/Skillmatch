@@ -158,8 +158,11 @@ public class ApplicationController {
 
     @GetMapping("/job/{jobId}/count")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<Long> countApplicationsByJob(@PathVariable String jobId) {
-        return ResponseEntity.ok(applicationService.countApplicationsByJob(jobId));
+    public ResponseEntity<Long> countApplicationsByJob(
+            @PathVariable String jobId,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        return ResponseEntity.ok(applicationService.countApplicationsByJob(
+                jobId, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
     }
 
     @GetMapping("/check")

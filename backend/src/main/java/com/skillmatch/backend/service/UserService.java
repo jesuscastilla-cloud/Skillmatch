@@ -15,7 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -146,10 +145,6 @@ public class UserService {
         long applicationsCount = applicationRepository.countByUserId(userId);
         long skillsCount = user.getSkills() != null ? user.getSkills().size() : 0L;
 
-        LocalDateTime createdAt = user.getCreatedAt();
-        long daysSinceCreation = createdAt != null ? ChronoUnit.DAYS.between(createdAt, LocalDateTime.now()) : 0;
-        long profileViews = 50 + (applicationsCount * 5) + (daysSinceCreation * 2);
-
         int completionScore = 0;
         if (user.getFirstName() != null && !user.getFirstName().isEmpty()) completionScore += 15;
         if (user.getLastName() != null && !user.getLastName().isEmpty()) completionScore += 15;
@@ -160,7 +155,6 @@ public class UserService {
         if (applicationsCount > 0) completionScore += 15;
 
         Map<String, Object> statistics = new HashMap<>();
-        statistics.put("profileViews", profileViews);
         statistics.put("applicationsCount", applicationsCount);
         statistics.put("matchRate", completionScore);
         statistics.put("skillsCount", skillsCount);

@@ -17,7 +17,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -186,17 +185,12 @@ public class CompanyService {
         long totalApplications = applicationService.countApplicationsByCompany(companyId);
         long pendingApplications = applicationService.countPendingApplicationsByCompany(companyId);
 
-        LocalDateTime createdAt = company.getCreatedAt();
-        long daysSinceCreation = createdAt != null ? ChronoUnit.DAYS.between(createdAt, LocalDateTime.now()) : 0;
-        long profileViews = 100 + (totalJobs * 15L) + (totalApplications * 3L) + (daysSinceCreation * 5L);
-
         double responseRate = 0;
         if (totalApplications > 0) {
             responseRate = ((totalApplications - pendingApplications) * 100.0) / totalApplications;
         }
 
         Map<String, Object> stats = new HashMap<>();
-        stats.put("profileViews", profileViews);
         stats.put("activeJobs", activeJobs);
         stats.put("totalJobs", totalJobs);
         stats.put("totalApplications", totalApplications);

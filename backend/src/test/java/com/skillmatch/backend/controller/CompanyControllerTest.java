@@ -24,8 +24,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -158,6 +161,28 @@ class CompanyControllerTest {
         mockMvc.perform(get("/api/companies/search?keyword=Tech"))
                 .andExpect(jsonPath("$[0].email").doesNotExist())
                 .andExpect(jsonPath("$[0].phone").doesNotExist());
+    }
+
+    @Test
+    void getCompanyStatistics_otraEmpresa_responde403() throws Exception {
+        loginAs("otra-cuenta-id", "EMPRESA");
+        when(companyService.isOwner("1", "otra-cuenta-id")).thenReturn(false);
+
+        mockMvc.perform(get("/api/companies/1/statistics"))
+                .andExpect(status().isForbidden());
+
+        verify(companyService, never()).getCompanyStatistics(anyString());
+    }
+
+    @Test
+    void getCompanyStatistics_dueno_responde200() throws Exception {
+        loginAs("owner-user-id", "EMPRESA");
+        when(companyService.isOwner("1", "owner-user-id")).thenReturn(true);
+        when(companyService.getCompanyStatistics("1")).thenReturn(Map.of("activeJobs", 2L));
+
+        mockMvc.perform(get("/api/companies/1/statistics"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activeJobs").value(2));
     }
 
     @AfterEach

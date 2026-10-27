@@ -45,4 +45,16 @@ class UserServiceTest {
         assertThat(profile).containsEntry("firstName", "Ana").containsEntry("headline", "Diseñadora");
         assertThat(profile).doesNotContainKeys("email", "phone");
     }
+
+    @Test
+    void getUserStatistics_sinVistasInventadas() {
+        User user = new User();
+        user.setId("user-id-1");
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(user));
+        when(applicationRepository.countByUserId("user-id-1")).thenReturn(2L);
+
+        Map<String, Object> stats = userService.getUserStatistics("user-id-1");
+
+        assertThat(stats).containsEntry("applicationsCount", 2L).doesNotContainKey("profileViews");
+    }
 }
