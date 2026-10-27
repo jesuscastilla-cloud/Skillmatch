@@ -35,6 +35,9 @@ public class CompanyService {
     private final ApplicationService applicationService;
     private final MongoTemplate mongoTemplate;
 
+    /** Las búsquedas de empresas no tienen paginación: se cortan aquí. */
+    static final int MAX_RESULTADOS = 100;
+
     public CompanyResponse createCompany(CompanyRequest request) {
         if (request.getEmail() == null || request.getEmail().isBlank()) {
             throw new RuntimeException("El email de la empresa es obligatorio");
@@ -125,11 +128,11 @@ public class CompanyService {
         if (keyword == null || keyword.isBlank()) return getActiveCompanies();
         Criteria criteria = Criteria.where("active").is(true)
                 .orOperator(
-                        Criteria.where("name").regex(keyword, "i"),
-                        Criteria.where("description").regex(keyword, "i"),
-                        Criteria.where("industry").regex(keyword, "i")
+                        Criteria.where("name").regex(BusquedaSegura.literal(keyword), "i"),
+                        Criteria.where("description").regex(BusquedaSegura.literal(keyword), "i"),
+                        Criteria.where("industry").regex(BusquedaSegura.literal(keyword), "i")
                 );
-        return mongoTemplate.find(new Query(criteria), Company.class).stream()
+        return mongoTemplate.find(new Query(criteria).limit(MAX_RESULTADOS), Company.class).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -138,10 +141,10 @@ public class CompanyService {
         List<Criteria> conditions = new ArrayList<>();
         conditions.add(Criteria.where("active").is(true));
         if (industry != null && !industry.isBlank()) conditions.add(Criteria.where("industry").is(industry));
-        if (location != null && !location.isBlank()) conditions.add(Criteria.where("location").regex(location, "i"));
+        if (location != null && !location.isBlank()) conditions.add(Criteria.where("location").regex(BusquedaSegura.literal(location), "i"));
         if (size != null && !size.isBlank()) conditions.add(Criteria.where("size").is(size));
         Criteria criteria = new Criteria().andOperator(conditions.toArray(new Criteria[0]));
-        return mongoTemplate.find(new Query(criteria), Company.class).stream()
+        return mongoTemplate.find(new Query(criteria).limit(MAX_RESULTADOS), Company.class).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }

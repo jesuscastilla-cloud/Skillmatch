@@ -108,8 +108,8 @@ public class JobService {
         if (keyword == null || keyword.isBlank()) return getAllActiveJobs(pageable);
         Criteria criteria = Criteria.where("active").is(true)
                 .orOperator(
-                        Criteria.where("title").regex(keyword, "i"),
-                        Criteria.where("description").regex(keyword, "i")
+                        Criteria.where("title").regex(BusquedaSegura.literal(keyword), "i"),
+                        Criteria.where("description").regex(BusquedaSegura.literal(keyword), "i")
                 );
         return executePagedQuery(new Query(criteria), pageable);
     }
@@ -124,7 +124,7 @@ public class JobService {
         if (type != null && !type.isBlank()) conditions.add(Criteria.where("type").is(type));
         if (modality != null && !modality.isBlank()) conditions.add(Criteria.where("modality").is(modality));
         if (experienceLevel != null && !experienceLevel.isBlank()) conditions.add(Criteria.where("experienceLevel").is(experienceLevel));
-        if (location != null && !location.isBlank()) conditions.add(Criteria.where("location").regex(location, "i"));
+        if (location != null && !location.isBlank()) conditions.add(Criteria.where("location").regex(BusquedaSegura.literal(location), "i"));
         if (minSalary != null) conditions.add(Criteria.where("salaryMax").gte(minSalary));
         if (maxSalary != null) conditions.add(Criteria.where("salaryMin").lte(maxSalary));
         Criteria criteria = new Criteria().andOperator(conditions.toArray(new Criteria[0]));
@@ -142,6 +142,11 @@ public class JobService {
         List<Job> jobs = jobRepository.findByCompanyId(companyId);
         Company company = companyRepository.findById(companyId).orElse(null);
         return jobs.stream().map(j -> mapToResponse(j, company)).collect(Collectors.toList());
+    }
+
+    /** Campo de orden permitido para las vacantes (postedDate si no se reconoce). */
+    public static String campoDeOrden(String sortBy) {
+        return BusquedaSegura.campoDeOrden(sortBy);
     }
 
     public long countJobsByCompany(String companyId) {

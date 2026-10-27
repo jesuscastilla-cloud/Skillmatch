@@ -158,7 +158,9 @@ public class JobController {
     }
 
     private Pageable buildPageable(int page, int size, String sortBy, String direction) {
-        Sort sort = "asc".equalsIgnoreCase(direction) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        // Solo campos conocidos: un nombre cualquiera daba un error interno con detalles
+        String campo = JobService.campoDeOrden(sortBy);
+        Sort sort = "asc".equalsIgnoreCase(direction) ? Sort.by(campo).ascending() : Sort.by(campo).descending();
         return PageRequest.of(page, size, sort);
     }
 }
