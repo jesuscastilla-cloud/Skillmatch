@@ -77,6 +77,9 @@ public class User implements UserDetails {
     // recuperación). Las cuentas anteriores a la fase 8 quedan en null.
     private Boolean emailVerified;
 
+    // Cuándo se le avisó que su cuenta inactiva se borrará (RetencionDatos). Entrar lo limpia.
+    private LocalDateTime avisoInactividadEn;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

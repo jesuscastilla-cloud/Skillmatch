@@ -101,7 +101,16 @@ public class DatosPersonalesService {
             loginAttemptService.recordFailure(user.getEmail());
             throw new IllegalArgumentException("La contraseña no es correcta");
         }
+        borrarDatos(user);
+        log.info("Cuenta {} eliminada por su titular", userId);
+    }
 
+    /**
+     * Lo que borra "Eliminar mi cuenta", sin pedir contraseña. Lo usan la persona
+     * (con su contraseña) y el borrado de cuentas inactivas (RetencionDatos).
+     */
+    void borrarDatos(User user) {
+        String userId = user.getId();
         companyRepository.findByUserId(userId).ifPresent(this::anonimizarEmpresa);
 
         // Las notificaciones de OTRAS personas que la mencionan ("Ana te envió un mensaje")
@@ -124,8 +133,6 @@ public class DatosPersonalesService {
         mongoTemplate.remove(new Query(Criteria.where("userId").is(userId)), SavedJob.class);
         loginAttemptService.reset(user.getEmail());
         userRepository.delete(user);
-
-        log.info("Cuenta {} eliminada por su titular", userId);
     }
 
     private void anonimizarEmpresa(Company company) {

@@ -101,7 +101,8 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
 - **Sección 9 (Cuánto tiempo los guardamos):** hoy dice "Mientras tengas tu cuenta". Agregar los plazos aprobados:
   - notificaciones: 90 días;
   - postulaciones: 12 meses después de que se cierra la vacante;
-  - cuentas sin entrar en 24 meses: se borran, avisando antes por correo (se activa con la fase 8);
+  - cuentas sin entrar en 24 meses: a los 23 llega un correo de aviso; si no entra en 30 días, se borran
+    (activo desde la fase 8, solo con Brevo configurado; las cuentas ADMIN no se borran);
   - al eliminar la cuenta se borran también los mensajes enviados y recibidos.
 - **Sección 2 (Qué datos guardamos):** agregar la fecha de la última entrada y la prueba de la autorización
   (qué aceptaste, versión de la política y fecha).

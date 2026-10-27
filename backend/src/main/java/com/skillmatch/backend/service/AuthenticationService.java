@@ -64,7 +64,7 @@ public class AuthenticationService {
 
         // Solo este campo ($set): no pisa cambios del perfil que ocurran al mismo tiempo
         mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(user.getId())),
-                new Update().set("lastLoginAt", LocalDateTime.now()), User.class);
+                new Update().set("lastLoginAt", LocalDateTime.now()).unset("avisoInactividadEn"), User.class);
 
         String primaryRole = resolvePrimaryRole(user);
         String companyId = null;
