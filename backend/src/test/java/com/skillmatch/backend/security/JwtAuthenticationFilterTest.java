@@ -40,7 +40,7 @@ class JwtAuthenticationFilterTest {
     void losRolesSalenDeLaBase_noDelToken() throws Exception {
         // El token podría decir ADMIN; en la base la cuenta solo es USER
         when(tokenProvider.validateToken("token")).thenReturn(true);
-        when(tokenProvider.getUsernameFromToken("token")).thenReturn("ana@test.com");
+        when(tokenProvider.getSubjectFromToken("token")).thenReturn("ana@test.com");
         when(userDetailsService.loadUserByUsername("ana@test.com")).thenReturn(buildUser(true, "USER"));
 
         MockFilterChain chain = new MockFilterChain();
@@ -55,7 +55,7 @@ class JwtAuthenticationFilterTest {
     @Test
     void cuentaDesactivada_responde401YNoSigue() throws Exception {
         when(tokenProvider.validateToken("token")).thenReturn(true);
-        when(tokenProvider.getUsernameFromToken("token")).thenReturn("ana@test.com");
+        when(tokenProvider.getSubjectFromToken("token")).thenReturn("ana@test.com");
         when(userDetailsService.loadUserByUsername("ana@test.com")).thenReturn(buildUser(false, "EMPRESA"));
 
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -72,7 +72,7 @@ class JwtAuthenticationFilterTest {
         // La contraseña se cambió: la cuenta va en versión 1 y el token es de la 0
         UserDetailsImpl user = buildUser(true, "USER", 1);
         when(tokenProvider.validateToken("token")).thenReturn(true);
-        when(tokenProvider.getUsernameFromToken("token")).thenReturn("ana@test.com");
+        when(tokenProvider.getSubjectFromToken("token")).thenReturn("ana@test.com");
         when(userDetailsService.loadUserByUsername("ana@test.com")).thenReturn(user);
         when(tokenProvider.getTokenVersionFromJwt("token")).thenReturn(0);
 

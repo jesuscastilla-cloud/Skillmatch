@@ -64,7 +64,7 @@ class JwtTokenProviderTest {
         String token = provider.generateToken(UserDetailsImpl.build(user));
 
         assertThat(provider.getTokenVersionFromJwt(token)).isEqualTo(3);
-        assertThat(provider.getUsernameFromToken(token)).isEqualTo("ana@test.com");
+        assertThat(provider.getSubjectFromToken(token)).isEqualTo("user-id-1"); // el ID, no el correo
     }
 
     @Test

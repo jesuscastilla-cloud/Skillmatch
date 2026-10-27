@@ -22,11 +22,14 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        log.debug("Cargando usuario por email: {}", email);
-        // Los tokens viejos pueden traer el correo con mayúsculas: se normaliza igual
-        User user = userRepository.findByEmail(Credenciales.normalizarCorreo(email))
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
+    public UserDetails loadUserByUsername(String correoOId) throws UsernameNotFoundException {
+        // Con "@" es un correo (login, y tokens anteriores a la fase 9); si no, el ID de la
+        // cuenta (sujeto de los tokens nuevos; las cuentas de teléfono no tienen correo).
+        String valor = correoOId == null ? "" : correoOId.trim();
+        User user = (valor.contains("@")
+                ? userRepository.findByEmail(Credenciales.normalizarCorreo(valor))
+                : userRepository.findById(valor))
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
 
         return UserDetailsImpl.build(user);
     }

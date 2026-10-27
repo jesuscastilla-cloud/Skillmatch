@@ -87,7 +87,9 @@ public class JwtTokenProvider {
                 // Identificador único: dos logins en el mismo segundo no dan el mismo token
                 // (si no, cerrar sesión en un dispositivo cerraría también el otro)
                 .id(UUID.randomUUID().toString())
-                .subject(user.getUsername())
+                // El sujeto es el ID de la cuenta (no cambia; las cuentas de teléfono no tienen correo).
+                // Los tokens de antes de la fase 9 llevaban el correo: CustomUserDetailsService acepta los dos.
+                .subject(user.getId())
                 .claim("userId", user.getId())
                 .claim("roles", roles)
                 .claim("ver", user.getTokenVersion())
@@ -97,7 +99,8 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String getUsernameFromToken(String token) {
+    /** A quién pertenece el token: el ID de la cuenta (o el correo, en tokens anteriores a la fase 9). */
+    public String getSubjectFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(signingKey)
                 .build()

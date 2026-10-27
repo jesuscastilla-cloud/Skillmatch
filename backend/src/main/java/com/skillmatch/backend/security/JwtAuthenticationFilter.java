@@ -23,15 +23,15 @@ import org.springframework.security.authentication.DisabledException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
-    
+
     @Autowired
     private JwtTokenProvider tokenProvider;
-    
+
     @Autowired
     private UserDetailsService userDetailsService;
-    
+
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -44,8 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             if (tokenProvider.validateToken(jwt)) {
-                String username = tokenProvider.getUsernameFromToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                String sujeto = tokenProvider.getSubjectFromToken(jwt);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(sujeto);
                 // La cuenta y sus roles se leen de la base en cada petición, no del token:
                 // así desactivar una cuenta o quitarle un rol surte efecto de inmediato.
                 if (!userDetails.isEnabled()) {
@@ -71,7 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-    
+
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
