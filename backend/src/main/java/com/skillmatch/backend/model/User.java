@@ -73,6 +73,10 @@ public class User implements UserDetails {
     // Última vez que entró: base para borrar cuentas inactivas (24 meses, fase 8)
     private LocalDateTime lastLoginAt;
 
+    // true cuando probó que recibe correo en su dirección (código de registro o de
+    // recuperación). Las cuentas anteriores a la fase 8 quedan en null.
+    private Boolean emailVerified;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

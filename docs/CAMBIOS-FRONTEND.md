@@ -105,3 +105,21 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
   - al eliminar la cuenta se borran también los mensajes enviados y recibidos.
 - **Sección 2 (Qué datos guardamos):** agregar la fecha de la última entrada y la prueba de la autorización
   (qué aceptaste, versión de la política y fecha).
+
+---
+
+## De la fase 8 (correo)
+
+### ⬜ F11. "¿Olvidaste tu contraseña?"
+- **Backend:**
+  1. `POST /api/auth/forgot-password` `{"email"}` → siempre 200 con
+     "Si ese correo tiene una cuenta en SkillMatch, te enviamos un código..." (no revela si existe la cuenta).
+  2. `POST /api/auth/reset-password` `{"email", "codigo" (6 números), "newPassword"}` →
+     200 "Listo: tu contraseña quedó cambiada. Ya puedes iniciar sesión." o 400 con el motivo
+     ("El código no es correcto o ya venció", contraseña común, menos de 8...). Cierra todas las sesiones abiertas.
+  - El código vence en 15 minutos, admite 5 intentos y se puede pedir otro cada minuto.
+  - Las dos rutas tienen el límite por IP (429).
+- **Dónde:** enlace "¿Olvidaste tu contraseña?" en `pages/login-usuario.html`, `pages/login-empresa.html` y
+  `pages/login.html`; página nueva (p. ej. `pages/recuperar-clave.html` con su `assets/js/recuperar-clave.js`) con dos
+  pasos: correo → código + contraseña nueva (reusar `UI.claveNueva` de `ui.js`, el medidor de contraseña).
+- **Probar en local sin Brevo:** con `start.ps1` el código sale escrito en la consola del backend.

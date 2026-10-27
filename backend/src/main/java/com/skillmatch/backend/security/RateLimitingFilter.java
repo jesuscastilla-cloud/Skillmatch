@@ -54,7 +54,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
         String uri = request.getRequestURI();
         boolean esRutaProtegida = uri.equals("/api/auth/login")
-                || uri.equals("/api/auth/register")
+                || uri.startsWith("/api/auth/register")
+                || uri.equals("/api/auth/forgot-password")
+                || uri.equals("/api/auth/reset-password")
                 || CAMBIO_DE_CLAVE.matcher(uri).matches();
         return !esRutaProtegida;
     }
