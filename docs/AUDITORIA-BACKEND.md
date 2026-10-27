@@ -23,7 +23,12 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 | 1. Fugas de datos | Hecha | C1, C2, C3, A5, M7, A7 |
 | 2. Vacantes y roles | Hecha | C4, A1, M9 (sin colección `audit_log`: por ahora solo una línea en el log), M13 |
 | 3. Sesión y configuración | Hecha, salvo B1 | A2, A3, B2, M1, M2, M10, M11 |
-| 4 a 11 | Pendientes | — |
+| 4. Fuerza bruta y enumeración | Hecha, salvo el registro | A4 (IP real + bloqueo por cuenta 5 fallos / 15 min), M4 en el login. El registro sigue diciendo "El email ya está registrado": se resuelve con la verificación de correo (fase 8) |
+| 5 a 11 | Pendientes | — |
+
+**Comprobar en Render al publicar la fase 4:** cuando alguien llegue al límite, el log mostrará
+`Límite de intentos para IP ... (X-Forwarded-For: ...)`. La IP contada debe ser la última de esa cadena y la del
+visitante real. Si Render agregara más de un proxy, ajustar `RATE_LIMIT_TRUSTED_PROXIES`.
 
 **B1 queda pendiente a propósito:** el frontend guarda `data.token` en `localStorage` y lo manda como
 `Authorization: Bearer`. Quitar el token del cuerpo rompería el login (en local la página va en `127.0.0.1:5500` y
