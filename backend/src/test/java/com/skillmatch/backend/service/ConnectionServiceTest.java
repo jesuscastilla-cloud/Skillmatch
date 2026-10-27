@@ -163,6 +163,79 @@ class ConnectionServiceTest {
         verifyNoInteractions(notificationService);
     }
 
+    // ─── Solicitud rechazada: 30 días para quien la envió ─────────────────────
+
+    @Test
+    void rechazadaHace10Dias_quienLaEnvioDebeEsperar() {
+        stubUsuarios();
+        Connection rechazada = rechazadaHace(10);
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-1", "user-id-2")).thenReturn(Optional.of(rechazada));
+
+        assertThatThrownBy(() -> connectionService.sendConnectionRequest("user-id-1", new ConnectionRequest("user-id-2", "Hola")))
+                .isInstanceOf(DuplicateResourceException.class)
+                .hasMessageContaining("Podrás enviarla de nuevo desde el");
+        verify(connectionRepository, never()).save(any());
+        verifyNoInteractions(notificationService);
+    }
+
+    @Test
+    void rechazadaHace31Dias_vuelveAPendienteSinCrearOtra() {
+        stubUsuarios();
+        Connection rechazada = rechazadaHace(31);
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-1", "user-id-2")).thenReturn(Optional.of(rechazada));
+        when(connectionRepository.save(any(Connection.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        connectionService.sendConnectionRequest("user-id-1", new ConnectionRequest("user-id-2", "Otra vez"));
+
+        ArgumentCaptor<Connection> guardada = ArgumentCaptor.forClass(Connection.class);
+        verify(connectionRepository).save(guardada.capture());
+        assertThat(guardada.getValue().getId()).isEqualTo("conn-rechazada");
+        assertThat(guardada.getValue().getStatus()).isEqualTo(PENDING);
+        assertThat(guardada.getValue().getRespondedAt()).isNull();
+        verify(notificationService).createConnectionRequestNotification("user-id-2", "user-id-1", "conn-rechazada");
+    }
+
+    @Test
+    void quienRechazo_puedeCambiarDeOpinionYa() {
+        stubUsuarios();
+        Connection rechazada = rechazadaHace(1); // user-id-1 la envió, user-id-2 la rechazó
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-2", "user-id-1")).thenReturn(Optional.empty());
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-1", "user-id-2")).thenReturn(Optional.of(rechazada));
+        when(connectionRepository.save(any(Connection.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        connectionService.sendConnectionRequest("user-id-2", new ConnectionRequest("user-id-1", "Perdón, sí"));
+
+        ArgumentCaptor<Connection> guardada = ArgumentCaptor.forClass(Connection.class);
+        verify(connectionRepository).save(guardada.capture());
+        assertThat(guardada.getValue().getUserId()).isEqualTo("user-id-2");
+        assertThat(guardada.getValue().getConnectedUserId()).isEqualTo("user-id-1");
+        assertThat(guardada.getValue().getStatus()).isEqualTo(PENDING);
+    }
+
+    @Test
+    void bloqueada_sigueSinPoderEnviarse() {
+        stubUsuarios();
+        Connection bloqueada = buildPendingConnection("conn-bloqueada");
+        bloqueada.setStatus(BLOCKED);
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-1", "user-id-2")).thenReturn(Optional.of(bloqueada));
+
+        assertThatThrownBy(() -> connectionService.sendConnectionRequest("user-id-1", new ConnectionRequest("user-id-2", "Hola")))
+                .isInstanceOf(DuplicateResourceException.class);
+        verify(connectionRepository, never()).save(any());
+    }
+
+    private void stubUsuarios() {
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(requester));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
+    }
+
+    private Connection rechazadaHace(int dias) {
+        Connection c = buildPendingConnection("conn-rechazada");
+        c.setStatus(REJECTED);
+        c.setRespondedAt(LocalDateTime.now().minusDays(dias));
+        return c;
+    }
+
     // ─── acceptConnection ─────────────────────────────────────────────────────
 
     @Test

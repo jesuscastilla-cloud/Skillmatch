@@ -20,6 +20,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,6 +42,9 @@ public class ConnectionService {
     private final MongoTemplate mongoTemplate;
     private final LimiteEnvios limiteEnvios;
 
+    /** Días que espera quien envió una solicitud rechazada antes de enviarla otra vez. */
+    static final int DIAS_TRAS_RECHAZO = 30;
+
     public ConnectionResponse sendConnectionRequest(String userId, ConnectionRequest request) {
         String connectedUserId = request.getConnectedUserId();
         if (connectedUserId == null || connectedUserId.isBlank()) {
@@ -55,18 +59,24 @@ public class ConnectionService {
         User connectedUser = userRepository.findById(connectedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + connectedUserId));
 
-        if (findConnectionBetweenUsers(userId, connectedUserId).isPresent()) {
+        Optional<Connection> existente = findConnectionBetweenUsers(userId, connectedUserId);
+        if (existente.isPresent() && existente.get().getStatus() != ConnectionStatus.REJECTED) {
             throw new DuplicateResourceException("Ya existe una conexión o solicitud pendiente con este usuario");
+        }
+        if (existente.isPresent()) {
+            verificarEsperaTrasRechazo(existente.get(), userId);
         }
         limiteEnvios.registrarSolicitud(userId);
 
-        Connection connection = new Connection();
+        // Una solicitud rechazada se reutiliza (vuelve a pendiente) en vez de crear otra
+        Connection connection = existente.orElseGet(Connection::new);
         connection.setUserId(userId);
         connection.setConnectedUserId(connectedUserId);
         connection.setStatus(ConnectionStatus.PENDING);
         connection.setMessage(request.getMessage());
         connection.setRequestedAt(LocalDateTime.now());
-        connection.setCreatedAt(LocalDateTime.now());
+        connection.setRespondedAt(null);
+        if (connection.getCreatedAt() == null) connection.setCreatedAt(LocalDateTime.now());
         connection.setUpdatedAt(LocalDateTime.now());
 
         connection = connectionRepository.save(connection);
@@ -175,6 +185,23 @@ public class ConnectionService {
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    /**
+     * Quien envió una solicitud rechazada espera DIAS_TRAS_RECHAZO para volver a
+     * enviarla (así no se puede insistir sin pausa). Quien la rechazó puede
+     * cambiar de opinión y enviarla de inmediato.
+     */
+    private void verificarEsperaTrasRechazo(Connection rechazada, String requesterId) {
+        boolean laRechazoQuienPide = requesterId.equals(rechazada.getConnectedUserId());
+        LocalDateTime rechazadaEn = rechazada.getRespondedAt() != null
+                ? rechazada.getRespondedAt() : rechazada.getUpdatedAt();
+        if (laRechazoQuienPide || rechazadaEn == null) return;
+        LocalDateTime desde = rechazadaEn.plusDays(DIAS_TRAS_RECHAZO);
+        if (LocalDateTime.now().isBefore(desde)) {
+            throw new DuplicateResourceException("Esta persona no aceptó tu solicitud. Podrás enviarla de nuevo desde el "
+                    + desde.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
+        }
+    }
 
     private Optional<Connection> findConnectionBetweenUsers(String u1, String u2) {
         Optional<Connection> conn = connectionRepository.findByUserIdAndConnectedUserId(u1, u2);
