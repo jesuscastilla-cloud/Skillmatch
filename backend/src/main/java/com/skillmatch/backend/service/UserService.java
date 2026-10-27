@@ -91,16 +91,19 @@ public class UserService {
         return saved;
     }
 
-    public void updatePassword(String userId, UpdatePasswordRequest request) {
+    /** Cambia la contraseña y cierra todas las sesiones abiertas (sube tokenVersion). */
+    public User updatePassword(String userId, UpdatePasswordRequest request) {
         User user = getUserById(userId);
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             log.warn("Contraseña incorrecta al intentar cambio para usuario {}", userId);
             throw new IllegalArgumentException("La contraseña actual es incorrecta");
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setTokenVersion((user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1);
         user.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(user);
-        log.info("Contraseña actualizada para usuario {}", userId);
+        User saved = userRepository.save(user);
+        log.info("Contraseña actualizada para usuario {} (sesiones anteriores cerradas)", userId);
+        return saved;
     }
 
     public Map<String, Object> getUserProfile(String userId) {

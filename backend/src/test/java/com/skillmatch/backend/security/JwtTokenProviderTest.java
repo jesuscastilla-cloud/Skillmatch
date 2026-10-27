@@ -1,9 +1,17 @@
 package com.skillmatch.backend.security;
 
 import com.skillmatch.backend.config.JwtProperties;
+import com.skillmatch.backend.model.User;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -42,5 +50,33 @@ class JwtTokenProviderTest {
     @Test
     void clavePropia_arranca() {
         assertThatCode(() -> arrancar(CLAVE_DE_PRUEBA, null)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void elTokenLlevaLaVersionDeSesiones() {
+        JwtTokenProvider provider = arrancar(CLAVE_DE_PRUEBA, null);
+        User user = new User();
+        user.setId("user-id-1");
+        user.setEmail("ana@test.com");
+        user.setRoles(List.of("USER"));
+        user.setTokenVersion(3);
+
+        String token = provider.generateToken(UserDetailsImpl.build(user));
+
+        assertThat(provider.getTokenVersionFromJwt(token)).isEqualTo(3);
+        assertThat(provider.getUsernameFromToken(token)).isEqualTo("ana@test.com");
+    }
+
+    @Test
+    void tokenSinVersion_cuentaComoCero() {
+        JwtTokenProvider provider = arrancar(CLAVE_DE_PRUEBA, null);
+        // Token como los de antes de este cambio: sin el claim "ver"
+        String tokenViejo = Jwts.builder()
+                .subject("ana@test.com")
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(Keys.hmacShaKeyFor(CLAVE_DE_PRUEBA.getBytes(StandardCharsets.UTF_8)))
+                .compact();
+
+        assertThat(provider.getTokenVersionFromJwt(tokenViejo)).isZero();
     }
 }

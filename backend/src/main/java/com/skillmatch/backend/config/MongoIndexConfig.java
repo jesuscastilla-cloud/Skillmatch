@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 
 import org.bson.Document;
 
+import java.time.Duration;
+
 @Slf4j
 @Component
 @Order(1)
@@ -74,6 +76,10 @@ public class MongoIndexConfig implements ApplicationRunner {
         // notifications
         safe("notifications", () -> mongoTemplate.indexOps("notifications")
                 .createIndex(new CompoundIndexDefinition(new Document("userId", 1).append("isRead", 1))));
+
+        // revoked_tokens: MongoDB borra cada registro cuando llega su expiresAt (TTL)
+        safe("revoked_tokens", () -> mongoTemplate.indexOps("revoked_tokens")
+                .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
 
         log.info("Indices de MongoDB verificados.");
     }

@@ -2299,9 +2299,12 @@
                 body: JSON.stringify({ currentPassword: actual, newPassword: nueva })
             }).then(function (r) {
                 if (r.ok) {
-                    v.cerrar();
-                    UI.aviso('Listo: tu contraseña quedó cambiada.', 'ok');
-                    return;
+                    // El servidor cierra las demás sesiones y entrega un token nuevo para esta
+                    return r.json().catch(function () { return {}; }).then(function (cuerpo) {
+                        if (cuerpo.token) saveToken(cuerpo.token);
+                        v.cerrar();
+                        UI.aviso('Listo: tu contraseña quedó cambiada y cerramos tu sesión en otros dispositivos.', 'ok');
+                    });
                 }
                 return r.json().catch(function () { return {}; }).then(function (cuerpo) {
                     problema(/actual es incorrecta/i.test(cuerpo.message || '')

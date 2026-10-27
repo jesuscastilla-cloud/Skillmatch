@@ -62,6 +62,11 @@ public class User implements UserDetails {
 
     private Boolean enabled = true;
 
+    // Versión de las sesiones: cambiar la contraseña la sube y todos los
+    // tokens con la versión anterior dejan de valer (ver JwtAuthenticationFilter)
+    @JsonIgnore
+    private Integer tokenVersion = 0;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

@@ -18,6 +18,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
 
 @Component
@@ -49,6 +50,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // así desactivar una cuenta o quitarle un rol surte efecto de inmediato.
                 if (!userDetails.isEnabled()) {
                     throw new DisabledException("Cuenta desactivada");
+                }
+                // Cambiar la contraseña sube la versión: los tokens anteriores dejan de valer
+                if (userDetails instanceof UserDetailsImpl user
+                        && tokenProvider.getTokenVersionFromJwt(jwt) != user.getTokenVersion()) {
+                    throw new CredentialsExpiredException("Token de una versión anterior");
                 }
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

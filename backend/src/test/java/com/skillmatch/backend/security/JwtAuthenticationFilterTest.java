@@ -67,6 +67,23 @@ class JwtAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
+    @Test
+    void tokenDeVersionAnterior_responde401() throws Exception {
+        // La contraseña se cambió: la cuenta va en versión 1 y el token es de la 0
+        UserDetailsImpl user = buildUser(true, "USER", 1);
+        when(tokenProvider.validateToken("token")).thenReturn(true);
+        when(tokenProvider.getUsernameFromToken("token")).thenReturn("ana@test.com");
+        when(userDetailsService.loadUserByUsername("ana@test.com")).thenReturn(user);
+        when(tokenProvider.getTokenVersionFromJwt("token")).thenReturn(0);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+        filter.doFilter(requestWithToken(), response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(chain.getRequest()).isNull();
+    }
+
     private MockHttpServletRequest requestWithToken() {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/users/me");
         request.addHeader("Authorization", "Bearer token");
@@ -74,7 +91,12 @@ class JwtAuthenticationFilterTest {
     }
 
     private UserDetailsImpl buildUser(boolean enabled, String role) {
+        return buildUser(enabled, role, 0);
+    }
+
+    private UserDetailsImpl buildUser(boolean enabled, String role, int tokenVersion) {
         User u = new User();
+        u.setTokenVersion(tokenVersion);
         u.setId("user-id-1");
         u.setEmail("ana@test.com");
         u.setEnabled(enabled);

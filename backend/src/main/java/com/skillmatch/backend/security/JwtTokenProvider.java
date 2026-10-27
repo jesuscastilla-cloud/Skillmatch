@@ -71,7 +71,10 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(Authentication authentication) {
-        UserDetailsImpl user = (UserDetailsImpl) authentication.getPrincipal();
+        return generateToken((UserDetailsImpl) authentication.getPrincipal());
+    }
+
+    public String generateToken(UserDetailsImpl user) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
 
@@ -83,6 +86,7 @@ public class JwtTokenProvider {
                 .subject(user.getUsername())
                 .claim("userId", user.getId())
                 .claim("roles", roles)
+                .claim("ver", user.getTokenVersion())
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(signingKey)
@@ -107,6 +111,17 @@ public class JwtTokenProvider {
                 .getPayload();
 
         return claims.get("userId", String.class);
+    }
+
+    /** Versión de sesiones escrita en el token. Los tokens viejos no la traen: cuentan como 0. */
+    public int getTokenVersionFromJwt(String token) {
+        Integer version = Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("ver", Integer.class);
+        return version == null ? 0 : version;
     }
 
     public long getExpirationMillis() {

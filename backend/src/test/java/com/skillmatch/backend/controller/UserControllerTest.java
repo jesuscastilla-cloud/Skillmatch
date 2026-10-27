@@ -1,6 +1,8 @@
 package com.skillmatch.backend.controller;
 
+import com.skillmatch.backend.dto.UpdatePasswordRequest;
 import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.security.AuthCookieService;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.UserService;
@@ -9,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,11 +23,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,6 +49,9 @@ class UserControllerTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private AuthCookieService authCookieService;
 
     @AfterEach
     void clearSecurityContext() {
@@ -103,6 +112,26 @@ class UserControllerTest {
         mockMvc.perform(get("/api/users/yo-id/statistics"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.applicationsCount").value(3));
+    }
+
+    @Test
+    void updatePassword_entregaTokenNuevoParaEstaSesion() throws Exception {
+        loginAs("yo-id", "USER");
+        User actualizado = new User();
+        actualizado.setId("yo-id");
+        actualizado.setEmail("yo@test.com");
+        actualizado.setRoles(List.of("USER"));
+        actualizado.setTokenVersion(1);
+        when(userService.updatePassword(eq("yo-id"), any(UpdatePasswordRequest.class))).thenReturn(actualizado);
+        when(jwtTokenProvider.generateToken(any(UserDetailsImpl.class))).thenReturn("token-nuevo");
+
+        mockMvc.perform(put("/api/users/yo-id/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"actual-123\",\"newPassword\":\"nueva-12345\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("token-nuevo"));
+
+        verify(authCookieService).setAuthCookie(any(), eq("token-nuevo"));
     }
 
     private void loginAs(String userId, String role) {

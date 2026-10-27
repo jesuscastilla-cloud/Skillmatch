@@ -3,8 +3,12 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.dto.UpdatePasswordRequest;
 import com.skillmatch.backend.dto.UpdateProfileRequest;
+import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.security.AuthCookieService;
+import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +25,8 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final JwtTokenProvider tokenProvider;
+    private final AuthCookieService authCookieService;
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
@@ -103,14 +109,21 @@ public class UserController {
     public ResponseEntity<?> updatePassword(
             @PathVariable String id,
             @Valid @RequestBody UpdatePasswordRequest request,
-            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser,
+            HttpServletResponse response) {
         if (currentUser == null) return ResponseEntity.status(401).body(new MessageResponse("Usuario no autenticado"));
         if (!currentUser.getId().equals(id)) {
             return ResponseEntity.status(403).body(new MessageResponse("No tienes permiso para actualizar esta contraseña"));
         }
         try {
-            userService.updatePassword(id, request);
-            return ResponseEntity.ok(new MessageResponse("Contraseña actualizada exitosamente"));
+            // Cambiar la contraseña cierra todas las sesiones; esta recibe un token nuevo
+            User updated = userService.updatePassword(id, request);
+            String token = tokenProvider.generateToken(UserDetailsImpl.build(updated));
+            authCookieService.setAuthCookie(response, token);
+            Map<String, Object> body = new HashMap<>();
+            body.put("message", "Contraseña actualizada exitosamente");
+            body.put("token", token);
+            return ResponseEntity.ok(body);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
