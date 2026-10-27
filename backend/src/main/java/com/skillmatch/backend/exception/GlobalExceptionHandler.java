@@ -4,6 +4,7 @@ import com.skillmatch.backend.dto.MessageResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
@@ -26,18 +27,12 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 1. Autenticación — usuario no encontrado
-    @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<?> handleUsernameNotFound(UsernameNotFoundException ex,
-                                                     WebRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new MessageResponse(ex.getMessage()));
-    }
-
-    // 2. Autenticación — credenciales incorrectas
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<?> handleBadCredentials(BadCredentialsException ex,
-                                                   WebRequest request) {
+    // 1-2. Autenticación: usuario inexistente, contraseña mala o cuenta desactivada,
+    // bloqueada o vencida responden IGUAL. Si no, se podría averiguar qué correos
+    // tienen cuenta (enumeración). Spring revisa "desactivada" antes que la contraseña.
+    @ExceptionHandler({UsernameNotFoundException.class, BadCredentialsException.class,
+                       AccountStatusException.class})
+    public ResponseEntity<?> handleBadCredentials(Exception ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(new MessageResponse("Email o contraseña incorrectos"));
     }
