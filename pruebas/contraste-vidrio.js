@@ -1,9 +1,10 @@
 // Contraste de verdad sobre el vidrio (docs/PLAN-PERFIL-GLASS.md, secciones 7 y 15).
 // auditoria.js calcula el contraste con los colores del CSS, pero no sabe lo que hay detras de un
 // vidrio translucido ni por donde pasan las manchas del fondo. Este guion lo mide con pixeles:
-// esconde el texto, detiene las manchas en 8 momentos de su recorrido, toma la foto en 3 alturas de
-// la pagina y, bajo cada texto, busca el fondo mas desfavorable (percentil 2). AA: 4.5 (3 si la
-// letra es grande). Con la tarjeta de video real (Edge sin ventana + Direct3D 11).
+// esconde el texto, detiene las manchas en 8 momentos de su recorrido (4 si la pagina es larga),
+// toma la foto bajando toda la pagina, un tramo de pantalla a la vez, y bajo cada texto busca el
+// fondo mas desfavorable (percentil 2). AA: 4.5 (3 si la letra es grande). Con la tarjeta de video
+// real (Edge sin ventana + Direct3D 11).
 // Uso (desde pruebas/):
 //   node contraste-vidrio.js                          (Mi perfil, persona: claro/oscuro, computador/celular)
 //   node contraste-vidrio.js "perfil-usuario.html?id=u-andres" persona
@@ -65,6 +66,12 @@ async function medirFoto(b64) {
     const piso = pestanas && getComputedStyle(pestanas).display !== 'none' ? pestanas.getBoundingClientRect().top : innerHeight;
     const salida = [];
     for (const tx of window.__textos) {
+        // Textos que la pagina reemplazo mientras se medía (los contadores animados de Inicio)
+        if (!tx.nodo.isConnected || !tx.nodo.parentElement) continue;
+        // Atenuado a proposito (por ejemplo los pasos de "Como funciona" que aun no se alcanzan, una
+        // decision tomada antes del vidrio): se cuenta aparte, no como falla
+        let opacidad = 1;
+        for (let a = tx.nodo.parentElement; a; a = a.parentElement) opacidad *= Number(getComputedStyle(a).opacity);
         const dentroDeBarra = tx.nodo.parentElement.closest('body > header, .tabbar');
         // Lo que se ve del texto: lo recortan los que tienen overflow (el "..." de una vista previa,
         // una lista con scroll). Sin esto se median letras escondidas contra lo que hay al lado
@@ -81,6 +88,16 @@ async function medirFoto(b64) {
             const x0 = Math.max(0, Math.floor(Math.max(r.left, vx0))), y0 = Math.max(0, Math.floor(Math.max(r.top, vy0)));
             const x1 = Math.min(img.width, Math.ceil(Math.min(r.right, vx1))), y1 = Math.min(img.height, Math.ceil(Math.min(r.bottom, vy1)));
             if (x1 - x0 < 2 || y1 - y0 < 2) continue;
+            // Tapado por otra cosa (una tarjeta pegada al bajar, como la de "Como funciona" en el
+            // celular): en esa foto nadie puede ver el texto, no se mide. Solo si lo de encima tiene fondo:
+            // una capa transparente (el enlace "estirado" que hace clickeable toda una tarjeta) no tapa nada
+            const encima = document.elementFromPoint((x0 + x1) / 2, (y0 + y1) / 2), propio = tx.nodo.parentElement;
+            let tapado = false;
+            for (let a = encima; a && !a.contains(propio) && !propio.contains(a); a = a.parentElement) {
+                const ca = getComputedStyle(a), fondo = (ca.backgroundColor.match(/[\d.]+/g) || [0, 0, 0, 0]).map(Number);
+                if ((fondo.length > 3 ? fondo[3] : 1) > .5 || ca.backgroundImage !== 'none') { tapado = true; break; }
+            }
+            if (tapado) continue;
             // Tapado por la barra o las pestanas, o bajo su sombra (al bajar, la barra echa una sombra
             // suave sobre lo que pasa justo debajo: un instante del scroll, no un texto que se lea mal)
             if (!dentroDeBarra && (r.top < techo + 12 || r.bottom > piso - 12)) continue;
@@ -89,7 +106,7 @@ async function medirFoto(b64) {
             const lt = lum(cr, cg, cb), valores = [];
             for (let i = 0; i < d.length; i += 4) { const lf = lum(d[i], d[i + 1], d[i + 2]); valores.push((Math.max(lt, lf) + .05) / (Math.min(lt, lf) + .05)); }
             valores.sort((a, b) => a - b);
-            salida.push({ texto: tx.texto, contraste: valores[Math.floor(valores.length * .02)], grande: tx.grande });
+            salida.push({ texto: tx.texto, contraste: valores[Math.floor(valores.length * .02)], grande: tx.grande, atenuado: opacidad < .9 });
         }
     }
     return salida;
@@ -127,18 +144,27 @@ async function medirFoto(b64) {
                 await page.waitForTimeout(700);
             }
             await page.evaluate(anotarTextos, DENTRO);
-            const peores = new Map();
+            const peores = new Map(), atenuados = new Set();
             const alto = await page.evaluate(() => document.documentElement.scrollHeight);
             const vista = disp.viewport.height;
-            const momentos = await page.evaluate(() => !!document.querySelector('.pagina-vidrio .fondo-vivo')) ? MOMENTOS : 1;
-            const alturas = DENTRO ? [await page.evaluate(() => scrollY)] : [0, Math.max(0, Math.round((alto - vista) / 2)), Math.max(0, alto - vista)];
+            // Toda la pagina, un tramo de pantalla a la vez (con solo arriba, medio y final, en una pagina
+            // larga como Inicio la mayor parte nunca entraba en una foto)
+            const alturas = [];
+            if (DENTRO) alturas.push(await page.evaluate(() => scrollY));
+            else { for (let y = 0; y < alto - vista; y += vista - 120) alturas.push(y); alturas.push(Math.max(0, alto - vista)); }
+            // Con muchas alturas, 4 momentos de las manchas en vez de 8 (para que no tarde una eternidad)
+            const momentos = await page.evaluate(() => !!document.querySelector('.pagina-vidrio .fondo-vivo')) ? (alturas.length > 3 ? MOMENTOS / 2 : MOMENTOS) : 1;
             for (const y of [...new Set(alturas)]) {
-                if (!DENTRO) await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), y);
+                if (!DENTRO) {
+                    await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), y);
+                    await page.waitForTimeout(500); // las secciones que aparecen al llegar (Inicio) terminan de aparecer
+                }
                 for (let k = 0; k < momentos; k++) {
                     await page.evaluate(ms => { const f = document.querySelector('.fondo-vivo'); if (f) f.getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = ms; }); }, k * 11000);
                     await page.waitForTimeout(120);
                     const foto = (await page.screenshot()).toString('base64');
                     for (const r of await page.evaluate(medirFoto, foto)) {
+                        if (r.atenuado) { atenuados.add(r.texto); continue; }
                         const antes = peores.get(r.texto);
                         if (!antes || r.contraste < antes.contraste) peores.set(r.texto, r);
                     }
@@ -148,7 +174,9 @@ async function medirFoto(b64) {
             const bajos = todos.filter(r => r.contraste < (r.grande ? 3 : 4.5)).sort((a, b) => a.contraste - b.contraste);
             const minimo = todos.reduce((m, r) => (!m || r.contraste < m.contraste ? r : m), null);
             fallas += bajos.length;
-            console.log(`${tema.padEnd(6)} ${nombre.padEnd(10)} textos: ${todos.length}, el mas bajo: ${minimo ? minimo.contraste.toFixed(2) + ` ("${minimo.texto}")` : '-'}, bajo AA: ${bajos.length}`);
+            const soloAtenuados = [...atenuados].filter(x => !peores.has(x)).length;
+            console.log(`${tema.padEnd(6)} ${nombre.padEnd(10)} textos: ${todos.length}, el mas bajo: ${minimo ? minimo.contraste.toFixed(2) + ` ("${minimo.texto}")` : '-'}, bajo AA: ${bajos.length}` +
+                (atenuados.size ? ` (atenuados a proposito en alguna foto: ${atenuados.size}${soloAtenuados ? `, ${soloAtenuados} nunca enteros` : ''})` : ''));
             bajos.slice(0, 10).forEach(r => console.log(`        ${r.contraste.toFixed(2)}  ${r.grande ? '(grande) ' : ''}${r.texto}`));
             await contexto.close();
         }

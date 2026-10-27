@@ -171,3 +171,33 @@ test('Mensajes: los paneles son de vidrio y las burbujas siguen sólidas para le
         if (await burbuja.count()) expect(await deVidrio(burbuja), s).toEqual({ translucido: false, desenfoca: false });
     }
 });
+
+// Fase 5: Inicio e Indicadores
+test('Inicio es de vidrio: repisas y tarjetas de tinte, y la portada oscura sigue sólida', async ({ page, context, api }) => {
+    await entrarComo(context, 'visitante');
+    await page.goto('index.html');
+    await expect(page.locator('.fondo-vivo')).toBeVisible();
+    for (const s of ['.search-section', '.benefits-section', '.como-funciona', '.stat-box']) {
+        expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
+    }
+    expect(await deVidrio(page.locator('.hero')), 'portada').toEqual({ translucido: false, desenfoca: false });
+    // El carrusel 3D sigue solido: en 3D las tarjetas translucidas se verian unas a traves de otras
+    const campo = page.locator('.search-section .search-input');
+    await campo.fill('mesero');
+    await page.locator('.search-section .search-btn').click();
+    const tarjeta = page.locator('#results-container .cv-tarjeta').first();
+    await expect(tarjeta).toBeVisible();
+    expect((await deVidrio(tarjeta)).translucido, 'tarjeta del carrusel').toBe(false);
+});
+
+test('el inicio de la persona y los Indicadores son de vidrio', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('index.html');
+    await expect(page.locator('.panel-bloque').first()).toBeVisible();
+    expect(await deVidrio(page.locator('.panel-bloque').first()), 'bloque del panel').toEqual({ translucido: true, desenfoca: false });
+    await page.goto('dashboard.html');
+    await expect(page.locator('.indicador').first()).toBeVisible();
+    for (const s of ['.indicadores-cabecera', '.indicador', '.indicadores-cifras li']) {
+        expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
+    }
+});

@@ -520,6 +520,19 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
     cuenta de vacantes y los mensajes de vacío van sobre vidrio. Medidos entre 3.1 y 4.3 antes del arreglo.
   - **En oscuro:** "Nueva", las habilidades que ya tienes, "Inicia sesión" y las iniciales van en turquesa
     claro; los avisos de "Comparamos..." e "Inicia sesión...", en blanco.
+- **Vidrio, fase 5: Inicio e Indicadores (hecho, 27 de octubre de 2026):** las dos páginas son de vidrio.
+  - **Las secciones de Inicio** (buscador, cómo funciona, beneficios, fotos de Cartagena, mapa, "Únete",
+    innovación y los resultados del buscador) son repisas de vidrio a lo ancho.
+  - **Las tarjetas** (cifras, beneficios, rutas, zonas del mapa, bloques del panel de inicio, "Únete" y
+    los indicadores) son de vidrio de tinte.
+  - **Siguen sólidos a propósito:** la portada, la franja del panel de inicio y la invitación del final
+    (superficies oscuras de la marca), y el carrusel 3D (en 3D las tarjetas translúcidas se verían unas a
+    través de otras).
+  - **Textos que iban sueltos:** la cuenta de Indicadores y la hora de los datos van en pastillas. En
+    oscuro, "Próximo" y la pestaña activa del celular van en turquesa claro.
+  - **Medición:** `contraste-vidrio.js` ahora mide la página completa, salta lo tapado por algo con fondo y
+    cuenta aparte lo atenuado a propósito. Todas las páginas de vidrio (fases 1 a 5) pasan medidas
+    completas.
 
 ## Orden propuesto (solo frontend)
 

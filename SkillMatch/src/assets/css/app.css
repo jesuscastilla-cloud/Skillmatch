@@ -6890,10 +6890,14 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 @media (prefers-reduced-motion: reduce) { .fondo-vivo > span { animation: none; } }
 
 /* ---- Vidrio de tinte: tarjetas (normal) y cabeceras (grueso). Fase 1: Mi perfil; fase 3: Mi empresa
-   (secciones, laterales y vacantes) y el perfil publico de empresa (bloques) ---- */
+   (secciones, laterales y vacantes) y el perfil publico de empresa (bloques). Ojo: en esta lista solo
+   clases sueltas; :is() toma la fuerza de su selector mas fuerte, y un "padre hijo" le ganaba al filo
+   turquesa de "Primeros pasos" y al vidrio grueso de las cabeceras (por eso :where() en las cifras) ---- */
 .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card,
     .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
-    .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area) {
+    .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
+    .stat-box, .roadmap-card, .benefit-item, .pathway-card, .mapa-zona, .panel-bloque, .choice-card,
+    :where(.indicadores-cifras) > li, .indicador) {
     isolation: isolate;
     background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte);
     border: 1px solid;
@@ -6935,10 +6939,20 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 /* ---- Fase 4: Vacantes, Empresas, Conexiones y Mensajes ---- */
 /* La franja blanca de arriba (titulo, frase y buscador) pasa a ser una repisa de vidrio a lo ancho:
    el texto sigue sobre vidrio y no suelto sobre las manchas */
-.pagina-vidrio :is(.opportunities-header, .directorio-cabecera, .connections-header) {
+.pagina-vidrio :is(.opportunities-header, .directorio-cabecera, .connections-header,
+    .search-section, .benefits-section, .mapa-section, .innovation-section, .indicadores-cabecera,
+    .como-funciona, .cartagena-section, .usuarios-empresas, .results-section) {
     background: linear-gradient(180deg, var(--vidrio-reflejo), transparent 70%), var(--vidrio-tinte);
     border-bottom-color: var(--vidrio-luz-2);
 }
+/* Fase 5 (Inicio e Indicadores): la portada, la franja del panel de inicio y la invitacion del final
+   siguen azul oscuro (superficies de la marca, como el pie). El carrusel 3D sigue solido: en 3D las
+   tarjetas translucidas se verian unas a traves de otras. Los recuadros punteados, con el tinte de las
+   tarjetas (con el vidrio fino, casi transparente en oscuro, su texto quedaba en 4.45) */
+.pagina-vidrio :is(.indicadores-powerbi, .indicadores-vacio) { background: var(--vidrio-tinte); }
+/* "Como funciona" en el celular: la tarjeta oscura se queda pegada arriba y su sombra pasa sobre el texto
+   de los pasos al bajar (con --ink-3 quedaba en 4.3 ese instante): un tono mas oscuro */
+.pagina-vidrio .cf-paso p { color: var(--ink-2); }
 .pagina-vidrio .directorio-cta { background: var(--vidrio-tinte-fino); }
 /* Mensajes: el fondo del chat deja ver el vidrio; las burbujas siguen solidas (las tuyas turquesa, las
    recibidas blancas) para leerse perfecto. La barra para escribir es de vidrio fino y su campo, solido */
@@ -6957,7 +6971,8 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     border: 1px solid; border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
     border-radius: var(--r-lg); background: var(--vidrio-tinte); box-shadow: var(--vidrio-grosor);
 }
-.pagina-vidrio .results-count {
+.pagina-vidrio :is(.indicadores-promedio, .indicadores-hora) { width: fit-content; } /* Indicadores: sueltos entre tarjetas (3.6 a 4.4) */
+.pagina-vidrio :is(.results-count, .indicadores-promedio, .indicadores-hora) {
     padding: 6px var(--s3); border: 1px solid var(--vidrio-borde-fino); border-radius: var(--r-pill);
     background: var(--vidrio-tinte); box-shadow: var(--vidrio-brillo-fino);
 }
@@ -7048,7 +7063,9 @@ body > header, [data-theme="dark"] body > header {
 [data-theme="dark"] .pagina-vidrio :is(.match-badge-small:not(.match-excellent, .match-fair), .company-logo-compact,
     .company-logo-opp, .empresa-cuenta, .primeros-pasos-cuenta,
     .connection-avatar-circle, .conversation-avatar, .empresa-avatar, .chat-avatar, .candidate-mini-avatar,
-    .etiqueta-vacante.es-nueva, .card-skills .skill.is-common) { color: #A3ECF3; } /* fase 4: "Nueva" y "ya tienes" en 3.6 a 4.2 */ /* fase 3: "4", "2 de 5" y "H" quedaban en 3.8 a 4.4 */
+    .etiqueta-vacante.es-nueva, .card-skills .skill.is-common, .status-planned) { color: #A3ECF3; } /* fase 4: "Nueva" y "ya tienes" en 3.6 a 4.2; fase 5: "Proximo" en 4.3 */
+/* La pestana activa del celular, en oscuro: el turquesa luminoso (con #2BB6C6 sobre su fondo turquesa, 4.4) */
+[data-theme="dark"] .tabbar a.is-active { color: var(--sea-luz); } /* fase 3: "4", "2 de 5" y "H" quedaban en 3.8 a 4.4 */
 [data-theme="dark"] .pagina-vidrio .meta-tag.es-verificada { color: #7FE3B8; } /* "Empresa verificada": con #3FCB93 quedaba en 4.36 */
 [data-theme="dark"] .pagina-vidrio .match-badge-small.match-excellent { color: #FFC896; } /* el naranja de siempre quedaba en 3.7 */
 
@@ -7067,7 +7084,10 @@ body > header, [data-theme="dark"] body > header {
     .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card, .skeleton-card,
         .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
         .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
-        .opportunities-header, .directorio-cabecera, .connections-header),
+        .opportunities-header, .directorio-cabecera, .connections-header,
+        .stat-box, .roadmap-card, .benefit-item, .pathway-card, .mapa-zona, .panel-bloque, .choice-card,
+        :where(.indicadores-cifras) > li, .indicador, .search-section, .benefits-section, .mapa-section, .innovation-section,
+        .indicadores-cabecera, .como-funciona, .cartagena-section, .usuarios-empresas, .results-section),
     :is(.menu-acciones, .notifications-dropdown, .lista-panel, .modal-content, .modal-content-small, .cmdk-panel, .recorrido-tarjeta) {
         background: var(--surface); border-color: var(--hairline); -webkit-backdrop-filter: none; backdrop-filter: none;
     }

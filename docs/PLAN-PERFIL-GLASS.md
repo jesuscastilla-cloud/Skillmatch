@@ -493,7 +493,7 @@ Luis mira en Live Server y commit con su permiso.
 | **2** | Piezas que están en todas las páginas: barra de arriba, pestañas, menús, ventanas (las de `UI.ventana` y las viejas), avisos, paleta Ctrl+K, recorrido guiado, esqueletos de carga. **Hecho el 26 de octubre** | Se prueban en todas las páginas, no solo en una |
 | **3** | Mi empresa y perfil público de empresa. **Hecho el 26 de octubre** | Tablero de postulaciones (columnas), vista previa de la oferta, Excel |
 | **4** | Vacantes, Empresas, Conexiones y Mensajes. **Hecho el 26 de octubre** | Listas largas: solo vidrio de tinte. En el chat, burbujas que se lean bien |
-| **5** | Inicio (portada del visitante y panel de la persona) e Indicadores | El carrusel 3D va sin `backdrop-filter` (en 3D se rompe); el mapa de Cartagena y las barras de las gráficas sobre vidrio |
+| **5** | Inicio (portada del visitante y panel de la persona) e Indicadores. **Hecho el 27 de octubre** | El carrusel 3D va sin `backdrop-filter` (en 3D se rompe); el mapa de Cartagena y las barras de las gráficas sobre vidrio |
 | **6** | Entrar, registrarse y elegir registro | Ya tienen diseño propio (personajes, columna oscura): el vidrio va solo en la tarjeta del formulario |
 | **Fuera** | Hoja de vida (es un documento para imprimir) y "Sin conexión" | Se quedan sólidas |
 
@@ -569,3 +569,17 @@ Luis mira en Live Server y commit con su permiso.
   llevan el texto en blanco.
 - **El chat:** el vidrio es el panel, no las burbujas. Las burbujas sólidas se leen perfecto en claro y
   oscuro.
+
+### Lo que se aprendió en la fase 5
+
+- **La medición tiene que bajar toda la página.** Con solo arriba, al medio y al final, en Inicio (unos
+  8.000 px) casi todo quedaba sin medir. Ahora va un tramo de pantalla a la vez, y con eso se volvieron a
+  medir las páginas de las fases 1 a 4: todas pasaron.
+- **Lo tapado no se mide:** en el celular, la tarjeta oscura de "Cómo funciona" se queda pegada y los
+  pasos suben por debajo. Pero una capa transparente (el enlace estirado de una tarjeta) no tapa nada: solo
+  cuenta lo que tiene fondo.
+- **Lo atenuado a propósito** (los pasos que aún no se alcanzan) se cuenta aparte, no como falla.
+- **Cuidado con `:is()`:** un selector "padre hijo" dentro de la lista de tarjetas le subió la fuerza a
+  toda la regla y le quitó el filo turquesa a "Primeros pasos" y el vidrio grueso a las cabeceras. Las
+  pruebas lo atraparon; en esa lista van solo clases sueltas (o `:where()`).
+- **Las pruebas con fechas relativas** fallaban de noche: "hace 30 minutos" cruzaba la medianoche. Ya no.
