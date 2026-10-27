@@ -18,10 +18,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.authentication.DisabledException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -47,13 +44,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             if (tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromToken(jwt);
-                List<String> roles = tokenProvider.getRolesFromJwt(jwt);
-                List<GrantedAuthority> authorities = roles.stream()
-                        .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
-                        .collect(Collectors.toList());
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                // La cuenta y sus roles se leen de la base en cada petición, no del token:
+                // así desactivar una cuenta o quitarle un rol surte efecto de inmediato.
+                if (!userDetails.isEnabled()) {
+                    throw new DisabledException("Cuenta desactivada");
+                }
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
