@@ -13,6 +13,7 @@ import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.NotificationRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
+import com.skillmatch.backend.validation.Credenciales;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
@@ -68,6 +69,7 @@ public class DatosPersonalesService {
         datos.put("estudios", user.getEducations());
         datos.put("certificaciones", user.getCertifications());
         datos.put("consentimientos", user.getConsentimientos());
+        datos.put("cuentaUnidaAGoogle", user.getGoogleId() != null);
         datos.put("postulaciones", applicationService.getApplicationsByUser(userId));
         datos.put("vacantesGuardadas", savedJobService.getUserSavedJobs(userId));
         datos.put("conexiones", mongoTemplate.find(new Query(new Criteria().orOperator(
@@ -95,6 +97,9 @@ public class DatosPersonalesService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
+        if (user.getPassword() == null) {
+            throw new IllegalArgumentException(Credenciales.SIN_CLAVE);
+        }
         // Igual que el cambio de contraseña: cuenta para el bloqueo por intentos fallidos
         loginAttemptService.checkNotLocked(LoginAttemptService.claveDe(user));
         if (claveActual == null || !passwordEncoder.matches(claveActual, user.getPassword())) {

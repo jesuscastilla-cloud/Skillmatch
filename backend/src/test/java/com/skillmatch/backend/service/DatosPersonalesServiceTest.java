@@ -56,6 +56,17 @@ class DatosPersonalesServiceTest {
     }
 
     @Test
+    void cuentaDeGoogleSinContrasena_pideCrearUna() {
+        user.setPassword(null);
+
+        assertThatThrownBy(() -> service.borrarCuenta("user-id-1", "algo"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Olvidaste tu contraseña");
+        verifyNoInteractions(loginAttemptService);
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
     void contrasenaMala_noBorraNada() {
         when(passwordEncoder.matches("mala", "hash")).thenReturn(false);
 

@@ -13,6 +13,10 @@ public final class Credenciales {
     /** BCrypt solo usa los primeros 72 bytes, y Spring lanza un error si hay más. */
     public static final int MAX_CLAVE = 72;
 
+    /** Cuentas creadas con Google: no tienen contraseña hasta que creen una. */
+    public static final String SIN_CLAVE =
+            "Tu cuenta no tiene contraseña (entraste con Google). Crea una con \"¿Olvidaste tu contraseña?\" y vuelve a intentarlo.";
+
     /** Las que cualquiera prueba primero (comparación exacta, sin mayúsculas ni tildes). */
     private static final Set<String> CLAVES_COMUNES = Set.of(
             "12345678", "123456789", "1234567890", "87654321", "11111111", "00000000",

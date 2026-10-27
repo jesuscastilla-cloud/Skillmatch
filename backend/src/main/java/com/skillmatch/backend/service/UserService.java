@@ -117,6 +117,9 @@ public class UserService {
     /** Cambia la contraseña y cierra todas las sesiones abiertas (sube tokenVersion). */
     public User updatePassword(String userId, UpdatePasswordRequest request) {
         User user = getUserById(userId);
+        if (user.getPassword() == null) {
+            throw new IllegalArgumentException(Credenciales.SIN_CLAVE);
+        }
         // La contraseña actual también se puede adivinar: cuenta para el mismo bloqueo del login
         loginAttemptService.checkNotLocked(LoginAttemptService.claveDe(user));
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
