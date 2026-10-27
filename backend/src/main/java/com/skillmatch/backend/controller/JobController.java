@@ -33,9 +33,13 @@ public class JobController {
     @Operation(summary = "Crear oferta", description = "Crea una nueva oferta laboral (solo empresas)")
     @PostMapping
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request) {
+    public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request,
+                                       @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(jobService.createJob(request));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(jobService.createJob(request, currentUser.getId(), isAdmin(currentUser)));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new MessageResponse("Error al crear oferta: " + e.getMessage()));
@@ -147,6 +151,10 @@ public class JobController {
     @GetMapping("/company/{companyId}")
     public ResponseEntity<List<JobResponse>> getJobsByCompany(@PathVariable String companyId) {
         return ResponseEntity.ok(jobService.getJobsByCompany(companyId));
+    }
+
+    private boolean isAdmin(UserDetailsImpl user) {
+        return user.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 
     private Pageable buildPageable(int page, int size, String sortBy, String direction) {

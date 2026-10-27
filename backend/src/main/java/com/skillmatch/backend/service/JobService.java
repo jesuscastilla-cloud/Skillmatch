@@ -37,11 +37,17 @@ public class JobService {
     private final CompanyRepository companyRepository;
     private final MongoTemplate mongoTemplate;
 
-    public JobResponse createJob(JobRequest request) {
+    public JobResponse createJob(JobRequest request, String requesterId, boolean isAdmin) {
         String companyId = request.getCompanyId();
         if (companyId == null) throw new RuntimeException("El ID de la compañía no puede ser nulo");
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Compañía no encontrada con ID: " + companyId));
+
+        // Solo el dueño de la empresa (o un ADMIN) publica a su nombre
+        if (!isAdmin && !requesterId.equals(company.getUserId())) {
+            log.warn("Usuario {} intentó publicar una vacante a nombre de la empresa {}", requesterId, companyId);
+            throw new AccessDeniedException("No puedes publicar vacantes a nombre de otra empresa");
+        }
 
         validateSalaryRange(request);
 
