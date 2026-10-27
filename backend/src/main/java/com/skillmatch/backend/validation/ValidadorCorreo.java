@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.InitialDirContext;
 import java.io.BufferedReader;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
  * (no en el login, para no dejar fuera a nadie ya registrado).
  *
  * 1. El dominio no está en la lista de desechables (correos-desechables.txt).
- * 2. El dominio existe en DNS (registro MX o, si no, A). Si el DNS no responde,
+ * 2. El dominio tiene servidor de correo en DNS (registro MX). Si el DNS no responde,
  *    se acepta: una caída de la red no debe impedir registrarse.
  */
 @Slf4j
@@ -85,10 +86,16 @@ public class ValidadorCorreo {
         env.put("com.sun.jndi.dns.timeout.retries", "1");
         try {
             InitialDirContext dns = new InitialDirContext(env);
-            Attributes mx = dns.getAttributes(dominio, new String[]{"MX"});
-            if (mx.get("MX") != null && mx.get("MX").size() > 0) return true;
-            Attributes a = dns.getAttributes(dominio, new String[]{"A"});
-            return a.get("A") != null && a.get("A").size() > 0;
+            // Solo MX: dominios como "gmial.com" existen (tienen web, registro A) para
+            // atrapar errores de tecleo, pero no reciben correo. "0 ." (MX nulo) = no recibe.
+            Attributes atributos = dns.getAttributes(dominio, new String[]{"MX"});
+            Attribute mx = atributos.get("MX");
+            if (mx == null) return false;
+            for (int i = 0; i < mx.size(); i++) {
+                String registro = String.valueOf(mx.get(i)).trim();
+                if (!registro.equals("0 .") && !registro.endsWith(" .")) return true;
+            }
+            return false;
         } catch (NameNotFoundException e) {
             return false; // el dominio no existe
         } catch (NamingException e) {
