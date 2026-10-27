@@ -91,11 +91,13 @@ test('"Cambiar contraseña" abre lista para escribir: sin error en el primer cam
     // La franja de los botones es el pie de la ventana (antes, una caja suelta con margen).
     // Se mide cuando la ventana termino de subir y las dos cajas en el mismo instante:
     // con la suite cargando el equipo, dos consultas separadas caian en momentos distintos de la subida
+    // La ventana es de vidrio y tiene un borde de luz de 1 px: la franja va de borde a borde por dentro de el
     const { caja, pie } = await page.locator('#ventanaContrasena').evaluate(async ventana => {
         await Promise.all(ventana.getAnimations({ subtree: true }).map(a => a.finished));
-        const caja = ventana.querySelector('.modal-content').getBoundingClientRect();
+        const contenido = ventana.querySelector('.modal-content'), r = contenido.getBoundingClientRect();
+        const caja = { x: r.x + contenido.clientLeft, y: r.y + contenido.clientTop, width: contenido.clientWidth, height: contenido.clientHeight };
         const pie = ventana.querySelector('.modal-actions').getBoundingClientRect();
-        return { caja: caja.toJSON(), pie: pie.toJSON() };
+        return { caja, pie: pie.toJSON() };
     });
     expect(Math.abs(pie.x - caja.x)).toBeLessThan(1.5);
     expect(Math.abs(pie.width - caja.width)).toBeLessThan(1.5);
