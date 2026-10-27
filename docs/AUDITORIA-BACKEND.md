@@ -24,7 +24,12 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 | 2. Vacantes y roles | Hecha | C4, A1, M9 (sin colección `audit_log`: por ahora solo una línea en el log), M13 |
 | 3. Sesión y configuración | Hecha, salvo B1 | A2, A3, B2, M1, M2, M10, M11 |
 | 4. Fuerza bruta y enumeración | Hecha, salvo el registro | A4 (IP real + bloqueo por cuenta 5 fallos / 15 min), M4 en el login. El registro sigue diciendo "El email ya está registrado": se resuelve con la verificación de correo (fase 8) |
-| 5 a 11 | Pendientes | — |
+| 5. Validación de entradas | Hecha | A6, B4, M5, M6, M12, M3, B3, A8 (con migración de correos al arrancar). Queda: algunos controladores todavía arman "Error al ...: " + mensaje en sus propios `catch`; con el manejador nuevo ya no llegan fallos de Java por ahí, pero conviene limpiarlos |
+| 6 a 11 | Pendientes | — |
+
+**Al publicar la fase 5 en Render:** mirar el log del primer arranque. `Correos normalizados a minúsculas: N cuentas`
+indica cuántas se arreglaron; una línea `Correo duplicado al normalizar` indica dos cuentas del mismo correo que hay
+que revisar a mano (decidir cuál se conserva).
 
 **Comprobar en Render al publicar la fase 4:** cuando alguien llegue al límite, el log mostrará
 `Límite de intentos para IP ... (X-Forwarded-For: ...)`. La IP contada debe ser la última de esa cadena y la del
