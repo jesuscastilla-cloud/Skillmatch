@@ -24,3 +24,9 @@ node_modules/
 pruebas/test-results/
 pruebas/playwright-report/
 pruebas/capturas/
+
+# Copias de la base (datos personales): nunca al repositorio (ver docs/OPERACION.md)
+*.archive.gpg
+*.archive
+copias/
+copias-skillmatch/
