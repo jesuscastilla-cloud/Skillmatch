@@ -10,7 +10,14 @@ function enFormatoJava(d) {
 function haceDias(dias, hora) {
     const d = new Date();
     d.setDate(d.getDate() - dias);
-    if (hora !== undefined) d.setHours(hora, 15, 0, 0); else d.setMinutes(d.getMinutes() - 30);
+    if (hora !== undefined) d.setHours(hora, 15, 0, 0);
+    else {
+        // Media hora antes, pero sin pasarse al dia anterior: cerca de medianoche (a las 00:25) "hoy"
+        // caia en ayer y "Nueva" de hace 3 dias en el dia 4, y las pruebas de fechas fallaban de noche
+        const inicio = new Date(d); inicio.setHours(0, 0, 30, 0);
+        d.setMinutes(d.getMinutes() - 30);
+        if (d < inicio) d.setTime(inicio.getTime());
+    }
     return enFormatoJava(d);
 }
 function enDias(dias) {
