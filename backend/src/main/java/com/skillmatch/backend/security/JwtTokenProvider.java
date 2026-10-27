@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -83,6 +84,9 @@ public class JwtTokenProvider {
                 .collect(Collectors.toList());
 
         return Jwts.builder()
+                // Identificador único: dos logins en el mismo segundo no dan el mismo token
+                // (si no, cerrar sesión en un dispositivo cerraría también el otro)
+                .id(UUID.randomUUID().toString())
                 .subject(user.getUsername())
                 .claim("userId", user.getId())
                 .claim("roles", roles)

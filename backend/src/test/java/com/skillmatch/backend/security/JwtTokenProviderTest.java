@@ -68,6 +68,18 @@ class JwtTokenProviderTest {
     }
 
     @Test
+    void dosLoginsSeguidos_danTokensDistintos() {
+        JwtTokenProvider provider = arrancar(CLAVE_DE_PRUEBA, null);
+        User user = new User();
+        user.setId("user-id-1");
+        user.setEmail("ana@test.com");
+        user.setRoles(List.of("USER"));
+        UserDetailsImpl detalles = UserDetailsImpl.build(user);
+
+        assertThat(provider.generateToken(detalles)).isNotEqualTo(provider.generateToken(detalles));
+    }
+
+    @Test
     void tokenSinVersion_cuentaComoCero() {
         JwtTokenProvider provider = arrancar(CLAVE_DE_PRUEBA, null);
         // Token como los de antes de este cambio: sin el claim "ver"
