@@ -26,7 +26,10 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 | 4. Fuerza bruta y enumeración | Hecha, salvo el registro | A4 (IP real + bloqueo por cuenta 5 fallos / 15 min), M4 en el login. El registro sigue diciendo "El email ya está registrado": se resuelve con la verificación de correo (fase 8) |
 | 5. Validación de entradas | Hecha | A6, B4, M5, M6, M12, M3, B3, A8 (con migración de correos al arrancar). Queda: algunos controladores todavía arman "Error al ...: " + mensaje en sus propios `catch`; con el manejador nuevo ya no llegan fallos de Java por ahí, pero conviene limpiarlos |
 | 6. Mensajes y conexiones | Hecha | M8: el bloqueo impide escribir (en los dos sentidos); 20 mensajes/min y 500/día, 30 solicitudes/día por cuenta; la conversación devuelve los 1000 mensajes más recientes. Pendientes 2.4: una solicitud rechazada se puede reenviar a los 30 días (quien rechazó, de inmediato). Se mantiene que cualquiera puede escribir a cualquiera (así está diseñado el frontend). El frontend todavía no tiene botón "Bloquear". Si una conversación pasara de 1000 mensajes, "Eliminar conversación" dejaría los más viejos: la solución es un `DELETE /api/messages/conversation/{id}` (pendientes 2.11) |
-| 7 a 11 | Pendientes | — |
+| 7. Datos personales | Hecha (backend) | Prueba del consentimiento (`User.consentimientos`, exigible con `PRIVACIDAD_EXIGIR_CONSENTIMIENTO`), `GET /api/users/me/export`, `DELETE /api/users/me` (borra todos los mensajes; empresa anónima), notificaciones 90 días (TTL), postulaciones 12 meses tras cerrar la vacante (tarea diaria), `lastLoginAt`. Pendiente: borrado de cuentas inactivas 24 meses (necesita correo, fase 8) y los botones y la política en el frontend (`docs/CAMBIOS-FRONTEND.md`, F6 a F9) |
+| 8 a 11 | Pendientes | — |
+
+Lo que el frontend tiene que hacer para usar lo nuevo del backend está en **`docs/CAMBIOS-FRONTEND.md`**.
 
 **Al publicar la fase 5 en Render:** mirar el log del primer arranque. `Correos normalizados a minúsculas: N cuentas`
 indica cuántas se arreglaron; una línea `Correo duplicado al normalizar` indica dos cuentas del mismo correo que hay
