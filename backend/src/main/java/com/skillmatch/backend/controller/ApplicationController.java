@@ -3,6 +3,7 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.ApplicationRequest;
 import com.skillmatch.backend.dto.ApplicationResponse;
 import com.skillmatch.backend.dto.MessageResponse;
+import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +42,9 @@ public class ApplicationController {
                     .body(applicationService.createApplication(userId, request));
         } catch (AccessDeniedException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(ex.getMessage()));
+        } catch (DuplicateResourceException e) {
+            // 409 con el mismo texto: oportunidades.js reconoce "Ya te has postulado"
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new MessageResponse("Error al crear postulación: " + e.getMessage()));

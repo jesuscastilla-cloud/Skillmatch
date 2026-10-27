@@ -32,6 +32,41 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void duplicadoEnLaBase_responde409SinDetalles() {
+        ResponseEntity<?> r = handler.handleDuplicateKey(
+                new org.springframework.dao.DuplicateKeyException("E11000 duplicate key error index: userId_1_jobId_1"));
+
+        assertThat(r.getStatusCode().value()).isEqualTo(409);
+        assertThat(((MessageResponse) r.getBody()).getMessage()).doesNotContain("E11000", "index");
+    }
+
+    @Test
+    void falloDeJava_noMuestraDetallesInternos() {
+        ResponseEntity<?> r = handler.handleRuntime(
+                new NullPointerException("Cannot invoke \"User.getEmail()\" because \"user\" is null"), null);
+
+        assertThat(r.getStatusCode().value()).isEqualTo(500);
+        assertThat(((MessageResponse) r.getBody()).getMessage()).doesNotContain("User", "null").contains("código");
+    }
+
+    @Test
+    void mensajeDeNegocio_siLlega() {
+        ResponseEntity<?> r = handler.handleRuntime(
+                new RuntimeException("El salario mínimo no puede ser mayor al salario máximo"), null);
+
+        assertThat(r.getStatusCode().value()).isEqualTo(400);
+        assertThat(((MessageResponse) r.getBody()).getMessage()).contains("salario mínimo");
+    }
+
+    @Test
+    void errorInesperado_noMuestraDetalles() {
+        ResponseEntity<?> r = handler.handleGlobal(new java.io.IOException("Connection reset by peer 10.0.0.5:27017"), null);
+
+        assertThat(r.getStatusCode().value()).isEqualTo(500);
+        assertThat(((MessageResponse) r.getBody()).getMessage()).doesNotContain("27017", "Connection");
+    }
+
+    @Test
     void demasiadosIntentos_responde429() {
         assertThat(handler.handleTooManyAttempts(new TooManyAttemptsException("Espera")).getStatusCode().value())
                 .isEqualTo(429);

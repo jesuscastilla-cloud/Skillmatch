@@ -28,6 +28,8 @@ import java.util.Map;
 @RequestMapping("/api")
 public class HealthController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HealthController.class);
+
     private final MongoTemplate mongoTemplate;
 
     public HealthController(MongoTemplate mongoTemplate) {
@@ -45,13 +47,13 @@ public class HealthController {
             long inicio = System.currentTimeMillis();
             mongoTemplate.executeCommand(new Document("ping", 1));
             body.put("mongodb", "UP");
-            body.put("mongodbDatabase", mongoTemplate.getDb().getName());
             body.put("mongodbPingMs", System.currentTimeMillis() - inicio);
             return ResponseEntity.ok(body);
         } catch (Exception e) {
+            // Ruta pública: el nombre de la base y el error de conexión solo van al log
+            log.error("Healthcheck: MongoDB no responde: {}", e.getMessage());
             body.put("status", "DOWN");
             body.put("mongodb", "DOWN");
-            body.put("mongodbError", e.getMessage());
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
         }
     }
