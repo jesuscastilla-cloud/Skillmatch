@@ -50,3 +50,21 @@ Estado: ⬜ pendiente · ✅ hecho
   como máximo los 1000 más recientes, así que en una conversación más larga quedarían los viejos.
 - **Backend:** falta `DELETE /api/messages/conversation/{otherUserId}` (no existe todavía; pedirlo cuando se haga
   esto). **Dónde:** `assets/js/mensajes.js` línea ~626.
+
+---
+
+## De la fase 7 (datos personales)
+
+### ⬜ F6. Enviar las casillas del registro (consentimiento)
+- **Backend:** `POST /api/auth/register` acepta `aceptaPolitica` (true/false) y, para personas, `mayorDeEdad`.
+  Guarda la prueba (qué se aceptó, versión de la política y fecha) en `User.consentimientos`.
+- **Dónde:**
+  - `assets/js/registro-usuario.js` línea ~88, dentro del `JSON.stringify({...})`:
+    `aceptaPolitica: document.getElementById('usuario-terminos').checked,`
+    `mayorDeEdad: document.getElementById('usuario-mayor').checked,`
+  - `assets/js/registro-empresa.js`, en el cuerpo del registro:
+    `aceptaPolitica: document.getElementById('empresa-terminos').checked,`
+- **Después de publicarlo:** en Render, agregar `PRIVACIDAD_EXIGIR_CONSENTIMIENTO=true`. Desde ahí, registrarse sin
+  aceptar es imposible (hoy el backend no lo exige para no romper el registro actual).
+- **Si cambia la política:** subir la versión en `pages/politica-datos.html` ("Versión 0.1") **y** en Render
+  (`PRIVACIDAD_VERSION_POLITICA`).

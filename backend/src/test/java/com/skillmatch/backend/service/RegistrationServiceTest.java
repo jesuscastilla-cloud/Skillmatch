@@ -5,6 +5,9 @@ import com.skillmatch.backend.dto.RegisterRequest;
 import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.model.Consentimiento;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.mockito.ArgumentCaptor;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
@@ -121,5 +124,67 @@ class RegistrationServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Elige otra");
         verify(userRepository, never()).save(any());
+    }
+
+    // ─── Consentimiento (Ley 1581) ────────────────────────────────────────────
+
+    @Test
+    void register_conCasillas_guardaLaPruebaDelConsentimiento() {
+        userRequest.setAceptaPolitica(true);
+        userRequest.setMayorDeEdad(true);
+        ArgumentCaptor<User> guardado = registrarYCapturar();
+
+        assertThat(guardado.getValue().getConsentimientos())
+                .extracting(Consentimiento::getTipo, Consentimiento::getVersion)
+                .containsExactly(tuple(Consentimiento.POLITICA_DATOS, "0.1"), tuple(Consentimiento.MAYOR_DE_EDAD, "0.1"));
+        assertThat(guardado.getValue().getConsentimientos()).allSatisfy(c -> assertThat(c.getFecha()).isNotNull());
+    }
+
+    @Test
+    void register_sinCasillas_mientrasNoSeExige_creaLaCuenta() {
+        ArgumentCaptor<User> guardado = registrarYCapturar();
+
+        assertThat(guardado.getValue().getConsentimientos()).isEmpty();
+    }
+
+    @Test
+    void register_sinAceptarPolitica_cuandoSeExige_noCreaLaCuenta() {
+        ReflectionTestUtils.setField(registrationService, "exigirConsentimiento", true);
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("política");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_personaSinMayoriaDeEdad_cuandoSeExige_noCreaLaCuenta() {
+        ReflectionTestUtils.setField(registrationService, "exigirConsentimiento", true);
+        userRequest.setAceptaPolitica(true);
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("mayor de edad");
+        verify(userRepository, never()).save(any());
+    }
+
+    private ArgumentCaptor<User> registrarYCapturar() {
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId("user-id-10");
+            return u;
+        });
+        Authentication mockAuth = mock(Authentication.class);
+        when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
+        when(tokenProvider.generateToken(mockAuth)).thenReturn("jwt.token");
+        when(tokenProvider.getExpirationMillis()).thenReturn(86400000L);
+
+        registrationService.register(userRequest);
+
+        ArgumentCaptor<User> guardado = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(guardado.capture());
+        return guardado;
     }
 }

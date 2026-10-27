@@ -67,6 +67,9 @@ public class User implements UserDetails {
     @JsonIgnore
     private Integer tokenVersion = 0;
 
+    // Prueba de las autorizaciones aceptadas (Ley 1581). Ver RegistrationService.
+    private List<Consentimiento> consentimientos = new ArrayList<>();
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

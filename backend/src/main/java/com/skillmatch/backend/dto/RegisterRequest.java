@@ -36,6 +36,18 @@ public class RegisterRequest {
     @NotBlank(message = "{validation.userType.required}")
     private String userType;
 
+    /** Casilla "Leí la política de tratamiento de datos y autorizo...". */
+    private Boolean aceptaPolitica;
+
+    /** Casilla "Soy mayor de edad" (solo personas). */
+    private Boolean mayorDeEdad;
+
+    /** El constructor de antes (sin las casillas), que siguen usando las pruebas. */
+    public RegisterRequest(String email, String password, String firstName, String lastName,
+                           String phone, String userType) {
+        this(email, password, firstName, lastName, phone, userType, null, null);
+    }
+
     /** Correo sin espacios y en minúsculas: un mismo correo, una sola cuenta. */
     public void setEmail(String email) {
         this.email = Credenciales.normalizarCorreo(email);
