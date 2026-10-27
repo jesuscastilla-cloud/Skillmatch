@@ -34,7 +34,9 @@ public class UserController {
     public ResponseEntity<?> getUserById(@PathVariable String id,
                                          @AuthenticationPrincipal UserDetailsImpl currentUser) {
         if (currentUser == null) return ResponseEntity.status(401).body(new MessageResponse("Usuario no autenticado"));
-        return ResponseEntity.ok(userService.getUserProfile(id));
+        // El correo y el teléfono solo los ve la propia persona o un ADMIN
+        boolean propioOAdmin = currentUser.getId().equals(id) || isAdmin(currentUser);
+        return ResponseEntity.ok(propioOAdmin ? userService.getUserProfile(id) : userService.getPublicProfile(id));
     }
 
     @PutMapping("/{id}")
@@ -124,5 +126,9 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(new MessageResponse("Error al obtener estadísticas: " + e.getMessage()));
         }
+    }
+
+    private boolean isAdmin(UserDetailsImpl user) {
+        return user.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }

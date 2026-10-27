@@ -1,0 +1,48 @@
+package com.skillmatch.backend.service;
+
+import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.repository.ApplicationRepository;
+import com.skillmatch.backend.repository.UserRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
+@SuppressWarnings("null")
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+
+    @Mock private UserRepository userRepository;
+    @Mock private CompanyService companyService;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private ApplicationRepository applicationRepository;
+    @Mock private MongoTemplate mongoTemplate;
+
+    @InjectMocks
+    private UserService userService;
+
+    @Test
+    void getPublicProfile_quitaCorreoYTelefono() {
+        User user = new User();
+        user.setId("user-id-1");
+        user.setFirstName("Ana");
+        user.setHeadline("Diseñadora");
+        user.setEmail("ana@test.com");
+        user.setPhone("3001234567");
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(user));
+
+        Map<String, Object> profile = userService.getPublicProfile("user-id-1");
+
+        assertThat(profile).containsEntry("firstName", "Ana").containsEntry("headline", "Diseñadora");
+        assertThat(profile).doesNotContainKeys("email", "phone");
+    }
+}

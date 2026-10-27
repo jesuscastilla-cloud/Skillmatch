@@ -121,6 +121,14 @@ public class UserService {
         return profile;
     }
 
+    /** Lo que ve otra persona: el mismo perfil, sin correo ni teléfono. */
+    public Map<String, Object> getPublicProfile(String userId) {
+        Map<String, Object> profile = getUserProfile(userId);
+        profile.remove("email");
+        profile.remove("phone");
+        return profile;
+    }
+
     public List<User> findSuggestionsForUser(String userId) {
         User user = getUserById(userId);
         if (user.getLocation() == null || user.getLocation().isBlank()) {
