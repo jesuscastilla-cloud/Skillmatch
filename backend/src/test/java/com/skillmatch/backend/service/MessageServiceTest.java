@@ -33,6 +33,7 @@ class MessageServiceTest {
 
     @Mock private MessageRepository messageRepository;
     @Mock private ConnectionRepository connectionRepository;
+    @Mock private LimiteEnvios limiteEnvios;
     @Mock private UserRepository userRepository;
     @Mock private NotificationService notificationService;
     @Mock private MongoTemplate mongoTemplate;

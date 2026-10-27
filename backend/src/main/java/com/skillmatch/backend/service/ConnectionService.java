@@ -39,6 +39,7 @@ public class ConnectionService {
     private final UserService userService;
     private final NotificationService notificationService;
     private final MongoTemplate mongoTemplate;
+    private final LimiteEnvios limiteEnvios;
 
     public ConnectionResponse sendConnectionRequest(String userId, ConnectionRequest request) {
         String connectedUserId = request.getConnectedUserId();
@@ -57,6 +58,7 @@ public class ConnectionService {
         if (findConnectionBetweenUsers(userId, connectedUserId).isPresent()) {
             throw new DuplicateResourceException("Ya existe una conexión o solicitud pendiente con este usuario");
         }
+        limiteEnvios.registrarSolicitud(userId);
 
         Connection connection = new Connection();
         connection.setUserId(userId);

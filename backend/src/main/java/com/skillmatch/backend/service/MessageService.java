@@ -34,6 +34,7 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final ConnectionRepository connectionRepository;
+    private final LimiteEnvios limiteEnvios;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final MongoTemplate mongoTemplate;
@@ -57,6 +58,7 @@ public class MessageService {
         if (connectionRepository.existsBetween(senderId, receiverId, ConnectionStatus.BLOCKED)) {
             throw new UnauthorizedException("No puedes enviar mensajes a esta persona");
         }
+        limiteEnvios.registrarMensaje(senderId);
 
         Message message = new Message();
         message.setSenderId(senderId);

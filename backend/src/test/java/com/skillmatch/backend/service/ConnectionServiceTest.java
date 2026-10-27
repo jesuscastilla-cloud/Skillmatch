@@ -43,6 +43,7 @@ class ConnectionServiceTest {
     @Mock private UserService userService;
     @Mock private NotificationService notificationService;
     @Mock private MongoTemplate mongoTemplate;
+    @Mock private LimiteEnvios limiteEnvios;
 
     @InjectMocks
     private ConnectionService connectionService;
