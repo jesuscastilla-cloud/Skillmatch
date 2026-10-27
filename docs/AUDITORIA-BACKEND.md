@@ -29,6 +29,17 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 `Authorization: Bearer`. Quitar el token del cuerpo rompería el login (en local la página va en `127.0.0.1:5500` y
 la API en `localhost:8080`, así que la cookie no viaja). Primero el frontend debe usar solo la cookie `httpOnly`.
 
+**Probado contra MongoDB local (27 de octubre):** 157 pruebas automáticas (incluida `AuthIntegrationTest`), 45
+casos de ataque contra el servidor real (base `skillmatch-auditoria`) y el sitio en el navegador (entrar, perfil,
+experiencias, cambio de contraseña, sugerencias, panel de empresa). Al probar se encontró y arregló que dos logins en
+el mismo segundo daban el mismo token (ahora cada token lleva `jti`). Quedan anotados:
+- Postularse dos veces responde 400 en vez de 409 (se bloquea igual): va en la fase 5 (M12).
+- Una ruta estática que no existe (`/pages/sw.js`) responde 500 en vez de 404: va en la fase 5 (M3).
+- Frontend: una experiencia sin fecha de fin sale como "dic 1969", y las fechas salen un mes antes por la zona
+  horaria (`2025-01-01` se ve "dic 2024"). Se nota ahora que las experiencias cargan.
+- Para correr `AuthIntegrationTest` en Windows con espacios en el usuario:
+  `./mvnw test "-DargLine=-Djdk.net.unixdomain.tmpdir=C:/Temp/skillmatch-java"` (carpeta sin espacios).
+
 **Revisar en Render al publicar la fase 3:** que exista `JWT_SECRET` (la app ya no arranca sin ella); que
 `ALLOWED_ORIGINS` no esté definida o tenga solo dominios exactos; que `COOKIE_SAME_SITE` no sea `None`; que
 `SWAGGER_ENABLED` no esté en `true`.
