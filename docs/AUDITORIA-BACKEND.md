@@ -16,6 +16,23 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 > **No es asesoría legal.** La parte de datos personales es una revisión técnica; antes de abrir al público conviene
 > validarla con un abogado (igual que dice `docs/REGISTRO-Y-MARCO-LEGAL.md`).
 
+## Estado (27 de octubre de 2026)
+
+| Fase | Estado | Notas |
+|---|---|---|
+| 1. Fugas de datos | Hecha | C1, C2, C3, A5, M7, A7 |
+| 2. Vacantes y roles | Hecha | C4, A1, M9 (sin colección `audit_log`: por ahora solo una línea en el log), M13 |
+| 3. Sesión y configuración | Hecha, salvo B1 | A2, A3, B2, M1, M2, M10, M11 |
+| 4 a 11 | Pendientes | — |
+
+**B1 queda pendiente a propósito:** el frontend guarda `data.token` en `localStorage` y lo manda como
+`Authorization: Bearer`. Quitar el token del cuerpo rompería el login (en local la página va en `127.0.0.1:5500` y
+la API en `localhost:8080`, así que la cookie no viaja). Primero el frontend debe usar solo la cookie `httpOnly`.
+
+**Revisar en Render al publicar la fase 3:** que exista `JWT_SECRET` (la app ya no arranca sin ella); que
+`ALLOWED_ORIGINS` no esté definida o tenga solo dominios exactos; que `COOKIE_SAME_SITE` no sea `None`; que
+`SWAGGER_ENABLED` no esté en `true`.
+
 ---
 
 ## 0. Cómo leer este informe
