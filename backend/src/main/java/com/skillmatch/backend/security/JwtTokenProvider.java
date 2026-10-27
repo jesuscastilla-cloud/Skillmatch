@@ -19,6 +19,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -34,6 +35,11 @@ public class JwtTokenProvider {
 
     private SecretKey signingKey;
 
+    /** Claves de ejemplo publicadas en el repositorio: nunca sirven para firmar. */
+    static final Set<String> CLAVES_PUBLICAS = Set.of(
+            "skillmatch-secreto-solo-para-desarrollo-local-no-usar-en-produccion",
+            "cambia-esto-por-una-cadena-larga-y-aleatoria-de-mas-de-32-caracteres");
+
     @PostConstruct
     private void init() {
         String secreto = jwtProperties.getSecret();
@@ -46,6 +52,12 @@ public class JwtTokenProvider {
                 "La variable de entorno JWT_SECRET es obligatoria y debe tener al menos 32 caracteres. " +
                 "Valor actual: " + (secreto == null ? "vacio" : secreto.trim().length() + " caracteres") + ". " +
                 "Genera una con: openssl rand -base64 48");
+        }
+
+        if (CLAVES_PUBLICAS.contains(secreto.trim())) {
+            throw new IllegalStateException(
+                "JWT_SECRET tiene un valor de ejemplo que esta publicado en el repositorio. " +
+                "Genera una clave propia con: openssl rand -base64 48");
         }
 
         if (jwtProperties.getExpiration() == null || jwtProperties.getExpiration() <= 0) {
