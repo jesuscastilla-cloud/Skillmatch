@@ -11,13 +11,16 @@
     <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#EDF2F8">
-    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="../assets/css/app.css">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');document.documentElement.style.setProperty('--reloj',Date.now()%864e5+'ms');addEventListener('pagereveal',function(e){var v=e.viewTransition,d;try{d=JSON.parse(sessionStorage.getItem('skillmatch_deslizar'));sessionStorage.removeItem('skillmatch_deslizar');}catch(x){}if(d&&d.a===location.pathname&&Date.now()-d.t<15000){if(v&&v.types)v.types.add('ir-'+d.dir);var h=document.documentElement,c='entra-'+d.dir;h.classList.add(c);setTimeout(function(){h.classList.remove(c);},1400);}});})();</script>
 </head>
-<body>
+<body class="pagina-vidrio">
+    <!-- Fondo vivo del vidrio (app.css, seccion 30): manchas de la marca que se mueven lento.
+         Va en el HTML para estar desde el primer cuadro; el guion del <head> pone --reloj. -->
+    <div class="fondo-vivo" aria-hidden="true"><span class="mancha-1"></span><span class="mancha-2"></span><span class="mancha-3"></span><span class="mancha-4"></span><span class="mancha-5"></span></div>
     <a class="skip-link" href="#main">Saltar al contenido</a>
     <header>
         <nav class="container" aria-label="Principal">
@@ -58,6 +61,8 @@
 
                 <!-- Chat actual -->
                 <div class="chat-area">
+                    <!-- Solo en el celular con un chat abierto (la lista y su h1 se ocultan) -->
+                    <h1 class="sr-only chat-titulo-celular">Mensajes</h1>
                     <div class="chat-empty" id="chatEmpty">
                         <div class="empty-state">
                             <h2><i data-ico="chat"></i> Selecciona una conversación</h2>
@@ -72,7 +77,7 @@
                                 <button class="btn-icon btn-volver-chat" id="backToListBtn" type="button" aria-label="Volver a las conversaciones"><i data-ico="arrow"></i></button>
                                 <div class="chat-avatar" id="chatAvatar"><i data-ico="user"></i></div>
                                 <div class="chat-user-details">
-                                    <h3 id="chatUserName">Usuario</h3>
+                                    <h2 id="chatUserName">Usuario</h2>
                                     <span class="chat-user-status" id="chatUserStatus"></span>
                                 </div>
                             </div>

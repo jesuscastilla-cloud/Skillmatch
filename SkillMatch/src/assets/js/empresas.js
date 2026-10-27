@@ -73,7 +73,7 @@ function tarjetaEmpresa(c) {
     const lugar = [c.industry, c.location].filter(Boolean).map(escaparHtml).join(' · ');
     return `
         <li class="empresa-tarjeta">
-            <span class="empresa-avatar" aria-hidden="true">${escaparHtml(iniciales(c.name))}</span>
+            <span class="empresa-avatar" aria-hidden="true"${c.userId ? ` data-logo-cuenta="${escaparHtml(String(c.userId))}"` : ''}>${escaparHtml(iniciales(c.name))}</span>
             <div class="empresa-datos">
                 <h3><a class="empresa-enlace" href="empresa.html?id=${encodeURIComponent(c.id)}">${escaparHtml(c.name || 'Empresa')}</a></h3>
                 ${lugar ? `<p>${lugar}</p>` : ''}

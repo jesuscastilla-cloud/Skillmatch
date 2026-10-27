@@ -18,3 +18,9 @@ build/
 .DS_Store
 Thumbs.db
 *.log
+
+# Pruebas (pruebas/): lo que instala npm y lo que genera Playwright
+node_modules/
+pruebas/test-results/
+pruebas/playwright-report/
+pruebas/capturas/

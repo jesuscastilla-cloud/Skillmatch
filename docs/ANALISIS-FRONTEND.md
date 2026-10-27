@@ -378,6 +378,194 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   - De paso: en la lista, las empresas salían como "Caribe Digital Estudio Empresa" (a la expresión le faltaba la
     barra de `\s`), y la negrita de los avisos no se leía sobre su fondo oscuro.
   - Las horas en Render salen 5 horas corridas porque el servidor guarda en UTC: es del backend (PENDIENTES 2.10).
+- **Ideas de los videos de Instagram y TikTok (hecho, 24 de octubre de 2026):**
+  - *Baraja de Vacantes sin rebote* y *"el trabajo del match"*: el aviso dice con cifras reales qué se comparó
+    ("Comparamos tus 3 habilidades… De las 9 que ves, 2 piden alguna").
+  - *Etiquetas "Nueva" y "Cierra pronto"* en cada vacante y *cuántas hay de cada opción* en los filtros; las
+    opciones sin resultados se atenúan con color (con opacidad bajaban de 4.5:1).
+  - *Descargar las postulaciones en Excel* (Mi empresa): primero fue un CSV con punto y coma, pero en un Windows
+    que separa con coma (Luis, español de México) salía todo en la columna A. Ahora es un `.xlsx` de verdad armado
+    en el navegador sin librerías (`hoja-excel.js`: los XML del libro en un zip sin comprimir): columnas en
+    cualquier computador, tildes, títulos en negrita fijos al bajar, filtros, anchos y la fecha como fecha. Los
+    textos van como texto, así que nada de lo que escribe una persona se vuelve fórmula.
+  - *Cerrar una vacante sabiendo qué pasa*: deja de verse, cuántas personas se postularon y quiénes esperan
+    respuesta (sin aviso, porque el backend no avisa). Se les puede responder en el mismo paso. Reabrir con la
+    fecha vencida pide cambiarla primero: si no, el backend la cerraría esa misma noche (PENDIENTES 2.12).
+  - *Detalle de cada gráfica en Indicadores*: crece desde su tarjeta (FLIP, solo `transform` y `opacity`), con
+    una tabla y las vacantes nuevas de esta semana frente a la anterior. Solo compara si las 200 vacantes más
+    recientes alcanzan a cubrir las dos semanas; si no, lo dice en lugar de inventar.
+- **Revisión de diseño con la skill ui-ux-pro-max (hecho, 24 de octubre de 2026):** se siguieron sus 119 reglas y
+  su lista de chequeo con un script que mide 138 vistas (`pruebas/auditoria.js`: teléfono de 375 px, de lado,
+  letra muy grande, escritorio; claro y oscuro). Pasó de 45 problemas a 5, y los 5 que quedan son decisiones:
+  - *Arreglado*: las conversaciones de Mensajes no se abrían con el teclado (ahora el nombre es un botón); los
+    buscadores de la portada y de Vacantes no mostraban dónde estaba el foco; la barra de pestañas del celular
+    tapaba lo que recibía el foco (`scroll-padding-bottom`); los contadores naranjas tenían texto blanco (2.7:1);
+    «Cerrada» casi no se leía (2.09:1); en iPhone, tocar un campo con letra de 15 px agrandaba la página; títulos
+    que saltaban de nivel (Conexiones) o un chat sin `h1` en el celular; la contraseña del login sin
+    `autocomplete`; filas del perfil con la mano del mouse aunque no se abrían; enlaces de menos de 24 px.
+  - *Se quedan así a propósito*: los pasos atenuados de "Cómo funciona" en la portada (se leen al llegar a ellos;
+    con "más contraste" en el sistema se ven completos) y títulos de tarjetas de 25 px en el celular (pasan el
+    mínimo de 24 px; la acción principal de cada tarjeta mide 44 px).
+  - Las pruebas de `pruebas/casos/accesibilidad.spec.js` cuidan que no vuelva a pasar.
+- **Ideas de los videos de Facebook (hecho, 24 de octubre de 2026):**
+  - *Contraseña nueva* (registros y "Cambiar contraseña"): ojo para verla, lo que se pide marcado mientras se
+    escribe, la fuerza en palabras ("Débil, porque incluye tu nombre o tu correo") y si coinciden. Solo los 8
+    caracteres son obligatorios, porque es lo que exige el backend; lo demás se recomienda sin bloquear
+    (`ui.js`, sección 26).
+  - *El menú marca la sección* en la que se está al hacer scroll ("Cómo funciona" en la portada, "Mis ofertas"
+    y "Candidatos" en Mi empresa) y su *línea se desliza* con el mouse. Esto último es solo con mouse y sin
+    movimiento reducido (`ui.js`, sección 27).
+- **Llenar el perfil con la hoja de vida en PDF (hecho, 24 de octubre de 2026):** idea del video "Lectora". El PDF
+  se lee en el navegador con pdf.js 6.4.299 (`vendor/pdfjs`), sin subirlo a ningún lado. Propone teléfono, ciudad,
+  titular, presentación, habilidades, estudios y experiencia; lo dudoso queda en ámbar y sin marcar, lo que el
+  perfil ya tiene distinto no se reemplaza solo, las referencias no se traen y nada se guarda sin confirmar
+  (`leer-hoja-de-vida.js`). Lee hojas de una y de dos columnas. Las experiencias se habilitan solas cuando el
+  backend arregle el punto 1.4.
+- **Cambio de página con la marca que viaja (hecho, 24 de octubre de 2026):** pedido de Luis, idea del video
+  «Modern Responsive Navbar». Al hacer clic, la línea del menú (computador) o una pastilla en la barra de
+  pestañas (celular) se desliza hasta el destino mientras carga la página siguiente, también desde enlaces del
+  contenido ("Ver vacantes abiertas"). Hallazgos al medirlo: el navegador toma la foto de la página nueva antes
+  de que corra `ui.js`, así que la línea y la barra de abajo no pueden "viajar" con la View Transition; por eso
+  la marca se adelanta en la página que sale, la barra de abajo de la página anterior se queda quieta hasta el
+  final y la línea no vuelve a crecer. Con "reducir movimiento" la página ya no cambia de golpe: se funde sin
+  desplazarse. En Firefox no hay transición entre páginas, pero la marca sí se desliza. En el celular simulado
+  de Playwright la transición entre páginas nunca corre (en una ventana angosta sin simular sí): es de la
+  simulación, no del sitio.
+- **El viaje se ve y la página se desliza (hecho, 25 de octubre de 2026):** pedido de Luis, que no veía
+  el deslizamiento. Medido: la pastilla recorría el 67 % del camino en 57 ms y la página siguiente cargaba
+  enseguida, así que parecía un salto. Ahora la marca viaja en 0,36 s con una curva que arranca y frena suave
+  (`--dur-viaje`, `--ease-viaje`) y la página cambia cuando llega (`irCuandoLlegue` en `ui.js`; si la línea ya
+  estaba bajo el mouse no se espera). La dirección queda en `sessionStorage` (`skillmatch_deslizar`) y el guion
+  del `<head>` de las 18 páginas la vuelve un tipo de la transición (`ir-derecha` / `ir-izquierda`) en
+  `pagereveal`, y una clase en `<html>` (`entra-derecha` / `entra-izquierda`) que se quita sola a los 1,4 s.
+  Se probó de lado (carrusel) y en vertical como el scroll del video; Luis eligió horizontal "que parezca que
+  entran las cosas": la vieja se corre un 30 % y se apaga, la nueva se corre un 30 % desde el lado de la
+  opción, y sus bloques (los hijos de cada `.container` de las secciones principales: título, buscador,
+  pestañas, tarjetas) llegan en fila desde ese lado, 60 ms uno tras otro y 180 ms después los de la segunda
+  sección. Las barras se quedan quietas.
+  Sin dirección (atrás, recargar, un enlace fuera del menú) queda el fundido de siempre, y con "reducir
+  movimiento" no hay viaje ni espera. Hallazgo al grabarlo: en 10 de las 18 páginas el guion del `<head>` iba
+  antes de las hojas de estilo y el navegador podía pintar un primer cuadro sin `app.css` (donde está
+  `@view-transition`), así que se saltaba la transición ("ViewTransition opt-in disabled"), también el fundido
+  de antes; con el guion después de las hojas pasó de 2 de 4 cambios con transición a 8 de 8. La barra de
+  arriba de la página nueva sale de visitante hasta que `ui.js` pone la sesión: durante la transición se ve
+  la de la página anterior, quieta. Al deslizar, la barra de abajo nueva (`ui.js` la arma en plena
+  transición) y la barra de progreso cruzaban la pantalla con la página: la primera se esconde hasta el final
+  y la segunda se esconde en `pageswap`. Con el computador muy ocupado (pruebas en paralelo) el navegador igual
+  puede saltarse alguna: por eso las pruebas revisan la dirección y el guion por separado.
+- **El logo de cada empresa en Vacantes (hecho, 25 de octubre de 2026):** Luis vio que las tarjetas mostraban solo
+  la inicial aunque la empresa tuviera logo. El logo vive en la cuenta de usuario de la empresa (ver
+  PENDIENTES-BACKEND 2.2), y solo el perfil público lo buscaba. Ahora `ui.js` (sección 28) cambia la inicial por el
+  logo en todo cuadrito marcado con `data-logo-empresa` o `data-logo-cuenta`: tarjetas de Vacantes, carrusel de la
+  portada y directorio de empresas. Una consulta por empresa (de a 3), con copia en la sesión del navegador; al
+  recargar no se pide nada. Los visitantes siguen viendo la inicial hasta que el backend mande el logo con la vacante.
+- **Ventanas sin la caja suelta (hecho, 25 de octubre de 2026):** en "Cambiar contraseña", confirmar, cerrar vacante
+  y foto o portada de la empresa, la franja de botones iba dentro del cuerpo (con margen) y quedaba como una caja
+  suelta, en claro y en oscuro. Ahora es el pie de la ventana, de borde a borde. Y "Contraseña actual" abría en
+  rojo: el ojo movía el campo, le quitaba el foco y la validación lo marcaba como error; ahora le devuelve el foco
+  y su estado.
+- **Panel del perfil de persona (hecho, 25 de octubre de 2026):** los cuadros crecían sin límite y la columna
+  derecha (300 px) llegaba casi al doble que el centro. Luis comparó dos prototipos (resumen arriba con dos
+  columnas, o pestañas) y eligió el primero: una fila de cifras (progreso en anillo con lo que falta como
+  acciones, postulaciones, guardadas, habilidades) y dos columnas parejas; experiencia y educación muestran 3 y
+  "Ver todas (N)". Estilo glassy (fondo de colores de la marca difuminados y tarjetas de vidrio), más liviano en
+  el celular y sólido con "reducir transparencia". Ideas de los reels "Inventory Management Dashboard" y
+  "Glassy Dashboard V2".
+- **Vidrio Liquid Glass, fase 1: el sistema y Mi perfil (hecho, 26 de octubre de 2026):** Luis eligió en un
+  prototipo el vidrio "B" (líquido: borde de luz, grosor y reflejo quieto) sobre manchas de la marca que se
+  mueven lento, en claro y oscuro, para todo el sitio. Plan, mediciones y fases en `docs/PLAN-PERFIL-GLASS.md`.
+  - **El sistema** (`app.css`, sección 30): todo bajo `<body class="pagina-vidrio">`.
+    - Tarjetas y listas de vidrio "de tinte", sin `backdrop-filter`: sobre las manchas no se nota y no cuesta.
+    - Vidrio real solo en la barra, las pestañas y los menús.
+    - Fondo vivo en el HTML. Sus manchas arrancan según la hora (`--reloj`, en el guion del `<head>` de las
+      18 páginas), así no vuelven a empezar al cambiar de página.
+    - Queda quieto con movimiento reducido y se va con alto contraste,
+      menos transparencia o al imprimir.
+  - **Mi perfil:**
+    - Iniciales con colores de la marca (antes podían salir moradas).
+    - Postulaciones y guardadas con la misma letra y alineadas.
+    - Experiencia y educación vacías explican por qué sirven y traen su botón.
+    - Anillo de progreso naranja (es un logro).
+  - **Medido:**
+    - `pruebas/contraste-vidrio.js`: ningún texto bajo AA en claro ni oscuro, en computador ni celular,
+      tampoco en el perfil de otra persona.
+    - 144 fps quieta y más de 270 bajando, también en celular con el procesador frenado 4 veces.
+    - Auditoría del perfil: 0 problemas.
+- **Vidrio, fase 2: la capa de controles en todo el sitio (hecho, 26 de octubre de 2026):** como en Liquid
+  Glass, lo que flota sobre el contenido es de vidrio en todas las páginas. Las tarjetas de cada página llegan
+  en las fases 3 a 6.
+  - **Qué piezas:** barra de arriba, pestañas del celular, menús ("⋯", "Más"), campana, listas desplegables,
+    ventanas nuevas y viejas, paleta Ctrl+K, avisos, tarjeta del recorrido y esqueletos de carga.
+  - **Tinte de la barra y las pestañas:** aguanta el peor caso de lo que pasa por detrás. Con menos, sobre el
+    papel blanco de la hoja de vida, los enlaces de la barra oscura quedaban en 2.0.
+  - **Contraste de antes, encontrado con píxeles:** el número naranja del anillo de match (2.7) y el pie
+    "Getsemaní" (3.2).
+  - **Medido:** 21 páginas y 8 piezas abiertas, claro y oscuro, computador y celular: ningún texto bajo AA.
+- **Vidrio, fase 3: Mi empresa y el perfil público de empresa (hecho, 26 de octubre de 2026):** las dos
+  páginas son de vidrio, como Mi perfil: fondo vivo de manchas y tarjetas de vidrio de tinte.
+  - **Mi empresa:** la cabecera con el logo (grueso), las secciones, las laterales y las vacantes.
+  - **Perfil público:** la cabecera con portada y los bloques.
+  - **"Primeros pasos"** conserva su filo turquesa.
+  - **Tablero de postulaciones:** las columnas solo cambian el fondo, porque su borde punteado se vuelve
+    turquesa al arrastrar encima; las tarjetas van en vidrio fino. Las secciones grandes no suben con el
+    mouse (adentro se arrastra).
+  - **El logo** lleva aro de vidrio real.
+- **Vidrio, fase 4: Vacantes, Empresas, Conexiones y Mensajes (hecho, 26 de octubre de 2026):** las cuatro
+  páginas son de vidrio.
+  - **La franja blanca de arriba** (título, frase, buscador) pasa a ser una repisa de vidrio a lo ancho.
+  - **Tarjetas de vidrio de tinte:** filtros, vacantes, empresas, conexiones, sugerencias y los dos paneles
+    de Mensajes.
+  - **En el chat**, el fondo deja ver el vidrio y las burbujas siguen sólidas para leerse perfecto.
+  - **Textos que iban sueltos sobre las manchas:** las pestañas, los títulos de sección del directorio, la
+    cuenta de vacantes y los mensajes de vacío van sobre vidrio. Medidos entre 3.1 y 4.3 antes del arreglo.
+  - **En oscuro:** "Nueva", las habilidades que ya tienes, "Inicia sesión" y las iniciales van en turquesa
+    claro; los avisos de "Comparamos..." e "Inicia sesión...", en blanco.
+- **Vidrio, fase 5: Inicio e Indicadores (hecho, 27 de octubre de 2026):** las dos páginas son de vidrio.
+  - **Las secciones de Inicio** (buscador, cómo funciona, beneficios, fotos de Cartagena, mapa, "Únete",
+    innovación y los resultados del buscador) son repisas de vidrio a lo ancho.
+  - **Las tarjetas** (cifras, beneficios, rutas, zonas del mapa, bloques del panel de inicio, "Únete" y
+    los indicadores) son de vidrio de tinte.
+  - **Siguen sólidos a propósito:** la portada, la franja del panel de inicio y la invitación del final
+    (superficies oscuras de la marca), y el carrusel 3D (en 3D las tarjetas translúcidas se verían unas a
+    través de otras).
+  - **Textos que iban sueltos:** la cuenta de Indicadores y la hora de los datos van en pastillas. En
+    oscuro, "Próximo" y la pestaña activa del celular van en turquesa claro.
+  - **Medición:** `contraste-vidrio.js` ahora mide la página completa, salta lo tapado por algo con fondo y
+    cuenta aparte lo atenuado a propósito. Todas las páginas de vidrio (fases 1 a 5) pasan medidas
+    completas.
+- **Vidrio, fase 6: entrar y registrarse (hecho, 27 de octubre de 2026):** las tres páginas de entrar, las dos
+  de registro y la de elegir registro son de vidrio.
+  - **Entrar:** la columna del formulario es de vidrio, y la de los personajes sigue azul oscuro.
+  - **Registro:** la sección es una repisa de vidrio con la tarjeta del formulario encima en vidrio grueso.
+  - **Siempre sólidos:** los campos para escribir.
+  - **En oscuro:** la etiqueta "Busco trabajo" / "Portal de empresas" va en turquesa claro (quedaba en 3.6).
+  - **Resultado:** con esto, todo el sitio usa el vidrio salvo la hoja de vida (es para imprimir), "Sin
+    conexión" y la política de datos (un documento de texto), que solo tienen la barra de vidrio.
+- **Ajustes tras la revisión de Luis (27 de octubre de 2026):**
+  - **Inicio sin franjas:** cada sección era una repisa aparte (brillo arriba, raya abajo) y la franja de
+    las cifras no tenía vidrio; se veían bandas horizontales de bordes duros. Ahora, de la ola de la portada
+    a la invitación del final, es una sola lámina con el mismo tinte, también bajo el panel de inicio con
+    sesión. Bajo la ola, el vidrio nace del color de la ola y se funde en 140 px, sin costura.
+  - **Vacantes:** la cuenta de vacantes iba 12 px más arriba que "Ordenar por" (un margen de abajo heredado
+    de los resultados de Inicio). Ahora van a la misma altura.
+  - **Anillo de compatibilidad hueco:** era un disco con un círculo blanco encima, que sobre el vidrio y el
+    recuadro turquesa del detalle se veía como un parche blanco. Ahora el aro tiene el centro hueco y la
+    pista translúcida.
+- **Vacantes cerca de ti (27 de octubre de 2026):** a pedido de Luis, Inicio ya no tiene las fotos de Cartagena
+  ni el mapa por zonas. En su lugar muestra las 6 vacantes abiertas más cercanas a la persona.
+  - **Desde dónde se mide:** la ciudad que eligió en la lista (se recuerda), su ubicación si la aceptó antes,
+    la ciudad de su perfil o Cartagena. La ubicación se pide solo al tocar "Usar mi ubicación": si el
+    navegador pregunta al entrar, mucha gente bloquea y después la página no puede volver a preguntar.
+  - **Cómo calcula "cerca":** `assets/js/ciudades.js` tiene 96 ciudades de Colombia con sus coordenadas (las
+    47 del filtro de Inicio, los alrededores de Cartagena, la costa, las capitales y las áreas
+    metropolitanas). La distancia es en línea recta (haversine): gratis y sin servicios de mapas.
+  - **Sin tocar el backend:** usa la búsqueda pública por ciudad (`/api/jobs/filter?location=`), 8 ciudades
+    a la vez y hasta 24. Las letras con tilde van como "." en el patrón ("Bogot." encuentra "Bogotá" y
+    "Bogota"), y cada vacante se confirma con la tabla (palabra completa: "Buga" no es "Bugalagrande").
+  - **Privacidad:** las coordenadas no salen del navegador ni se guardan; al servidor solo va el nombre de
+    la ciudad.
+  - **Las empresas no la ven** (no buscan empleo). Pruebas en `pruebas/casos/cerca.spec.js` con la
+    ubicación simulada.
 
 ## Orden propuesto (solo frontend)
 

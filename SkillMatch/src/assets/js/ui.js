@@ -310,6 +310,82 @@
 
         document.body.appendChild(nav);
         document.body.classList.add('has-tabbar');
+        pastillaDeLaBarra(nav);
+    }
+
+    /** Si el clic va a otra pagina (no la misma, ni otra pestana): asi la marca
+     *  del menu solo se adelanta cuando de verdad se va a cambiar de pagina. */
+    function vaAOtraPagina(e, a) {
+        return !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey &&
+            (!a.target || a.target === '_self') && !a.hasAttribute('download') && !a.hasAttribute('data-cerrar-sesion') &&
+            a.origin === location.origin && a.pathname !== location.pathname;
+    }
+
+    // El viaje de la marca se ve completo: la pagina cambia cuando la marca
+    // llega (antes la siguiente cargaba antes de que recorriera el camino).
+    // La direccion queda anotada para la pagina nueva: el guion del <head> de
+    // cada pagina la lee en "pagereveal" y la pagina se desliza de ese lado.
+    let viajePendiente = 0;
+
+    /** Anota hacia que lado del menu queda el destino (desde y hasta: posiciones en el menu). */
+    function anotarDireccion(a, desde, hasta) {
+        if (desde < 0 || hasta < 0 || desde === hasta) return;
+        try {
+            sessionStorage.setItem('skillmatch_deslizar', JSON.stringify({
+                a: a.pathname, dir: hasta > desde ? 'derecha' : 'izquierda', t: Date.now()
+            }));
+        } catch (err) { /* sin almacenamiento: la pagina solo se funde */ }
+    }
+
+    /** Cambia de pagina cuando la marca termina de deslizarse. Con "reducir
+     *  movimiento" no hay viaje que esperar: el enlace sigue enseguida. */
+    function irCuandoLlegue(e, a, marca) {
+        if (reduceMotion) return;
+        e.preventDefault();
+        clearTimeout(viajePendiente);
+        // "0.36s, 0.2s": la primera es la de transform
+        const duracion = parseFloat(getComputedStyle(marca).transitionDuration) || 0;
+        viajePendiente = setTimeout(function () { UI.irA(a.href); }, duracion * 1000);
+    }
+
+    /** La pastilla de la pestana activa: al tocar otra se desliza hasta ella
+     *  mientras carga la pagina siguiente (que ya la trae en su sitio). */
+    function pastillaDeLaBarra(nav) {
+        const enlaces = Array.from(nav.querySelectorAll('a'));
+        const marca = document.createElement('span');
+        marca.className = 'tabbar-marca';
+        marca.setAttribute('aria-hidden', 'true');
+        // Antes de la lista: asi las pestanas (position: relative) quedan encima
+        nav.insertBefore(marca, nav.firstChild);
+        nav.style.setProperty('--pestanas', enlaces.length);
+        nav.classList.add('con-marca');
+        const ponerEn = function (a, sinAnimar) {
+            const i = enlaces.indexOf(a);
+            if (sinAnimar) marca.style.transition = 'none';
+            marca.style.setProperty('--i', Math.max(i, 0));
+            marca.style.opacity = i < 0 ? '0' : '1';
+            if (sinAnimar) { marca.getBoundingClientRect(); marca.style.transition = ''; }
+        };
+        ponerEn(nav.querySelector('a.is-active'), true);
+        nav.addEventListener('click', function (e) {
+            const a = e.target instanceof Element && e.target.closest('a');
+            if (!a || !vaAOtraPagina(e, a)) return;
+            enlaces.forEach(function (x) { x.classList.toggle('es-destino', x === a); });
+            anotarDireccion(a, enlaces.indexOf(nav.querySelector('a.is-active')), enlaces.indexOf(a));
+            // Si no habia ninguna activa, aparece en la tocada sin cruzar la
+            // barra: no hay viaje que esperar
+            const sinViaje = marca.style.opacity === '0';
+            ponerEn(a, sinViaje);
+            if (!sinViaje) irCuandoLlegue(e, a, marca);
+        });
+        // Justo antes de la foto de salida: la pastilla, ya en la pestana elegida
+        window.addEventListener('pageswap', function () { marca.style.transition = 'none'; });
+        // Al volver con "atras" (la pagina sale tal cual de la memoria): a su sitio
+        window.addEventListener('pageshow', function (e) {
+            if (!e.persisted) return;
+            enlaces.forEach(function (x) { x.classList.remove('es-destino'); });
+            ponerEn(nav.querySelector('a.is-active'), true);
+        });
     }
 
     /** Tema oscuro: el <head> de cada pagina ya deja [data-theme] puesto
@@ -423,8 +499,12 @@
             window.SkillMatchUI_progress();
         });
 
+        // Justo antes de la foto de salida la pagina nueva ya llego: sin
+        // esconderla, la barra se iria con la pagina que se desliza
+        window.addEventListener('pageswap', function () { barra.style.visibility = 'hidden'; });
         window.addEventListener('pageshow', function () {
             barra.style.width = '0';
+            barra.style.visibility = '';
             activa = false;
         });
     }
@@ -435,7 +515,7 @@
      *  (tambien las vacantes que llegan despues desde la API), sin tocar el HTML. */
     const REVELAR = '.reveal, .section-header-center, .innovation-header, .why-header, ' +
                     '.feature-card, .benefit-item, .pathway-card, .roadmap-card, ' +
-                    '.cartagena-photo, .opportunity-card, .connection-card, .suggestion-card, ' +
+                    '.opportunity-card, .connection-card, .suggestion-card, ' +
                     '.offer-card, .candidate-mini-card, .application-card';
     // Las vacantes no suben desde abajo: salen de debajo de la tarjeta de
     // arriba, una tras otra, como cartas que se reparten (idea de Luis)
@@ -494,6 +574,10 @@
     /* ---------- 4. Estados de carga ---------- */
 
     const UI = {
+        /** Cambia de pagina. Las pruebas lo reemplazan para quedarse en la
+         *  pagina y revisar lo que paso antes de irse. */
+        irA: function (url) { window.location.href = url; },
+
         /** Dibuja n tarjetas fantasma dentro de un contenedor mientras llegan los datos. */
         skeletons: function (contenedor, n) {
             const destino = typeof contenedor === 'string' ? document.querySelector(contenedor) : contenedor;
@@ -700,6 +784,7 @@
                 if (node.nodeType !== 1 || node.classList.contains('ripple')) continue;
                 revelar(node);
                 hidratarLottie(node);
+                pintarLogos(node);
             }
         }
     });
@@ -1133,7 +1218,7 @@
         ] },
         { titulo: 'SkillMatch', enlaces: [
             ['index.html#como-funciona', 'Cómo funciona'],
-            ['index.html#mapa-cartagena', 'Cartagena por zonas'],
+            ['index.html#cerca', 'Vacantes cerca de ti'],
             ['dashboard.html', 'Indicadores del mercado'],
             ['index.html#innovacion', 'Lo que viene'],
             // La Ley 1581 pide que la politica de datos este siempre a la mano
@@ -2192,6 +2277,11 @@
         const boton = form.querySelector('[type="submit"]');
         function problema(texto) { error.textContent = texto || ''; error.hidden = !texto; }
         function listo() { boton.disabled = false; boton.textContent = 'Cambiar contraseña'; }
+        ojoDeClave(form.querySelector('#claveActual'));
+        UI.claveNueva(form.querySelector('#claveNueva'), form.querySelector('#claveNueva2'), function () {
+            return [datos.firstName, datos.lastName, String(datos.email || '').split('@')[0], datos.companyName]
+                .join(' ').split(/[\s._-]+/).filter(Boolean);
+        });
         form.querySelector('[data-cancelar]').addEventListener('click', v.cerrar);
         form.addEventListener('submit', function (e) {
             e.preventDefault();
@@ -2488,6 +2578,441 @@
         if (window.SkillMatchServidor && window.SkillMatchServidor.lento) mostrar(true);
     }
 
+    /* ---------- 26. Contrasena nueva: verla, lo que se pide y su fuerza ---------- */
+
+    // Donde se crea una contrasena (los registros y "Cambiar contrasena"): un
+    // boton para verla, lo que se pide marcado mientras se escribe, la fuerza
+    // en palabras y, al repetirla, si coinciden. Solo los 8 caracteres son
+    // obligatorios, porque es lo que exige el backend; lo demas se recomienda
+    // sin bloquear. El boton del ojo es el mismo del login (.campo-clave).
+    const REGLAS_CLAVE = [
+        ['largo', '8 caracteres o más', function (v) { return v.length >= 8; }],
+        ['letras', 'Mayúsculas y minúsculas', function (v) { return /\p{Ll}/u.test(v) && /\p{Lu}/u.test(v); }],
+        ['numero', 'Un número', function (v) { return /\p{N}/u.test(v); }],
+        ['simbolo', 'Un símbolo, como ! # o @', function (v) { return /[^\p{L}\p{N}\s]/u.test(v); }]
+    ];
+    // Palabras que cualquiera prueba primero
+    const CLAVES_COMUNES = ['password', 'contrasena', 'skillmatch', 'cartagena', 'colombia', 'qwerty', 'admin', 'iloveyou', 'teamo'];
+    const sinTildes = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+
+    /** Que tan dificil de adivinar es: { nivel 0-3, texto, cumple: {regla: bool} }.
+     *  personales: palabras de la persona (nombre, correo) que no deberia usar. */
+    UI.fuerzaClave = function (clave, personales) {
+        const cumple = {};
+        REGLAS_CLAVE.forEach(function (r) { cumple[r[0]] = r[2](clave); });
+        if (!clave) return { nivel: 0, texto: '', cumple: cumple };
+        if (!cumple.largo) {
+            const faltan = 8 - Array.from(clave).length;
+            return { nivel: 0, texto: faltan === 1 ? 'Falta 1 carácter' : 'Faltan ' + faltan + ' caracteres', cumple: cumple };
+        }
+        const plana = sinTildes(clave);
+        if ((personales || []).some(function (p) { return p.length >= 4 && plana.includes(p); })) {
+            return { nivel: 1, texto: 'Débil, porque incluye tu nombre o tu correo', cumple: cumple };
+        }
+        if (/^(.)\1+$/.test(clave) || CLAVES_COMUNES.some(function (c) { return plana.includes(c); })) {
+            return { nivel: 1, texto: 'Débil, porque es muy fácil de adivinar', cumple: cumple };
+        }
+        let puntos = ['letras', 'numero', 'simbolo'].filter(function (k) { return cumple[k]; }).length + (clave.length >= 12 ? 1 : 0);
+        if (/0123|1234|2345|3456|4567|5678|6789|abcd|qwer|asdf/.test(plana)) puntos--;
+        if (puntos >= 3) return { nivel: 3, texto: 'Fuerte', cumple: cumple };
+        if (puntos >= 2) return { nivel: 2, texto: 'Aceptable', cumple: cumple };
+        return { nivel: 1, texto: 'Débil', cumple: cumple };
+    };
+
+    /** El ojo para ver lo escrito. Al enviar se vuelve a ocultar, para que el
+     *  navegador la guarde como contrasena. */
+    function ojoDeClave(campo) {
+        if (!campo || campo.closest('.campo-clave')) return;
+        // Mover el campo le quita el foco, y la validacion lo marcaba como
+        // error sin haber escrito nada ("Cambiar contrasena" abre con el foco
+        // en el primero): se le devuelven el foco y su estado de antes
+        const conFoco = document.activeElement === campo;
+        const estado = ['is-invalid', 'is-valid'].filter(function (c) { return campo.classList.contains(c); });
+        const envoltura = document.createElement('div');
+        envoltura.className = 'campo-clave';
+        campo.parentNode.insertBefore(envoltura, campo);
+        envoltura.appendChild(campo);
+        if (conFoco) {
+            campo.classList.remove('is-invalid', 'is-valid');
+            estado.forEach(function (c) { campo.classList.add(c); });
+            campo.focus();
+        }
+        const ver = document.createElement('button');
+        ver.type = 'button';
+        ver.className = 'campo-clave-ver';
+        ver.setAttribute('aria-pressed', 'false');
+        ver.setAttribute('aria-controls', campo.id);
+        ver.innerHTML = svgIcon('eye') + svgIcon('eye-off');
+        envoltura.appendChild(ver);
+        const mostrar = function (si) {
+            campo.type = si ? 'text' : 'password';
+            ver.setAttribute('aria-pressed', String(si));
+            ver.setAttribute('aria-label', si ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            ver.dataset.tooltip = si ? 'Ocultar contraseña' : 'Mostrar contraseña';
+        };
+        mostrar(false);
+        // Con el mouse, el foco no sale del campo al tocar el boton
+        ver.addEventListener('mousedown', function (e) { e.preventDefault(); });
+        ver.addEventListener('click', function () {
+            mostrar(campo.type === 'password');
+            campo.focus();
+            campo.setSelectionRange(campo.value.length, campo.value.length);
+        });
+        if (campo.form) campo.form.addEventListener('submit', function () { mostrar(false); });
+    }
+
+    /** campo: la contrasena nueva; repetir: donde se escribe otra vez (opcional);
+     *  personales(): palabras de la persona que no deberia usar. */
+    UI.claveNueva = function (campo, repetir, personales) {
+        if (!campo || campo.dataset.claveNueva) return;
+        campo.dataset.claveNueva = '1';
+        [campo, repetir].forEach(ojoDeClave);
+
+        const grupo = campo.closest('.form-group') || campo.parentNode;
+        // "Minimo 8 caracteres" ya va en la lista
+        const ayuda = grupo.querySelector('.input-help');
+        if (ayuda && /8 caracteres/.test(ayuda.textContent)) ayuda.hidden = true;
+        const medidor = document.createElement('div');
+        medidor.className = 'clave-medidor';
+        medidor.dataset.nivel = '0';
+        const idReglas = campo.id + '-reglas';
+        medidor.innerHTML =
+            '<div class="clave-barra" aria-hidden="true"><span></span></div>' +
+            '<p class="clave-fuerza" aria-hidden="true"></p>' +
+            '<p class="sr-only" aria-live="polite" data-anuncio></p>' +
+            '<ul class="clave-reglas" id="' + idReglas + '">' + REGLAS_CLAVE.map(function (r, i) {
+                return '<li data-regla="' + r[0] + '">' + svgIcon('check') + '<span>' + r[1] +
+                    (i === 0 ? ' <small>(obligatorio)</small>' : '') + '</span><span class="sr-only" data-estado>: falta</span></li>';
+            }).join('') + '</ul>';
+        grupo.appendChild(medidor);
+        campo.setAttribute('aria-describedby', ((campo.getAttribute('aria-describedby') || '') + ' ' + idReglas).trim());
+
+        const barra = medidor.querySelector('.clave-barra > span');
+        const fuerza = medidor.querySelector('.clave-fuerza');
+        const anuncio = medidor.querySelector('[data-anuncio]');
+        let espera = 0;
+        const revisar = function () {
+            const palabras = personales ? personales().map(sinTildes).filter(Boolean) : [];
+            const r = UI.fuerzaClave(campo.value, palabras);
+            const largo = Array.from(campo.value).length;
+            medidor.dataset.nivel = String(r.nivel);
+            // Mientras faltan caracteres la barra avanza hacia el primer tercio
+            barra.style.transform = 'scaleX(' + (r.nivel ? r.nivel / 3 : Math.min(largo / 8, 1) / 3) + ')';
+            fuerza.textContent = r.texto ? (r.nivel ? 'Fuerza: ' + r.texto : r.texto) : '';
+            medidor.querySelectorAll('[data-regla]').forEach(function (li) {
+                const ok = r.cumple[li.dataset.regla];
+                li.classList.toggle('cumple', ok);
+                li.querySelector('[data-estado]').textContent = ok ? ': cumplido' : ': falta';
+            });
+            // El lector de pantalla oye la fuerza cuando se deja de escribir, no en cada tecla
+            clearTimeout(espera);
+            espera = setTimeout(function () { anuncio.textContent = fuerza.textContent; }, 900);
+        };
+        campo.addEventListener('input', revisar);
+        revisar();
+
+        if (!repetir) return;
+        const grupoRepetir = repetir.closest('.form-group') || repetir.parentNode;
+        const coinciden = document.createElement('p');
+        coinciden.className = 'clave-coinciden';
+        coinciden.setAttribute('aria-live', 'polite');
+        grupoRepetir.appendChild(coinciden);
+        // Que coinciden se dice al momento; que no, al salir del campo (o si ya
+        // se escribio de mas): mientras se escribe todavia no es un error
+        const comparar = function (alSalir) {
+            const a = campo.value;
+            const b = repetir.value;
+            let estado = '';
+            if (b && a === b) estado = 'si';
+            else if (b && (alSalir || b.length >= a.length || !a.startsWith(b))) estado = 'no';
+            coinciden.dataset.estado = estado;
+            coinciden.innerHTML = estado === 'si' ? svgIcon('check') + 'Las contraseñas coinciden'
+                : estado === 'no' ? 'Las contraseñas no coinciden' : '';
+        };
+        repetir.addEventListener('input', function () { comparar(false); });
+        repetir.addEventListener('blur', function () { comparar(true); });
+        campo.addEventListener('input', function () { if (repetir.value) comparar(false); });
+    };
+
+    // En los registros: el primer campo de contrasena nueva de cada formulario y
+    // el segundo para repetirla. Las palabras propias salen del mismo formulario.
+    function clavesNuevas() {
+        document.querySelectorAll('form').forEach(function (form) {
+            const campos = form.querySelectorAll('input[autocomplete="new-password"]');
+            if (!campos.length) return;
+            UI.claveNueva(campos[0], campos[1], function () {
+                const palabras = [];
+                form.querySelectorAll('input[autocomplete="given-name"], input[autocomplete="family-name"], input[autocomplete="organization"], input[type="email"]').forEach(function (c) {
+                    const v = c.type === 'email' ? c.value.split('@')[0] : c.value;
+                    v.split(/[\s._-]+/).forEach(function (p) { if (p) palabras.push(p); });
+                });
+                return palabras;
+            });
+        });
+    }
+
+    /* ---------- 27. El menu sigue la seccion y su linea se desliza ---------- */
+
+    // En las paginas con enlaces a sus propias secciones ("Como funciona" en la
+    // portada, "Mis ofertas" y "Candidatos" en Mi empresa), al hacer scroll se
+    // marca la seccion que se esta viendo; fuera de ellas, la pagina. Es solo
+    // visual: aria-current="page" sigue en la pagina, que es lo correcto.
+    function seccionEnMenu() {
+        if (!('IntersectionObserver' in window)) return;
+        // El de la pagina no cuenta como seccion aunque apunte a #main ("Inicio" en la portada)
+        const enlaces = Array.from(document.querySelectorAll('header .nav-left .nav-links a[href^="#"]:not([aria-current="page"])')).filter(function (a) {
+            return a.getAttribute('href').length > 1 && document.getElementById(a.getAttribute('href').slice(1));
+        });
+        if (!enlaces.length) return;
+        const pagina = document.querySelector('header .nav-left .nav-links a[aria-current="page"]');
+        const visibles = new Set();
+        const marcar = function () {
+            // Si dos cruzan la franja, gana la que va primero en la pagina
+            const activo = enlaces.filter(function (a) { return visibles.has(a.getAttribute('href').slice(1)); })
+                .sort(function (a, b) {
+                    const ea = document.getElementById(a.getAttribute('href').slice(1));
+                    const eb = document.getElementById(b.getAttribute('href').slice(1));
+                    return ea.compareDocumentPosition(eb) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+                })[0] || null;
+            enlaces.forEach(function (a) { a.classList.toggle('active-nav', a === activo); });
+            if (pagina) pagina.classList.toggle('active-nav', !activo);
+            document.dispatchEvent(new CustomEvent('skillmatch:menu'));
+        };
+        // Una franja entre el 30 % y el 40 % de la pantalla: la seccion que la cruza es la actual
+        const observador = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (e) {
+                if (e.isIntersecting) visibles.add(e.target.id); else visibles.delete(e.target.id);
+            });
+            marcar();
+        }, { rootMargin: '-30% 0px -60% 0px' });
+        enlaces.forEach(function (a) { observador.observe(document.getElementById(a.getAttribute('href').slice(1))); });
+    }
+
+    // Una sola linea bajo el menu que se desliza (transform) hasta el enlace
+    // activo, o hasta el que tiene el mouse encima. Sigue al mouse: solo con
+    // mouse y sin "reducir movimiento"; si no, queda la linea fija de cada enlace.
+    function lineaDelMenu() {
+        const lista = document.querySelector('header .nav-left .nav-links');
+        const marco = lista && lista.closest('.nav-left');
+        if (!marco || reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        // Va en el contenedor del menu y no en la lista: un <ul> solo lleva <li>
+        const linea = document.createElement('span');
+        linea.className = 'nav-linea';
+        linea.setAttribute('aria-hidden', 'true');
+        marco.appendChild(linea);
+        lista.classList.add('con-linea');
+        let sobre = null;
+        // La pagina a la que se va tras un clic: manda mientras carga la siguiente
+        let elegido = null;
+        // Mide sin animar la primera vez, para que no entre volando desde la izquierda
+        let primera = true;
+        const ubicar = function () {
+            const destino = elegido || sobre || lista.querySelector('a.active-nav, a.active');
+            if (!destino || !destino.offsetWidth) { linea.style.opacity = '0'; return; }
+            const caja = marco.getBoundingClientRect();
+            const r = destino.getBoundingClientRect();
+            const margen = parseFloat(getComputedStyle(destino).paddingLeft) || 0;
+            // Igual que la linea fija: debajo del enlace, sin su relleno a los lados
+            const x = r.left - caja.left + margen;
+            const y = r.bottom - caja.top + 18 - 2.5;
+            const ancho = Math.max(r.width - margen * 2, 0);
+            if (primera) linea.style.transition = 'none';
+            linea.style.transform = 'translate(' + x + 'px, ' + y + 'px) scaleX(' + (ancho / 100) + ')';
+            linea.style.opacity = '1';
+            if (primera) { linea.getBoundingClientRect(); linea.style.transition = ''; primera = false; }
+        };
+        lista.addEventListener('mouseover', function (e) {
+            const a = e.target instanceof Element && e.target.closest('a');
+            if (a && lista.contains(a) && a !== sobre) { sobre = a; ubicar(); }
+        });
+        lista.addEventListener('mouseleave', function () { sobre = null; ubicar(); });
+        // Un clic que lleva a una pagina del menu, este en el menu o en cualquier
+        // parte ("Ver vacantes" en la portada): la linea se va de una vez hasta
+        // ella. Gana el enlace identico ("Como funciona" lleva ancla) y si no,
+        // el de la misma pagina sin ancla (una busqueda en Vacantes cuenta).
+        document.addEventListener('click', function (e) {
+            const a = e.target instanceof Element && e.target.closest('a[href]');
+            if (!a || !vaAOtraPagina(e, a)) return;
+            const delMenu = Array.from(lista.querySelectorAll('a'));
+            const destino = delMenu.find(function (n) { return n.href === a.href; }) ||
+                delMenu.find(function (n) { return !n.hash && n.pathname === a.pathname; });
+            if (!destino) return;
+            const activo = lista.querySelector('a.active-nav, a.active');
+            // Con el mouse encima, la linea ya llego al enlace: nada que esperar
+            const sinViaje = linea.style.opacity !== '1' || (elegido || sobre || activo) === destino;
+            elegido = destino;
+            ubicar();
+            anotarDireccion(a, delMenu.indexOf(activo), delMenu.indexOf(destino));
+            if (!sinViaje) irCuandoLlegue(e, a, linea);
+        });
+        // Justo antes de la foto de salida: la linea, ya en su destino
+        window.addEventListener('pageswap', function () { linea.style.transition = 'none'; });
+        // Al volver con "atras" (la pagina sale tal cual de la memoria): a su sitio
+        window.addEventListener('pageshow', function (e) {
+            if (!e.persisted) return;
+            elegido = null;
+            primera = true;
+            ubicar();
+        });
+        document.addEventListener('skillmatch:menu', ubicar);
+        let espera = 0;
+        window.addEventListener('resize', function () { clearTimeout(espera); espera = setTimeout(ubicar, 120); });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(ubicar);
+        ubicar();
+    }
+
+    /* ---------- 28. Logos de las empresas ---------- */
+
+    // "Mi empresa" guarda el logo en la cuenta de usuario de la empresa (el
+    // backend no deja cambiar Company.logo: docs/PENDIENTES-BACKEND.md, 2.2) y
+    // las tarjetas solo mostraban la inicial. Un cuadrito con
+    // data-logo-empresa="<id de la empresa>" (o data-logo-cuenta="<id de su
+    // cuenta>") cambia la inicial por el logo: empresa -> su cuenta -> imagen.
+    // Una vez por empresa, de a 3 pedidos, con copia en la sesion del
+    // navegador. Solo con sesion: GET /users/{id} la pide, asi que los
+    // visitantes siguen viendo la inicial.
+    const LOGOS_KEY = 'skillmatch_logos';
+    const logosPedidos = new Map();
+    let logosGuardados = null;
+    let logosEnCurso = 0;
+    const logosEnFila = [];
+
+    function logosDeLaSesion() {
+        if (!logosGuardados) {
+            try { logosGuardados = JSON.parse(sessionStorage.getItem(LOGOS_KEY) || '{}'); } catch (e) { logosGuardados = {}; }
+        }
+        return logosGuardados;
+    }
+
+    function guardarLogo(clave, url) {
+        logosDeLaSesion()[clave] = url || '';
+        // Los logos subidos son imagenes dentro del texto (data:): si ya no
+        // caben en la sesion, se quedan solo en esta pagina
+        try { sessionStorage.setItem(LOGOS_KEY, JSON.stringify(logosGuardados)); } catch (e) { /* lleno o sin almacenamiento */ }
+    }
+
+    // Solo imagenes: las que guarda el editor (data:) o una direccion https
+    function imagenDeLogo(url) {
+        return typeof url === 'string' && (/^data:image\/(png|jpe?g|gif|webp|svg\+xml)[;,]/i.test(url) || /^https:\/\//i.test(url)) ? url : null;
+    }
+
+    function enTurno(tarea) {
+        return new Promise(function (listo) {
+            const correr = function () {
+                logosEnCurso++;
+                tarea().then(listo, function () { listo(undefined); }).finally(function () {
+                    logosEnCurso--;
+                    if (logosEnFila.length) logosEnFila.shift()();
+                });
+            };
+            if (logosEnCurso < 3) correr(); else logosEnFila.push(correr);
+        });
+    }
+
+    /** Promesa con la imagen del logo de una empresa, o null si no tiene. */
+    UI.logoDeEmpresa = function (empresaId, cuentaId) {
+        if ((!empresaId && !cuentaId) || !datosSesion() || typeof fetchWithAuth !== 'function') return Promise.resolve(null);
+        const clave = cuentaId ? 'u:' + cuentaId : 'c:' + empresaId;
+        const guardado = logosDeLaSesion()[clave];
+        if (guardado !== undefined) return Promise.resolve(guardado || null);
+        if (!logosPedidos.has(clave)) {
+            logosPedidos.set(clave, enTurno(async function () {
+                const leer = async function (ruta) {
+                    const r = await fetchWithAuth(ruta);
+                    return r.ok ? r.json() : null;
+                };
+                let cuenta = cuentaId;
+                if (!cuenta) {
+                    const empresa = await leer('/companies/' + encodeURIComponent(empresaId));
+                    cuenta = empresa && empresa.userId;
+                }
+                const datos = cuenta ? await leer('/users/' + encodeURIComponent(cuenta)) : null;
+                const url = datos ? imagenDeLogo(datos.profileImageUrl) : null;
+                guardarLogo(clave, url);
+                return url;
+            }).then(function (url) {
+                // Sin red (undefined): se queda la inicial y se intenta en la proxima pagina
+                if (url === undefined) logosPedidos.delete(clave);
+                return url || null;
+            }));
+        }
+        return logosPedidos.get(clave);
+    };
+
+    function pintarLogos(raiz) {
+        if (!raiz.querySelectorAll) return;
+        const cuadros = Array.from(raiz.querySelectorAll('[data-logo-empresa], [data-logo-cuenta]'));
+        if (raiz.matches && raiz.matches('[data-logo-empresa], [data-logo-cuenta]')) cuadros.push(raiz);
+        cuadros.forEach(function (cuadro) {
+            if (cuadro.dataset.logoPedido) return;
+            cuadro.dataset.logoPedido = '1';
+            UI.logoDeEmpresa(cuadro.dataset.logoEmpresa, cuadro.dataset.logoCuenta).then(function (url) {
+                if (!url || !cuadro.isConnected) return;
+                // Se cambia cuando la imagen ya cargo: si falla, queda la inicial
+                const img = new Image();
+                img.alt = '';
+                img.decoding = 'async';
+                img.onload = function () { cuadro.replaceChildren(img); cuadro.classList.add('con-logo'); };
+                img.src = url;
+            });
+        });
+    }
+
+    /* ---------- 29. Menu de un boton ("Mas") ---------- */
+
+    // Un boton con data-menu="<id del menu>" abre y cierra ese menu (role=menu,
+    // con hidden; el estilo es el de .menu-acciones de Mensajes). Igual que
+    // alla: las flechas recorren las opciones, Escape cierra y devuelve el
+    // foco al boton, un clic afuera o en una opcion lo cierra. Cada opcion
+    // hace lo suyo con su propio oyente (sus id no cambian).
+    function menusDeBoton() {
+        let abierto = null;
+        const opciones = function (menu) {
+            return Array.from(menu.querySelectorAll('[role="menuitem"]')).filter(function (o) { return o.offsetParent !== null; });
+        };
+        const cerrar = function (devolverFoco) {
+            if (!abierto) return;
+            abierto.menu.hidden = true;
+            abierto.boton.setAttribute('aria-expanded', 'false');
+            if (devolverFoco) abierto.boton.focus();
+            abierto = null;
+        };
+        document.addEventListener('click', function (e) {
+            const boton = e.target instanceof Element && e.target.closest('[data-menu]');
+            if (boton) {
+                const menu = document.getElementById(boton.dataset.menu);
+                if (!menu) return;
+                const eraEste = !!abierto && abierto.menu === menu;
+                cerrar(false);
+                if (eraEste) return;
+                menu.hidden = false;
+                boton.setAttribute('aria-expanded', 'true');
+                abierto = { boton: boton, menu: menu };
+                const primera = opciones(menu)[0];
+                if (primera) primera.focus();
+                return;
+            }
+            if (!abierto) return;
+            if (abierto.menu.contains(e.target) && !e.target.closest('[role="menuitem"]')) return;
+            cerrar(false);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (!abierto) return;
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cerrar(true); return; }
+            if (e.key === 'Tab') { cerrar(false); return; }
+            if (['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(e.key) < 0) return;
+            const lista = opciones(abierto.menu);
+            if (!lista.length) return;
+            e.preventDefault();
+            const actual = lista.indexOf(document.activeElement);
+            const siguiente = e.key === 'Home' ? 0 : e.key === 'End' ? lista.length - 1
+                : (actual + (e.key === 'ArrowDown' ? 1 : -1) + lista.length) % lista.length;
+            lista[siguiente].focus();
+        }, true);
+        // Al volver con "atras" (pagina sacada de la memoria), cerrado
+        window.addEventListener('pageshow', function () { cerrar(false); });
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -2502,6 +3027,8 @@
         sesionEnBarra();
         sinBotonDeEstaPagina();
         marcarNavegacionActiva();
+        seccionEnMenu();
+        lineaDelMenu();
         construirTabbar();
         actualizarNoLeidos();
         document.addEventListener('visibilitychange', function () { if (!document.hidden) actualizarNoLeidos(); });
@@ -2515,9 +3042,12 @@
         movimientoDeEntrada();
         movimientoConMouse();
         hidratarLottie(document.body);
+        pintarLogos(document.body);
         observadorNuevos.observe(document.body, { childList: true, subtree: true });
         modalesAccesibles();
         validacionVisible();
+        menusDeBoton();
+        clavesNuevas();
         listas(document);
         anillos(document);
         setInterval(function () { anillos(document); }, 1200);

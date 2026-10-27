@@ -22,6 +22,7 @@ let vacanteAbierta = null;   // la del detalle o la de la postulación
 // Habilidades de quien inicio sesion (nombres normalizados). null = no se
 // sabe (sin sesion, empresa o fallo la carga): entonces no se muestra %.
 let userSkills = null;
+let nombresHabilidades = []; // como las escribio la persona (para mostrarlas)
 let userSkillsReady = Promise.resolve();
 
 function debounce(fn, delay) {
@@ -241,7 +242,9 @@ async function loadUserSkills() {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${datos.id}/skills`);
         if (response.ok) {
-            userSkills = new Set((await response.json()).map(s => normalizeStr(s.name).trim()));
+            const lista = await response.json();
+            userSkills = new Set(lista.map(s => normalizeStr(s.name).trim()));
+            nombresHabilidades = lista.map(s => String(s.name || '').trim()).filter(Boolean);
         }
     } catch (error) {
         // Sin habilidades no hay %: las tarjetas salen sin anillo
@@ -317,7 +320,22 @@ function matchHint() {
     if (datos.userType !== 'empresa' && userSkills && userSkills.size === 0) {
         return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="perfil-usuario.html">Agrega tus habilidades</a> y te mostramos qué tanto encajas con cada vacante.</span></p>';
     }
+    if (datos.userType !== 'empresa' && userSkills && userSkills.size) return resumenDelMatch();
     return '';
+}
+
+// "Mostrar el trabajo": que se comparo y que salio, con cifras reales (la gente
+// confia mas cuando ve lo que hizo el sistema). Nada de esperas ni barras falsas.
+function resumenDelMatch() {
+    const n = nombresHabilidades.length;
+    const nombres = nombresHabilidades.slice(0, 3).map(escaparHtml);
+    const lista = nombres.length > 1 ? `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}` : nombres[0];
+    const resto = n > 3 ? ` y ${n - 3} más` : '';
+    const vistas = shownJobs.length;
+    const conAlguna = shownJobs.filter(j => { const m = getSkillMatch(j); return m && m.tiene > 0; }).length;
+    const orden = document.getElementById('sortSelect')?.value === 'match' ? ' Las que más encajan van primero.' : '';
+    return `<p class="match-resumen"><i data-ico="target"></i> <span>Comparamos ${n === 1 ? 'tu habilidad' : `tus ${n} habilidades`} (${lista}${resto}) con cada vacante.
+        De ${vistas === 1 ? 'la que ves' : `las ${vistas.toLocaleString('es-CO')} que ves`}, <strong>${conAlguna.toLocaleString('es-CO')}</strong> ${conAlguna === 1 ? 'pide' : 'piden'} alguna.${orden}</span></p>`;
 }
 
 function hayFiltros() {
@@ -448,16 +466,40 @@ function enlaceEmpresa(job) {
         : nombre;
 }
 
+// "Nueva" (publicada en los ultimos 3 dias) y "Cierra en N dias" (cierra en una
+// semana o menos): datos que la tarjeta no mostraba; antes la fecha limite solo
+// salia en el detalle. Dias de calendario, como formatDate.
+function etiquetasVacante(job) {
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const diasHasta = fecha => {
+        const d = new Date(fecha);
+        if (!fecha || Number.isNaN(d.getTime())) return null;
+        d.setHours(0, 0, 0, 0);
+        return Math.round((d - hoy) / 86400000);
+    };
+    const etiquetas = [];
+    const publicada = diasHasta(job.postedDate);
+    if (publicada !== null && publicada >= -2 && publicada <= 0) etiquetas.push('<span class="etiqueta-vacante es-nueva">Nueva</span>');
+    const abierta = !job.status || String(job.status).toLowerCase() === 'abierta';
+    const cierra = abierta ? diasHasta(job.expirationDate) : null;
+    if (cierra !== null && cierra >= 0 && cierra <= 7) {
+        const texto = cierra === 0 ? 'Cierra hoy' : cierra === 1 ? 'Cierra mañana' : `Cierra en ${cierra} días`;
+        etiquetas.push(`<span class="etiqueta-vacante es-cierra"><i data-ico="clock"></i> ${texto}</span>`);
+    }
+    return etiquetas.length ? `<div class="etiquetas-vacante">${etiquetas.join('')}</div>` : '';
+}
+
 // Crear tarjeta de trabajo
 function createJobCard(job) {
     const id = escaparHtml(job.id);
     return `
         <div class="opportunity-card" data-job-id="${id}">
             <div class="card-header-opp">
-                <div class="company-logo-opp">${job.companyName ? escaparHtml(job.companyName.charAt(0)) : '<i data-ico="building"></i>'}</div>
+                <div class="company-logo-opp"${job.companyId ? ` data-logo-empresa="${escaparHtml(String(job.companyId))}"` : ''}>${job.companyName ? escaparHtml(job.companyName.charAt(0)) : '<i data-ico="building"></i>'}</div>
                 <div class="card-info">
                     <h3 class="job-title"><button type="button" class="job-title-link" data-job-id="${id}" onclick="abrirDetallePorId(this.dataset.jobId)">${escaparHtml(job.title)}</button></h3>
                     <p class="company-name">${enlaceEmpresa(job)}</p>
+                    ${etiquetasVacante(job)}
                 </div>
                 ${anilloCompatibilidad(job)}
             </div>
@@ -810,27 +852,53 @@ function normalizeStr(str) {
 
 // Aplicar filtros (sobre lo cargado: la lista general o la búsqueda)
 function applyFilters() {
-    const types = getCheckedValues('input[name="type"]:checked');
-    const modalities = getCheckedValues('input[name="modality"]:checked');
-    const experienceLevels = getCheckedValues('input[name="experience"]:checked');
-    const maxSalary = parseInt(document.getElementById('salaryRange')?.value || '10000000');
-
-    let filtered = allJobs;
-
-    if (types.length > 0) {
-        filtered = filtered.filter(job => types.some(t => normalizeStr(t) === normalizeStr(job.type)));
-    }
-    if (modalities.length > 0) {
-        filtered = filtered.filter(job => modalities.some(m => normalizeStr(m) === normalizeStr(job.modality)));
-    }
-    if (experienceLevels.length > 0) {
-        filtered = filtered.filter(job => experienceLevels.includes(job.experienceLevel));
-    }
-    filtered = filtered.filter(job => !job.salaryMin || job.salaryMin <= maxSalary);
-
-    currentFilters = { types, modalities, experienceLevels, maxSalary };
+    const f = filtrosElegidos();
+    const filtered = allJobs.filter(job => cumpleFiltros(job, f));
+    currentFilters = { types: f.type, modalities: f.modality, experienceLevels: f.experience, maxSalary: f.maxSalary };
     displayJobs(filtered);
+    contarOpciones(f);
     guardarFiltrosEnDireccion();
+}
+
+// ---- La regla de los filtros (la usan el filtro y los conteos de cada opcion) ----
+const GRUPOS_FILTRO = ['type', 'modality', 'experience'];
+
+function filtrosElegidos() {
+    const f = { maxSalary: parseInt(document.getElementById('salaryRange')?.value || '10000000') };
+    GRUPOS_FILTRO.forEach(g => { f[g] = getCheckedValues(`input[name="${g}"]:checked`); });
+    return f;
+}
+
+function cumpleGrupo(job, grupo, valores) {
+    if (!valores.length) return true;
+    if (grupo === 'experience') return valores.includes(job.experienceLevel);
+    const campo = grupo === 'type' ? job.type : job.modality;
+    return valores.some(v => normalizeStr(v) === normalizeStr(campo));
+}
+
+// "excepto": un grupo que no se tiene en cuenta (para contar sus opciones)
+function cumpleFiltros(job, f, excepto) {
+    return GRUPOS_FILTRO.every(g => g === excepto || cumpleGrupo(job, g, f[g]))
+        && (!job.salaryMin || job.salaryMin <= f.maxSalary);
+}
+
+// Junto a cada opcion: cuantas de las vacantes cargadas quedarian al marcarla,
+// con los otros filtros que ya estan puestos. Las que darian 0 se ven atenuadas.
+function contarOpciones(f) {
+    document.querySelectorAll('.filter-card input[type="checkbox"][name]').forEach(casilla => {
+        const grupo = casilla.name;
+        if (!GRUPOS_FILTRO.includes(grupo)) return;
+        const n = allJobs.filter(job => cumpleFiltros(job, f, grupo) && cumpleGrupo(job, grupo, [casilla.value])).length;
+        const etiqueta = casilla.closest('label');
+        let cuenta = etiqueta.querySelector('.opcion-cuenta');
+        if (!cuenta) {
+            cuenta = document.createElement('span');
+            cuenta.className = 'opcion-cuenta';
+            etiqueta.appendChild(cuenta);
+        }
+        cuenta.textContent = n.toLocaleString('es-CO');
+        etiqueta.classList.toggle('sin-resultados', n === 0 && !casilla.checked);
+    });
 }
 
 // ---- La busqueda y los filtros en la direccion ----
