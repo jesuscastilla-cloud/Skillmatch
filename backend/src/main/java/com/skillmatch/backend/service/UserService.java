@@ -8,6 +8,7 @@ import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.validation.Credenciales;
 import com.skillmatch.backend.validation.EntradaSegura;
+import com.skillmatch.backend.validation.ValidadorCorreo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -32,6 +33,7 @@ public class UserService {
     private final ApplicationRepository applicationRepository;
     private final MongoTemplate mongoTemplate;
     private final LoginAttemptService loginAttemptService;
+    private final ValidadorCorreo validadorCorreo;
 
     @SuppressWarnings("null")
     public User getUserById(String id) {
@@ -53,6 +55,9 @@ public class UserService {
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
         if (request.getLastName() != null) user.setLastName(request.getLastName());
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (!validadorCorreo.puedeRecibir(request.getEmail())) {
+                throw new IllegalArgumentException(ValidadorCorreo.MENSAJE);
+            }
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new IllegalArgumentException("El email ya está en uso");
             }

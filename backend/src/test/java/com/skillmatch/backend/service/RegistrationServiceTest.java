@@ -11,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
+import com.skillmatch.backend.validation.ValidadorCorreo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,7 @@ class RegistrationServiceTest {
     @Mock private CompanyRepository companyRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtTokenProvider tokenProvider;
+    @Mock private ValidadorCorreo validadorCorreo;
 
     @InjectMocks
     private RegistrationService registrationService;
@@ -45,6 +47,8 @@ class RegistrationServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Por defecto el correo puede recibir mensajes (el DNS se prueba en ValidadorCorreoTest)
+        lenient().when(validadorCorreo.puedeRecibir(anyString())).thenReturn(true);
         userRequest = new RegisterRequest("user@test.com", "Clave-de-prueba-1", "Ana", "García", "3001234567", "USER");
         empresaRequest = new RegisterRequest("empresa@test.com", "Clave-de-prueba-1", "TechCorp", "SAS", "3009876543", "EMPRESA");
     }
@@ -186,5 +190,15 @@ class RegistrationServiceTest {
         ArgumentCaptor<User> guardado = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(guardado.capture());
         return guardado;
+    }
+
+    @Test
+    void register_correoQueNoPuedeRecibir_seRechaza() {
+        when(validadorCorreo.puedeRecibir("user@test.com")).thenReturn(false);
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(ValidadorCorreo.MENSAJE);
+        verify(userRepository, never()).save(any());
     }
 }

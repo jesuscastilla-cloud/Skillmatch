@@ -4,6 +4,7 @@ import com.skillmatch.backend.dto.UpdatePasswordRequest;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.validation.ValidadorCorreo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,6 +33,7 @@ class UserServiceTest {
     @Mock private ApplicationRepository applicationRepository;
     @Mock private MongoTemplate mongoTemplate;
     @Mock private LoginAttemptService loginAttemptService;
+    @Mock private ValidadorCorreo validadorCorreo;
 
     @InjectMocks
     private UserService userService;

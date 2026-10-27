@@ -10,6 +10,7 @@ import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.validation.Credenciales;
+import com.skillmatch.backend.validation.ValidadorCorreo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +34,7 @@ public class RegistrationService {
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final ValidadorCorreo validadorCorreo;
 
     /** Versión de la política vigente (la que muestra politica-datos.html). */
     @Value("${app.privacidad.version-politica:0.1}")
@@ -48,6 +50,9 @@ public class RegistrationService {
     public AuthResponse register(RegisterRequest registerRequest) {
         if (Credenciales.esClaveComun(registerRequest.getPassword())) {
             throw new IllegalArgumentException("Esa contraseña es de las primeras que prueba cualquiera. Elige otra.");
+        }
+        if (!validadorCorreo.puedeRecibir(registerRequest.getEmail())) {
+            throw new IllegalArgumentException(ValidadorCorreo.MENSAJE);
         }
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             log.warn("Intento de registro con email duplicado: {}", registerRequest.getEmail());
