@@ -1,5 +1,7 @@
 package com.skillmatch.backend.config;
 
+import com.skillmatch.backend.security.GoogleLoginHandler;
+import com.skillmatch.backend.security.IntencionGoogleResolver;
 import com.skillmatch.backend.security.JwtAuthenticationEntryPoint;
 import com.skillmatch.backend.security.JwtAuthenticationFilter;
 import com.skillmatch.backend.security.RateLimitingFilter;
@@ -7,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -16,9 +19,16 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.oauth2.client.CommonOAuth2Provider;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
@@ -26,6 +36,8 @@ import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,6 +53,16 @@ public class SecurityConfig {
     /** Origenes permitidos para CORS, configurables con la variable ALLOWED_ORIGINS. */
     @Value("${app.cors.allowed-origins}")
     private String[] allowedOrigins;
+
+    /** Entrar con Google: apagado mientras falte alguna de las dos (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET). */
+    @Value("${app.google.client-id:}")
+    private String googleClientId;
+
+    @Value("${app.google.client-secret:}")
+    private String googleClientSecret;
+
+    @Value("${app.google.pagina-retorno:/pages/login.html}")
+    private String googlePaginaRetorno;
 
     public SecurityConfig(UserDetailsService userDetailsService,
                           JwtAuthenticationEntryPoint unauthorizedHandler) {
@@ -102,7 +124,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            JwtAuthenticationFilter jwtFilter,
-                                           RateLimitingFilter rateLimitFilter) throws Exception {
+                                           RateLimitingFilter rateLimitFilter,
+                                           // @Lazy: el manejador usa el login, que sale de esta misma configuración
+                                           @Lazy GoogleLoginHandler googleLoginHandler) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -157,11 +181,52 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             );
 
+        if (!googleClientId.isBlank() && !googleClientSecret.isBlank()) {
+            // Las direcciones de Google (y la validación de su firma) ya vienen en Spring
+            ClientRegistrationRepository registros = new InMemoryClientRegistrationRepository(
+                    CommonOAuth2Provider.GOOGLE.getBuilder("google")
+                            .clientId(googleClientId)
+                            .clientSecret(googleClientSecret)
+                            .build());
+            http.oauth2Login(oauth -> oauth
+                    .clientRegistrationRepository(registros)
+                    .authorizedClientRepository(new SinGuardarTokensDeGoogle())
+                    .authorizationEndpoint(ida -> ida.authorizationRequestResolver(new IntencionGoogleResolver(registros)))
+                    // Sin esto Spring publica su propia página /login genérica
+                    .loginPage(googlePaginaRetorno)
+                    .successHandler(googleLoginHandler)
+                    .failureHandler(googleLoginHandler));
+        }
+
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-        http.addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class);
+        // El límite va antes de los filtros de Google (que responden solos en /oauth2/... y
+        // /login/oauth2/...) y, por lo tanto, también antes del JWT
+        http.addFilterBefore(rateLimitFilter, OAuth2AuthorizationRequestRedirectFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Spring guarda por defecto el token de acceso de Google para llamar a Google
+     * después. Solo queremos saber quién es la persona: no se guarda nada.
+     */
+    static class SinGuardarTokensDeGoogle implements OAuth2AuthorizedClientRepository {
+        @Override
+        public <T extends OAuth2AuthorizedClient> T loadAuthorizedClient(String registrationId, Authentication principal,
+                                                                         HttpServletRequest request) {
+            return null;
+        }
+
+        @Override
+        public void saveAuthorizedClient(OAuth2AuthorizedClient authorizedClient, Authentication principal,
+                                         HttpServletRequest request, HttpServletResponse response) {
+        }
+
+        @Override
+        public void removeAuthorizedClient(String registrationId, Authentication principal,
+                                           HttpServletRequest request, HttpServletResponse response) {
+        }
     }
 
     @Bean

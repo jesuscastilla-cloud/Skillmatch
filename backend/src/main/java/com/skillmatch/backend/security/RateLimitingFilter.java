@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 /**
  * Limita por IP los intentos en las rutas donde se adivinan contraseñas:
- * login, registro y cambio de contraseña.
+ * login, registro, cambio de contraseña, códigos y la ida y vuelta a Google.
  *
  * Se configura con:
  *   app.rate-limit.enabled          (RATE_LIMIT_ENABLED)
@@ -59,6 +59,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 || uri.equals("/api/auth/reset-password")
                 || uri.startsWith("/api/auth/phone/")
                 || uri.startsWith("/api/users/me/phone/")
+                || uri.startsWith("/api/auth/google/")
+                || uri.startsWith("/oauth2/authorization/")
+                || uri.startsWith("/login/oauth2/")
                 || CAMBIO_DE_CLAVE.matcher(uri).matches();
         return !esRutaProtegida;
     }

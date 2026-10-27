@@ -57,6 +57,12 @@ class SecurityConfigTest {
     }
 
     @Test
+    void sinCredencialesDeGoogle_laIdaAGoogleNoExiste() throws Exception {
+        mockMvc.perform(get("/oauth2/authorization/google"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void cors_aceptaElDominioReal() throws Exception {
         mockMvc.perform(preflight(SITIO))
                 .andExpect(status().isOk())
