@@ -453,6 +453,11 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   transición) y la barra de progreso cruzaban la pantalla con la página: la primera se esconde hasta el final
   y la segunda se esconde en `pageswap`. Con el computador muy ocupado (pruebas en paralelo) el navegador igual
   puede saltarse alguna: por eso las pruebas revisan la dirección y el guion por separado.
+- **Ventanas sin la caja suelta (hecho, 25 de octubre de 2026):** en "Cambiar contraseña", confirmar, cerrar vacante
+  y foto o portada de la empresa, la franja de botones iba dentro del cuerpo (con margen) y quedaba como una caja
+  suelta, en claro y en oscuro. Ahora es el pie de la ventana, de borde a borde. Y "Contraseña actual" abría en
+  rojo: el ojo movía el campo, le quitaba el foco y la validación lo marcaba como error; ahora le devuelve el foco
+  y su estado.
 
 ## Orden propuesto (solo frontend)
 

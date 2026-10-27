@@ -79,3 +79,25 @@ test('en "Cambiar contraseña" también: ojo en los tres campos y medidor en la 
     await ventana.locator('#claveNueva').fill('Herrera2026#');
     await expect(ventana.locator('.clave-fuerza')).toHaveText('Fuerza: Débil, porque incluye tu nombre o tu correo');
 });
+
+test('"Cambiar contraseña" abre lista para escribir: sin error en el primer campo y con los botones de borde a borde', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('perfil-usuario.html');
+    await page.evaluate(() => SkillMatchUI.cambiarContrasena());
+    const actual = page.locator('#claveActual');
+    // Antes, el ojo movía el campo, le quitaba el foco y lo marcaba como error sin haber escrito nada
+    await expect(actual).toBeFocused();
+    await expect(actual).not.toHaveClass(/is-invalid/);
+    // La franja de los botones es el pie de la ventana (antes, una caja suelta con margen).
+    // Se mide cuando la ventana termino de subir y las dos cajas en el mismo instante:
+    // con la suite cargando el equipo, dos consultas separadas caian en momentos distintos de la subida
+    const { caja, pie } = await page.locator('#ventanaContrasena').evaluate(async ventana => {
+        await Promise.all(ventana.getAnimations({ subtree: true }).map(a => a.finished));
+        const caja = ventana.querySelector('.modal-content').getBoundingClientRect();
+        const pie = ventana.querySelector('.modal-actions').getBoundingClientRect();
+        return { caja: caja.toJSON(), pie: pie.toJSON() };
+    });
+    expect(Math.abs(pie.x - caja.x)).toBeLessThan(1.5);
+    expect(Math.abs(pie.width - caja.width)).toBeLessThan(1.5);
+    expect(Math.abs((pie.y + pie.height) - (caja.y + caja.height))).toBeLessThan(1.5);
+});

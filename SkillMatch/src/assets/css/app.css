@@ -1603,6 +1603,17 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     border-top: 1px solid var(--hairline-soft);
     background: var(--surface-sunk);
 }
+/* Ventanas de UI.ventana (cambiar contrasena, confirmar, cerrar vacante, foto
+   y portada de la empresa, hoja de vida): los botones van dentro del cuerpo,
+   que tiene margen, y la franja quedaba como una caja suelta. Se estira hasta
+   los bordes y el fondo, como en las demas ventanas, y se queda abajo al
+   hacer scroll */
+.modal-body > .modal-actions,
+.modal-body > form > .modal-actions {
+    position: sticky;
+    bottom: calc(var(--s5) * -1);
+    margin: var(--s5) calc(var(--s5) * -1) calc(var(--s5) * -1);
+}
 /* Formularios del perfil de usuario: van directo en la ventana, sin
    .modal-body, y los campos quedaban pegados al borde. El formulario hace
    de cuerpo: margen interior, scroll si no cabe y botones siempre abajo. */
@@ -1698,7 +1709,7 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .lector-nivel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); margin-top: var(--s4); font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); }
 .lector-nivel select { width: auto; min-width: 12rem; }
 /* Los botones quedan siempre a la vista al bajar por la lista */
-.lector-acciones { position: sticky; bottom: calc(var(--s5) * -1); flex-wrap: wrap; align-items: center; margin: var(--s5) calc(var(--s5) * -1) calc(var(--s5) * -1); }
+.lector-acciones { flex-wrap: wrap; align-items: center; }
 .lector-cuenta { margin-right: auto; font-size: var(--t-sm); color: var(--ink-3); }
 @media (max-width: 600px) { .lector-campos { grid-template-columns: minmax(0, 1fr); } }
 

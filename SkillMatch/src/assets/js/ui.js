@@ -2622,10 +2622,20 @@
      *  navegador la guarde como contrasena. */
     function ojoDeClave(campo) {
         if (!campo || campo.closest('.campo-clave')) return;
+        // Mover el campo le quita el foco, y la validacion lo marcaba como
+        // error sin haber escrito nada ("Cambiar contrasena" abre con el foco
+        // en el primero): se le devuelven el foco y su estado de antes
+        const conFoco = document.activeElement === campo;
+        const estado = ['is-invalid', 'is-valid'].filter(function (c) { return campo.classList.contains(c); });
         const envoltura = document.createElement('div');
         envoltura.className = 'campo-clave';
         campo.parentNode.insertBefore(envoltura, campo);
         envoltura.appendChild(campo);
+        if (conFoco) {
+            campo.classList.remove('is-invalid', 'is-valid');
+            estado.forEach(function (c) { campo.classList.add(c); });
+            campo.focus();
+        }
         const ver = document.createElement('button');
         ver.type = 'button';
         ver.className = 'campo-clave-ver';

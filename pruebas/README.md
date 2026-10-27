@@ -44,7 +44,7 @@ npx playwright test --project=celular
 | `casos/inicio.spec.js` | Panel de inicio de la persona |
 | `casos/exportar.spec.js` | "Descargar en Excel" en Mi empresa: un `.xlsx` de verdad con sus columnas, tildes, la fecha como fecha, títulos fijos con filtros y nada se vuelve fórmula |
 | `casos/cerrar-vacante.spec.js` | Cerrar una vacante (qué pasa, responder a quienes esperan) y reabrirla (fecha vencida) |
-| `casos/contrasena.spec.js` | Contraseña nueva: el ojo, lo que se pide, la fuerza en palabras y si coinciden (registros y "Cambiar contraseña") |
+| `casos/contrasena.spec.js` | Contraseña nueva: el ojo, lo que se pide, la fuerza en palabras y si coinciden (registros y "Cambiar contraseña"); la ventana abre sin error en el primer campo y con los botones de borde a borde |
 | `casos/menu.spec.js` | El menú marca la sección al hacer scroll y su línea se desliza con el mouse (no con movimiento reducido) |
 | `casos/cambio-de-pagina.spec.js` | Al cambiar de página, la línea del menú y la pastilla de la barra de pestañas viajan al destino y la página cambia cuando llegan; las cosas de la nueva entran en fila desde el lado de la opción (sin viaje ni espera con movimiento reducido: solo se funde); el guion del `<head>` va después de las hojas de estilo |
 | `casos/hoja-de-vida-pdf.spec.js` | Llenar el perfil con la hoja de vida en PDF: lo que propone, lo dudoso sin marcar, dos columnas y nada se guarda sin confirmar |
