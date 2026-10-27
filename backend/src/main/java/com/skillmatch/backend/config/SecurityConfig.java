@@ -21,6 +21,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -111,6 +113,13 @@ public class SecurityConfig {
                     .maxAgeInSeconds(31536000))
                 .frameOptions(frame -> frame.disable())
                 .contentTypeOptions(Customizer.withDefaults())
+                // Al salir por un enlace externo, el otro sitio solo ve el dominio, no la URL
+                .referrerPolicy(referrer -> referrer.policy(
+                    ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                // Apaga lo que el sitio no usa; la ubicacion solo para el propio sitio
+                // ("Vacantes cerca de ti")
+                .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy",
+                    "camera=(), microphone=(), payment=(), usb=(), geolocation=(self)"))
                 .contentSecurityPolicy(csp -> csp.policyDirectives(
                     "default-src 'self'; " +
                     "script-src 'self' 'unsafe-inline'; " +
@@ -118,9 +127,9 @@ public class SecurityConfig {
                     "font-src 'self' data: https://fonts.gstatic.com; " +
                     // El frontend usa ui-avatars.com y unsplash.com para avatares y portadas
                     "img-src 'self' data: https:; " +
-                    // Permite que el frontend llame a la API aunque esten en dominios distintos
-                    "connect-src 'self' https:; " +
-                    "frame-src https://app.powerbi.com; " +
+                    // El frontend va en el mismo dominio que la API: las paginas
+                    // solo pueden mandar datos a su propio servidor
+                    "connect-src 'self'; " +
                     "frame-ancestors 'self'"
                 ))
             )

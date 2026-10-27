@@ -7,6 +7,9 @@ $env:MONGODB_URI = "mongodb://localhost:27017/skillmatch"
 # Clave de firma de los JWT (minimo 32 caracteres)
 $env:JWT_SECRET  = "skillmatch-clave-local-de-desarrollo-no-usar-en-produccion-2026"
 
+# Swagger (mapa de la API) en http://localhost:8080/swagger-ui.html; en produccion queda apagado
+$env:SWAGGER_ENABLED = "true"
+
 # Pon "true" solo la primera vez, para llenar la base con datos de prueba
 $env:SEED_ENABLED = "false"
 
