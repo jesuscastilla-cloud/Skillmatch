@@ -9,6 +9,7 @@ import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.TokenBlacklistService;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -61,7 +62,15 @@ public class AuthenticationService {
 
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        return respuesta(user, jwt);
+    }
 
+    /** Sesión para una cuenta que ya probó quién es por otro camino (Google). */
+    public AuthResponse sesionPara(User user) {
+        return respuesta(user, tokenProvider.generateToken(UserDetailsImpl.build(user)));
+    }
+
+    private AuthResponse respuesta(User user, String jwt) {
         // Solo este campo ($set): no pisa cambios del perfil que ocurran al mismo tiempo
         mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(user.getId())),
                 new Update().set("lastLoginAt", LocalDateTime.now()).unset("avisoInactividadEn"), User.class);
@@ -75,7 +84,7 @@ public class AuthenticationService {
         }
 
         long expiresAt = System.currentTimeMillis() + tokenProvider.getExpirationMillis();
-        log.info("Login exitoso: email={}, rol={}", user.getEmail(), primaryRole);
+        log.info("Login exitoso: id={}, rol={}", user.getId(), primaryRole);
         AuthResponse response = new AuthResponse(jwt, user.getId(), companyId, user.getEmail(),
             user.getFirstName(), user.getLastName(), primaryRole);
         response.setExpiresAt(expiresAt);
