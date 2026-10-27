@@ -16,5 +16,7 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     Optional<User> findByPhone(String phone);
 
+    Optional<User> findByGoogleId(String googleId);
+
     long countByRolesContaining(String role);
 }

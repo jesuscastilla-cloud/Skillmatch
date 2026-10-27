@@ -41,6 +41,10 @@ public class MongoIndexConfig implements ApplicationRunner {
         safe("users", () -> mongoTemplate.indexOps("users")
                 .createIndex(new Index("phone", Sort.Direction.ASC).unique()
                         .partial(PartialIndexFilter.of(Criteria.where("phone").type(2)))));
+        // Una cuenta de Google solo puede estar unida a una cuenta de SkillMatch
+        safe("users", () -> mongoTemplate.indexOps("users")
+                .createIndex(new Index("googleId", Sort.Direction.ASC).unique()
+                        .partial(PartialIndexFilter.of(Criteria.where("googleId").type(2)))));
 
         // companies
         safe("companies", () -> mongoTemplate.indexOps("companies")
@@ -104,6 +108,10 @@ public class MongoIndexConfig implements ApplicationRunner {
 
         // registros_pendientes: un registro sin confirmar se borra a los 30 minutos
         safe("registros_pendientes", () -> mongoTemplate.indexOps("registros_pendientes")
+                .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
+
+        // canjes_google: el código de un solo uso de "Entrar con Google" vence al minuto
+        safe("canjes_google", () -> mongoTemplate.indexOps("canjes_google")
                 .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
 
         log.info("Indices de MongoDB verificados.");

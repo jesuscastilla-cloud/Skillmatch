@@ -81,6 +81,11 @@ public class User implements UserDetails {
     // recuperación). Las cuentas anteriores a la fase 8 quedan en null.
     private Boolean emailVerified;
 
+    // Identificador fijo que Google da a la persona ("sub"). No cambia aunque cambie
+    // su correo de Google. null si nunca entró con Google.
+    @JsonIgnore
+    private String googleId;
+
     // Cuándo se le avisó que su cuenta inactiva se borrará (RetencionDatos). Entrar lo limpia.
     private LocalDateTime avisoInactividadEn;
 

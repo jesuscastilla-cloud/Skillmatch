@@ -61,6 +61,12 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- Entrar con Google (OAuth2 / OpenID Connect del lado del servidor) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+
 
         <!-- JWT Dependencies -->
         <dependency>
