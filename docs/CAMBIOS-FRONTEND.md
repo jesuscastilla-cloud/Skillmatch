@@ -123,3 +123,19 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
   `pages/login.html`; página nueva (p. ej. `pages/recuperar-clave.html` con su `assets/js/recuperar-clave.js`) con dos
   pasos: correo → código + contraseña nueva (reusar `UI.claveNueva` de `ui.js`, el medidor de contraseña).
 - **Probar en local sin Brevo:** con `start.ps1` el código sale escrito en la consola del backend.
+
+### ⬜ F10. Registro con código (sin cuentas a medias)
+- **Backend (con `REGISTRO_VERIFICAR_CORREO=true`):**
+  1. `POST /api/auth/register` (mismos campos de hoy, más F6) → **202** `{"message": "Te enviamos un código de 6
+     números..."}`. **No** crea la cuenta ni abre sesión. Responde igual si el correo ya tenía cuenta (al dueño le
+     llega un aviso), así que la pantalla siempre pasa al paso del código.
+  2. `POST /api/auth/register/verify` `{"email", "codigo"}` → **200** con la misma respuesta del registro de hoy
+     (`token`, `id`, `companyId`, `role`...) y la cookie de sesión. 400 si el código no es correcto o venció.
+  3. `POST /api/auth/register/resend` `{"email"}` → otro código (uno por minuto; responde siempre lo mismo).
+- **Dónde:** `assets/js/registro-usuario.js` (línea ~88) y `assets/js/registro-empresa.js`: si la respuesta del
+  registro es 202, mostrar el paso "Escribe el código que te enviamos a <correo>" (un campo de 6 números,
+  `inputmode="numeric"`, botón "Reenviar código"); al confirmar, hacer lo mismo que hoy tras un registro exitoso
+  (`saveToken`, `saveUserData`, redirigir). Si es 200 (backend con el interruptor apagado), seguir como hoy.
+  Así el mismo frontend sirve antes y después de activar el interruptor.
+- **Después de publicarlo:** con Brevo configurado (`MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`), poner
+  `REGISTRO_VERIFICAR_CORREO=true` en Render.

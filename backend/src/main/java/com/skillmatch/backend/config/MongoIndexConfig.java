@@ -93,6 +93,10 @@ public class MongoIndexConfig implements ApplicationRunner {
         safe("codigos_correo", () -> mongoTemplate.indexOps("codigos_correo")
                 .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
 
+        // registros_pendientes: un registro sin confirmar se borra a los 30 minutos
+        safe("registros_pendientes", () -> mongoTemplate.indexOps("registros_pendientes")
+                .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
+
         log.info("Indices de MongoDB verificados.");
     }
 

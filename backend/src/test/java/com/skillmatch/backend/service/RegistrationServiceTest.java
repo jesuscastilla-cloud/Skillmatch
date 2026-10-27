@@ -12,6 +12,10 @@ import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.validation.ValidadorCorreo;
+import com.skillmatch.backend.model.RegistroPendiente;
+import com.skillmatch.backend.repository.RegistroPendienteRepository;
+import com.skillmatch.backend.security.UserDetailsImpl;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +42,9 @@ class RegistrationServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtTokenProvider tokenProvider;
     @Mock private ValidadorCorreo validadorCorreo;
+    @Mock private RegistroPendienteRepository registrosPendientes;
+    @Mock private CodigoCorreoService codigos;
+    @Mock private CorreoService correo;
 
     @InjectMocks
     private RegistrationService registrationService;
@@ -200,5 +207,69 @@ class RegistrationServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(ValidadorCorreo.MENSAJE);
         verify(userRepository, never()).save(any());
+    }
+
+    // ─── Registro con código: no hay cuentas a medias ─────────────────────────
+
+    @Test
+    void iniciarRegistro_guardaPendienteYEnviaCodigo_sinCrearCuenta() {
+        when(userRepository.existsByEmail("user@test.com")).thenReturn(false);
+        when(passwordEncoder.encode("Clave-de-prueba-1")).thenReturn("hash");
+        when(codigos.generar("user@test.com", CodigoCorreoService.REGISTRO)).thenReturn(Optional.of("482913"));
+
+        registrationService.iniciarRegistro(userRequest);
+
+        ArgumentCaptor<RegistroPendiente> pendiente = ArgumentCaptor.forClass(RegistroPendiente.class);
+        verify(registrosPendientes).save(pendiente.capture());
+        assertThat(pendiente.getValue().getPasswordHash()).isEqualTo("hash");
+        assertThat(pendiente.getValue().getExpiresAt()).isNotNull();
+        verify(correo).enviar(eq("user@test.com"), anyString(), contains("482913"));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void iniciarRegistro_correoYaRegistrado_respondeIgualYAvisaAlDueno() {
+        when(userRepository.existsByEmail("user@test.com")).thenReturn(true);
+        when(codigos.generar("user@test.com", "AVISO_CUENTA_EXISTENTE")).thenReturn(Optional.of("x"));
+
+        registrationService.iniciarRegistro(userRequest); // no lanza: misma respuesta que un correo nuevo
+
+        verify(correo).enviar(eq("user@test.com"), contains("Alguien intentó"), anyString());
+        verify(registrosPendientes, never()).save(any());
+        verify(codigos, never()).generar("user@test.com", CodigoCorreoService.REGISTRO);
+    }
+
+    @Test
+    void confirmarRegistro_codigoMalo_noCreaNada() {
+        when(codigos.verificar("user@test.com", CodigoCorreoService.REGISTRO, "000000")).thenReturn(false);
+
+        assertThatThrownBy(() -> registrationService.confirmarRegistro("user@test.com", "000000"))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void confirmarRegistro_codigoBueno_creaCuentaVerificadaYAbreSesion() {
+        when(codigos.verificar("user@test.com", CodigoCorreoService.REGISTRO, "482913")).thenReturn(true);
+        when(registrosPendientes.findById("user@test.com")).thenReturn(Optional.of(new RegistroPendiente(
+                "user@test.com", "hash", "Ana", "García", "3001234567", "USER", List.of(), new java.util.Date())));
+        when(userRepository.existsByEmail("user@test.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId("nuevo-id");
+            return u;
+        });
+        when(tokenProvider.generateToken(any(UserDetailsImpl.class))).thenReturn("jwt.token");
+
+        AuthResponse result = registrationService.confirmarRegistro("user@test.com", "482913");
+
+        ArgumentCaptor<User> guardado = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(guardado.capture());
+        assertThat(guardado.getValue().getEmailVerified()).isTrue();
+        assertThat(guardado.getValue().getPassword()).isEqualTo("hash");
+        assertThat(result.getToken()).isEqualTo("jwt.token");
+        assertThat(result.getRole()).isEqualTo("USER");
+        verify(registrosPendientes).deleteById("user@test.com");
+        verifyNoInteractions(authenticationManager);
     }
 }
