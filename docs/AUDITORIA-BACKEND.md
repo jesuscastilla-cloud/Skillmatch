@@ -27,7 +27,16 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 | 5. Validación de entradas | Hecha | A6, B4, M5, M6, M12, M3, B3, A8 (con migración de correos al arrancar). Queda: algunos controladores todavía arman "Error al ...: " + mensaje en sus propios `catch`; con el manejador nuevo ya no llegan fallos de Java por ahí, pero conviene limpiarlos |
 | 6. Mensajes y conexiones | Hecha | M8: el bloqueo impide escribir (en los dos sentidos); 20 mensajes/min y 500/día, 30 solicitudes/día por cuenta; la conversación devuelve los 1000 mensajes más recientes. Pendientes 2.4: una solicitud rechazada se puede reenviar a los 30 días (quien rechazó, de inmediato). Se mantiene que cualquiera puede escribir a cualquiera (así está diseñado el frontend). El frontend todavía no tiene botón "Bloquear". Si una conversación pasara de 1000 mensajes, "Eliminar conversación" dejaría los más viejos: la solución es un `DELETE /api/messages/conversation/{id}` (pendientes 2.11) |
 | 7. Datos personales | Hecha (backend) | Prueba del consentimiento (`User.consentimientos`, exigible con `PRIVACIDAD_EXIGIR_CONSENTIMIENTO`), `GET /api/users/me/export`, `DELETE /api/users/me` (borra todos los mensajes; empresa anónima), notificaciones 90 días (TTL), postulaciones 12 meses tras cerrar la vacante (tarea diaria), `lastLoginAt`. Pendiente: borrado de cuentas inactivas 24 meses (necesita correo, fase 8) y los botones y la política en el frontend (`docs/CAMBIOS-FRONTEND.md`, F6 a F9) |
-| 8 a 11 | Pendientes | — |
+| 8. Correo | Hecha (backend) | Envío con Brevo (`CorreoService`, modo prueba en local). Correos válidos: MX real y lista de desechables. Códigos de 6 dígitos (15 min, 5 intentos, huella SHA-256). "Olvidé mi contraseña". Registro con código sin cuentas a medias y sin enumeración (interruptor `REGISTRO_VERIFICAR_CORREO`). Aviso y borrado de cuentas inactivas (24 meses). Pendiente: crear la cuenta de Brevo y el frontend (F10, F11). Teléfono (SMS/WhatsApp) va en la fase 9 y es de pago; Google en la 10 |
+| 9 a 11 | Pendientes | — |
+
+**Para activar la fase 8 en Render:**
+1. Crear la cuenta en Brevo, verificar el remitente (el correo o dominio desde el que se envía) y sacar la
+   "SMTP key" (Ajustes > SMTP y API).
+2. En Render: `MAIL_USERNAME` (el usuario SMTP de Brevo), `MAIL_PASSWORD` (la SMTP key) y `MAIL_FROM`
+   (por ejemplo `SkillMatch <no-responder@tu-dominio>`, que debe ser el remitente verificado).
+3. Cuando el frontend tenga la pantalla del código (F10): `REGISTRO_VERIFICAR_CORREO=true`.
+4. Nunca poner `CORREO_MODO_PRUEBA=true` en Render (escribiría los códigos en el log).
 
 Lo que el frontend tiene que hacer para usar lo nuevo del backend está en **`docs/CAMBIOS-FRONTEND.md`**.
 
