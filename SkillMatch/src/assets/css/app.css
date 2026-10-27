@@ -6940,11 +6940,21 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 /* La franja blanca de arriba (titulo, frase y buscador) pasa a ser una repisa de vidrio a lo ancho:
    el texto sigue sobre vidrio y no suelto sobre las manchas */
 .pagina-vidrio :is(.opportunities-header, .directorio-cabecera, .connections-header,
-    .search-section, .benefits-section, .mapa-section, .innovation-section, .indicadores-cabecera,
-    .como-funciona, .cartagena-section, .usuarios-empresas, .results-section, .registro-section) {
+    .indicadores-cabecera, .registro-section) {
     background: linear-gradient(180deg, var(--vidrio-reflejo), transparent 70%), var(--vidrio-tinte);
     border-bottom-color: var(--vidrio-luz-2);
 }
+/* Inicio, de la ola de la portada a la invitacion del final: una sola lamina de vidrio. Con una repisa
+   por seccion (cada una con su brillo arriba y su raya abajo) y la franja de las cifras sin vidrio, se
+   veian franjas horizontales de bordes duros. Ahora todas llevan el mismo tinte, sin rayas entre ellas
+   (las separa el espacio). Con sesion, la lamina empieza bajo la franja oscura del panel de inicio (sus
+   tarjetas iban directo sobre las manchas). Para visitantes, bajo la ola de la portada el vidrio nace del
+   mismo color de la ola (--surface) y se funde en 140 px: sin eso, bajo la ola quedaba una linea recta */
+.pagina-vidrio :is(.panel-inicio, .search-section, .results-section, .impact-stats, .como-funciona, .benefits-section,
+    .cartagena-section, .mapa-section, .usuarios-empresas, .innovation-section) {
+    background: var(--vidrio-tinte); border-block-width: 0;
+}
+.pagina-vidrio .hero:not([hidden]) + .search-section { background: linear-gradient(180deg, var(--surface), transparent 140px), var(--vidrio-tinte); }
 /* Fase 5 (Inicio e Indicadores): la portada, la franja del panel de inicio y la invitacion del final
    siguen azul oscuro (superficies de la marca, como el pie). El carrusel 3D sigue solido: en 3D las
    tarjetas translucidas se verian unas a traves de otras. Los recuadros punteados, con el tinte de las
@@ -7096,7 +7106,7 @@ body > header, [data-theme="dark"] body > header {
         .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
         .opportunities-header, .directorio-cabecera, .connections-header,
         .stat-box, .roadmap-card, .benefit-item, .pathway-card, .mapa-zona, .panel-bloque, .choice-card,
-        :where(.indicadores-cifras) > li, .indicador, .search-section, .benefits-section, .mapa-section, .innovation-section,
+        :where(.indicadores-cifras) > li, .indicador, .panel-inicio, .search-section, .impact-stats, .benefits-section, .mapa-section, .innovation-section,
         .indicadores-cabecera, .como-funciona, .cartagena-section, .usuarios-empresas, .results-section,
         .registro-section, .auth-panel),
     .pagina-vidrio .registro-section > .container > .registro-form,

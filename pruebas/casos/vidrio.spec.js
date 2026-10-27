@@ -190,6 +190,45 @@ test('Inicio es de vidrio: repisas y tarjetas de tinte, y la portada oscura sigu
     expect((await deVidrio(tarjeta)).translucido, 'tarjeta del carrusel').toBe(false);
 });
 
+// Con una repisa por seccion (cada una con su brillo y su raya) y la franja de las cifras sin vidrio,
+// Inicio se veia en franjas horizontales de bordes duros
+test('Inicio es una sola lámina de vidrio: el mismo tinte en todas las secciones, sin rayas entre ellas ni costura bajo la ola', async ({ page, context, api }) => {
+    const secciones = ['.search-section', '.impact-stats', '.como-funciona', '.benefits-section', '.cartagena-section',
+        '.mapa-section', '.innovation-section'];
+    const leer = lista => page.evaluate(lista => lista.map(s => {
+        const cs = getComputedStyle(document.querySelector(s));
+        return { s, fondo: cs.backgroundColor, bordes: [cs.borderTopWidth, cs.borderBottomWidth] };
+    }), lista);
+
+    await entrarComo(context, 'visitante');
+    await page.goto('index.html');
+    await expect(page.locator('.fondo-vivo')).toBeVisible();
+    const visitante = await leer([...secciones, '.usuarios-empresas']);
+    expect(visitante[0].fondo, 'tinte translucido').toMatch(/^rgba\(.+, 0\.\d+\)$/);
+    for (const e of visitante) {
+        expect(e.fondo, e.s).toBe(visitante[0].fondo);
+        expect(e.bordes, e.s).toEqual(['0px', '0px']);
+    }
+    // Bajo la ola de la portada, el vidrio nace del mismo color de la ola y se funde
+    const ola = await page.locator('.hero-ola').evaluate(el => getComputedStyle(el).backgroundColor);
+    expect(await page.locator('.search-section').evaluate(el => getComputedStyle(el).backgroundImage)).toContain(ola);
+});
+
+test('con sesión, el panel de inicio también va sobre la lámina y el buscador la continúa sin costura', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('index.html');
+    await expect(page.locator('.panel-bloque').first()).toBeVisible();
+    const [panel, buscador] = await page.evaluate(() => ['.panel-inicio', '.search-section'].map(s => {
+        const cs = getComputedStyle(document.querySelector(s));
+        return { fondo: cs.backgroundColor, brillo: cs.backgroundImage };
+    }));
+    expect(panel.fondo).toMatch(/^rgba\(.+, 0\.\d+\)$/);
+    // Sin portada no hay ola: el buscador no empieza blanco (se veia una linea bajo el panel)
+    expect(buscador).toEqual({ fondo: panel.fondo, brillo: 'none' });
+    // La franja oscura del saludo sigue solida
+    expect(await deVidrio(page.locator('.panel-franja')), 'franja del saludo').toEqual({ translucido: false, desenfoca: false });
+});
+
 test('el inicio de la persona y los Indicadores son de vidrio', async ({ page, context, api }) => {
     await entrarComo(context, 'persona');
     await page.goto('index.html');
