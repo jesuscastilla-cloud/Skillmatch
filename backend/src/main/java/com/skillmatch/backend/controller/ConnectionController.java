@@ -2,7 +2,7 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.ConnectionRequest;
 import com.skillmatch.backend.dto.MessageResponse;
-import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.dto.UserSummaryResponse;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.ConnectionService;
 import jakarta.validation.Valid;
@@ -123,7 +123,7 @@ public class ConnectionController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> getSuggestions(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            List<User> suggestions = connectionService.getSuggestions(currentUser.getId());
+            List<UserSummaryResponse> suggestions = connectionService.getSuggestions(currentUser.getId());
             return ResponseEntity.ok(suggestions);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));

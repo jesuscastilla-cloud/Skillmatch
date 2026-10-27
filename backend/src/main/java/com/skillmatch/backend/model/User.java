@@ -1,5 +1,6 @@
 package com.skillmatch.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,6 +29,9 @@ public class User implements UserDetails {
     @Indexed(unique = true)
     private String email;
 
+    // Nunca sale en un JSON, aunque alguien devuelva un User por error.
+    // No afecta a MongoDB: Spring Data guarda el campo igual.
+    @JsonIgnore
     private String password;
 
     private String firstName;

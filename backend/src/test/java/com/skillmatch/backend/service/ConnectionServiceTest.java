@@ -1,12 +1,15 @@
 package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.ConnectionRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.skillmatch.backend.dto.ConnectionResponse;
+import com.skillmatch.backend.dto.UserSummaryResponse;
 import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.exception.UnauthorizedException;
 import com.skillmatch.backend.model.Connection;
 import com.skillmatch.backend.model.ConnectionStatus;
+import com.skillmatch.backend.model.Skill;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ConnectionRepository;
 import com.skillmatch.backend.repository.UserRepository;
@@ -419,12 +422,41 @@ class ConnectionServiceTest {
     // ─── getSuggestions ───────────────────────────────────────────────────────
 
     @Test
-    void getSuggestions_returnsList() {
+    void getSuggestions_returnsSummaries() {
+        receiver.setHeadline("Desarrollador");
+        receiver.setLocation("Cartagena");
+        receiver.setSkills(List.of(new Skill("s1", "Java", "AVANZADO", null, null, null, null)));
         when(userService.findSuggestionsForUser("user-id-1")).thenReturn(List.of(receiver));
 
-        List<User> result = connectionService.getSuggestions("user-id-1");
+        List<UserSummaryResponse> result = connectionService.getSuggestions("user-id-1");
 
-        assertThat(result).containsExactly(receiver);
+        assertThat(result).hasSize(1);
+        UserSummaryResponse sugerencia = result.get(0);
+        assertThat(sugerencia.getId()).isEqualTo("user-id-2");
+        assertThat(sugerencia.getFirstName()).isEqualTo("Luis");
+        assertThat(sugerencia.getHeadline()).isEqualTo("Desarrollador");
+        assertThat(sugerencia.getLocation()).isEqualTo("Cartagena");
+        assertThat(sugerencia.getSkills()).containsExactly("Java");
+    }
+
+    @Test
+    void getSuggestions_noExponeContrasenaNiContacto() throws Exception {
+        receiver.setPassword("$2a$10$hashSecreto");
+        receiver.setPhone("3001234567");
+        when(userService.findSuggestionsForUser("user-id-1")).thenReturn(List.of(receiver));
+
+        String json = new ObjectMapper().writeValueAsString(connectionService.getSuggestions("user-id-1"));
+
+        assertThat(json).doesNotContain("hashSecreto", "password", "luis@test.com", "3001234567", "roles");
+    }
+
+    @Test
+    void user_nuncaSerializaLaContrasena() throws Exception {
+        receiver.setPassword("$2a$10$hashSecreto");
+
+        String json = new ObjectMapper().findAndRegisterModules().writeValueAsString(receiver);
+
+        assertThat(json).doesNotContain("hashSecreto").doesNotContain("\"password\"");
     }
 
     @Test

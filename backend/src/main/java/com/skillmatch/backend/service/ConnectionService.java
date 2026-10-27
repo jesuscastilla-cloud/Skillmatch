@@ -2,11 +2,13 @@ package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.ConnectionRequest;
 import com.skillmatch.backend.dto.ConnectionResponse;
+import com.skillmatch.backend.dto.UserSummaryResponse;
 import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.exception.UnauthorizedException;
 import com.skillmatch.backend.model.Connection;
 import com.skillmatch.backend.model.ConnectionStatus;
+import com.skillmatch.backend.model.Skill;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ConnectionRepository;
 import com.skillmatch.backend.repository.UserRepository;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -162,9 +165,11 @@ public class ConnectionService {
         return mongoTemplate.count(new Query(criteria), Connection.class);
     }
 
-    public List<User> getSuggestions(String userId) {
+    public List<UserSummaryResponse> getSuggestions(String userId) {
         if (userId == null) throw new IllegalArgumentException("ID de usuario no puede ser nulo");
-        return userService.findSuggestionsForUser(userId);
+        return userService.findSuggestionsForUser(userId).stream()
+                .map(this::mapToSummary)
+                .collect(Collectors.toList());
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -199,6 +204,15 @@ public class ConnectionService {
         return connections.stream()
                 .map(c -> mapToResponse(c, userMap.get(c.getUserId()), userMap.get(c.getConnectedUserId())))
                 .collect(Collectors.toList());
+    }
+
+    private UserSummaryResponse mapToSummary(User user) {
+        List<String> skills = user.getSkills() == null ? List.of() : user.getSkills().stream()
+                .map(Skill::getName)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        return new UserSummaryResponse(user.getId(), user.getFirstName(), user.getLastName(),
+                user.getHeadline(), user.getLocation(), user.getProfileImageUrl(), skills);
     }
 
     private ConnectionResponse mapToResponse(Connection connection, User user, User connectedUser) {
