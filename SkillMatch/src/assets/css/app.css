@@ -6883,9 +6883,9 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 @keyframes deriva-5 { 0% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(-20vw, 30vh, 0) scale(1.1); } 100% { transform: translate3d(16vw, 12vh, 0) scale(.95); } }
 /* En el celular, 3 manchas */
 @media (max-width: 760px) { .mancha-2, .mancha-5 { display: none; } }
-/* Con una ventana abierta el fondo no se ve: en pausa, para no gastar. Las ventanas nuevas se
-   abren con clase; las viejas del perfil, con style.display = 'flex' (sin clase) */
-.pagina-vidrio:has(.modal:is(.active, .is-open, [open], [style*="flex"])) .fondo-vivo > span { animation-play-state: paused; }
+/* Sin pausa con una ventana abierta: la regla ".pagina-vidrio:has(.modal[style*='flex'])" obligaba a
+   revisar toda la pagina cada vez que algo cambiaba su estilo en linea, y en Inicio (que lo hace sin
+   parar) un celular lento bajaba de 90 a 64 fps. Las manchas solo mueven transform: casi no cuestan */
 /* Movimiento reducido: quietas en su lugar */
 @media (prefers-reduced-motion: reduce) { .fondo-vivo > span { animation: none; } }
 

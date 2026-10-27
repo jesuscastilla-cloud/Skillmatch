@@ -479,7 +479,7 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
     - Vidrio real solo en la barra, las pestañas y los menús.
     - Fondo vivo en el HTML. Sus manchas arrancan según la hora (`--reloj`, en el guion del `<head>` de las
       18 páginas), así no vuelven a empezar al cambiar de página.
-    - Se pausa con una ventana abierta, queda quieto con movimiento reducido y se va con alto contraste,
+    - Queda quieto con movimiento reducido y se va con alto contraste,
       menos transparencia o al imprimir.
   - **Mi perfil:**
     - Iniciales con colores de la marca (antes podían salir moradas).

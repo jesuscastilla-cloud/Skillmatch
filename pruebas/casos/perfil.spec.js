@@ -167,16 +167,11 @@ test.describe('vidrio', () => {
         expect(await filtro('#perfilMasMenu')).toContain('blur');
     });
 
-    test('el fondo queda en pausa con una ventana abierta, quieto con movimiento reducido, y se va con alto contraste o menos transparencia', async ({ page, context, api }) => {
+    // Sin pausa con una ventana abierta: la regla :has() que lo hacia frenaba Inicio en celulares lentos
+    test('el fondo queda quieto con movimiento reducido y se va con alto contraste o menos transparencia', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('perfil-usuario.html');
         const estados = () => page.evaluate(visibles => [...new Set(eval(visibles).map(m => (m.getAnimations()[0] || {}).playState || 'quieta'))], visibles);
-        await expect.poll(estados).toEqual(['running']);
-        await page.locator('#cifraAgregarHabilidad').click();
-        await expect(page.locator('#addSkillModal')).toBeVisible();
-        await expect.poll(estados).toEqual(['paused']);
-        await page.locator('#addSkillModal .btn-close-modal').click();
-        await expect(page.locator('#addSkillModal')).toBeHidden();
         await expect.poll(estados).toEqual(['running']);
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await expect.poll(estados).toEqual(['quieta']);

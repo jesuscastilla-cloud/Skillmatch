@@ -137,7 +137,8 @@ Lo que funciona en claro no sirve tal cual en oscuro.
 - **Grano fino:** ruido casi invisible (un SVG quieto) para que los degradados no se vean en escalones.
 - **Se pausa solo:**
   - Con movimiento reducido, las manchas quedan quietas en un lugar bonito.
-  - Mientras hay una ventana abierta (Editar perfil, etc.): ahí el fondo no se ve y se ahorra trabajo.
+  - ~~Mientras hay una ventana abierta~~: se quitó en la revisión final. La regla `:has()` que lo hacía frenaba
+    Inicio en celulares lentos (ver "Revisión final" al final).
   - En una pestaña que no se ve, lo frena el navegador.
 - **Reemplaza** el fondo de hoy (`.perfil-panel::before`) y arregla el corte del hallazgo 3.
 - **Cambio de página:** al entrar o salir del perfil, el fondo se funde en vez de deslizarse con la
@@ -231,7 +232,6 @@ Van junto a los tokens `--*` que ya existen.
 - **Ahorro desde el diseño:**
   - Sin `backdrop-filter` en lo de adentro (sección 1).
   - `will-change` solo en las manchas.
-  - Fondo en pausa con una ventana abierta.
   - En el celular, 3 manchas, desenfoque de 12 px y sin efectos de mouse.
 
 ---
@@ -260,7 +260,6 @@ En `pruebas/casos/perfil.spec.js`:
 - [ ] El fondo vivo existe, tiene 5 manchas en el computador y 3 en el celular, y se mueve con
       `transform`.
 - [ ] Con movimiento reducido, nada se mueve.
-- [ ] Con una ventana abierta, el fondo queda en pausa.
 - [ ] Sin luz que siga al cursor (decisión de Luis), y nada de mouse en táctil.
 - [ ] Con "reducir transparencia" y con `forced-colors`, todo es sólido.
 - [ ] Lo de adentro **no** tiene `backdrop-filter`; las tarjetas sí.
@@ -396,7 +395,7 @@ Prototipo: `SkillMatch/src/pages/prototipo-vidrio.html`. Sale del proyecto cuand
 |---|---|
 | Texto que no se lee sobre el vidrio | Tinte mínimo y contraste con píxeles en el peor momento, en claro y oscuro |
 | En oscuro, vidrio que no se nota o mancha naranja café | Receta propia para oscuro (sección 3) |
-| La página se pone lenta | Manchas sin `filter`, sin vidrio dentro de vidrio, pausa con ventanas abiertas, medición con la tarjeta de video real |
+| La página se pone lenta | Manchas sin `filter`, sin vidrio dentro de vidrio, sin `:has()` costosos, medición con la tarjeta de video real |
 | Romper lo que ya funciona | Solo clases nuevas, mismos ids, todo bajo `.pagina-vidrio`, suite completa en cada fase |
 | Safari o Firefox se ven distinto | La lente es un extra y se detecta por la marca del navegador: sin ella queda el vidrio normal |
 | Que maree | Movimiento lento y suave; con movimiento reducido, quieto |
@@ -472,7 +471,6 @@ cabecera ya no tiene `backdrop-filter`.
    - Con eso, el cambio de página que ya existe (las cosas entran deslizándose) se ve sobre un fondo que
      no salta.
 4. **Lo que se apaga solo:**
-   - Fondo en pausa con una ventana abierta.
    - Quieto con movimiento reducido.
    - Sólido con "reducir transparencia" y con alto contraste.
    - Sin vidrio al imprimir.
@@ -512,7 +510,7 @@ Luis mira en Live Server y commit con su permiso.
 - **No fijar el fondo durante el cambio de página.** En una transición, la captura de la página nueva
   incluye el color de fondo, que es opaco: el fondo vivo quedaría tapado o taparía las tarjetas. Se desliza
   con la página y, como va con la hora, llega al mismo lugar.
-- **Las ventanas viejas** se abren con `style.display = 'flex'`, sin clase. La pausa del fondo las reconoce
+- **Las ventanas viejas** se abren con `style.display = 'flex'`, sin clase. La pausa del fondo (quitada en la revisión final) las reconocía
   por eso (`[style*="flex"]`).
 - **`:is()` toma la fuerza de su selector más fuerte.** Una regla con un `#id` dentro de `:is()` les quitaba
   su color al pasar el mouse a todos los demás. Para lo de adentro de las tarjetas se usa `:where()`, que no
@@ -593,3 +591,25 @@ Luis mira en Live Server y commit con su permiso.
 - **Estado final:** las 15 páginas con contenido usan el sistema de vidrio. La hoja de vida (para
   imprimir), "Sin conexión" y la política de datos (un documento de texto) solo llevan la barra de vidrio.
   Medidas todas con píxeles en claro y oscuro, computador y celular: ningún texto bajo AA.
+
+### Revisión final (27 de octubre, madrugada)
+
+- **Auditoría de todas las páginas** (138 vistas): 2 avisos. Antes del vidrio eran 5. Los 2 que quedan son
+  la decisión de siempre (títulos de vacante de 25 px en el celular). Los 3 de "Cómo funciona" se fueron
+  porque su texto ahora va sobre vidrio.
+- **Fluidez con la tarjeta de video real.** Medido con Edge sin ventana, que no se limita a 60 fps, así que
+  los números muestran el margen. El celular lleva el procesador frenado 4 veces:
+
+  | Página | Computador | Celular lento |
+  |---|---|---|
+  | Vacantes | 144 fps | 144 fps |
+  | Inicio | 144 fps | 79 fps, 1 cuadro largo al bajar (antes del vidrio: 93) |
+
+- **El fondo ya no se pausa con una ventana abierta.** La regla
+  `.pagina-vidrio:has(.modal[style*="flex"])` obligaba a revisar toda la página cada vez que algo cambiaba
+  su estilo en línea. En Inicio, que lo hace sin parar, un celular lento bajó de 90 a 64 fps y tuvo 22
+  cuadros largos al bajar. Sin ella: 79 fps y 1 cuadro largo.
+  - Las manchas solo mueven `transform`, así que pausarlas no ganaba casi nada.
+  - **Lección:** nada de `:has()` sobre el `<body>` que dependa de atributos que cambian seguido (el
+    `style`); con clases es más liviano.
+- **Suite completa:** 300 pasan, 0 fallan.
