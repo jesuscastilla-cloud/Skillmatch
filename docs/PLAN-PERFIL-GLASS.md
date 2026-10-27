@@ -630,3 +630,8 @@ Luis mira en Live Server y commit con su permiso.
   vidrio. El aro va en `::before` con una máscara radial y la pista es translúcida (`--ring-pista`).
   - **Ojo:** `--pct` está registrado con `@property` sin herencia; el `::before` necesita `--pct: inherit`.
 - **Vacantes:** la cuenta de vacantes quedaba 12 px más arriba que "Ordenar por" por un margen heredado.
+- **Corrección sobre la auditoría.** En la revisión final se anotó que los 3 avisos de "Cómo funciona" se habían
+  ido "porque su texto ahora va sobre vidrio". No era así: la auditoría calcula el fondo con los colores del CSS y
+  no podía leerlo a través del brillo en degradado de la repisa. Con la lámina de tinte plano los vuelve a medir:
+  son los pasos que todavía no tocan, atenuados a propósito al 35 % (con píxeles, los pasos activos pasan AA).
+  La auditoría queda en 5 avisos, como antes del vidrio: esos 3 y los 2 de los títulos de 25 px.

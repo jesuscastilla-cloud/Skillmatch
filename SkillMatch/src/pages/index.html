@@ -376,6 +376,34 @@
         </div>
     </section>
 
+    <!-- Vacantes cerca de ti (vacantes-cerca.js): las vacantes abiertas mas cercanas a la persona, en lugar
+         de las fotos y el mapa de Cartagena. La ubicacion se pide solo al tocar "Usar mi ubicacion" y no sale
+         del navegador; sin ella se usa la ciudad elegida, la del perfil o Cartagena. Las empresas no la ven -->
+    <section class="cerca-section" id="cerca" aria-labelledby="cerca-titulo">
+        <div class="container">
+            <div class="section-header-center">
+                <h2 id="cerca-titulo">Vacantes cerca de ti</h2>
+                <p id="cercaFrase" aria-live="polite">Las vacantes abiertas más cercanas, de la más cerca a la más lejos.</p>
+            </div>
+            <div class="cerca-controles">
+                <button type="button" class="btn btn-primary cerca-ubicacion" id="cercaUbicacion" hidden>
+                    <i data-ico="pin"></i> <span>Usar mi ubicación</span>
+                </button>
+                <div class="cerca-ciudad">
+                    <label for="cercaCiudad" class="sr-only">Tu ciudad</label>
+                    <select id="cercaCiudad" class="filter-select" data-lista="buscable" data-icono="pin"
+                            data-placeholder="Tu ciudad" data-vacio="Revisa cómo se escribe o prueba con otra ciudad."></select>
+                </div>
+            </div>
+            <div class="cerca-lista" id="cercaCargando"></div>
+            <ul class="cerca-lista" id="cercaLista" hidden></ul>
+            <div class="cerca-vacio" id="cercaVacio" hidden></div>
+            <p class="cerca-pie">
+                <a href="oportunidades.html" class="link-view-all">Ver todas las vacantes <i data-ico="arrow" class="ico-sm"></i></a>
+            </p>
+        </div>
+    </section>
+
     <section class="usuarios-empresas" id="usuarios-empresas">
         <div class="container">
             <div class="section-header-center">
@@ -519,6 +547,8 @@
     <script src="../assets/js/search-handler.js"></script>
     <script src="../assets/js/panel-inicio.js"></script>
     <script src="../assets/js/index.js"></script>
+    <script src="../assets/js/ciudades.js"></script>
+    <script src="../assets/js/vacantes-cerca.js"></script>
 
     <script src="../assets/js/ui.js"></script>
 </body>

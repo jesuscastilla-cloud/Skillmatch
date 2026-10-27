@@ -211,7 +211,8 @@ test('Inicio es de vidrio: repisas y tarjetas de tinte, y la portada oscura sigu
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
     await expect(page.locator('.fondo-vivo')).toBeVisible();
-    for (const s of ['.search-section', '.benefits-section', '.como-funciona', '.stat-box']) {
+    await expect(page.locator('.cerca-tarjeta').first()).toBeVisible();
+    for (const s of ['.search-section', '.benefits-section', '.como-funciona', '.stat-box', '.cerca-tarjeta']) {
         expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
     }
     expect(await deVidrio(page.locator('.hero')), 'portada').toEqual({ translucido: false, desenfoca: false });
@@ -228,7 +229,7 @@ test('Inicio es de vidrio: repisas y tarjetas de tinte, y la portada oscura sigu
 // Inicio se veia en franjas horizontales de bordes duros
 test('Inicio es una sola lámina de vidrio: el mismo tinte en todas las secciones, sin rayas entre ellas ni costura bajo la ola', async ({ page, context, api }) => {
     const secciones = ['.search-section', '.impact-stats', '.como-funciona', '.benefits-section',
-        '.innovation-section'];
+        '.cerca-section', '.innovation-section'];
     const leer = lista => page.evaluate(lista => lista.map(s => {
         const cs = getComputedStyle(document.querySelector(s));
         return { s, fondo: cs.backgroundColor, bordes: [cs.borderTopWidth, cs.borderBottomWidth] };

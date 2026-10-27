@@ -1218,6 +1218,7 @@
         ] },
         { titulo: 'SkillMatch', enlaces: [
             ['index.html#como-funciona', 'Cómo funciona'],
+            ['index.html#cerca', 'Vacantes cerca de ti'],
             ['dashboard.html', 'Indicadores del mercado'],
             ['index.html#innovacion', 'Lo que viene'],
             // La Ley 1581 pide que la politica de datos este siempre a la mano

@@ -551,6 +551,21 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   - **Anillo de compatibilidad hueco:** era un disco con un círculo blanco encima, que sobre el vidrio y el
     recuadro turquesa del detalle se veía como un parche blanco. Ahora el aro tiene el centro hueco y la
     pista translúcida.
+- **Vacantes cerca de ti (27 de octubre de 2026):** a pedido de Luis, Inicio ya no tiene las fotos de Cartagena
+  ni el mapa por zonas. En su lugar muestra las 6 vacantes abiertas más cercanas a la persona.
+  - **Desde dónde se mide:** la ciudad que eligió en la lista (se recuerda), su ubicación si la aceptó antes,
+    la ciudad de su perfil o Cartagena. La ubicación se pide solo al tocar "Usar mi ubicación": si el
+    navegador pregunta al entrar, mucha gente bloquea y después la página no puede volver a preguntar.
+  - **Cómo calcula "cerca":** `assets/js/ciudades.js` tiene 96 ciudades de Colombia con sus coordenadas (las
+    47 del filtro de Inicio, los alrededores de Cartagena, la costa, las capitales y las áreas
+    metropolitanas). La distancia es en línea recta (haversine): gratis y sin servicios de mapas.
+  - **Sin tocar el backend:** usa la búsqueda pública por ciudad (`/api/jobs/filter?location=`), 8 ciudades
+    a la vez y hasta 24. Las letras con tilde van como "." en el patrón ("Bogot." encuentra "Bogotá" y
+    "Bogota"), y cada vacante se confirma con la tabla (palabra completa: "Buga" no es "Bugalagrande").
+  - **Privacidad:** las coordenadas no salen del navegador ni se guardan; al servidor solo va el nombre de
+    la ciudad.
+  - **Las empresas no la ven** (no buscan empleo). Pruebas en `pruebas/casos/cerca.spec.js` con la
+    ubicación simulada.
 
 ## Orden propuesto (solo frontend)
 

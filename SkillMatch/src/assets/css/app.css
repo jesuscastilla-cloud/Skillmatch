@@ -5794,6 +5794,59 @@ kbd {
 .feature-card h3, .benefit-item h3, .pathway-card h3 { font-size: var(--t-md); margin-bottom: var(--s2); }
 .feature-card p, .benefit-item p, .pathway-card p { color: var(--ink-3); font-size: var(--t-base); }
 
+/* ---- Inicio: vacantes cerca de ti (vacantes-cerca.js) ----
+   En lugar de las fotos y el mapa de Cartagena: las vacantes abiertas mas cercanas a la persona, de la mas
+   cerca a la mas lejos. La tarjeta entera se toca (el enlace del cargo se estira encima), pero el lector de
+   pantalla solo lee el cargo como enlace. En el vidrio, las tarjetas son de tinte (seccion 30) */
+.cerca-section { padding: var(--s9) 0; }
+.cerca-controles {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: var(--s3); margin-bottom: var(--s6);
+}
+.cerca-ubicacion { min-height: 48px; }
+.cerca-ubicacion[aria-busy="true"] { cursor: progress; }
+.cerca-ciudad { width: min(100%, 300px); }
+.cerca-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--s4); }
+.cerca-tarjeta {
+    position: relative;
+    display: flex; flex-direction: column; gap: var(--s2);
+    padding: var(--s5);
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-1);
+    transition: transform .24s var(--ease-out);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .cerca-tarjeta:hover { transform: translateY(-2px); }
+}
+.cerca-distancia {
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    padding: 4px 10px; border-radius: var(--r-pill);
+    background: var(--sea-light); color: var(--sea-deep);
+    font-size: var(--t-sm); font-weight: 600;
+}
+.cerca-distancia .ico { width: 15px; height: 15px; }
+/* En tu misma ciudad: el naranja de la chispa del match */
+.cerca-distancia.es-aqui { background: var(--naranja-soft); color: var(--naranja-texto); }
+.cerca-cargo { font-size: var(--t-md); line-height: 1.3; }
+.cerca-enlace { color: var(--ink); text-decoration: none; }
+.cerca-enlace::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.cerca-enlace:focus-visible { outline: none; }
+.cerca-enlace:focus-visible::after { outline: 2.5px solid var(--sea); outline-offset: 3px; }
+.cerca-empresa { color: var(--ink-3); font-size: var(--t-sm); }
+.cerca-datos {
+    display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4);
+    margin-top: auto; padding-top: var(--s2);
+    font-size: var(--t-sm); color: var(--ink-3);
+}
+.cerca-datos span { display: inline-flex; align-items: center; gap: 6px; }
+.cerca-datos .ico { width: 15px; height: 15px; }
+.cerca-vacio { max-width: 640px; margin-inline: auto; padding: var(--s5); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--hairline); }
+.cerca-pie { max-width: none; margin-top: var(--s5); text-align: center; } /* los <p> llevan 72ch de ancho: sin esto, el enlace quedaba corrido */
+[data-theme="dark"] .cerca-distancia { color: var(--sea-luz); }
+[data-theme="dark"] .cerca-distancia.es-aqui { color: #FFC896; }
+
 .benefits-simple-list, .pathway-features, .choice-points, .plan-features-list, .progress-checklist, .resources-links-list {
     display: flex; flex-direction: column; gap: 9px; margin-top: var(--s4);
 }
@@ -6663,7 +6716,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card,
     .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
     .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
-    .stat-box, .roadmap-card, .benefit-item, .pathway-card, .panel-bloque, .choice-card,
+    .stat-box, .roadmap-card, .benefit-item, .pathway-card, .panel-bloque, .choice-card, .cerca-tarjeta, .cerca-vacio,
     :where(.indicadores-cifras) > li, .indicador) {
     isolation: isolate;
     background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte);
@@ -6718,7 +6771,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    tarjetas iban directo sobre las manchas). Para visitantes, bajo la ola de la portada el vidrio nace del
    mismo color de la ola (--surface) y se funde en 140 px: sin eso, bajo la ola quedaba una linea recta */
 .pagina-vidrio :is(.panel-inicio, .search-section, .results-section, .impact-stats, .como-funciona, .benefits-section,
-    .usuarios-empresas, .innovation-section) {
+    .cerca-section, .usuarios-empresas, .innovation-section) {
     background: var(--vidrio-tinte); border-block-width: 0;
 }
 .pagina-vidrio .hero:not([hidden]) + .search-section { background: linear-gradient(180deg, var(--surface), transparent 140px), var(--vidrio-tinte); }
@@ -6872,8 +6925,9 @@ body > header, [data-theme="dark"] body > header {
         .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
         .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
         .opportunities-header, .directorio-cabecera, .connections-header,
-        .stat-box, .roadmap-card, .benefit-item, .pathway-card, .panel-bloque, .choice-card,
+        .stat-box, .roadmap-card, .benefit-item, .pathway-card, .panel-bloque, .choice-card, .cerca-tarjeta, .cerca-vacio,
         :where(.indicadores-cifras) > li, .indicador, .panel-inicio, .search-section, .impact-stats, .benefits-section, .innovation-section,
+        .cerca-section,
         .indicadores-cabecera, .como-funciona, .usuarios-empresas, .results-section,
         .registro-section, .auth-panel),
     .pagina-vidrio .registro-section > .container > .registro-form,
