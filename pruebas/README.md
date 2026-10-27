@@ -42,7 +42,7 @@ npx playwright test --project=celular
 | `casos/indicadores.spec.js` | Cartagena una sola vez, "Ver detalle" (crece desde la tarjeta, esta semana contra la anterior, sin inventar si faltan datos) y los mensajes con el sitio vacío |
 | `casos/conexiones.spec.js` | Las tarjetas no se enciman en el celular |
 | `casos/inicio.spec.js` | Panel de inicio de la persona |
-| `casos/perfil.spec.js` | Cabecera del perfil de persona: la foto (152 px, 112 en el celular) montada justo a la mitad de la portada, los botones en una fila al lado del nombre y el menú "Más" (teclado, clic afuera, no aparece en el perfil de otra persona) |
+| `casos/perfil.spec.js` | Cabecera del perfil de persona: la foto (152 px, 112 en el celular) montada justo a la mitad de la portada, los botones en una fila al lado del nombre y el menú "Más" (teclado, clic afuera, no aparece en el perfil de otra persona); el panel: cifras de arriba, dos columnas, "Ver todas (N)" y sin cifras en el perfil de otra persona |
 | `casos/exportar.spec.js` | "Descargar en Excel" en Mi empresa: un `.xlsx` de verdad con sus columnas, tildes, la fecha como fecha, títulos fijos con filtros y nada se vuelve fórmula |
 | `casos/cerrar-vacante.spec.js` | Cerrar una vacante (qué pasa, responder a quienes esperan) y reabrirla (fecha vencida) |
 | `casos/contrasena.spec.js` | Contraseña nueva: el ojo, lo que se pide, la fuerza en palabras y si coinciden (registros y "Cambiar contraseña"); la ventana abre sin error en el primer campo y con los botones de borde a borde |

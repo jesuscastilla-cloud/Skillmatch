@@ -464,6 +464,13 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   suelta, en claro y en oscuro. Ahora es el pie de la ventana, de borde a borde. Y "Contraseña actual" abría en
   rojo: el ojo movía el campo, le quitaba el foco y la validación lo marcaba como error; ahora le devuelve el foco
   y su estado.
+- **Panel del perfil de persona (hecho, 25 de octubre de 2026):** los cuadros crecían sin límite y la columna
+  derecha (300 px) llegaba casi al doble que el centro. Luis comparó dos prototipos (resumen arriba con dos
+  columnas, o pestañas) y eligió el primero: una fila de cifras (progreso en anillo con lo que falta como
+  acciones, postulaciones, guardadas, habilidades) y dos columnas parejas; experiencia y educación muestran 3 y
+  "Ver todas (N)". Estilo glassy (fondo de colores de la marca difuminados y tarjetas de vidrio), más liviano en
+  el celular y sólido con "reducir transparencia". Ideas de los reels "Inventory Management Dashboard" y
+  "Glassy Dashboard V2".
 
 ## Orden propuesto (solo frontend)
 

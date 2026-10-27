@@ -3587,20 +3587,187 @@ footer.pie > .container { position: relative; z-index: 1; }
 /* Estrellas del nivel de cada habilidad, rellenas con el naranja del logo */
 .skill-level .ico { fill: currentColor; color: var(--naranja-texto); }
 
-/* Perfil de usuario en 3 columnas, como el de empresa: tarjeta, estadisticas,
-   habilidades y progreso a la izquierda; secciones al centro; recomendaciones
-   a la derecha. Antes eran 2 columnas para 3 bloques: el centro caia en la
-   columna angosta y la derecha bajaba a otra fila. */
+/* Perfil de persona en 2 columnas (diseno A, elegido por Luis el 25 de
+   octubre): la ancha con experiencia, educacion y vacantes para ti; la lateral
+   con habilidades, postulaciones y guardadas. Antes eran 3 columnas angostas
+   (300 / centro / 300): la derecha crecia sin fin y el centro quedaba casi
+   vacio. Arriba van las cifras (seccion "Panel del perfil", mas abajo). */
 .profile-layout {
     display: grid;
-    grid-template-columns: 300px minmax(0, 1fr) 300px;
-    gap: var(--s6);
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: var(--s5);
     align-items: start;
 }
-/* Escritorio mediano: las recomendaciones bajan debajo de las secciones */
-@media (width > 1080px) and (width < 1280px) {
-    .profile-layout { grid-template-columns: 300px minmax(0, 1fr); }
-    .profile-right-sidebar { grid-column: 2; position: static; }
+/* La lateral ahora es mas alta que la pantalla: pegada arriba, su parte de
+   abajo no se veia hasta el final (lo mismo que paso con la izquierda) */
+.perfil-panel .profile-right-sidebar { position: static; }
+/* La lateral separa sus tarjetas con gap, como la ancha: antes cada una
+   traia su margen de abajo y Habilidades (.profile-card, que venia de la
+   antigua columna izquierda) no tenia, asi que salia pegada a Postulaciones */
+.perfil-panel .profile-right-sidebar { display: flex; flex-direction: column; gap: var(--s5); }
+.perfil-panel .profile-right-sidebar > * { margin-bottom: 0; }
+
+/* ---- Panel del perfil: cifras arriba y estilo glassy ----
+   Ideas de dos reels: las cifras del "Inventory Management Dashboard"
+   (_code_and_chill_) y el vidrio del "Glassy Dashboard V2" (code.xr). Detras
+   del panel, colores de la marca difuminados; encima, tarjetas de vidrio
+   esmerilado, lo bastante opacas para que el texto se lea bien. */
+.perfil-panel {
+    --vidrio: rgba(255, 255, 255, .62);
+    --vidrio-borde: rgba(255, 255, 255, .85);
+    --vidrio-luz: inset 0 1px 0 rgba(255, 255, 255, .9);
+    --vidrio-sombra: 0 10px 30px -12px rgba(8, 32, 60, .22), 0 1px 2px rgba(8, 32, 60, .06);
+    --vidrio-claro: rgba(255, 255, 255, .55);
+    position: relative; isolation: isolate;
+}
+[data-theme="dark"] .perfil-panel {
+    --vidrio: rgba(18, 36, 60, .58);
+    --vidrio-borde: rgba(255, 255, 255, .10);
+    --vidrio-luz: inset 0 1px 0 rgba(255, 255, 255, .08);
+    --vidrio-sombra: 0 12px 34px -12px rgba(0, 0, 0, .6);
+    --vidrio-claro: rgba(255, 255, 255, .05);
+}
+.perfil-panel::before {
+    content: ""; position: absolute; inset: -40px 0 0; z-index: -1; pointer-events: none;
+    background:
+        radial-gradient(38% 30% at 12% 8%, rgba(43, 182, 198, .38), transparent 70%),
+        radial-gradient(30% 26% at 88% 20%, rgba(255, 118, 24, .22), transparent 70%),
+        radial-gradient(42% 34% at 70% 70%, rgba(43, 102, 224, .20), transparent 72%),
+        radial-gradient(30% 28% at 20% 85%, rgba(11, 126, 140, .22), transparent 70%);
+    filter: blur(8px);
+}
+[data-theme="dark"] .perfil-panel::before {
+    background:
+        radial-gradient(38% 30% at 12% 8%, rgba(43, 182, 198, .26), transparent 70%),
+        radial-gradient(30% 26% at 88% 20%, rgba(255, 118, 24, .14), transparent 70%),
+        radial-gradient(42% 34% at 70% 70%, rgba(43, 102, 224, .18), transparent 72%),
+        radial-gradient(30% 28% at 20% 85%, rgba(11, 126, 140, .18), transparent 70%);
+}
+.perfil-cifra,
+.perfil-panel .profile-card, .perfil-panel .profile-section, .perfil-panel .sidebar-card {
+    border: 1px solid var(--vidrio-borde);
+    border-radius: 22px;
+    background: var(--vidrio);
+    box-shadow: var(--vidrio-luz), var(--vidrio-sombra);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+}
+/* Lo de adentro: un vidrio mas claro, no un bloque solido */
+.perfil-panel .apps-summary, .perfil-panel #recommendedJobs .opportunity-item-compact {
+    background: var(--vidrio-claro); border-color: var(--vidrio-borde);
+}
+
+/* Cifras: el progreso (mas ancho) y tres mas */
+.perfil-cifras {
+    display: grid; grid-template-columns: 1.35fr repeat(3, minmax(0, 1fr)); gap: var(--s4);
+    margin-bottom: var(--s5);
+}
+.perfil-cifra { position: relative; display: flex; flex-direction: column; gap: 2px; min-height: 150px; padding: var(--s5); }
+.cifra-icono { position: absolute; top: var(--s4); right: var(--s4); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; }
+.cifra-icono .ico { width: 20px; height: 20px; }
+.cifra-icono.es-mar { background: var(--sea-light); color: var(--sea-deep); }
+.cifra-icono.es-chispa { background: var(--naranja-soft); color: var(--naranja-texto); }
+.cifra-icono.es-verde { background: var(--verde-soft); color: var(--verde-texto); }
+[data-theme="dark"] .cifra-icono.es-mar { color: var(--sea); }
+.cifra-numero { margin: 0; font-family: var(--font-display); font-size: 2.1rem; font-weight: 800; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cifra-etiqueta { margin: 0; font-weight: 600; color: var(--ink); }
+.cifra-nota { margin: 0; font-size: var(--t-sm); color: var(--ink-3); }
+.cifra-ir {
+    display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; min-height: 32px;
+    margin-top: auto; padding-top: var(--s2);
+    color: var(--sea-deep); font-size: var(--t-sm); font-weight: 600; text-decoration: none;
+}
+[data-theme="dark"] .cifra-ir { color: var(--sea); }
+.cifra-ir .ico { width: 16px; height: 16px; transition: transform .2s var(--ease); }
+.cifra-ir:hover .ico { transform: translateX(3px); }
+
+/* Progreso: anillo (como el "Sales goal" del reel) y los pendientes como
+   botones que abren su formulario; lo ya hecho no se repite */
+.cifra-progreso { flex-direction: row; align-items: center; gap: var(--s4); overflow: hidden; }
+.cifra-progreso::before {
+    content: ""; position: absolute; z-index: -1; left: -30px; top: -40px; width: 180px; height: 180px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(43, 182, 198, .45), transparent);
+}
+.cifra-anillo { position: relative; flex: 0 0 auto; width: 92px; height: 92px; }
+.cifra-anillo svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.cifra-anillo circle { fill: none; stroke-width: 4.5; }
+.cifra-anillo .pista { stroke: var(--hairline); }
+.cifra-anillo .valor { stroke: var(--sea); stroke-linecap: round; }
+/* El numero y el "%" son dos piezas: en fila (con grid salian uno encima del otro) */
+.cifra-anillo > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 1.35rem; font-weight: 800; color: var(--ink); }
+.cifra-texto { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.cifra-listo, .perfil-completo .cifra-falta { display: none; }
+.perfil-completo .cifra-listo { display: block; }
+.cifra-progreso .progress-checklist { flex-direction: row; flex-wrap: wrap; gap: 6px; margin: 0; }
+.cifra-progreso .progress-checklist li.completed { display: none; }
+.cifra-progreso .progress-step {
+    width: auto; margin: 0; min-height: 32px; padding: 4px 10px; gap: 4px;
+    border: 1px solid var(--vidrio-borde); border-radius: var(--r-pill); background: var(--vidrio-claro);
+    color: var(--ink-2); font-size: var(--t-xs); font-weight: 600;
+}
+.cifra-progreso .progress-step .ico { width: 14px; height: 14px; margin: 0; color: var(--sea); opacity: 1; }
+.cifra-progreso .progress-step:hover { border-color: var(--sea); background: var(--vidrio-claro); color: var(--ink); }
+
+/* Experiencia y educacion: 3 y "Ver todas (N)" (profile.js, limitarLista) */
+.lista-recortada:not(.lista-abierta) > :is(.experience-item, .education-item):nth-child(n+4) { display: none; }
+.ver-todas {
+    display: inline-flex; align-items: center; gap: 4px; min-height: 32px; margin-top: var(--s3);
+    color: var(--sea-deep); font-weight: 600;
+}
+[data-theme="dark"] .ver-todas { color: var(--sea); }
+.ver-todas .ico { width: 16px; height: 16px; transition: transform .2s var(--ease); }
+.ver-todas[aria-expanded="true"] .ico { transform: rotate(180deg); }
+
+/* Vacantes para ti en la columna ancha: dos por fila, el titulo en una linea */
+.perfil-panel #recommendedJobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.perfil-panel #recommendedJobs > :not(.opportunity-item-compact) { grid-column: 1 / -1; }
+.perfil-panel #recommendedJobs .opportunity-item-compact {
+    display: flex; flex-direction: column; margin: 0; padding: var(--s4);
+    border: 1px solid var(--vidrio-borde); border-radius: var(--r-md);
+}
+.perfil-panel #recommendedJobs .btn-apply-compact { margin-top: auto; align-self: flex-start; }
+
+/* Habilidades compactas: estrellas chicas sin fondo propio. Antes cada una
+   media 160-220 px y salian una por fila */
+.perfil-panel #userSkills .skill-tag { gap: 6px; padding: 4px 4px 4px 10px; }
+.perfil-panel #userSkills .skill-level { gap: 1px; padding: 0; background: none; border: 0; }
+.perfil-panel #userSkills .skill-level .ico { width: 13px; height: 13px; }
+.perfil-panel #userSkills .btn-remove-skill { justify-content: center; min-width: 24px; margin-left: 0; }
+
+/* Tableta y celular: el progreso ocupa la fila y las otras tres van juntas */
+@media (max-width: 1080px) {
+    .perfil-cifras { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cifra-progreso { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+    /* El desenfoque cuesta en telefonos modestos: vidrio mas liviano */
+    .perfil-cifra, .perfil-panel .profile-card, .perfil-panel .profile-section, .perfil-panel .sidebar-card {
+        -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    }
+}
+@media (max-width: 600px) {
+    .perfil-cifras { gap: var(--s2); }
+    .perfil-cifra:not(.cifra-progreso) { min-height: 0; padding: var(--s3); }
+    .perfil-cifra:not(.cifra-progreso) :is(.cifra-icono, .cifra-nota) { display: none; }
+    .cifra-numero { font-size: 1.6rem; }
+    .perfil-cifra .cifra-etiqueta { font-size: var(--t-sm); line-height: 1.25; }
+    .cifra-anillo { width: 76px; height: 76px; }
+    .perfil-panel #recommendedJobs { grid-template-columns: minmax(0, 1fr); }
+}
+/* Con el dedo, todo lo que se toca mide al menos 44 px (la auditoria lo
+   pide). El titulo de cada postulacion es un enlace de texto: se agranda la
+   zona que responde sin mover nada, como la X de las habilidades */
+@media (pointer: coarse) {
+    .cifra-ir, .ver-todas, .cifra-progreso .progress-step { min-height: 44px; }
+    .company-info-compact h3 a { position: relative; }
+    .company-info-compact h3 a::after { content: ""; position: absolute; inset: -10px -4px; }
+}
+/* Quien pide menos transparencia en su equipo: tarjetas solidas */
+@media (prefers-reduced-transparency: reduce) {
+    .perfil-cifra, .perfil-panel .profile-card, .perfil-panel .profile-section, .perfil-panel .sidebar-card {
+        background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none;
+    }
+    .perfil-panel::before { display: none; }
 }
 
 .profile-header, .profile-cover {

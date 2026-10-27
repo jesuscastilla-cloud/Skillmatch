@@ -56,3 +56,76 @@ test('un clic afuera cierra el menú, y en el perfil de otra persona no aparece 
     await expect(page.locator('#userName')).toContainText('Andrés');
     await expect(page.locator('#perfilMasBtn')).toBeHidden();
 });
+
+test.describe('panel del perfil', () => {
+    test('las cifras de arriba resumen el perfil: progreso, postulaciones, guardadas y habilidades', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('perfil-usuario.html');
+        await expect(page.locator('#cifraHabilidades')).toHaveText('3');
+        await expect(page.locator('#cifraGuardadas')).toHaveText('1');
+        // Las postulaciones se cuentan igual que en la tarjeta "Tus postulaciones"
+        const enviadas = page.locator('#interestedCompanies .apps-summary strong').first();
+        await expect(enviadas).toBeVisible();
+        await expect(page.locator('#cifraPostulaciones')).toHaveText(await enviadas.textContent());
+        await expect(page.locator('#cifraPostulacionesNota')).toContainText('en proceso');
+        // Sin experiencia ni estudios: 60 %, y lo que falta como acciones
+        await expect(page.locator('#progressPercentage')).toHaveText('60');
+        await expect(page.locator('#profileProgress')).toHaveAttribute('stroke-dasharray', '60 100');
+        await expect(page.locator('#profileChecklist .progress-step')).toHaveText(['Agregar experiencia', 'Agregar educación']);
+        await page.locator('#profileChecklist .progress-step', { hasText: 'Agregar educación' }).click();
+        await expect(page.locator('#addEducationModal')).toBeVisible();
+        await page.locator('#addEducationModal .btn-close-modal').click();
+        await expect(page.locator('#addEducationModal')).toBeHidden();
+        await page.locator('#cifraAgregarHabilidad').click();
+        await expect(page.locator('#addSkillModal')).toBeVisible();
+    });
+
+    test('dos columnas en el computador, y las listas largas muestran 3 y "Ver todas"', async ({ page, context, api }, info) => {
+        api.estado.datos.usuarios.find(u => u.id === 'u-valentina').educations = [1, 2, 3, 4, 5].map(n => ({
+            id: 'ed-' + n, school: 'Institución ' + n, degree: 'Técnico', fieldOfStudy: 'Cocina ' + n,
+            startDate: `201${n}-01-15`, endDate: `201${n + 1}-11-30`, isCurrent: false, description: ''
+        }));
+        await entrarComo(context, 'persona');
+        await page.goto('perfil-usuario.html');
+        if (info.project.name === 'escritorio') {
+            const [ancha, lateral] = await Promise.all(['.profile-main', '.profile-right-sidebar'].map(s => page.locator(s).boundingBox()));
+            expect(lateral.x, 'la lateral a la derecha').toBeGreaterThan(ancha.x + ancha.width - 1);
+            await expect(page.locator('.profile-main #recommendedJobs')).toHaveCount(1);
+            await expect(page.locator('.profile-right-sidebar #userSkills')).toHaveCount(1);
+        }
+        const estudios = page.locator('#educationContainer > .education-item');
+        await expect(estudios).toHaveCount(5);
+        await expect(estudios.nth(2)).toBeVisible();
+        await expect(estudios.nth(3)).toBeHidden();
+        const ver = page.locator('#educationContainer + .ver-todas');
+        await expect(ver).toHaveText('Ver todas (5)');
+        await ver.click();
+        await expect(estudios.nth(4)).toBeVisible();
+        await expect(ver).toHaveText('Ver menos');
+        await expect(ver).toHaveAttribute('aria-expanded', 'true');
+        // Con 3 o menos no hay botón
+        await expect(page.locator('#experienceContainer + .ver-todas')).toBeHidden();
+    });
+
+    test('las tarjetas de las dos columnas tienen el mismo aire entre ellas (Habilidades no queda pegada)', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('perfil-usuario.html');
+        await expect(page.locator('#savedJobsCard')).toBeVisible();
+        const huecos = selector => page.locator(selector).evaluate(columna => {
+            const tarjetas = [...columna.children].filter(t => t.offsetParent !== null).map(t => t.getBoundingClientRect());
+            return tarjetas.slice(1).map((t, i) => Math.round(t.top - tarjetas[i].bottom));
+        });
+        const [ancha, lateral] = [await huecos('.profile-main'), await huecos('.profile-right-sidebar')];
+        expect(lateral.length, 'Habilidades, Postulaciones y Guardadas').toBe(2);
+        for (const hueco of [...ancha, ...lateral]) expect(hueco).toBe(ancha[0]);
+        expect(ancha[0]).toBeGreaterThanOrEqual(16);
+    });
+
+    test('en el perfil de otra persona no aparecen las cifras (son de quien inició sesión)', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('perfil-usuario.html?id=u-andres');
+        await expect(page.locator('#userName')).toContainText('Andrés');
+        await expect(page.locator('#perfilCifras')).toBeHidden();
+        await expect(page.locator('#userSkills')).toBeVisible();
+    });
+});
