@@ -510,6 +510,16 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
     turquesa al arrastrar encima; las tarjetas van en vidrio fino. Las secciones grandes no suben con el
     mouse (adentro se arrastra).
   - **El logo** lleva aro de vidrio real.
+- **Vidrio, fase 4: Vacantes, Empresas, Conexiones y Mensajes (hecho, 26 de octubre de 2026):** las cuatro
+  páginas son de vidrio.
+  - **La franja blanca de arriba** (título, frase, buscador) pasa a ser una repisa de vidrio a lo ancho.
+  - **Tarjetas de vidrio de tinte:** filtros, vacantes, empresas, conexiones, sugerencias y los dos paneles
+    de Mensajes.
+  - **En el chat**, el fondo deja ver el vidrio y las burbujas siguen sólidas para leerse perfecto.
+  - **Textos que iban sueltos sobre las manchas:** las pestañas, los títulos de sección del directorio, la
+    cuenta de vacantes y los mensajes de vacío van sobre vidrio. Medidos entre 3.1 y 4.3 antes del arreglo.
+  - **En oscuro:** "Nueva", las habilidades que ya tienes, "Inicia sesión" y las iniciales van en turquesa
+    claro; los avisos de "Comparamos..." e "Inicia sesión...", en blanco.
 
 ## Orden propuesto (solo frontend)
 

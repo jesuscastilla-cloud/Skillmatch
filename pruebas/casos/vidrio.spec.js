@@ -132,3 +132,42 @@ test('el perfil público de empresa es de vidrio, con el logo en un aro de vidri
     const logo = page.locator('.empresa-cabeza.con-portada .empresa-avatar.grande');
     if (await logo.count()) expect((await deVidrio(logo)).desenfoca, 'aro del logo').toBe(true);
 });
+
+// Fase 4: Vacantes, Empresas, Conexiones y Mensajes
+test('Vacantes es de vidrio: repisa arriba, filtros y vacantes de tinte, y las pestañas y la cuenta sobre vidrio', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('oportunidades.html');
+    await expect(page.locator('.opportunity-card').first()).toBeVisible();
+    await expect(page.locator('.fondo-vivo')).toBeVisible();
+    for (const s of ['.opportunities-header', '.filter-card', '.opportunity-card', '.tab-list', '.results-count']) {
+        expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
+    }
+});
+
+test('Empresas y Conexiones son de vidrio, con los títulos de sección sobre una repisa', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('empresas.html');
+    await expect(page.locator('.empresa-tarjeta').first()).toBeVisible();
+    for (const s of ['.directorio-cabecera', '.empresa-tarjeta', '.directorio-titulo']) {
+        expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
+    }
+    await page.goto('conexiones.html');
+    await expect(page.locator('.connection-card').first()).toBeVisible();
+    for (const s of ['.connections-header', '.connection-card', '.connections-tabs']) {
+        expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
+    }
+});
+
+test('Mensajes: los paneles son de vidrio y las burbujas siguen sólidas para leerse perfecto', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    await page.goto('mensajes.html?userId=u-digital');
+    await expect(page.locator('.message').first()).toBeVisible();
+    for (const s of ['.conversations-sidebar', '.chat-area']) {
+        expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
+    }
+    expect(await page.locator('.chat-messages').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+    for (const s of ['.message.sent .message-content', '.message:not(.sent) .message-content']) {
+        const burbuja = page.locator(s).first();
+        if (await burbuja.count()) expect(await deVidrio(burbuja), s).toEqual({ translucido: false, desenfoca: false });
+    }
+});

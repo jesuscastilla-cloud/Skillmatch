@@ -6892,7 +6892,8 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 /* ---- Vidrio de tinte: tarjetas (normal) y cabeceras (grueso). Fase 1: Mi perfil; fase 3: Mi empresa
    (secciones, laterales y vacantes) y el perfil publico de empresa (bloques) ---- */
 .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card,
-    .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza) {
+    .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
+    .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area) {
     isolation: isolate;
     background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte);
     border: 1px solid;
@@ -6910,9 +6911,11 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 .pagina-vidrio .primeros-pasos { border-color: var(--sea); }
 /* Las tarjetas suben un poco con el mouse (Luis, 7 de octubre); los botones no se mueven. Las secciones
    grandes de Mi empresa no: adentro se arrastran las tarjetas del tablero de postulaciones */
-.pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .sidebar-widget, .empresa-bloque) { transition: transform .24s var(--ease-out); }
+.pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .sidebar-widget, .empresa-bloque,
+    .connection-card, .suggestion-card) { transition: transform .24s var(--ease-out); }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .sidebar-widget, .empresa-bloque):hover { transform: translateY(-2px); }
+    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .sidebar-widget, .empresa-bloque,
+        .connection-card, .suggestion-card):hover { transform: translateY(-2px); }
 }
 
 /* ---- Vidrio fino: lo que va dentro de una tarjeta (tampoco desenfoca) ----
@@ -6928,6 +6931,39 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    se arrastra una tarjeta encima (.encima); con el borde del vidrio se veria punteado siempre */
 .pagina-vidrio :where(.tablero-columna) { background: var(--vidrio-tinte-fino); }
 .pagina-vidrio .apps-summary > div + div { border-left-color: var(--vidrio-borde-fino); }
+
+/* ---- Fase 4: Vacantes, Empresas, Conexiones y Mensajes ---- */
+/* La franja blanca de arriba (titulo, frase y buscador) pasa a ser una repisa de vidrio a lo ancho:
+   el texto sigue sobre vidrio y no suelto sobre las manchas */
+.pagina-vidrio :is(.opportunities-header, .directorio-cabecera, .connections-header) {
+    background: linear-gradient(180deg, var(--vidrio-reflejo), transparent 70%), var(--vidrio-tinte);
+    border-bottom-color: var(--vidrio-luz-2);
+}
+.pagina-vidrio .directorio-cta { background: var(--vidrio-tinte-fino); }
+/* Mensajes: el fondo del chat deja ver el vidrio; las burbujas siguen solidas (las tuyas turquesa, las
+   recibidas blancas) para leerse perfecto. La barra para escribir es de vidrio fino y su campo, solido */
+.pagina-vidrio .chat-messages { background: transparent; }
+.pagina-vidrio .chat-input { background: var(--vidrio-tinte-fino); }
+.pagina-vidrio .conversation-item:not(.active):hover { background: var(--vidrio-hover); }
+/* Texto que iba suelto sobre las manchas (medido: 3.4 a 4.3 en claro): las pestanas y los titulos de
+   seccion del directorio van sobre una repisa de vidrio, y la cuenta de vacantes sobre una pastilla */
+.pagina-vidrio :is(.tab-list, .connections-tabs, .directorio-titulo) {
+    padding-inline: var(--s4); border-radius: var(--r-md);
+    background: var(--vidrio-tinte);
+}
+.pagina-vidrio .directorio-titulo { padding-block: var(--s3); }
+/* Los mensajes de "vacio" ("No hay sugerencias disponibles") iban sueltos sobre las manchas: 3.1 en claro */
+.pagina-vidrio .no-results-message {
+    border: 1px solid; border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
+    border-radius: var(--r-lg); background: var(--vidrio-tinte); box-shadow: var(--vidrio-grosor);
+}
+.pagina-vidrio .results-count {
+    padding: 6px var(--s3); border: 1px solid var(--vidrio-borde-fino); border-radius: var(--r-pill);
+    background: var(--vidrio-tinte); box-shadow: var(--vidrio-brillo-fino);
+}
+/* En oscuro, el recuadro "Comparamos tus habilidades..." con su texto en blanco (con el gris quedaba en 3.9) */
+[data-theme="dark"] .pagina-vidrio :is(.match-resumen, .recommend-hint) { color: var(--ink); }
+[data-theme="dark"] .pagina-vidrio :is(.match-resumen strong, .recommend-hint a) { color: #A3ECF3; }
 
 /* ---- El logo de la empresa con aro de vidrio real, como la foto del perfil ---- */
 .pagina-vidrio :is(.company-logo-img, .empresa-cabeza.con-portada .empresa-avatar.grande) {
@@ -7010,7 +7046,9 @@ body > header, [data-theme="dark"] body > header {
 /* Sobre su propio fondo turquesa (insignias "1 de 3", inicial de la empresa) hace falta aun mas
    claro: con --sea-luz quedaban en 4.35 y 4.46. Las insignias naranja y gris conservan su color */
 [data-theme="dark"] .pagina-vidrio :is(.match-badge-small:not(.match-excellent, .match-fair), .company-logo-compact,
-    .company-logo-opp, .empresa-cuenta, .primeros-pasos-cuenta) { color: #A3ECF3; } /* fase 3: "4", "2 de 5" y "H" quedaban en 3.8 a 4.4 */
+    .company-logo-opp, .empresa-cuenta, .primeros-pasos-cuenta,
+    .connection-avatar-circle, .conversation-avatar, .empresa-avatar, .chat-avatar, .candidate-mini-avatar,
+    .etiqueta-vacante.es-nueva, .card-skills .skill.is-common) { color: #A3ECF3; } /* fase 4: "Nueva" y "ya tienes" en 3.6 a 4.2 */ /* fase 3: "4", "2 de 5" y "H" quedaban en 3.8 a 4.4 */
 [data-theme="dark"] .pagina-vidrio .meta-tag.es-verificada { color: #7FE3B8; } /* "Empresa verificada": con #3FCB93 quedaba en 4.36 */
 [data-theme="dark"] .pagina-vidrio .match-badge-small.match-excellent { color: #FFC896; } /* el naranja de siempre quedaba en 3.7 */
 
@@ -7027,7 +7065,9 @@ body > header, [data-theme="dark"] body > header {
 @media (prefers-reduced-transparency: reduce) {
     .pagina-vidrio .fondo-vivo { display: none; }
     .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card, .skeleton-card,
-        .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza),
+        .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
+        .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
+        .opportunities-header, .directorio-cabecera, .connections-header),
     :is(.menu-acciones, .notifications-dropdown, .lista-panel, .modal-content, .modal-content-small, .cmdk-panel, .recorrido-tarjeta) {
         background: var(--surface); border-color: var(--hairline); -webkit-backdrop-filter: none; backdrop-filter: none;
     }

@@ -492,7 +492,7 @@ Luis mira en Live Server y commit con su permiso.
 | **1** | El sistema y "Mi perfil" como piloto (fases 2 a 5 de este plan). **Hecho el 26 de octubre**, aprobado por Luis | Es la prueba de fuego del sistema |
 | **2** | Piezas que están en todas las páginas: barra de arriba, pestañas, menús, ventanas (las de `UI.ventana` y las viejas), avisos, paleta Ctrl+K, recorrido guiado, esqueletos de carga. **Hecho el 26 de octubre** | Se prueban en todas las páginas, no solo en una |
 | **3** | Mi empresa y perfil público de empresa. **Hecho el 26 de octubre** | Tablero de postulaciones (columnas), vista previa de la oferta, Excel |
-| **4** | Vacantes, Empresas, Conexiones y Mensajes | Listas largas: solo vidrio de tinte. En el chat, burbujas que se lean bien |
+| **4** | Vacantes, Empresas, Conexiones y Mensajes. **Hecho el 26 de octubre** | Listas largas: solo vidrio de tinte. En el chat, burbujas que se lean bien |
 | **5** | Inicio (portada del visitante y panel de la persona) e Indicadores | El carrusel 3D va sin `backdrop-filter` (en 3D se rompe); el mapa de Cartagena y las barras de las gráficas sobre vidrio |
 | **6** | Entrar, registrarse y elegir registro | Ya tienen diseño propio (personajes, columna oscura): el vidrio va solo en la tarjeta del formulario |
 | **Fuera** | Hoja de vida (es un documento para imprimir) y "Sin conexión" | Se quedan sólidas |
@@ -555,3 +555,17 @@ Luis mira en Live Server y commit con su permiso.
   suman las suyas.
 - **La vista previa de la oferta**, dentro de la ventana de Nueva oferta, ya se ve de vidrio porque la
   tarjeta de vacante lo es en las páginas de vidrio. Va a coincidir con Vacantes en la fase 4.
+
+### Lo que se aprendió en la fase 4
+
+- **Las franjas blancas de arriba** de las páginas de lista pasan a ser una repisa de vidrio a lo ancho.
+  Así el título y la frase no quedan sueltos sobre las manchas.
+- **Busca los textos sueltos antes de medir:**
+  - Las pestañas, la cuenta de resultados ("9 vacantes publicadas") y los títulos de sección fuera de una
+    tarjeta.
+  - Los mensajes de vacío ("No hay sugerencias disponibles"). Este solo aparece al abrir la pestaña.
+  - Todos fallaron en claro (3.1 a 4.3) y todos se arreglan igual: sobre vidrio.
+- **Los recuadros de color sobre vidrio** ("Comparamos tus habilidades...", "Inicia sesión...") en oscuro
+  llevan el texto en blanco.
+- **El chat:** el vidrio es el panel, no las burbujas. Las burbujas sólidas se leen perfecto en claro y
+  oscuro.
