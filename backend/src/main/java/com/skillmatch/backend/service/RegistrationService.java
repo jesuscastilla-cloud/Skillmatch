@@ -236,7 +236,8 @@ public class RegistrationService {
         return lista;
     }
 
-    private String createCompanyProfile(User owner, RegisterRequest request) {
+    // Sin "private": también lo usa la entrada con Google (GoogleAuthService)
+    String createCompanyProfile(User owner, RegisterRequest request) {
         Company company = new Company();
         company.setUserId(owner.getId());
         company.setName(request.getFirstName());
