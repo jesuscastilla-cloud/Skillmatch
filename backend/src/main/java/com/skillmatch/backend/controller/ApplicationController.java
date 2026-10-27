@@ -49,12 +49,15 @@ public class ApplicationController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> getApplicationById(@PathVariable String id) {
+    public ResponseEntity<?> getApplicationById(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.ok(applicationService.getApplicationById(id));
+            return ResponseEntity.ok(applicationService.getApplicationById(
+                    id, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new MessageResponse("Postulación no encontrada: " + e.getMessage()));
+                    .body(new MessageResponse("Postulación no encontrada"));
         }
     }
 
@@ -108,8 +111,11 @@ public class ApplicationController {
 
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<List<ApplicationResponse>> getApplicationsByStatus(@PathVariable String status) {
-        return ResponseEntity.ok(applicationService.getApplicationsByStatus(status));
+    public ResponseEntity<List<ApplicationResponse>> getApplicationsByStatus(
+            @PathVariable String status,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        return ResponseEntity.ok(applicationService.getApplicationsByStatus(
+                status, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
     }
 
     @Operation(summary = "Actualizar estado", description = "La empresa cambia el estado de una postulación")

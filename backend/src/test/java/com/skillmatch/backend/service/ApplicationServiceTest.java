@@ -17,16 +17,20 @@ import com.skillmatch.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.access.AccessDeniedException;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("null")
@@ -182,11 +186,127 @@ class ApplicationServiceTest {
                 .isInstanceOf(AccessDeniedException.class);
     }
 
+    // ─── getApplicationById: solo postulante, empresa dueña o ADMIN ───────────
+
     @Test
     void getApplicationById_notFound_throwsResourceNotFoundException() {
         when(applicationRepository.findById("app-id-999")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> applicationService.getApplicationById("app-id-999"))
+        assertThatThrownBy(() -> applicationService.getApplicationById("app-id-999", "user-id-1", false))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void getApplicationById_postulante_laVeSinNotasInternas() {
+        stubApplicationWithNotes();
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
+
+        ApplicationResponse result = applicationService.getApplicationById("app-id-70", "user-id-1", false);
+
+        assertThat(result.getId()).isEqualTo("app-id-70");
+        assertThat(result.getNotes()).isNull();
+    }
+
+    @Test
+    void getApplicationById_empresaDuena_laVeConNotas() {
+        stubApplicationWithNotes();
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
+
+        ApplicationResponse result = applicationService.getApplicationById("app-id-70", "user-id-2", false);
+
+        assertThat(result.getNotes()).isEqualTo("nota interna");
+        assertThat(result.getUserEmail()).isEqualTo("user@test.com");
+    }
+
+    @Test
+    void getApplicationById_otraPersona_respondeNoEncontrada() {
+        stubApplicationWithNotes();
+
+        assertThatThrownBy(() -> applicationService.getApplicationById("app-id-70", "user-id-99", false))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(userRepository, never()).findById(any());
+    }
+
+    @Test
+    void getApplicationById_admin_laVe() {
+        stubApplicationWithNotes();
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
+
+        ApplicationResponse result = applicationService.getApplicationById("app-id-70", "admin-id", true);
+
+        assertThat(result.getNotes()).isEqualTo("nota interna");
+    }
+
+    // ─── getApplicationsByStatus: solo las de la propia empresa ──────────────
+
+    @Test
+    void getApplicationsByStatus_empresa_soloConsultaSusVacantes() {
+        Application app = buildApplicationWithNotes();
+        when(companyRepository.findByUserId("user-id-2")).thenReturn(Optional.of(company));
+        when(jobRepository.findByCompanyId("company-id-10")).thenReturn(List.of(openJob));
+        when(mongoTemplate.find(any(Query.class), eq(Application.class))).thenReturn(List.of(app));
+        stubMapList();
+
+        List<ApplicationResponse> result = applicationService.getApplicationsByStatus("pendiente", "user-id-2", false);
+
+        assertThat(result).extracting(ApplicationResponse::getId).containsExactly("app-id-70");
+        ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
+        verify(mongoTemplate).find(query.capture(), eq(Application.class));
+        org.bson.Document filtroJob = (org.bson.Document) query.getValue().getQueryObject().get("jobId");
+        assertThat(filtroJob.get("$in")).isEqualTo(List.of("job-id-5"));
+        verify(applicationRepository, never()).findByStatus(any());
+    }
+
+    @Test
+    void getApplicationsByStatus_sinEmpresa_devuelveVacio() {
+        when(companyRepository.findByUserId("user-id-1")).thenReturn(Optional.empty());
+
+        assertThat(applicationService.getApplicationsByStatus("pendiente", "user-id-1", false)).isEmpty();
+        verifyNoInteractions(mongoTemplate);
+        verify(applicationRepository, never()).findByStatus(any());
+    }
+
+    @Test
+    void getApplicationsByStatus_admin_veTodas() {
+        Application app = buildApplicationWithNotes();
+        when(applicationRepository.findByStatus(ApplicationStatus.PENDIENTE)).thenReturn(List.of(app));
+        stubMapList();
+
+        assertThat(applicationService.getApplicationsByStatus("pendiente", "admin-id", true)).hasSize(1);
+    }
+
+    // ─── Mis postulaciones: sin notas internas ───────────────────────────────
+
+    @Test
+    void getApplicationsByUser_ocultaNotasInternas() {
+        when(applicationRepository.findByUserId("user-id-1")).thenReturn(List.of(buildApplicationWithNotes()));
+        stubMapList();
+
+        List<ApplicationResponse> result = applicationService.getApplicationsByUser("user-id-1");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getNotes()).isNull();
+    }
+
+    private Application buildApplicationWithNotes() {
+        Application application = new Application();
+        application.setId("app-id-70");
+        application.setUserId("user-id-1");
+        application.setJobId("job-id-5");
+        application.setStatus(ApplicationStatus.PENDIENTE);
+        application.setNotes("nota interna");
+        return application;
+    }
+
+    private void stubApplicationWithNotes() {
+        when(applicationRepository.findById("app-id-70")).thenReturn(Optional.of(buildApplicationWithNotes()));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
+    }
+
+    private void stubMapList() {
+        when(userRepository.findAllById(any())).thenReturn(List.of(applicant));
+        when(jobRepository.findAllById(any())).thenReturn(List.of(openJob));
+        when(companyRepository.findAllById(any())).thenReturn(List.of(company));
     }
 }

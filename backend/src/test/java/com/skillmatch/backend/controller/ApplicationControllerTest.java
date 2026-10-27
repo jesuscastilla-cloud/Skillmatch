@@ -1,5 +1,6 @@
 package com.skillmatch.backend.controller;
 
+import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
@@ -23,6 +24,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -82,6 +84,30 @@ class ApplicationControllerTest {
                         .param("status", "aceptada"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("No tienes permiso para acceder a estas postulaciones"));
+    }
+
+    @Test
+    void getApplicationById_ajena_responde404SinDetalles() throws Exception {
+        when(applicationService.getApplicationById(eq("app-a-id"), eq("empresa-b-user-id"), eq(false)))
+                .thenThrow(new ResourceNotFoundException("Postulación no encontrada"));
+
+        mockMvc.perform(get("/api/applications/app-a-id")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Postulación no encontrada"));
+    }
+
+    @Test
+    void getApplicationsByStatus_pasaQuienPregunta() throws Exception {
+        when(applicationService.getApplicationsByStatus(eq("pendiente"), eq("empresa-b-user-id"), eq(false)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/applications/status/pendiente")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+
+        verify(applicationService).getApplicationsByStatus("pendiente", "empresa-b-user-id", false);
     }
 
     private UserDetailsImpl buildEmpresaPrincipal(String userId) {
