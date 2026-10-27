@@ -70,6 +70,9 @@ public class User implements UserDetails {
     // Prueba de las autorizaciones aceptadas (Ley 1581). Ver RegistrationService.
     private List<Consentimiento> consentimientos = new ArrayList<>();
 
+    // Última vez que entró: base para borrar cuentas inactivas (24 meses, fase 8)
+    private LocalDateTime lastLoginAt;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

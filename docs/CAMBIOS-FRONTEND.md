@@ -92,3 +92,16 @@ Estado: ⬜ pendiente · ✅ hecho
 - **Qué mostrar antes:** que es definitivo y qué se borra (incluidas las conversaciones de la otra persona con ella),
   y ofrecer primero "Descargar mis datos" (F7). Después del 200: `limpiarSesion()` y volver a `index.html`.
 - **Enlazarlo** desde `pages/politica-datos.html`, en la parte de los derechos (suprimir).
+
+### ⬜ F9. Actualizar la política de datos (`pages/politica-datos.html`)
+Lo que hace el backend ahora y la política todavía no dice. Al cambiarla, subir la versión ("Versión 0.1") aquí y en
+Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los datos, hay que pedir de nuevo la autorización.
+- **Sección 7 (Cómo ejercer tus derechos):** agregar que desde el perfil se puede **descargar todos tus datos** (F7)
+  y **eliminar tu cuenta** (F8). Completar "[correo por completar]".
+- **Sección 9 (Cuánto tiempo los guardamos):** hoy dice "Mientras tengas tu cuenta". Agregar los plazos aprobados:
+  - notificaciones: 90 días;
+  - postulaciones: 12 meses después de que se cierra la vacante;
+  - cuentas sin entrar en 24 meses: se borran, avisando antes por correo (se activa con la fase 8);
+  - al eliminar la cuenta se borran también los mensajes enviados y recibidos.
+- **Sección 2 (Qué datos guardamos):** agregar la fecha de la última entrada y la prueba de la autorización
+  (qué aceptaste, versión de la política y fecha).

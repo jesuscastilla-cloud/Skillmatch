@@ -11,6 +11,10 @@ import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +37,7 @@ public class AuthenticationService {
     private final JwtTokenProvider tokenProvider;
     private final TokenBlacklistService tokenBlacklistService;
     private final LoginAttemptService loginAttemptService;
+    private final MongoTemplate mongoTemplate;
 
     public AuthResponse login(LoginRequest loginRequest) {
         // Bloqueo por cuenta: 5 contraseñas equivocadas en 15 min bloquean el correo
@@ -55,6 +61,10 @@ public class AuthenticationService {
 
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        // Solo este campo ($set): no pisa cambios del perfil que ocurran al mismo tiempo
+        mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(user.getId())),
+                new Update().set("lastLoginAt", LocalDateTime.now()), User.class);
 
         String primaryRole = resolvePrimaryRole(user);
         String companyId = null;

@@ -10,6 +10,10 @@ import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.TokenBlacklistService;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +29,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +41,7 @@ class AuthenticationServiceTest {
     @Mock private JwtTokenProvider tokenProvider;
     @Mock private TokenBlacklistService tokenBlacklistService;
     @Mock private LoginAttemptService loginAttemptService;
+    @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks
     private AuthenticationService authenticationService;
@@ -105,6 +111,21 @@ class AuthenticationServiceTest {
 
         verify(loginAttemptService).reset("test@skillmatch.com");
         verify(loginAttemptService, never()).recordFailure(any());
+    }
+
+    @Test
+    void login_correcto_guardaLaFechaDeEntrada() {
+        LoginRequest request = new LoginRequest("test@skillmatch.com", "password123");
+        when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
+        when(tokenProvider.generateToken(mockAuth)).thenReturn("tok");
+        when(userRepository.findByEmail("test@skillmatch.com")).thenReturn(Optional.of(testUser));
+
+        authenticationService.login(request);
+
+        ArgumentCaptor<Update> update = ArgumentCaptor.forClass(Update.class);
+        verify(mongoTemplate).updateFirst(any(Query.class), update.capture(), eq(User.class));
+        assertThat(update.getValue().getUpdateObject().get("$set", org.bson.Document.class)).containsKey("lastLoginAt");
+        verify(userRepository, never()).save(any());
     }
 
     @Test

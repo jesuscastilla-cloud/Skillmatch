@@ -85,6 +85,10 @@ public class MongoIndexConfig implements ApplicationRunner {
         safe("login_attempts", () -> mongoTemplate.indexOps("login_attempts")
                 .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
 
+        // notifications: se borran solas a los 90 días (plazo de retención, ver RetencionDatos)
+        safe("notifications", () -> mongoTemplate.indexOps("notifications")
+                .createIndex(new Index("createdAt", Sort.Direction.ASC).expire(Duration.ofDays(90))));
+
         log.info("Indices de MongoDB verificados.");
     }
 
