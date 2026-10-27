@@ -29,6 +29,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationRepository applicationRepository;
     private final MongoTemplate mongoTemplate;
+    private final LoginAttemptService loginAttemptService;
 
     @SuppressWarnings("null")
     public User getUserById(String id) {
@@ -94,10 +95,14 @@ public class UserService {
     /** Cambia la contraseña y cierra todas las sesiones abiertas (sube tokenVersion). */
     public User updatePassword(String userId, UpdatePasswordRequest request) {
         User user = getUserById(userId);
+        // La contraseña actual también se puede adivinar: cuenta para el mismo bloqueo del login
+        loginAttemptService.checkNotLocked(user.getEmail());
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             log.warn("Contraseña incorrecta al intentar cambio para usuario {}", userId);
+            loginAttemptService.recordFailure(user.getEmail());
             throw new IllegalArgumentException("La contraseña actual es incorrecta");
         }
+        loginAttemptService.reset(user.getEmail());
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setTokenVersion((user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1);
         user.setUpdatedAt(LocalDateTime.now());

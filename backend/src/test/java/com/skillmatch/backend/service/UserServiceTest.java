@@ -31,6 +31,7 @@ class UserServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private ApplicationRepository applicationRepository;
     @Mock private MongoTemplate mongoTemplate;
+    @Mock private LoginAttemptService loginAttemptService;
 
     @InjectMocks
     private UserService userService;
@@ -79,6 +80,7 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.updatePassword("user-id-1", new UpdatePasswordRequest("mala", "nueva-12345")))
                 .isInstanceOf(IllegalArgumentException.class);
         verify(userRepository, never()).save(any());
+        verify(loginAttemptService).recordFailure(user.getEmail());
     }
 
     @Test

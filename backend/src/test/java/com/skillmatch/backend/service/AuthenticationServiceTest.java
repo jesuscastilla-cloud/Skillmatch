@@ -3,6 +3,7 @@ package com.skillmatch.backend.service;
 import com.skillmatch.backend.dto.AuthResponse;
 import com.skillmatch.backend.dto.LoginRequest;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
+import com.skillmatch.backend.exception.TooManyAttemptsException;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
@@ -34,6 +35,7 @@ class AuthenticationServiceTest {
     @Mock private CompanyRepository companyRepository;
     @Mock private JwtTokenProvider tokenProvider;
     @Mock private TokenBlacklistService tokenBlacklistService;
+    @Mock private LoginAttemptService loginAttemptService;
 
     @InjectMocks
     private AuthenticationService authenticationService;
@@ -77,6 +79,32 @@ class AuthenticationServiceTest {
 
         assertThatThrownBy(() -> authenticationService.login(request))
                 .isInstanceOf(BadCredentialsException.class);
+        verify(loginAttemptService).recordFailure("test@skillmatch.com");
+        verify(loginAttemptService, never()).reset(any());
+    }
+
+    @Test
+    void login_cuentaBloqueada_niSiquieraPruebaLaContrasena() {
+        LoginRequest request = new LoginRequest("test@skillmatch.com", "password123");
+        doThrow(new TooManyAttemptsException("Demasiados intentos"))
+                .when(loginAttemptService).checkNotLocked("test@skillmatch.com");
+
+        assertThatThrownBy(() -> authenticationService.login(request))
+                .isInstanceOf(TooManyAttemptsException.class);
+        verifyNoInteractions(authenticationManager);
+    }
+
+    @Test
+    void login_correcto_reiniciaElContador() {
+        LoginRequest request = new LoginRequest("test@skillmatch.com", "password123");
+        when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
+        when(tokenProvider.generateToken(mockAuth)).thenReturn("tok");
+        when(userRepository.findByEmail("test@skillmatch.com")).thenReturn(Optional.of(testUser));
+
+        authenticationService.login(request);
+
+        verify(loginAttemptService).reset("test@skillmatch.com");
+        verify(loginAttemptService, never()).recordFailure(any());
     }
 
     @Test

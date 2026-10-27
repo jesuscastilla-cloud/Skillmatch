@@ -106,6 +106,13 @@ public class GlobalExceptionHandler {
                 .body(new MessageResponse(ex.getMessage()));
     }
 
+    // Demasiados intentos con una cuenta (bloqueo por fuerza bruta)
+    @ExceptionHandler(TooManyAttemptsException.class)
+    public ResponseEntity<?> handleTooManyAttempts(TooManyAttemptsException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new MessageResponse(ex.getMessage()));
+    }
+
     // 9. Errores de negocio genéricos — SIEMPRE antes de Exception
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleRuntime(RuntimeException ex, WebRequest request) {

@@ -81,6 +81,10 @@ public class MongoIndexConfig implements ApplicationRunner {
         safe("revoked_tokens", () -> mongoTemplate.indexOps("revoked_tokens")
                 .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
 
+        // login_attempts: el contador de fallos se borra solo a los 15 minutos (TTL)
+        safe("login_attempts", () -> mongoTemplate.indexOps("login_attempts")
+                .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
+
         log.info("Indices de MongoDB verificados.");
     }
 
