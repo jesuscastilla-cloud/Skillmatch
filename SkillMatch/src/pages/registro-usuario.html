@@ -26,7 +26,10 @@
     <meta name="theme-color" content="#EDF2F8">
     <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');document.documentElement.style.setProperty('--reloj',Date.now()%864e5+'ms');addEventListener('pagereveal',function(e){var v=e.viewTransition,d;try{d=JSON.parse(sessionStorage.getItem('skillmatch_deslizar'));sessionStorage.removeItem('skillmatch_deslizar');}catch(x){}if(d&&d.a===location.pathname&&Date.now()-d.t<15000){if(v&&v.types)v.types.add('ir-'+d.dir);var h=document.documentElement,c='entra-'+d.dir;h.classList.add(c);setTimeout(function(){h.classList.remove(c);},1400);}});})();</script>
 </head>
-<body>
+<body class="pagina-vidrio">
+    <!-- Fondo vivo del vidrio (app.css, seccion 30): manchas de la marca que se mueven lento.
+         Va en el HTML para estar desde el primer cuadro; el guion del <head> pone --reloj. -->
+    <div class="fondo-vivo" aria-hidden="true"><span class="mancha-1"></span><span class="mancha-2"></span><span class="mancha-3"></span><span class="mancha-4"></span><span class="mancha-5"></span></div>
     <a class="skip-link" href="#main">Saltar al contenido</a>
     <header>
         <nav class="container" aria-label="Principal">

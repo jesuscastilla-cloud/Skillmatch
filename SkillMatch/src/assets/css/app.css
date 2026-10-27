@@ -6941,7 +6941,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    el texto sigue sobre vidrio y no suelto sobre las manchas */
 .pagina-vidrio :is(.opportunities-header, .directorio-cabecera, .connections-header,
     .search-section, .benefits-section, .mapa-section, .innovation-section, .indicadores-cabecera,
-    .como-funciona, .cartagena-section, .usuarios-empresas, .results-section) {
+    .como-funciona, .cartagena-section, .usuarios-empresas, .results-section, .registro-section) {
     background: linear-gradient(180deg, var(--vidrio-reflejo), transparent 70%), var(--vidrio-tinte);
     border-bottom-color: var(--vidrio-luz-2);
 }
@@ -6950,6 +6950,16 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    tarjetas translucidas se verian unas a traves de otras. Los recuadros punteados, con el tinte de las
    tarjetas (con el vidrio fino, casi transparente en oscuro, su texto quedaba en 4.45) */
 .pagina-vidrio :is(.indicadores-powerbi, .indicadores-vacio) { background: var(--vidrio-tinte); }
+/* Fase 6: entrar y registrarse. La columna del formulario es de vidrio (la de los personajes sigue azul
+   oscuro); las paginas de registro son una repisa de vidrio y su tarjeta de formulario va encima en vidrio
+   grueso. Esa tarjeta se pinta con ".registro-section > .container > .registro-form": hace falta la misma
+   fuerza para que gane el vidrio. Los campos para escribir siguen solidos */
+.pagina-vidrio .auth-panel { background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte); }
+.pagina-vidrio .registro-section > .container > .registro-form {
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte-grueso);
+    border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
+    box-shadow: var(--vidrio-grosor), var(--vidrio-sombra-grueso);
+}
 /* "Como funciona" en el celular: la tarjeta oscura se queda pegada arriba y su sombra pasa sobre el texto
    de los pasos al bajar (con --ink-3 quedaba en 4.3 ese instante): un tono mas oscuro */
 .pagina-vidrio .cf-paso p { color: var(--ink-2); }
@@ -7063,7 +7073,7 @@ body > header, [data-theme="dark"] body > header {
 [data-theme="dark"] .pagina-vidrio :is(.match-badge-small:not(.match-excellent, .match-fair), .company-logo-compact,
     .company-logo-opp, .empresa-cuenta, .primeros-pasos-cuenta,
     .connection-avatar-circle, .conversation-avatar, .empresa-avatar, .chat-avatar, .candidate-mini-avatar,
-    .etiqueta-vacante.es-nueva, .card-skills .skill.is-common, .status-planned) { color: #A3ECF3; } /* fase 4: "Nueva" y "ya tienes" en 3.6 a 4.2; fase 5: "Proximo" en 4.3 */
+    .etiqueta-vacante.es-nueva, .card-skills .skill.is-common, .status-planned, .auth-eyebrow) { color: #A3ECF3; } /* fase 4: "Nueva" y "ya tienes" en 3.6 a 4.2; fase 5: "Proximo" en 4.3 */
 /* La pestana activa del celular, en oscuro: el turquesa luminoso (con #2BB6C6 sobre su fondo turquesa, 4.4) */
 [data-theme="dark"] .tabbar a.is-active { color: var(--sea-luz); } /* fase 3: "4", "2 de 5" y "H" quedaban en 3.8 a 4.4 */
 [data-theme="dark"] .pagina-vidrio .meta-tag.es-verificada { color: #7FE3B8; } /* "Empresa verificada": con #3FCB93 quedaba en 4.36 */
@@ -7087,7 +7097,9 @@ body > header, [data-theme="dark"] body > header {
         .opportunities-header, .directorio-cabecera, .connections-header,
         .stat-box, .roadmap-card, .benefit-item, .pathway-card, .mapa-zona, .panel-bloque, .choice-card,
         :where(.indicadores-cifras) > li, .indicador, .search-section, .benefits-section, .mapa-section, .innovation-section,
-        .indicadores-cabecera, .como-funciona, .cartagena-section, .usuarios-empresas, .results-section),
+        .indicadores-cabecera, .como-funciona, .cartagena-section, .usuarios-empresas, .results-section,
+        .registro-section, .auth-panel),
+    .pagina-vidrio .registro-section > .container > .registro-form,
     :is(.menu-acciones, .notifications-dropdown, .lista-panel, .modal-content, .modal-content-small, .cmdk-panel, .recorrido-tarjeta) {
         background: var(--surface); border-color: var(--hairline); -webkit-backdrop-filter: none; backdrop-filter: none;
     }

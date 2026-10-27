@@ -533,6 +533,14 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   - **Medición:** `contraste-vidrio.js` ahora mide la página completa, salta lo tapado por algo con fondo y
     cuenta aparte lo atenuado a propósito. Todas las páginas de vidrio (fases 1 a 5) pasan medidas
     completas.
+- **Vidrio, fase 6: entrar y registrarse (hecho, 27 de octubre de 2026):** las tres páginas de entrar, las dos
+  de registro y la de elegir registro son de vidrio.
+  - **Entrar:** la columna del formulario es de vidrio, y la de los personajes sigue azul oscuro.
+  - **Registro:** la sección es una repisa de vidrio con la tarjeta del formulario encima en vidrio grueso.
+  - **Siempre sólidos:** los campos para escribir.
+  - **En oscuro:** la etiqueta "Busco trabajo" / "Portal de empresas" va en turquesa claro (quedaba en 3.6).
+  - **Resultado:** con esto, todo el sitio usa el vidrio salvo la hoja de vida (es para imprimir), "Sin
+    conexión" y la política de datos (un documento de texto), que solo tienen la barra de vidrio.
 
 ## Orden propuesto (solo frontend)
 

@@ -201,3 +201,17 @@ test('el inicio de la persona y los Indicadores son de vidrio', async ({ page, c
         expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
     }
 });
+
+// Fase 6: entrar y registrarse
+test('entrar y registrarse: la columna del formulario y las tarjetas son de vidrio; los personajes y los campos siguen sólidos', async ({ page, context, api }) => {
+    await entrarComo(context, 'visitante');
+    await page.goto('login-usuario.html');
+    await expect(page.locator('.fondo-vivo')).toBeVisible();
+    expect(await deVidrio(page.locator('.auth-panel')), 'columna del formulario').toEqual({ translucido: true, desenfoca: false });
+    expect((await deVidrio(page.locator('.auth-aside'))).translucido, 'columna de los personajes').toBe(false);
+    expect(await deVidrio(page.locator('input[type="email"]').first()), 'campo').toEqual({ translucido: false, desenfoca: false });
+    await page.goto('registro-usuario.html');
+    expect(await deVidrio(page.locator('.registro-section > .container > .registro-form')), 'tarjeta del registro').toEqual({ translucido: true, desenfoca: false });
+    await page.goto('seleccionar-registro.html');
+    expect(await deVidrio(page.locator('.choice-card').first()), 'tarjeta de elegir').toEqual({ translucido: true, desenfoca: false });
+});

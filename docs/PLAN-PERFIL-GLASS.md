@@ -494,7 +494,7 @@ Luis mira en Live Server y commit con su permiso.
 | **3** | Mi empresa y perfil público de empresa. **Hecho el 26 de octubre** | Tablero de postulaciones (columnas), vista previa de la oferta, Excel |
 | **4** | Vacantes, Empresas, Conexiones y Mensajes. **Hecho el 26 de octubre** | Listas largas: solo vidrio de tinte. En el chat, burbujas que se lean bien |
 | **5** | Inicio (portada del visitante y panel de la persona) e Indicadores. **Hecho el 27 de octubre** | El carrusel 3D va sin `backdrop-filter` (en 3D se rompe); el mapa de Cartagena y las barras de las gráficas sobre vidrio |
-| **6** | Entrar, registrarse y elegir registro | Ya tienen diseño propio (personajes, columna oscura): el vidrio va solo en la tarjeta del formulario |
+| **6** | Entrar, registrarse y elegir registro. **Hecho el 27 de octubre** | Ya tienen diseño propio (personajes, columna oscura): el vidrio va solo en la tarjeta del formulario |
 | **Fuera** | Hoja de vida (es un documento para imprimir) y "Sin conexión" | Se quedan sólidas |
 
 ### Riesgos de hacerlo en todo el sitio
@@ -583,3 +583,13 @@ Luis mira en Live Server y commit con su permiso.
   toda la regla y le quitó el filo turquesa a "Primeros pasos" y el vidrio grueso a las cabeceras. Las
   pruebas lo atraparon; en esa lista van solo clases sueltas (o `:where()`).
 - **Las pruebas con fechas relativas** fallaban de noche: "hace 30 minutos" cruzaba la medianoche. Ya no.
+
+### Lo que se aprendió en la fase 6 (y estado final)
+
+- **Entrar no tenía tarjeta:** el formulario iba directo sobre la columna clara. Esa columna entera pasó a
+  ser de vidrio, sin mover nada de lugar.
+- **La tarjeta del registro** se pinta con un selector muy específico
+  (`.registro-section > .container > .registro-form`): el vidrio necesita la misma fuerza para ganar.
+- **Estado final:** las 15 páginas con contenido usan el sistema de vidrio. La hoja de vida (para
+  imprimir), "Sin conexión" y la política de datos (un documento de texto) solo llevan la barra de vidrio.
+  Medidas todas con píxeles en claro y oscuro, computador y celular: ningún texto bajo AA.
