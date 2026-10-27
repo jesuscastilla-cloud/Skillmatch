@@ -4,6 +4,8 @@ import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletRequestWrapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -73,7 +75,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         } else {
             // La cadena completa sirve para comprobar en Render que se cuenta la IP correcta
             log.warn("Límite de intentos para IP {} en {} (X-Forwarded-For: {})",
-                    ip, request.getRequestURI(), request.getHeader("X-Forwarded-For"));
+                    ip, request.getRequestURI(), original(request).getHeader("X-Forwarded-For"));
             response.setStatus(429);
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write(
@@ -102,9 +104,14 @@ public class RateLimitingFilter extends OncePerRequestFilter {
      * Cada proxy AGREGA al final de X-Forwarded-For la IP que vio. Lo del principio
      * lo puede escribir el visitante, así que se cuenta desde el final: con
      * trustedProxies = 1 (Render), la IP real es la última de la lista.
+     *
+     * Se lee de la petición ORIGINAL: con server.forward-headers-strategy=framework,
+     * el ForwardedHeaderFilter de Spring corre antes, quita esta cabecera y deja como
+     * getRemoteAddr() la PRIMERA IP de la lista (la que escribe el atacante).
      */
     String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
+        HttpServletRequest original = original(request);
+        String forwarded = original.getHeader("X-Forwarded-For");
         if (trustedProxies > 0 && forwarded != null && !forwarded.isBlank()) {
             String[] ips = forwarded.split(",");
             int posicion = ips.length - trustedProxies;
@@ -112,6 +119,15 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 return ips[posicion].trim();
             }
         }
-        return request.getRemoteAddr();
+        return original.getRemoteAddr();
+    }
+
+    /** Quita las capas que ponen los filtros anteriores hasta llegar a la petición del servidor. */
+    private static HttpServletRequest original(HttpServletRequest request) {
+        ServletRequest actual = request;
+        while (actual instanceof ServletRequestWrapper capa) {
+            actual = capa.getRequest();
+        }
+        return actual instanceof HttpServletRequest http ? http : request;
     }
 }

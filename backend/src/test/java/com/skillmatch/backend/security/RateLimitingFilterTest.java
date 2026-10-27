@@ -1,5 +1,6 @@
 package com.skillmatch.backend.security;
 
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -49,6 +50,25 @@ class RateLimitingFilterTest {
         intentar(filter, "/api/jobs", IP_REAL);
 
         assertThat(intentar(filter, "/api/jobs", IP_REAL)).isEqualTo(200);
+    }
+
+    @Test
+    void otroFiltroQueEscondeLaCabecera_noEngana() {
+        // Así deja la petición el ForwardedHeaderFilter de Spring: sin X-Forwarded-For
+        // y con la PRIMERA IP de la lista (la del atacante) como getRemoteAddr()
+        RateLimitingFilter filter = new RateLimitingFilter(true, 5, 1);
+        MockHttpServletRequest original = new MockHttpServletRequest("POST", "/api/auth/login");
+        original.addHeader("X-Forwarded-For", "6.6.6.6, " + IP_REAL);
+        HttpServletRequestWrapper comoLaDejaSpring = new HttpServletRequestWrapper(original) {
+            @Override public String getHeader(String name) {
+                return "X-Forwarded-For".equalsIgnoreCase(name) ? null : super.getHeader(name);
+            }
+            @Override public String getRemoteAddr() {
+                return "6.6.6.6";
+            }
+        };
+
+        assertThat(filter.resolveClientIp(comoLaDejaSpring)).isEqualTo(IP_REAL);
     }
 
     @Test
