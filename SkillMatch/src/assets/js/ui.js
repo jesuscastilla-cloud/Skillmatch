@@ -784,6 +784,7 @@
                 if (node.nodeType !== 1 || node.classList.contains('ripple')) continue;
                 revelar(node);
                 hidratarLottie(node);
+                pintarLogos(node);
             }
         }
     });
@@ -2860,6 +2861,103 @@
         ubicar();
     }
 
+    /* ---------- 28. Logos de las empresas ---------- */
+
+    // "Mi empresa" guarda el logo en la cuenta de usuario de la empresa (el
+    // backend no deja cambiar Company.logo: docs/PENDIENTES-BACKEND.md, 2.2) y
+    // las tarjetas solo mostraban la inicial. Un cuadrito con
+    // data-logo-empresa="<id de la empresa>" (o data-logo-cuenta="<id de su
+    // cuenta>") cambia la inicial por el logo: empresa -> su cuenta -> imagen.
+    // Una vez por empresa, de a 3 pedidos, con copia en la sesion del
+    // navegador. Solo con sesion: GET /users/{id} la pide, asi que los
+    // visitantes siguen viendo la inicial.
+    const LOGOS_KEY = 'skillmatch_logos';
+    const logosPedidos = new Map();
+    let logosGuardados = null;
+    let logosEnCurso = 0;
+    const logosEnFila = [];
+
+    function logosDeLaSesion() {
+        if (!logosGuardados) {
+            try { logosGuardados = JSON.parse(sessionStorage.getItem(LOGOS_KEY) || '{}'); } catch (e) { logosGuardados = {}; }
+        }
+        return logosGuardados;
+    }
+
+    function guardarLogo(clave, url) {
+        logosDeLaSesion()[clave] = url || '';
+        // Los logos subidos son imagenes dentro del texto (data:): si ya no
+        // caben en la sesion, se quedan solo en esta pagina
+        try { sessionStorage.setItem(LOGOS_KEY, JSON.stringify(logosGuardados)); } catch (e) { /* lleno o sin almacenamiento */ }
+    }
+
+    // Solo imagenes: las que guarda el editor (data:) o una direccion https
+    function imagenDeLogo(url) {
+        return typeof url === 'string' && (/^data:image\/(png|jpe?g|gif|webp|svg\+xml)[;,]/i.test(url) || /^https:\/\//i.test(url)) ? url : null;
+    }
+
+    function enTurno(tarea) {
+        return new Promise(function (listo) {
+            const correr = function () {
+                logosEnCurso++;
+                tarea().then(listo, function () { listo(undefined); }).finally(function () {
+                    logosEnCurso--;
+                    if (logosEnFila.length) logosEnFila.shift()();
+                });
+            };
+            if (logosEnCurso < 3) correr(); else logosEnFila.push(correr);
+        });
+    }
+
+    /** Promesa con la imagen del logo de una empresa, o null si no tiene. */
+    UI.logoDeEmpresa = function (empresaId, cuentaId) {
+        if ((!empresaId && !cuentaId) || !datosSesion() || typeof fetchWithAuth !== 'function') return Promise.resolve(null);
+        const clave = cuentaId ? 'u:' + cuentaId : 'c:' + empresaId;
+        const guardado = logosDeLaSesion()[clave];
+        if (guardado !== undefined) return Promise.resolve(guardado || null);
+        if (!logosPedidos.has(clave)) {
+            logosPedidos.set(clave, enTurno(async function () {
+                const leer = async function (ruta) {
+                    const r = await fetchWithAuth(ruta);
+                    return r.ok ? r.json() : null;
+                };
+                let cuenta = cuentaId;
+                if (!cuenta) {
+                    const empresa = await leer('/companies/' + encodeURIComponent(empresaId));
+                    cuenta = empresa && empresa.userId;
+                }
+                const datos = cuenta ? await leer('/users/' + encodeURIComponent(cuenta)) : null;
+                const url = datos ? imagenDeLogo(datos.profileImageUrl) : null;
+                guardarLogo(clave, url);
+                return url;
+            }).then(function (url) {
+                // Sin red (undefined): se queda la inicial y se intenta en la proxima pagina
+                if (url === undefined) logosPedidos.delete(clave);
+                return url || null;
+            }));
+        }
+        return logosPedidos.get(clave);
+    };
+
+    function pintarLogos(raiz) {
+        if (!raiz.querySelectorAll) return;
+        const cuadros = Array.from(raiz.querySelectorAll('[data-logo-empresa], [data-logo-cuenta]'));
+        if (raiz.matches && raiz.matches('[data-logo-empresa], [data-logo-cuenta]')) cuadros.push(raiz);
+        cuadros.forEach(function (cuadro) {
+            if (cuadro.dataset.logoPedido) return;
+            cuadro.dataset.logoPedido = '1';
+            UI.logoDeEmpresa(cuadro.dataset.logoEmpresa, cuadro.dataset.logoCuenta).then(function (url) {
+                if (!url || !cuadro.isConnected) return;
+                // Se cambia cuando la imagen ya cargo: si falla, queda la inicial
+                const img = new Image();
+                img.alt = '';
+                img.decoding = 'async';
+                img.onload = function () { cuadro.replaceChildren(img); cuadro.classList.add('con-logo'); };
+                img.src = url;
+            });
+        });
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
@@ -2889,6 +2987,7 @@
         movimientoDeEntrada();
         movimientoConMouse();
         hidratarLottie(document.body);
+        pintarLogos(document.body);
         observadorNuevos.observe(document.body, { childList: true, subtree: true });
         modalesAccesibles();
         validacionVisible();

@@ -35,7 +35,7 @@ npx playwright test --project=celular
 |---|---|
 | `casos/humo.spec.js` | Que cada página abra sin errores para visitante, persona y empresa, y que el frontend solo llame a direcciones que existen en el backend |
 | `casos/navegacion.spec.js` | Menú según quién mira, botones de entrar y registrarse, enlaces del registro, cerrar sesión |
-| `casos/vacantes.spec.js` | Orden, "¿Por qué este match?", el trabajo del match, etiquetas "Nueva" y "Cierra pronto", conteos en los filtros, el detalle en el historial ("atrás" lo cierra), filtros en la dirección, postularse y "¿Cerrar sin guardar?" |
+| `casos/vacantes.spec.js` | Orden, "¿Por qué este match?", el trabajo del match, etiquetas "Nueva" y "Cierra pronto", conteos en los filtros, el detalle en el historial ("atrás" lo cierra), filtros en la dirección, postularse, "¿Cerrar sin guardar?" y el logo de cada empresa (con sesión, una consulta por empresa; el visitante ve la inicial) |
 | `casos/mensajes.spec.js` | Lista, fechas y palomitas, "Ver perfil" de empresas, archivar, eliminar, copiar, abrir una conversación con el teclado y celular |
 | `casos/empresa.spec.js` | "Nueva oferta" y "Acerca de nosotros" (preguntar antes de perder lo escrito), ventana de candidatos |
 | `casos/avisos.spec.js` | "SkillMatch se está despertando" y la negrita de los avisos |

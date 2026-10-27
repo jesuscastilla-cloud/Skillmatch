@@ -81,7 +81,9 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
   portada. Por eso solo los ve quien tiene sesión (`GET /users/{id}` pide sesión). Para que salgan a los visitantes, en
   el directorio y en las tarjetas de Vacantes (`JobResponse.companyLogo`), conviene que la empresa pueda guardar su
   `logo` y un campo nuevo `coverImage` en `Company` (y `CompanyResponse`). El frontend se cambia a esos campos en
-  cuanto existan.
+  cuanto existan. Mientras tanto (25 de octubre), con sesión las tarjetas de Vacantes, el carrusel de la portada y
+  el directorio buscan el logo en la cuenta de la empresa (`GET /companies/{id}` y `GET /users/{userId}`, una vez
+  por empresa y con copia en la sesión del navegador); con `JobResponse.companyLogo` no harían falta esas consultas.
 - **Frontend:** cuando esté, se agrega el formulario en el perfil de empresa y se vuelven a pedir esos datos en el
   registro.
 

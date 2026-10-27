@@ -495,7 +495,7 @@ function createJobCard(job) {
     return `
         <div class="opportunity-card" data-job-id="${id}">
             <div class="card-header-opp">
-                <div class="company-logo-opp">${job.companyName ? escaparHtml(job.companyName.charAt(0)) : '<i data-ico="building"></i>'}</div>
+                <div class="company-logo-opp"${job.companyId ? ` data-logo-empresa="${escaparHtml(String(job.companyId))}"` : ''}>${job.companyName ? escaparHtml(job.companyName.charAt(0)) : '<i data-ico="building"></i>'}</div>
                 <div class="card-info">
                     <h3 class="job-title"><button type="button" class="job-title-link" data-job-id="${id}" onclick="abrirDetallePorId(this.dataset.jobId)">${escaparHtml(job.title)}</button></h3>
                     <p class="company-name">${enlaceEmpresa(job)}</p>

@@ -270,3 +270,48 @@ test.describe('etiquetas y conteos', () => {
         await expect(page.locator('.etiqueta-vacante.es-nueva')).toHaveCount(3);
     });
 });
+
+test.describe('logo de la empresa', () => {
+    // Un logo de prueba como los que guarda el editor (imagen dentro del texto, data:)
+    const LOGO = 'data:image/svg+xml;base64,' + Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#0B7E8C"/></svg>').toString('base64');
+    const consultas = page => {
+        const lista = [];
+        page.on('request', r => { const ruta = new URL(r.url()).pathname; if (/\/(companies|users)\/[^/]+$/.test(ruta)) lista.push(ruta.replace(/^.*?\/(companies|users)\//, '/$1/')); });
+        return lista;
+    };
+
+    test('con sesión, la tarjeta muestra el logo que la empresa subió, con una consulta por empresa', async ({ page, context, api }) => {
+        api.estado.datos.usuarios.find(u => u.id === 'u-hotel').profileImageUrl = LOGO;
+        await entrarComo(context, 'persona');
+        const lista = consultas(page);
+        await page.goto('oportunidades.html');
+        const delHotel = page.locator('.opportunity-card', { hasText: 'Hotel Puerta del Mar' });
+        await expect(delHotel.first().locator('.company-logo-opp img')).toHaveAttribute('src', LOGO);
+        // Las que no subieron logo siguen con la inicial
+        await expect(page.locator('.opportunity-card').filter({ hasNotText: 'Hotel Puerta del Mar' }).first().locator('.company-logo-opp img')).toHaveCount(0);
+        // El hotel tiene varias vacantes, pero se consulta una sola vez
+        expect(await delHotel.count()).toBeGreaterThan(1);
+        await expect.poll(() => lista.filter(r => r === '/companies/c-hotel' || r === '/users/u-hotel').sort()).toEqual(['/companies/c-hotel', '/users/u-hotel']);
+    });
+
+    test('en el perfil público el logo va grande y montado justo a la mitad de la portada', async ({ page, context, api }) => {
+        api.estado.datos.usuarios.find(u => u.id === 'u-hotel').profileImageUrl = LOGO;
+        await entrarComo(context, 'persona');
+        await page.goto('empresa.html?id=c-hotel');
+        await expect(page.locator('#empresaLogo img')).toHaveAttribute('src', LOGO);
+        const [portada, logo] = await Promise.all([page.locator('#empresaPortada').boundingBox(), page.locator('#empresaLogo').boundingBox()]);
+        expect(logo.width).toBeGreaterThanOrEqual(88);
+        expect(Math.abs((portada.y + portada.height - logo.y) - logo.height / 2), 'la mitad sobre la portada').toBeLessThan(1.5);
+    });
+
+    test('un visitante ve la inicial y no se consulta nada (el backend pide sesión para ver la cuenta)', async ({ page, context, api }) => {
+        api.estado.datos.usuarios.find(u => u.id === 'u-hotel').profileImageUrl = LOGO;
+        await entrarComo(context, 'visitante');
+        const lista = consultas(page);
+        await page.goto('oportunidades.html');
+        await expect(page.locator('.opportunity-card').first()).toBeVisible();
+        await page.waitForTimeout(500);
+        await expect(page.locator('.company-logo-opp img')).toHaveCount(0);
+        expect(lista).toEqual([]);
+    });
+});

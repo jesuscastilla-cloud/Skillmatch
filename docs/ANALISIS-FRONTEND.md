@@ -453,6 +453,12 @@ desbordes y sin texto ilegible**. Solo falla en la red el 400 conocido de experi
   transición) y la barra de progreso cruzaban la pantalla con la página: la primera se esconde hasta el final
   y la segunda se esconde en `pageswap`. Con el computador muy ocupado (pruebas en paralelo) el navegador igual
   puede saltarse alguna: por eso las pruebas revisan la dirección y el guion por separado.
+- **El logo de cada empresa en Vacantes (hecho, 25 de octubre de 2026):** Luis vio que las tarjetas mostraban solo
+  la inicial aunque la empresa tuviera logo. El logo vive en la cuenta de usuario de la empresa (ver
+  PENDIENTES-BACKEND 2.2), y solo el perfil público lo buscaba. Ahora `ui.js` (sección 28) cambia la inicial por el
+  logo en todo cuadrito marcado con `data-logo-empresa` o `data-logo-cuenta`: tarjetas de Vacantes, carrusel de la
+  portada y directorio de empresas. Una consulta por empresa (de a 3), con copia en la sesión del navegador; al
+  recargar no se pide nada. Los visitantes siguen viendo la inicial hasta que el backend mande el logo con la vacante.
 - **Ventanas sin la caja suelta (hecho, 25 de octubre de 2026):** en "Cambiar contraseña", confirmar, cerrar vacante
   y foto o portada de la empresa, la franja de botones iba dentro del cuerpo (con margen) y quedaba como una caja
   suelta, en claro y en oscuro. Ahora es el pie de la ventana, de borde a borde. Y "Contraseña actual" abría en

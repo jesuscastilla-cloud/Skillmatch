@@ -1134,6 +1134,9 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     overflow: hidden;
 }
 .connection-avatar-circle, .conversation-avatar, .candidate-mini-avatar { border-radius: 50%; }
+/* El logo de la empresa en lugar de la inicial, cuando lo tiene (ui.js, seccion 28) */
+.company-logo-opp > img, .cv-logo > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cv-logo.con-logo { overflow: hidden; }
 
 .card-meta, .result-meta, .card-info, .offer-card-info, .connection-info, .result-salary {
     display: flex;
@@ -4420,12 +4423,14 @@ a.meta-tag { position: relative; }
     box-shadow: var(--sh-1);
 }
 .empresa-cabeza .skeleton-title { display: block; width: 240px; }
-/* Portada arriba de la cabecera (la de la marca, o la que eligio la empresa) */
-.empresa-cabeza.con-portada { padding-top: 0; overflow: hidden; }
+/* Portada arriba de la cabecera (la de la marca, o la que eligio la empresa).
+   Igual que la cabecera del perfil de persona: la portada va dentro del
+   margen de la tarjeta, con las esquinas de arriba redondeadas */
+.empresa-cabeza.con-portada { padding: var(--s6); overflow: hidden; }
 .empresa-portada {
-    flex: 0 0 calc(100% + 2 * var(--s6));
-    height: 150px;
-    margin: 0 calc(-1 * var(--s6));
+    flex: 0 0 100%;
+    height: 200px;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
     background:
         var(--grain),
         radial-gradient(circle at 85% 0%, rgba(11,126,140,.45), transparent 60%),
@@ -4436,10 +4441,30 @@ a.meta-tag { position: relative; }
     background-position: center;
 }
 .empresa-portada[style*="background-image"] { background-size: cover; background-blend-mode: normal; }
-.empresa-cabeza.con-portada .empresa-avatar.grande { margin-top: -52px; border: 4px solid var(--surface); box-shadow: var(--sh-2); overflow: hidden; }
 .empresa-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .empresa-cabeza .skeleton-line { display: block; margin-top: 10px; width: 160px; }
 .empresa-avatar.grande { width: 72px; height: 72px; border-radius: var(--r-lg); font-size: var(--t-lg); }
+/* Con portada, el logo va como la foto del perfil de persona: 128 px,
+   montado justo a la mitad sobre la portada y a 16 px de su borde. Antes la
+   fila lo centraba junto al nombre y solo tocaba la portada unos pixeles. El
+   nombre va 24 px a la derecha y 16 px debajo de la portada; detras de un
+   logo con partes transparentes, la tarjeta */
+.empresa-cabeza.con-portada { row-gap: 0; column-gap: var(--s5); align-items: flex-start; }
+.empresa-cabeza.con-portada .empresa-avatar.grande {
+    width: 128px; height: 128px;
+    margin: -64px 0 0 var(--s4);
+    border: 4px solid var(--surface);
+    border-radius: 22px;
+    box-shadow: var(--sh-3);
+    font-size: var(--t-xl);
+    overflow: hidden;
+    /* El turquesa de las iniciales es transparente en oscuro: sin una base
+       opaca, la mitad de arriba dejaba ver la portada */
+    background: linear-gradient(var(--sea-light), var(--sea-light)), var(--surface);
+}
+.empresa-cabeza.con-portada .empresa-avatar.grande:has(> img) { background: var(--surface); }
+.empresa-cabeza.con-portada .empresa-cabeza-texto { padding-top: var(--s4); }
+.empresa-cabeza.con-portada .empresa-cabeza-accion { margin-top: var(--s4); }
 .empresa-cabeza-texto { flex: 1 1 240px; min-width: 0; }
 .empresa-cabeza-texto h1 { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem); overflow-wrap: anywhere; }
 .empresa-cabeza-texto p { margin-top: 4px; color: var(--ink-3); }
@@ -4496,8 +4521,11 @@ a.meta-tag { position: relative; }
 }
 @media (max-width: 600px) {
     .empresa-cabeza, .empresa-bloque { padding: var(--s4); }
-    .empresa-cabeza.con-portada { padding-top: 0; }
-    .empresa-portada { flex-basis: calc(100% + 2 * var(--s4)); margin: 0 calc(-1 * var(--s4)); height: 110px; }
+    /* En el celular, como en el perfil de persona: el logo de 96 px y el
+       nombre debajo */
+    .empresa-cabeza.con-portada { padding: var(--s6); }
+    .empresa-cabeza.con-portada .empresa-avatar.grande { width: 96px; height: 96px; margin-top: -48px; border-radius: var(--r-lg); font-size: var(--t-lg); }
+    .empresa-cabeza.con-portada .empresa-cabeza-texto { padding-top: var(--s4); }
     .empresa-vacante-extra { text-align: left; }
     .directorio-cta { padding: var(--s4); }
 }
