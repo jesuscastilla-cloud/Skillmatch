@@ -95,6 +95,18 @@ class LoginAttemptServiceTest {
         assertThat(coleccion.keySet()).allSatisfy(k -> assertThat(k).hasSize(64).doesNotContain("ana"));
     }
 
+    @Test
+    void cuentaSinCorreo_cuentaPorSuTelefono() {
+        com.skillmatch.backend.model.User soloTelefono = new com.skillmatch.backend.model.User();
+        soloTelefono.setPhone("+573001234567");
+        com.skillmatch.backend.model.User conCorreo = new com.skillmatch.backend.model.User();
+        conCorreo.setEmail("ana@test.com");
+        conCorreo.setPhone("+573001234567");
+
+        assertThat(LoginAttemptService.claveDe(soloTelefono)).isEqualTo("+573001234567");
+        assertThat(LoginAttemptService.claveDe(conCorreo)).isEqualTo("ana@test.com");
+    }
+
     private void fallar(String email, int veces) {
         for (int i = 0; i < veces; i++) service.recordFailure(email);
     }

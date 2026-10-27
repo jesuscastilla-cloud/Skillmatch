@@ -96,9 +96,9 @@ public class DatosPersonalesService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         // Igual que el cambio de contraseña: cuenta para el bloqueo por intentos fallidos
-        loginAttemptService.checkNotLocked(user.getEmail());
+        loginAttemptService.checkNotLocked(LoginAttemptService.claveDe(user));
         if (claveActual == null || !passwordEncoder.matches(claveActual, user.getPassword())) {
-            loginAttemptService.recordFailure(user.getEmail());
+            loginAttemptService.recordFailure(LoginAttemptService.claveDe(user));
             throw new IllegalArgumentException("La contraseña no es correcta");
         }
         borrarDatos(user);
@@ -131,7 +131,7 @@ public class DatosPersonalesService {
         mongoTemplate.remove(new Query(susConexiones), Connection.class);
         mongoTemplate.remove(new Query(Criteria.where("userId").is(userId)), Application.class);
         mongoTemplate.remove(new Query(Criteria.where("userId").is(userId)), SavedJob.class);
-        loginAttemptService.reset(user.getEmail());
+        loginAttemptService.reset(LoginAttemptService.claveDe(user));
         userRepository.delete(user);
     }
 

@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -26,7 +25,8 @@ public class User implements UserDetails {
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    // Único entre las cuentas que lo tienen (índice parcial en MongoIndexConfig).
+    // Puede faltar en cuentas creadas con teléfono (fase 9).
     private String email;
 
     // Nunca sale en un JSON, aunque alguien devuelva un User por error.

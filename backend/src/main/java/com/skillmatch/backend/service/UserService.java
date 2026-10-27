@@ -118,13 +118,13 @@ public class UserService {
     public User updatePassword(String userId, UpdatePasswordRequest request) {
         User user = getUserById(userId);
         // La contraseña actual también se puede adivinar: cuenta para el mismo bloqueo del login
-        loginAttemptService.checkNotLocked(user.getEmail());
+        loginAttemptService.checkNotLocked(LoginAttemptService.claveDe(user));
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             log.warn("Contraseña incorrecta al intentar cambio para usuario {}", userId);
-            loginAttemptService.recordFailure(user.getEmail());
+            loginAttemptService.recordFailure(LoginAttemptService.claveDe(user));
             throw new IllegalArgumentException("La contraseña actual es incorrecta");
         }
-        loginAttemptService.reset(user.getEmail());
+        loginAttemptService.reset(LoginAttemptService.claveDe(user));
         if (Credenciales.esClaveComun(request.getNewPassword())) {
             throw new IllegalArgumentException("Esa contraseña es de las primeras que prueba cualquiera. Elige otra.");
         }

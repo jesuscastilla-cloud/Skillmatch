@@ -76,7 +76,10 @@ public class RetencionDatos {
         Criteria noAdmin = Criteria.where("roles").ne("ADMIN");
 
         // 1. Avisar
+        // Solo cuentas con correo: el aviso va por correo. Las cuentas de solo teléfono no se
+        // avisan (un SMS cuesta) y por eso tampoco se borran por inactividad.
         Query porAvisar = new Query(new Criteria().andOperator(noAdmin,
+                Criteria.where("email").type(2),
                 Criteria.where("avisoInactividadEn").is(null),
                 new Criteria().orOperator(
                         Criteria.where("lastLoginAt").lt(limiteAviso),

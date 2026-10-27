@@ -59,6 +59,11 @@ public class LoginAttemptService {
         repository.save(intento);
     }
 
+    /** Con qué se cuentan los intentos de una cuenta: su correo o, si no tiene, su teléfono. */
+    public static String claveDe(com.skillmatch.backend.model.User user) {
+        return user.getEmail() != null ? user.getEmail() : user.getPhone();
+    }
+
     public void reset(String email) {
         repository.deleteById(hash(email));
     }

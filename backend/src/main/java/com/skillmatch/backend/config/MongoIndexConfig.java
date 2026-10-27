@@ -9,6 +9,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.CompoundIndexDefinition;
 import org.springframework.data.mongodb.core.index.Index;
+import org.springframework.data.mongodb.core.index.PartialIndexFilter;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.index.TextIndexDefinition;
 import org.springframework.stereotype.Component;
 
@@ -29,9 +31,16 @@ public class MongoIndexConfig implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         log.info("Verificando indices de MongoDB...");
 
-        // users
+        // users: correo y teléfono únicos, pero PARCIALES: solo entre cuentas que los tienen.
+        // Una cuenta creada con teléfono no tiene correo; con un índice normal, "sin correo"
+        // contaría como un valor más y solo podría existir una.
+        safe("users", () -> reemplazarSiNoEsParcial("users", "email_1"));
         safe("users", () -> mongoTemplate.indexOps("users")
-                .createIndex(new Index("email", Sort.Direction.ASC).unique()));
+                .createIndex(new Index("email", Sort.Direction.ASC).unique()
+                        .partial(PartialIndexFilter.of(Criteria.where("email").type(2)))));
+        safe("users", () -> mongoTemplate.indexOps("users")
+                .createIndex(new Index("phone", Sort.Direction.ASC).unique()
+                        .partial(PartialIndexFilter.of(Criteria.where("phone").type(2)))));
 
         // companies
         safe("companies", () -> mongoTemplate.indexOps("companies")
@@ -98,6 +107,17 @@ public class MongoIndexConfig implements ApplicationRunner {
                 .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
 
         log.info("Indices de MongoDB verificados.");
+    }
+
+    /** Borra el índice si existe sin filtro parcial (el de antes), para crearlo de nuevo parcial. */
+    private void reemplazarSiNoEsParcial(String coleccion, String nombre) {
+        mongoTemplate.indexOps(coleccion).getIndexInfo().stream()
+                .filter(i -> i.getName().equals(nombre) && i.getPartialFilterExpression() == null)
+                .findFirst()
+                .ifPresent(i -> {
+                    mongoTemplate.indexOps(coleccion).dropIndex(nombre);
+                    log.info("Índice {} de '{}' se recrea como parcial", nombre, coleccion);
+                });
     }
 
     /**
