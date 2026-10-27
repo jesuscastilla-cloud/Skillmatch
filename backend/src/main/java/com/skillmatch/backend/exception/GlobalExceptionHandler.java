@@ -1,6 +1,7 @@
 package com.skillmatch.backend.exception;
 
 import com.skillmatch.backend.dto.MessageResponse;
+import com.skillmatch.backend.service.TelefonoAuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -107,6 +108,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleUnauthorized(UnauthorizedException ex,
                                                  WebRequest request) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new MessageResponse(ex.getMessage()));
+    }
+
+    // Registro o entrada con teléfono sin habilitar (o sin proveedor de SMS): 503
+    @ExceptionHandler(TelefonoAuthService.TelefonoNoDisponibleException.class)
+    public ResponseEntity<?> handleTelefonoNoDisponible(TelefonoAuthService.TelefonoNoDisponibleException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(new MessageResponse(ex.getMessage()));
     }
 

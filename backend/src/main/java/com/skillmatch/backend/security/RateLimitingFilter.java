@@ -57,6 +57,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 || uri.startsWith("/api/auth/register")
                 || uri.equals("/api/auth/forgot-password")
                 || uri.equals("/api/auth/reset-password")
+                || uri.startsWith("/api/auth/phone/")
+                || uri.startsWith("/api/users/me/phone/")
                 || CAMBIO_DE_CLAVE.matcher(uri).matches();
         return !esRutaProtegida;
     }

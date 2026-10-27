@@ -216,7 +216,8 @@ public class RegistrationService {
      * Arma la prueba del consentimiento. Con exigirConsentimiento, sin aceptar la
      * política (y, si es persona, sin declarar mayoría de edad) no hay registro.
      */
-    private List<Consentimiento> consentimientos(RegisterRequest request, boolean esPersona) {
+    // Sin "private": también lo usa el registro con teléfono (TelefonoAuthService)
+    List<Consentimiento> consentimientos(RegisterRequest request, boolean esPersona) {
         boolean politica = Boolean.TRUE.equals(request.getAceptaPolitica());
         boolean mayor = Boolean.TRUE.equals(request.getMayorDeEdad());
         if (exigirConsentimiento && !politica) {

@@ -140,3 +140,28 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
   Así el mismo frontend sirve antes y después de activar el interruptor.
 - **Después de publicarlo:** con Brevo configurado (`MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`), poner
   `REGISTRO_VERIFICAR_CORREO=true` en Render.
+
+---
+
+## De la fase 9 (teléfono)
+
+### ⬜ F12. Entrar y registrarse con el celular
+- **Solo cuando haya proveedor** (Twilio, de pago) y `TELEFONO_HABILITADO=true`. Antes de mostrar los botones,
+  preguntar `GET /api/auth/phone/disponible` → `{"disponible": true|false}`; con `false`, no mostrarlos (las rutas
+  responden 503).
+- **Backend:**
+  - Registro (solo personas): `POST /api/auth/phone/register` `{"phone", "password", "firstName", "lastName",
+    "aceptaPolitica", "mayorDeEdad"}` → 202 y llega un código por SMS (o WhatsApp). Luego
+    `POST /api/auth/phone/register/verify` `{"phone", "codigo"}` → 200 con la sesión (misma forma que el login;
+    `email` viene `null`).
+  - Entrar sin contraseña: `POST /api/auth/phone/code` `{"phone"}` → 200 (siempre igual) y
+    `POST /api/auth/phone/login` `{"phone", "codigo"}` → 200 con la sesión. Solo para números ya verificados.
+  - Agregar el número a una cuenta (con sesión): `POST /api/users/me/phone/code` `{"phone"}` y
+    `POST /api/users/me/phone/verify` `{"phone", "codigo"}`.
+  - El número se puede escribir como sea (`300 123 4567`, `+57...`); el backend lo devuelve como `+573001234567`.
+- **Dónde:** pestaña "Con mi celular" en `pages/login-usuario.html` y `pages/registro-usuario.html` (empresas no:
+  se registran con correo); en "Mi perfil", junto al teléfono, "Confirmar número" si `phoneVerified` no es `true`.
+- **Mostrar el número bonito:** el backend guarda `+573001234567`; en pantalla conviene `+57 300 123 4567`.
+  Revisar dónde se muestra `phone` (`profile.js`, `hoja-de-vida.js`, `perfil-empresa.js`).
+- **Cuentas sin correo:** el frontend debe aguantar `email: null` (por ejemplo `ui.js` línea ~2282 hace
+  `String(datos.email || '')`, bien; revisar los demás usos de `email` del usuario en sesión).
