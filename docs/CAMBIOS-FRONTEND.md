@@ -165,3 +165,35 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
   Revisar dónde se muestra `phone` (`profile.js`, `hoja-de-vida.js`, `perfil-empresa.js`).
 - **Cuentas sin correo:** el frontend debe aguantar `email: null` (por ejemplo `ui.js` línea ~2282 hace
   `String(datos.email || '')`, bien; revisar los demás usos de `email` del usuario en sesión).
+
+---
+
+## De la fase 10 (Google)
+
+### ⬜ F13. Botón "Continuar con Google"
+- **Antes de mostrarlo:** `GET /api/auth/google/disponible` → `{"disponible": true|false}`. Con `false` (sin
+  credenciales de Google en el servidor), no mostrar el botón.
+- **El botón es un enlace normal** (sin scripts de Google: la CSP los bloquea y no hacen falta):
+  `<a class="btn-google" href="/oauth2/authorization/google">` con el icono de `ui.js` (agregar `google` si no
+  existe). En local con Live Server, el `href` debe ir al backend: `http://localhost:8080/oauth2/authorization/google`
+  (usar la base de `api-config.js` sin el `/api`).
+  - En `login.html`, `login-usuario.html` y `login-empresa.html`: el enlace tal cual.
+  - En `registro-usuario.html`: agregar `?acepta=1&mayor=1` **solo** si las casillas de F6 están marcadas (armar el
+    enlace al hacer clic). En `registro-empresa.html`: `?tipo=EMPRESA&acepta=1`.
+  - Con `PRIVACIDAD_EXIGIR_CONSENTIMIENTO=true`, una cuenta nueva sin esas casillas vuelve con
+    `#google-error=consentimiento`: mandar a la persona al registro.
+- **Al volver de Google** el backend redirige a `pages/login.html` (cambiable con `GOOGLE_PAGINA_RETORNO`) con:
+  - `#google=<código>` → `POST /api/auth/google/canjear` `{"codigo"}` → 200 con lo mismo que el login (`token`,
+    `id`, `companyId`, `role`...). Hacer lo mismo que `auth.js` tras un login exitoso (`saveToken`, `saveUserData`,
+    redirigir). Borrar el `#` de la barra con `history.replaceState` antes de canjear. El código vence al minuto y
+    sirve una sola vez (400 si no).
+  - `#google-error=<motivo>` → mostrar con `SkillMatchUI.aviso`:
+    - `cancelado`: "Cancelaste la entrada con Google."
+    - `correo_no_verificado`: "Google no confirma ese correo. Verifícalo en Google o regístrate con tu correo."
+    - `cuenta_desactivada`: "Esta cuenta está desactivada."
+    - `consentimiento`: "Para crear tu cuenta, acepta la política de datos en el registro."
+    - `error`: "No se pudo entrar con Google. Intenta de nuevo."
+- **Cuentas sin contraseña:** quien se registró con Google no tiene contraseña. "Cambiar contraseña" y "Eliminar mi
+  cuenta" (F8) responden 400 con el mensaje "Tu cuenta no tiene contraseña (entraste con Google). Crea una con
+  ¿Olvidaste tu contraseña?..."; mostrarlo tal cual y ofrecer el enlace a F11.
+- **"Descargar mis datos"** (F7) ahora trae `cuentaUnidaAGoogle: true|false`.

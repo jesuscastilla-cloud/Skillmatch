@@ -29,7 +29,23 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 | 7. Datos personales | Hecha (backend) | Prueba del consentimiento (`User.consentimientos`, exigible con `PRIVACIDAD_EXIGIR_CONSENTIMIENTO`), `GET /api/users/me/export`, `DELETE /api/users/me` (borra todos los mensajes; empresa anónima), notificaciones 90 días (TTL), postulaciones 12 meses tras cerrar la vacante (tarea diaria), `lastLoginAt`. Pendiente: borrado de cuentas inactivas 24 meses (necesita correo, fase 8) y los botones y la política en el frontend (`docs/CAMBIOS-FRONTEND.md`, F6 a F9) |
 | 8. Correo | Hecha (backend) | Envío con Brevo (`CorreoService`, modo prueba en local). Correos válidos: MX real y lista de desechables. Códigos de 6 dígitos (15 min, 5 intentos, huella SHA-256). "Olvidé mi contraseña". Registro con código sin cuentas a medias y sin enumeración (interruptor `REGISTRO_VERIFICAR_CORREO`). Aviso y borrado de cuentas inactivas (24 meses). Pendiente: crear la cuenta de Brevo y el frontend (F10, F11). Teléfono (SMS/WhatsApp) va en la fase 9 y es de pago; Google en la 10 |
 | 9. Teléfono | Hecha (backend) | Teléfono validado con libphonenumber, guardado en E.164 y único (con migración). Servicio de SMS/WhatsApp con Twilio (`MensajeTelefonoService`), apagado. El token identifica por ID de cuenta (los viejos con correo siguen sirviendo; cambiar el correo ya no cierra la sesión). Correo opcional en la base (índices únicos parciales). Registro y entrada con código por teléfono y agregar teléfono a la cuenta, detrás de `TELEFONO_HABILITADO`. Pendiente: proveedor de pago y frontend (F12). Las cuentas de solo teléfono no reciben aviso de inactividad (sería por SMS) y por eso no se borran por inactividad |
-| 10 y 11 | Pendientes | — |
+| 10. Google | Hecha (backend) | "Continuar con Google" del lado del servidor (`spring-boot-starter-oauth2-client`): state, nonce y PKCE; solo correos que Google da por verificados; no se guardan los tokens de Google. Une por `googleId` y, si no, por correo; si la cuenta unida nunca había verificado su correo, se le quita la contraseña y se cierran sus sesiones (contra el pre-registro) y se le avisa por correo. Cuentas nuevas ya verificadas, persona o empresa según el botón, con las mismas reglas de consentimiento. El frontend recibe un código de un solo uso (1 minuto, en el `#` de la URL) y lo canjea por la sesión. Límite de intentos también en la ida y vuelta (se arregló el orden del filtro). Apagado sin `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`. Pendiente: credenciales y frontend (F13) |
+| 11 | Pendiente | — |
+
+**Para activar Google (fase 10), gratis:**
+1. En https://console.cloud.google.com crear un proyecto (por ejemplo "SkillMatch").
+2. "APIs y servicios" > "Pantalla de consentimiento de OAuth": tipo **Externo**, nombre "SkillMatch", correo de
+   soporte, logo opcional, enlace a la política (`/pages/politica-datos.html`). Permisos: solo `openid`, `email`
+   y `profile` (no requieren revisión de Google). Publicarla ("En producción") para que entre cualquier persona.
+3. "Credenciales" > "Crear credenciales" > "ID de cliente de OAuth" > **Aplicación web**. En "URI de
+   redireccionamiento autorizados" poner exactamente:
+   - `https://skillmatch-yz37.onrender.com/login/oauth2/code/google`
+   - `http://localhost:8080/login/oauth2/code/google` (para probar en local)
+4. En Render: `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (el secreto **nunca** en el código ni en un chat).
+5. En local, para probar con Live Server: además `GOOGLE_PAGINA_RETORNO` con la URL completa de `login.html`
+   en el puerto 5500.
+6. El botón aparece cuando el frontend tenga F13 (antes, `/api/auth/google/disponible` ya dirá `true` pero nada
+   lo muestra).
 
 **Para activar el teléfono (fase 9), cuando haya presupuesto:**
 1. Crear la cuenta de Twilio, comprar un número (SMS) y/o activar el remitente de WhatsApp.
@@ -523,11 +539,12 @@ Las tres respetan la regla "nada de pago" y la CSP (ningún script externo en el
      misma cookie `auth_token` de siempre y redirige al panel.
 - **Necesita de ti:** un proyecto en Google Cloud (gratis), la pantalla de consentimiento y las credenciales
   (`GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` como variables en Render, nunca en el código).
-- **Decisiones pendientes:**
-  - Si ya existe una cuenta con ese correo y contraseña, ¿se unen? (Propuesta: sí, solo si Google dice que el correo
-    está verificado.)
-  - Una cuenta nueva con Google, ¿es persona o empresa? (Propuesta: preguntar después, en una pantalla corta.)
-  - ¿Pueden las empresas entrar con Google? (Propuesta: sí, pero igual pasan por la verificación de empresa.)
+- **Decidido (fase 10):**
+  - Si ya existe una cuenta con ese correo, se unen solo si Google dice que el correo está verificado. Si esa cuenta
+    nunca había verificado su correo, pierde la contraseña y sus sesiones (pudo crearla otra persona).
+  - Persona o empresa: lo dice el botón (`?tipo=EMPRESA` en el registro de empresa), sin pantalla extra.
+  - Las empresas pueden entrar con Google y pasan igual por la verificación de empresa.
+  - Para no depender de la cookie en local, la sesión llega con un código de un solo uso que se canjea.
 
 ### 6.2 Número de teléfono
 - **Validar y normalizar** (gratis): guardar en formato internacional E.164 (`+573001234567`) con
