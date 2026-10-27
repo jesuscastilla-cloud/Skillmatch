@@ -63,9 +63,9 @@ public class JobService {
         return mapToResponse(jobRepository.save(job), company);
     }
 
-    public JobResponse updateJob(String id, JobRequest request, String requesterId) {
+    public JobResponse updateJob(String id, JobRequest request, String requesterId, boolean isAdmin) {
         Job job = findJobOrThrow(id);
-        verifyOwnership(job, requesterId);
+        verifyOwnership(job, requesterId, isAdmin);
         validateSalaryRange(request);
         buildJobFromRequest(job, request);
         job.setUpdatedAt(LocalDateTime.now());
@@ -73,9 +73,9 @@ public class JobService {
         return mapToResponse(jobRepository.save(job), company);
     }
 
-    public JobResponse changeStatus(String id, String status, String requesterId) {
+    public JobResponse changeStatus(String id, String status, String requesterId, boolean isAdmin) {
         Job job = findJobOrThrow(id);
-        verifyOwnership(job, requesterId);
+        verifyOwnership(job, requesterId, isAdmin);
         JobStatus jobStatus = JobStatus.fromValue(status);
         job.setStatus(jobStatus);
         job.setActive(jobStatus != JobStatus.CERRADA);
@@ -84,9 +84,9 @@ public class JobService {
         return mapToResponse(jobRepository.save(job), company);
     }
 
-    public void deleteJob(String id, String requesterId) {
+    public void deleteJob(String id, String requesterId, boolean isAdmin) {
         Job job = findJobOrThrow(id);
-        verifyOwnership(job, requesterId);
+        verifyOwnership(job, requesterId, isAdmin);
         job.setActive(false);
         job.setStatus(JobStatus.CERRADA);
         job.setUpdatedAt(LocalDateTime.now());
@@ -182,11 +182,17 @@ public class JobService {
                 .collect(Collectors.toList());
     }
 
-    private void verifyOwnership(Job job, String requesterId) {
+    /** El dueño de la empresa modifica sus vacantes; un ADMIN puede moderar cualquiera. */
+    private void verifyOwnership(Job job, String requesterId, boolean isAdmin) {
         Company company = companyRepository.findById(job.getCompanyId()).orElse(null);
-        if (company == null || !requesterId.equals(company.getUserId())) {
-            throw new AccessDeniedException("No tienes permiso para modificar esta oferta");
+        boolean isOwner = company != null && requesterId.equals(company.getUserId());
+        if (isOwner) return;
+        if (isAdmin) {
+            log.info("Moderación: ADMIN {} modifica la vacante {} de la empresa {}",
+                    requesterId, job.getId(), job.getCompanyId());
+            return;
         }
+        throw new AccessDeniedException("No tienes permiso para modificar esta oferta");
     }
 
     private Job findJobOrThrow(String id) {

@@ -110,10 +110,11 @@ public class ApplicationService {
         return applications;
     }
 
-    public List<ApplicationResponse> getApplicationsByJob(String jobId, String requesterId) {
+    /** La empresa dueña de la vacante, o un ADMIN que modera, ve sus postulaciones. */
+    public List<ApplicationResponse> getApplicationsByJob(String jobId, String requesterId, boolean isAdmin) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado con ID: " + jobId));
-        verifyJobOwnership(job, requesterId);
+        if (!isAdmin) verifyJobOwnership(job, requesterId);
         return mapList(applicationRepository.findByJobId(jobId));
     }
 
@@ -122,8 +123,9 @@ public class ApplicationService {
         return mapList(findByCompanyId(companyId));
     }
 
-    public Page<ApplicationResponse> getApplicationsByCompany(String companyId, String requesterId, Pageable pageable) {
-        verifyCompanyOwnership(companyId, requesterId);
+    public Page<ApplicationResponse> getApplicationsByCompany(String companyId, String requesterId,
+                                                              boolean isAdmin, Pageable pageable) {
+        if (!isAdmin) verifyCompanyOwnership(companyId, requesterId);
         List<String> jobIds = jobRepository.findByCompanyId(companyId)
                 .stream().map(Job::getId).collect(Collectors.toList());
         if (jobIds.isEmpty()) return Page.empty(pageable);

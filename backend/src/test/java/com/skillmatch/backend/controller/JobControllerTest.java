@@ -128,7 +128,7 @@ class JobControllerTest {
 
     @Test
     void changeStatus_wrongOwner_returnsForbidden() throws Exception {
-        when(jobService.changeStatus(eq("job-a-id"), eq("CERRADA"), eq("empresa-b-user-id")))
+        when(jobService.changeStatus(eq("job-a-id"), eq("CERRADA"), eq("empresa-b-user-id"), eq(false)))
                 .thenThrow(new AccessDeniedException("No tienes permiso para modificar esta oferta"));
 
         mockMvc.perform(patch("/api/jobs/job-a-id/status")
@@ -142,7 +142,7 @@ class JobControllerTest {
         // Mínimo válido: companyId @NotBlank, title @NotBlank, type @Pattern(empleo|práctica|freelance)
         String body = "{\"companyId\":\"comp-b\",\"title\":\"Dev\",\"type\":\"empleo\"}";
 
-        when(jobService.updateJob(eq("job-a-id"), any(JobRequest.class), eq("empresa-b-user-id")))
+        when(jobService.updateJob(eq("job-a-id"), any(JobRequest.class), eq("empresa-b-user-id"), eq(false)))
                 .thenThrow(new AccessDeniedException("No tienes permiso para modificar esta oferta"));
 
         mockMvc.perform(put("/api/jobs/job-a-id")

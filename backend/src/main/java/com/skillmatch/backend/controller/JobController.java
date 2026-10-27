@@ -52,7 +52,7 @@ public class JobController {
                                        @Valid @RequestBody JobRequest request,
                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.ok(jobService.updateJob(id, request, currentUser.getId()));
+            return ResponseEntity.ok(jobService.updateJob(id, request, currentUser.getId(), isAdmin(currentUser)));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
@@ -67,7 +67,7 @@ public class JobController {
                                           @RequestParam String status,
                                           @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.ok(jobService.changeStatus(id, status, currentUser.getId()));
+            return ResponseEntity.ok(jobService.changeStatus(id, status, currentUser.getId(), isAdmin(currentUser)));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
@@ -81,7 +81,7 @@ public class JobController {
     public ResponseEntity<?> deleteJob(@PathVariable String id,
                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            jobService.deleteJob(id, currentUser.getId());
+            jobService.deleteJob(id, currentUser.getId(), isAdmin(currentUser));
             return ResponseEntity.ok(new MessageResponse("Oferta eliminada exitosamente"));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));

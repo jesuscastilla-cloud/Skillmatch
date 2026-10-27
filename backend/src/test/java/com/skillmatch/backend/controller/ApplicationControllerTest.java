@@ -64,7 +64,7 @@ class ApplicationControllerTest {
 
     @Test
     void getApplicationsByJob_wrongOwner_returnsForbidden() throws Exception {
-        when(applicationService.getApplicationsByJob(eq("job-a-id"), eq("empresa-b-user-id")))
+        when(applicationService.getApplicationsByJob(eq("job-a-id"), eq("empresa-b-user-id"), eq(false)))
                 .thenThrow(new AccessDeniedException("No tienes permiso para acceder a estas postulaciones"));
 
         mockMvc.perform(get("/api/applications/job/job-a-id")

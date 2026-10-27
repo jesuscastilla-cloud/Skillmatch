@@ -275,6 +275,35 @@ class ApplicationServiceTest {
         assertThat(applicationService.getApplicationsByStatus("pendiente", "admin-id", true)).hasSize(1);
     }
 
+    // ─── Moderación: el ADMIN ve, pero no decide por la empresa ──────────────
+
+    @Test
+    void getApplicationsByJob_admin_veSinSerDueno() {
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(applicationRepository.findByJobId("job-id-5")).thenReturn(List.of(buildApplicationWithNotes()));
+        stubMapList();
+
+        assertThat(applicationService.getApplicationsByJob("job-id-5", "admin-id", true)).hasSize(1);
+    }
+
+    @Test
+    void getApplicationsByJob_otraEmpresa_rechaza() {
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
+
+        assertThatThrownBy(() -> applicationService.getApplicationsByJob("job-id-5", "user-id-99", false))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void updateStatus_admin_noPuedeDecidirPorLaEmpresa() {
+        stubApplicationWithNotes();
+
+        assertThatThrownBy(() -> applicationService.updateStatus("app-id-70", "aceptada", null, "admin-id"))
+                .isInstanceOf(AccessDeniedException.class);
+        verify(applicationRepository, never()).save(any());
+    }
+
     // ─── Mis postulaciones: sin notas internas ───────────────────────────────
 
     @Test

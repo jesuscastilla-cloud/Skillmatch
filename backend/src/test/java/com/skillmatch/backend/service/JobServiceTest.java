@@ -77,4 +77,43 @@ class JobServiceTest {
 
         assertThat(jobService.createJob(request, "admin-id", true).getCompanyId()).isEqualTo("company-a");
     }
+
+    // ─── Moderación: el ADMIN cierra vacantes ajenas, otra empresa no ────────
+
+    @Test
+    void changeStatus_admin_cierraVacanteAjena() {
+        stubExistingJob();
+        when(jobRepository.save(any(Job.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        JobResponse result = jobService.changeStatus("job-1", "CERRADA", "admin-id", true);
+
+        assertThat(result.getActive()).isFalse();
+    }
+
+    @Test
+    void changeStatus_otraEmpresa_rechaza() {
+        stubExistingJob();
+
+        assertThatThrownBy(() -> jobService.changeStatus("job-1", "CERRADA", "owner-b", false))
+                .isInstanceOf(AccessDeniedException.class);
+        verify(jobRepository, never()).save(any());
+    }
+
+    @Test
+    void deleteJob_admin_cierraVacanteAjena() {
+        stubExistingJob();
+
+        jobService.deleteJob("job-1", "admin-id", true);
+
+        verify(jobRepository).save(argThat(job -> !job.getActive()));
+    }
+
+    private void stubExistingJob() {
+        Job job = new Job();
+        job.setId("job-1");
+        job.setCompanyId("company-a");
+        job.setActive(true);
+        when(jobRepository.findById("job-1")).thenReturn(Optional.of(job));
+        when(companyRepository.findById("company-a")).thenReturn(Optional.of(company));
+    }
 }

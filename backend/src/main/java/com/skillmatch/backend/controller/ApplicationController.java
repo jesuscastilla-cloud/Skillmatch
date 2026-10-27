@@ -81,7 +81,8 @@ public class ApplicationController {
             @PathVariable String jobId,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.ok(applicationService.getApplicationsByJob(jobId, requireUser(currentUser)));
+            return ResponseEntity.ok(applicationService.getApplicationsByJob(
+                    jobId, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
@@ -99,7 +100,7 @@ public class ApplicationController {
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Page<ApplicationResponse> apps = applicationService.getApplicationsByCompany(
-                    companyId, requireUser(currentUser), pageable);
+                    companyId, requireUser(currentUser), hasRole(currentUser, "ADMIN"), pageable);
             return ResponseEntity.ok(apps);
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
@@ -143,7 +144,8 @@ public class ApplicationController {
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             String requesterId = requireUser(currentUser);
-            boolean isAdmin = hasRole(currentUser, "ADMIN") || hasRole(currentUser, "EMPRESA");
+            // Solo ADMIN: una empresa no puede borrar postulaciones de nadie
+            boolean isAdmin = hasRole(currentUser, "ADMIN");
             applicationService.deleteApplication(id, requesterId, isAdmin);
             return ResponseEntity.ok(new MessageResponse("Postulación eliminada exitosamente"));
         } catch (AccessDeniedException e) {
