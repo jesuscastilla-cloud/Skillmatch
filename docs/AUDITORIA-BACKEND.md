@@ -25,7 +25,8 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 | 3. Sesión y configuración | Hecha, salvo B1 | A2, A3, B2, M1, M2, M10, M11 |
 | 4. Fuerza bruta y enumeración | Hecha, salvo el registro | A4 (IP real + bloqueo por cuenta 5 fallos / 15 min), M4 en el login. El registro sigue diciendo "El email ya está registrado": se resuelve con la verificación de correo (fase 8) |
 | 5. Validación de entradas | Hecha | A6, B4, M5, M6, M12, M3, B3, A8 (con migración de correos al arrancar). Queda: algunos controladores todavía arman "Error al ...: " + mensaje en sus propios `catch`; con el manejador nuevo ya no llegan fallos de Java por ahí, pero conviene limpiarlos |
-| 6 a 11 | Pendientes | — |
+| 6. Mensajes y conexiones | Hecha | M8: el bloqueo impide escribir (en los dos sentidos); 20 mensajes/min y 500/día, 30 solicitudes/día por cuenta; la conversación devuelve los 1000 mensajes más recientes. Pendientes 2.4: una solicitud rechazada se puede reenviar a los 30 días (quien rechazó, de inmediato). Se mantiene que cualquiera puede escribir a cualquiera (así está diseñado el frontend). El frontend todavía no tiene botón "Bloquear". Si una conversación pasara de 1000 mensajes, "Eliminar conversación" dejaría los más viejos: la solución es un `DELETE /api/messages/conversation/{id}` (pendientes 2.11) |
+| 7 a 11 | Pendientes | — |
 
 **Al publicar la fase 5 en Render:** mirar el log del primer arranque. `Correos normalizados a minúsculas: N cuentas`
 indica cuántas se arreglaron; una línea `Correo duplicado al normalizar` indica dos cuentas del mismo correo que hay
