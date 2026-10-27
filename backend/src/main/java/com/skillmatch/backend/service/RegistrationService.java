@@ -8,6 +8,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
+import com.skillmatch.backend.validation.Credenciales;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,6 +32,9 @@ public class RegistrationService {
     private final JwtTokenProvider tokenProvider;
 
     public AuthResponse register(RegisterRequest registerRequest) {
+        if (Credenciales.esClaveComun(registerRequest.getPassword())) {
+            throw new IllegalArgumentException("Esa contraseña es de las primeras que prueba cualquiera. Elige otra.");
+        }
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             log.warn("Intento de registro con email duplicado: {}", registerRequest.getEmail());
             throw new DuplicateResourceException("El email ya está registrado");

@@ -3,6 +3,7 @@ package com.skillmatch.backend.service;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.UserDetailsImpl;
+import com.skillmatch.backend.validation.Credenciales;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
@@ -23,7 +24,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         log.debug("Cargando usuario por email: {}", email);
-        User user = userRepository.findByEmail(email)
+        // Los tokens viejos pueden traer el correo con mayúsculas: se normaliza igual
+        User user = userRepository.findByEmail(Credenciales.normalizarCorreo(email))
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
 
         return UserDetailsImpl.build(user);

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import com.skillmatch.backend.validation.EntradaSegura;
 import jakarta.validation.constraints.Pattern;
+import com.skillmatch.backend.validation.Credenciales;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,7 +41,7 @@ public class CompanyRequest {
     private String website;
 
     @NotBlank(message = "El email es obligatorio")
-    @Email(message = "El email debe ser válido")
+    @Email(regexp = Credenciales.REGEX_CORREO, message = "El email debe ser válido")
     @Size(max = 100, message = "El email no puede exceder 100 caracteres")
     private String email;
 
@@ -55,4 +56,9 @@ public class CompanyRequest {
     private Boolean isVerified;
 
     private Boolean active;
+
+    /** Correo sin espacios y en minúsculas: un mismo correo, una sola cuenta. */
+    public void setEmail(String email) {
+        this.email = Credenciales.normalizarCorreo(email);
+    }
 }

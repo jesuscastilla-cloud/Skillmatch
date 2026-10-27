@@ -42,8 +42,8 @@ class RegistrationServiceTest {
 
     @BeforeEach
     void setUp() {
-        userRequest = new RegisterRequest("user@test.com", "password123", "Ana", "García", "3001234567", "USER");
-        empresaRequest = new RegisterRequest("empresa@test.com", "password123", "TechCorp", "SAS", "3009876543", "EMPRESA");
+        userRequest = new RegisterRequest("user@test.com", "Clave-de-prueba-1", "Ana", "García", "3001234567", "USER");
+        empresaRequest = new RegisterRequest("empresa@test.com", "Clave-de-prueba-1", "TechCorp", "SAS", "3009876543", "EMPRESA");
     }
 
     @Test
@@ -110,6 +110,16 @@ class RegistrationServiceTest {
                 .isInstanceOf(DuplicateResourceException.class)
                 .hasMessageContaining("email");
 
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_contrasenaComun_seRechazaSinCrearCuenta() {
+        userRequest.setPassword("Cartagena");
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Elige otra");
         verify(userRepository, never()).save(any());
     }
 }

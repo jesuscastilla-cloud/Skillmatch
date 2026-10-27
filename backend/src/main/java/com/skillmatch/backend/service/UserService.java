@@ -6,6 +6,7 @@ import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.validation.Credenciales;
 import com.skillmatch.backend.validation.EntradaSegura;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +43,7 @@ public class UserService {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("El email no puede estar vacío");
         }
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmail(Credenciales.normalizarCorreo(email))
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con email: " + email));
     }
 
@@ -110,6 +111,9 @@ public class UserService {
             throw new IllegalArgumentException("La contraseña actual es incorrecta");
         }
         loginAttemptService.reset(user.getEmail());
+        if (Credenciales.esClaveComun(request.getNewPassword())) {
+            throw new IllegalArgumentException("Esa contraseña es de las primeras que prueba cualquiera. Elige otra.");
+        }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setTokenVersion((user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1);
         user.setUpdatedAt(LocalDateTime.now());
