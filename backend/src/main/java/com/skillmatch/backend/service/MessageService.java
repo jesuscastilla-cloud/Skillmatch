@@ -19,6 +19,8 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,6 +37,9 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final ConnectionRepository connectionRepository;
     private final LimiteEnvios limiteEnvios;
+
+    /** Mensajes que devuelve una conversación (los más recientes). */
+    static final int MAX_CONVERSACION = 1000;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final MongoTemplate mongoTemplate;
@@ -83,8 +88,12 @@ public class MessageService {
                 Criteria.where("senderId").is(userId).and("receiverId").is(otherUserId).and("deletedBySender").is(false),
                 Criteria.where("senderId").is(otherUserId).and("receiverId").is(userId).and("deletedByReceiver").is(false)
         );
-        List<Message> messages = mongoTemplate.find(
-                new Query(criteria).with(Sort.by(Sort.Direction.ASC, "sentAt")), Message.class);
+        // Solo los MAX_CONVERSACION más recientes: antes se cargaban todos en cada apertura.
+        // Se piden del más nuevo al más viejo y se devuelven en el orden de siempre.
+        List<Message> messages = new ArrayList<>(mongoTemplate.find(
+                new Query(criteria).with(Sort.by(Sort.Direction.DESC, "sentAt")).limit(MAX_CONVERSACION),
+                Message.class));
+        Collections.reverse(messages);
         return mapListWithBatchUsers(messages);
     }
 
