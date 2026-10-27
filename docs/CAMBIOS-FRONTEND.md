@@ -79,3 +79,16 @@ Estado: ⬜ pendiente · ✅ hecho
   `pages/politica-datos.html`, en la parte de los derechos.
 - **Qué hacer:** `fetchWithAuth('/users/me/export')`, convertir la respuesta en `Blob` y descargarla con un `<a download>`
   (un enlace directo no manda el token mientras exista F4).
+
+### ⬜ F8. Botón "Eliminar mi cuenta"
+- **Backend:** `DELETE /api/users/me` con cuerpo `{"password": "<contraseña actual>"}`.
+  - 200 `{"message": "Tu cuenta y tus datos fueron eliminados"}` y borra la cookie de sesión.
+  - 400 `{"message": "La contraseña no es correcta"}`; 429 tras 5 intentos fallidos (mismo bloqueo que el login).
+  - Borra postulaciones, vacantes guardadas, conexiones, **todos** los mensajes (enviados y recibidos) y
+    notificaciones. Si es empresa, cierra sus vacantes y la empresa queda como "Empresa eliminada".
+- **Dónde:** "Mi perfil" (`assets/js/profile.js`, menú "Más", junto a "Cambiar contraseña" que vive en
+  `assets/js/ui.js`) y "Mi empresa" (`assets/js/perfil-empresa.js`). Se puede copiar la ventana de cambio de
+  contraseña de `ui.js` (línea ~2270): mismo campo de contraseña con el ojo.
+- **Qué mostrar antes:** que es definitivo y qué se borra (incluidas las conversaciones de la otra persona con ella),
+  y ofrecer primero "Descargar mis datos" (F7). Después del 200: `limpiarSesion()` y volver a `index.html`.
+- **Enlazarlo** desde `pages/politica-datos.html`, en la parte de los derechos (suprimir).

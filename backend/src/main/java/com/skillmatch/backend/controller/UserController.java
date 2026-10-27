@@ -50,6 +50,25 @@ public class UserController {
                 .body(datosPersonalesService.exportar(currentUser.getId()));
     }
 
+    /**
+     * "Eliminar mi cuenta" (derecho a suprimir, Ley 1581). Pide la contraseña actual
+     * en el cuerpo: {"password": "..."}. Cierra la sesión borrando la cookie.
+     */
+    @DeleteMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> deleteMyAccount(@RequestBody(required = false) Map<String, String> body,
+                                             @AuthenticationPrincipal UserDetailsImpl currentUser,
+                                             HttpServletResponse response) {
+        if (currentUser == null) return ResponseEntity.status(401).body(new MessageResponse("Usuario no autenticado"));
+        try {
+            datosPersonalesService.borrarCuenta(currentUser.getId(), body == null ? null : body.get("password"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+        authCookieService.clearAuthCookie(response);
+        return ResponseEntity.ok(new MessageResponse("Tu cuenta y tus datos fueron eliminados"));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getUserById(@PathVariable String id,
