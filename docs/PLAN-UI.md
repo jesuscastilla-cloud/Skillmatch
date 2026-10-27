@@ -14,7 +14,7 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
 ### 1. Identidad visual
 - Recuperar el **naranja del logo** como acento real (botones de acción, matches altos, logros) en lugar del magenta.
 - **Fondos con textura**: grano sutil y degradados *mesh* suaves con los tres colores de marca (portada y cabeceras). *(Stripe)*
-- **Fotografía real de Cartagena y estudiantes** en WebP dentro de `assets/img` (muralla, Getsemaní, gente trabajando).
+- **Fotografía real de Cartagena y estudiantes** en WebP dentro de `assets/img` (muralla, Getsemaní, gente trabajando). *(Quitado el 27 de octubre de 2026 a pedido de Luis: en su lugar, "Vacantes cerca de ti" en Inicio.)*
 - **Ilustraciones SVG animadas propias** para estados vacíos, onboarding y errores.
 - **Login con personajes que miran** *(idea de Luis, agregada el 2026-10-04)*: las figuras del logo
   siguen al mouse, miran el campo donde se escribe, cierran los ojos con la contraseña, una espía con
@@ -60,7 +60,7 @@ Stack: HTML/CSS/JS puro + Spring Boot + MongoDB Atlas, desplegado gratis en Rend
 - **Historias de éxito** en carrusel infinito que se detiene con hover.
 - **Cinta de logos** de empresas y universidades de Cartagena.
 - **Contadores al entrar en pantalla** con datos reales de `/api/public/stats`.
-- **Mapa SVG de Cartagena** con puntos que laten por barrio (Bocagrande, Manga, Mamonal, Centro).
+- **Mapa SVG de Cartagena** con puntos que laten por barrio (Bocagrande, Manga, Mamonal, Centro). *(Quitado el 27 de octubre de 2026 a pedido de Luis: en su lugar, "Vacantes cerca de ti" en Inicio.)*
 - **Separadores en forma de ola** con desplazamiento lento.
 - **Pie de página grande** con CTA final y logo con brillo al hover.
 

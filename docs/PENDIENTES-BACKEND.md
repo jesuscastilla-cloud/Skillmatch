@@ -38,6 +38,8 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
   `private final ExperienceService experienceService = null;`
 - **Arreglo:** quitar `= null`. Al tener un valor, `@RequiredArgsConstructor` lo deja fuera del constructor y Spring
   nunca lo conecta.
+- **Frontend listo:** "Llenar con mi hoja de vida" (perfil) ya encuentra las experiencias en el PDF, pero no deja
+  agregarlas mientras `GET /experiences` falle. Con el arreglo se habilitan solas, sin tocar el frontend.
 
 ### 1.5 Una empresa puede publicar vacantes a nombre de otra
 - **Qué pasa:** `POST /api/jobs` acepta el `companyId` que venga en el cuerpo sin revisar que sea de quien publica.
@@ -79,7 +81,9 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
   portada. Por eso solo los ve quien tiene sesión (`GET /users/{id}` pide sesión). Para que salgan a los visitantes, en
   el directorio y en las tarjetas de Vacantes (`JobResponse.companyLogo`), conviene que la empresa pueda guardar su
   `logo` y un campo nuevo `coverImage` en `Company` (y `CompanyResponse`). El frontend se cambia a esos campos en
-  cuanto existan.
+  cuanto existan. Mientras tanto (25 de octubre), con sesión las tarjetas de Vacantes, el carrusel de la portada y
+  el directorio buscan el logo en la cuenta de la empresa (`GET /companies/{id}` y `GET /users/{userId}`, una vez
+  por empresa y con copia en la sesión del navegador); con `JobResponse.companyLogo` no harían falta esas consultas.
 - **Frontend:** cuando esté, se agrega el formulario en el perfil de empresa y se vuelven a pedir esos datos en el
   registro.
 
@@ -160,6 +164,17 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
   cerca de un minuto y parece que el sitio no funciona.
 - **Arreglo gratis:** programar en cron-job.org una visita a `https://skillmatch-yz37.onrender.com/api/health` cada
   10 minutos. Las 750 horas gratis al mes alcanzan para un servicio encendido todo el tiempo.
+
+### 2.12 (Opcional) Que la persona sepa que la vacante se cerró
+- **Hoy:** al cerrar una vacante (`JobService.changeStatus`), sus postulaciones no cambian y nadie recibe aviso: la
+  persona sigue viendo su postulación en proceso en "Mis postulaciones". En "Mi empresa", la ventana de cerrar lo
+  explica y deja responder a quienes esperan (pasan a «Rechazada» con `PATCH /api/applications/{id}/status`).
+- **Arreglo propuesto:** agregar `jobStatus` a `ApplicationResponse` para que "Mis postulaciones" muestre "Vacante
+  cerrada". Con 2.1 arreglado, la persona además recibe un aviso cuando le responden.
+- **Opcional:** guardar por qué se cerró (contrató por SkillMatch, por otro medio, ya no la necesita), por ejemplo con
+  `PATCH /api/jobs/{id}/status?status=CERRADA&reason=...`. Serviría en Indicadores ("vacantes cubiertas gracias a
+  SkillMatch"). El frontend preguntaría el motivo en la misma ventana; hoy no lo pregunta porque no habría dónde
+  guardarlo.
 
 ---
 

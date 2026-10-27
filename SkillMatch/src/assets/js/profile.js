@@ -97,14 +97,15 @@ function hideEditButtons() {
     
     // Ocultar botón de editar perfil, la portada, la foto y los "+ Agregar"
     // (no tienen onclick y el selector de arriba no los encontraba)
-    ['editProfileBtn', 'changePasswordBtn', 'editCoverBtn', 'editAvatarBtn', 'addSkillBtn', 'addExperienceBtn', 'addEducationBtn'].forEach(id => {
+    ['editProfileBtn', 'perfilMas', 'changePasswordBtn', 'importarCvBtn', 'editCoverBtn', 'editAvatarBtn', 'addSkillBtn', 'addExperienceBtn', 'addEducationBtn'].forEach(id => {
         const boton = document.getElementById(id);
         if (boton) boton.style.display = 'none';
     });
     
-    // Ocultar la tarjeta de progreso completa (antes quedaba el titulo solo)
-    const profileProgress = document.querySelector('.profile-progress');
-    if (profileProgress) profileProgress.closest('.profile-card').style.display = 'none';
+    // Las cifras de arriba (progreso, postulaciones, guardadas) son de quien
+    // inicio sesion, no de esta persona
+    const cifras = document.getElementById('perfilCifras');
+    if (cifras) cifras.style.display = 'none';
 
     // Las postulaciones son las de quien inicio sesion, no las de este perfil
     const applicationsCard = document.getElementById('applicationsCard');
@@ -203,7 +204,10 @@ function esPerfilAjeno() {
     try { return String(id) !== String(JSON.parse(localStorage.getItem('userData')).id); } catch (e) { return true; }
 }
 
-const AVATAR_COLORS = ['#0369a1','#0891b2','#0d9488','#059669','#7c3aed','#9333ea','#c026d3','#e11d48','#b45309'];
+// Colores de la marca para la foto con iniciales: azul marino, azules, turquesas y naranja
+// oscuro, todos con las letras blancas a 4.7:1 o mas. Antes 4 de 9 eran morado, fucsia o
+// rosado (fuera de la marca; el magenta se cambio por el naranja del logo)
+const AVATAR_COLORS = ['#08203C', '#12365E', '#1F4E8C', '#096670', '#0B7E8C', '#2B66E0', '#A34600'];
 
 function setProfileAvatar(profileImageUrl, fullName) {
     const img = document.getElementById('profileImage');
@@ -303,6 +307,16 @@ function updateProfileChecklist(checkType, value) {
     renderProfileChecklist();
 }
 
+// Como se ofrece cada pendiente en la cifra del progreso: una accion, no un
+// estado ("Experiencia agregada" se leia raro despues de "Te falta:")
+const ACCION_PASO = {
+    'Información básica': 'Completar tus datos',
+    'Teléfono': 'Agregar teléfono',
+    'Habilidades agregadas': 'Agregar habilidades',
+    'Experiencia agregada': 'Agregar experiencia',
+    'Educación agregada': 'Agregar educación'
+};
+
 // Que formulario abre cada pendiente de la lista
 const PASOS_PERFIL = {
     'Información básica': () => openEditModal(),
@@ -322,7 +336,7 @@ function renderProfileChecklist() {
             value
                 ? `<li class="completed"><i data-ico="check"></i> ${key}</li>`
                 : `<li><button type="button" class="progress-step" data-paso="${key}">
-                       <i data-ico="circle"></i> ${key} <i data-ico="plus"></i>
+                       <i data-ico="plus"></i> ${ACCION_PASO[key] || key}
                    </button></li>`
         ).join('');
         if (!checklist.dataset.listo) {
@@ -337,10 +351,49 @@ function renderProfileChecklist() {
     const total = Object.keys(profileChecks).length;
     const hechos = Object.values(profileChecks).filter(Boolean).length;
     const porcentaje = Math.round(hechos / total * 100);
-    const barra = document.getElementById('profileProgress');
+    // El anillo de la cifra: el trazo del circulo mide 100 (pathLength)
+    const anillo = document.getElementById('profileProgress');
     const texto = document.getElementById('progressPercentage');
-    if (barra) barra.style.width = porcentaje + '%';
+    if (anillo) anillo.setAttribute('stroke-dasharray', porcentaje + ' 100');
     if (texto) texto.textContent = porcentaje;
+    const cifras = document.getElementById('perfilCifras');
+    if (cifras) cifras.classList.toggle('perfil-completo', hechos === total);
+}
+
+// Las cifras de arriba (postulaciones, guardadas, habilidades)
+function ponerCifra(id, valor, nota) {
+    const numero = document.getElementById(id);
+    if (numero) numero.textContent = valor;
+    const texto = nota !== undefined && document.getElementById(id + 'Nota');
+    if (texto) texto.textContent = nota;
+}
+
+// Las listas largas (experiencia, educacion) muestran 3 y "Ver todas (N)":
+// antes la tarjeta crecia sin limite con cada una
+const VISIBLES_EN_LISTA = 3;
+function limitarLista(contenedor) {
+    if (!contenedor) return;
+    let boton = contenedor.nextElementSibling;
+    if (!boton || !boton.classList.contains('ver-todas')) {
+        boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'ver-todas';
+        boton.setAttribute('aria-expanded', 'false');
+        boton.setAttribute('aria-controls', contenedor.id);
+        boton.addEventListener('click', () => {
+            boton.setAttribute('aria-expanded', String(contenedor.classList.toggle('lista-abierta')));
+            boton.pintar();
+        });
+        contenedor.after(boton);
+    }
+    // Se cuenta cada vez: la lista se vuelve a pintar al agregar o borrar
+    const total = contenedor.querySelectorAll(':scope > .experience-item, :scope > .education-item').length;
+    boton.pintar = () => {
+        boton.innerHTML = (contenedor.classList.contains('lista-abierta') ? 'Ver menos' : `Ver todas (${total})`) + ' <i data-ico="chevron"></i>';
+    };
+    contenedor.classList.toggle('lista-recortada', total > VISIBLES_EN_LISTA);
+    boton.hidden = total <= VISIBLES_EN_LISTA;
+    boton.pintar();
 }
 
 // Calcular progreso del perfil
@@ -384,6 +437,7 @@ function displaySkills(skills) {
     setUserSkillNames((skills || []).map(skill => skill.name));
 
     const ajeno = esPerfilAjeno();
+    ponerCifra('cifraHabilidades', (skills || []).length);
     if (!skills || skills.length === 0) {
         skillsContainer.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado habilidades' : 'Aún no has agregado habilidades'}</p>`;
         updateProfileChecklist('skills', false);
@@ -507,13 +561,31 @@ async function loadUserExperiences() {
     }
 }
 
+/** Sección vacía del perfil propio: qué falta, por qué sirve y el botón que abre su
+ *  formulario (el mismo de "+ Agregar"; el clic lo escucha data-abre, al cargar la página) */
+function estadoVacio(icono, titulo, porque, abre, accion) {
+    return `<div class="estado-vacio">
+        <span class="estado-vacio-icono"><i data-ico="${icono}"></i></span>
+        <div>
+            <p class="estado-vacio-titulo">${titulo}</p>
+            <p class="estado-vacio-texto">${porque}</p>
+            <button type="button" class="btn btn-primary btn-small" data-abre="${abre}"><i data-ico="plus"></i> ${accion}</button>
+        </div>
+    </div>`;
+}
+
 // Mostrar experiencias
 function displayExperiences(experiences) {
     const container = document.getElementById('experienceContainer');
     
     const ajeno = esPerfilAjeno();
     if (!experiences || experiences.length === 0) {
-        container.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado experiencia laboral' : 'Aún no has agregado experiencia laboral'}</p>`;
+        container.innerHTML = ajeno
+            ? '<p class="empty-text">Esta persona aún no ha agregado experiencia laboral</p>'
+            : estadoVacio('briefcase', 'Aún no has agregado experiencia laboral',
+                'Las empresas ven primero los perfiles con experiencia. Cuenta también los trabajos informales y las prácticas.',
+                'addExperienceBtn', 'Agregar experiencia');
+        limitarLista(container);
         updateProfileChecklist('experience', false);
         return;
     }
@@ -537,6 +609,7 @@ function displayExperiences(experiences) {
             </div>
         `;
     }).join('');
+    limitarLista(container);
     
     updateProfileChecklist('experience', true);
 }
@@ -645,7 +718,12 @@ function displayEducations(educations) {
     
     const ajeno = esPerfilAjeno();
     if (!educations || educations.length === 0) {
-        container.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado estudios' : 'Aún no has agregado información educativa'}</p>`;
+        container.innerHTML = ajeno
+            ? '<p class="empty-text">Esta persona aún no ha agregado estudios</p>'
+            : estadoVacio('cap', 'Aún no has agregado información educativa',
+                'Bachillerato, técnico, cursos o la carrera que estudias: todo cuenta para las vacantes que piden formación.',
+                'addEducationBtn', 'Agregar educación');
+        limitarLista(container);
         updateProfileChecklist('education', false);
         return;
     }
@@ -669,6 +747,7 @@ function displayEducations(educations) {
             </div>
         `;
     }).join('');
+    limitarLista(container);
     
     updateProfileChecklist('education', true);
 }
@@ -868,6 +947,9 @@ async function loadInterestedCompanies() {
             const companies = Array.from(companiesMap.values())
                 .sort((a, b) => b.appliedDate - a.appliedDate);
             misPostulaciones = companies;
+            ponerCifra('cifraPostulaciones', companies.length, companies.length
+                ? `${companies.filter(c => ['PENDIENTE', 'REVISADA'].includes(estadoPostulacion(c))).length} en proceso`
+                : 'Aún no te postulas');
 
             if (companies.length === 0) {
                 companiesContainer.innerHTML = '<p class="empty-text">Aún no te has postulado a ninguna vacante.</p>' +
@@ -897,7 +979,7 @@ async function loadInterestedCompanies() {
                     <div class="company-item-compact">
                         <div class="company-logo-compact">${escaparHtml((company.name || '?').charAt(0))}</div>
                         <div class="company-info-compact">
-                            <h3>${escaparHtml(company.job || company.name)}</h3>
+                            <h3>${company.jobId ? `<a href="oportunidades.html?jobId=${encodeURIComponent(company.jobId)}">${escaparHtml(company.job || company.name)}</a>` : escaparHtml(company.job || company.name)}</h3>
                             <p>${company.job ? escaparHtml(company.name) + ' · ' : ''}${cuando}</p>
                             <p class="status-badge ${clave.toLowerCase()}"><i data-ico="${estado.ico}"></i> ${estado.texto}</p>
                         </div>
@@ -1256,6 +1338,7 @@ function pintarGuardadas(guardadas) {
     const lista = document.getElementById('savedJobsList');
     const cuenta = document.getElementById('savedJobsCount');
     if (cuenta) cuenta.textContent = guardadas.length ? `(${guardadas.length})` : '';
+    ponerCifra('cifraGuardadas', guardadas.length);
 
     if (!guardadas.length) {
         lista.innerHTML = '<p class="empty-text">Aún no has guardado vacantes. Pulsa "Guardar" en las que te interesen y aquí las tienes a mano.</p>' +
@@ -1436,6 +1519,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addSkillBtn) {
         addSkillBtn.addEventListener('click', openAddSkillModal);
     }
+    // El mismo formulario desde la cifra de habilidades de arriba
+    const cifraHabilidad = document.getElementById('cifraAgregarHabilidad');
+    if (cifraHabilidad) cifraHabilidad.addEventListener('click', openAddSkillModal);
+    // Botones de las secciones vacías: hacen clic en su "+ Agregar" (estadoVacio)
+    document.addEventListener('click', e => {
+        const boton = e.target.closest('[data-abre]');
+        const destino = boton && document.getElementById(boton.dataset.abre);
+        if (destino) destino.click();
+    });
 
     // Form agregar skill
     const addSkillForm = document.getElementById('addSkillForm');

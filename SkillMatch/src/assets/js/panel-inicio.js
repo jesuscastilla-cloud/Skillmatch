@@ -254,7 +254,10 @@
             const conPct = todas.filter(v => v.coincidencia && v.coincidencia.pct > 0)
                 .sort((a, b) => b.coincidencia.pct - a.coincidencia.pct);
             if (conPct.length) {
-                nota.textContent = 'Entre las vacantes más recientes, las que más coinciden con tus habilidades.';
+                // Lo que se comparo y lo que salio, con cifras reales (antes no decia cuantas)
+                const n = habilidades.length;
+                nota.textContent = `Comparamos ${n === 1 ? 'tu habilidad' : `tus ${n} habilidades`} con las ${todas.length} vacantes más recientes: ` +
+                    `${conPct.length} ${conPct.length === 1 ? 'pide' : 'piden'} alguna. Estas son las que más coinciden.`;
                 vacantes.innerHTML = conPct.slice(0, 3).map(tarjetaVacante).join('');
             } else {
                 nota.innerHTML = habilidades.length

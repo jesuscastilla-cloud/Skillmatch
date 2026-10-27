@@ -17,6 +17,7 @@
     --ink-muted:      #587089; /* 4.5:1 sobre --bg y 5.1:1 sobre blanco */
     --hairline:       #DCE6F0;
     --hairline-soft:  #EBF1F7;
+    --ring-pista:     rgba(8, 32, 60, .08); /* pista del anillo de compatibilidad: translucida, va sobre cualquier fondo */
 
     --bg:             #EDF2F8;
     --bg-deep:        #061A31;
@@ -53,9 +54,6 @@
     --verde-soft:     #E0F4EC;
     --verde-texto:    #0D7050; /* verde legible como texto sobre --verde-soft */
     --sea-luz:        #5FD0DC; /* turquesa luminoso sobre superficies oscuras */
-    --mapa-tierra:    #0E2D4C; /* tierra del mapa de Cartagena, sobre --bg-deep */
-    --mapa-costa:     rgba(95, 208, 220, .45); /* linea de costa: --sea-luz suave */
-    --mapa-laguna:    #0B3A50; /* agua de la Cienaga de la Virgen, distinta del mar */
     --personaje-azul:     #2B66E0; /* figura azul del logo, aclarada para verse sobre --bg-deep */
     --personaje-turquesa: #00B4CC; /* figura turquesa del logo */
     --rojo:           #C62B3E;
@@ -346,6 +344,23 @@ header .logo img { translate: 0 -15%; }
     to   { transform: scaleX(1); opacity: 1; }
 }
 
+/* Linea que se desliza bajo el menu (ui.js, seccion 27). Solo con mouse y sin
+   "reducir movimiento"; entonces la linea fija de cada enlace no se dibuja.
+   Mide 100 px y el JS la estira con scaleX hasta el ancho del enlace. */
+.nav-left:has(.con-linea) { position: relative; }
+.nav-links.con-linea a.active-nav::after,
+.nav-links.con-linea a.active::after { display: none; }
+.nav-linea {
+    position: absolute; left: 0; top: 0;
+    width: 100px; height: 2.5px;
+    border-radius: var(--r-pill);
+    background: var(--sea);
+    transform-origin: left center;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .35s var(--ease-out), opacity .2s var(--ease);
+}
+
 /* Interruptor de tema — lo inyecta ui.js dentro de la barra */
 .theme-toggle {
     display: inline-flex;
@@ -436,6 +451,25 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .tabbar a.is-active { color: var(--sea-deep); background: var(--sea-light); }
 .tabbar a:active { transform: scale(.94); }
 
+/* Una sola pastilla bajo la pestana activa (ui.js, construirTabbar): al
+   tocar otra se desliza hasta ella mientras carga la pagina siguiente, como
+   la linea del menu en el escritorio. Las pestanas son columnas iguales:
+   --i dice en cual va y se mueve con transform. */
+.tabbar-marca {
+    position: absolute;
+    top: var(--s2); left: var(--s2);
+    bottom: calc(var(--s2) + env(safe-area-inset-bottom));
+    width: calc((100% - 2 * var(--s2) - (var(--pestanas) - 1) * var(--s1)) / var(--pestanas));
+    border-radius: var(--r-md);
+    background: var(--sea-light);
+    transform: translateX(calc(var(--i, 0) * (100% + var(--s1))));
+    transition: transform var(--dur-viaje) var(--ease-viaje), opacity .2s var(--ease);
+    pointer-events: none;
+}
+.tabbar.con-marca a.is-active { background: transparent; }
+.tabbar.con-marca a.es-destino { color: var(--sea-deep); }
+.tabbar.con-marca:has(a.es-destino) a.is-active:not(.es-destino) { color: var(--ink-muted); }
+
 /* ---------- 8. Botones ---------- */
 
 /* Solo .btn: si se escribe a.btn, gana a las variantes (.btn-outline,
@@ -502,6 +536,18 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .btn-primary-modal.btn-peligro:hover { filter: none; opacity: .92; }
 [data-theme="dark"] .btn-primary-modal.btn-peligro { color: var(--surface-inverse); }
 .confirmar-texto { margin-bottom: var(--s5); color: var(--ink-2); line-height: 1.6; }
+/* Cerrar una vacante: lo que pasa, antes de confirmar (perfil-empresa.js) */
+.cierre-consecuencias { list-style: none; margin: calc(var(--s3) * -1) 0 var(--s5); padding: 0; display: grid; gap: var(--s3); }
+.cierre-consecuencias li { display: flex; gap: var(--s3); align-items: flex-start; color: var(--ink-2); line-height: 1.5; }
+.cierre-consecuencias .ico { flex: 0 0 auto; margin-top: 2px; color: var(--sea-deep); }
+.cierre-esperan {
+    margin-bottom: var(--s5); padding: var(--s4);
+    border-radius: var(--r-md); background: var(--sol-soft);
+    color: var(--ink); line-height: 1.55;
+}
+.cierre-esperan p { margin: 0 0 var(--s2); }
+.cierre-esperan .checkbox-label { margin: 0; padding: 6px 0; font-weight: 600; }
+.cierre-esperan .checkbox-label:hover { background: none; }
 
 /* El naranja se reserva para la accion decisiva de cada pantalla.
    Texto en azul marino: el blanco sobre este naranja no se lee bien (2.7:1). */
@@ -662,6 +708,11 @@ select, textarea {
     color: var(--ink);
     transition: border-color .16s var(--ease), box-shadow .16s var(--ease), background-color .16s var(--ease);
 }
+/* En iPhone, tocar un campo con letra de menos de 16 px agranda toda la página */
+@media (pointer: coarse) {
+    :is(input[type="text"], input[type="email"], input[type="password"], input[type="tel"], input[type="url"],
+        input[type="number"], input[type="date"], input[type="search"], input[type="month"], select, textarea) { font-size: max(16px, var(--t-base)); }
+}
 /* Edge dibuja su propio ojo dentro de las contrasenas: junto al boton de la
    pagina salian dos ojos (captura de Luis en login-usuario) */
 input::-ms-reveal, input::-ms-clear { display: none; }
@@ -804,12 +855,27 @@ input[type="radio"]:checked { box-shadow: inset 0 0 0 4px var(--surface); }
 }
 
 .checkbox-text { font-size: var(--t-base); color: var(--ink-2); line-height: 1.5; }
+/* Cuantas vacantes cargadas quedarian con cada opcion (oportunidades.js, contarOpciones) */
+.opcion-cuenta { margin-left: auto; padding-left: var(--s2); font-size: var(--t-xs); color: var(--ink-muted); font-variant-numeric: tabular-nums; line-height: 1.5; padding-top: 2px; }
+/* Sin resultados: texto atenuado con color (con opacidad bajaba de 4.5:1) */
+.checkbox-label.sin-resultados .checkbox-text { color: var(--ink-muted); }
+
+/* Etiquetas de la tarjeta de vacante: "Nueva" y "Cierra en N dias" */
+.etiquetas-vacante { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.etiqueta-vacante {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 9px; border-radius: var(--r-pill);
+    font-size: var(--t-xs); font-weight: 600; line-height: 1.5;
+}
+.etiqueta-vacante .ico { width: 13px; height: 13px; }
+.etiqueta-vacante.es-nueva { background: var(--sea-light); color: var(--sea-deep); }
+.etiqueta-vacante.es-cierra { background: var(--sol-soft); color: var(--sol-deep); }
 /* Icono y texto del filtro en la misma linea (el reset pone los svg en bloque) */
 .checkbox-text:has(.ico) { display: inline-flex; align-items: center; gap: var(--s2); }
 .checkbox-text .ico { color: var(--ink-muted); }
 
 /* Deslizador (salario): color de marca y zona tactil comoda */
-input[type="range"] { accent-color: var(--sea); cursor: pointer; }
+input[type="range"] { accent-color: var(--sea); cursor: pointer; min-height: 24px; }
 @media (pointer: coarse) { input[type="range"] { min-height: 44px; } }
 
 /* Buscador principal */
@@ -831,6 +897,10 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     padding-left: var(--s5) !important;
 }
 .search-input-main:focus { box-shadow: none !important; }
+/* El campo va dentro de la cápsula y no lleva anillo propio: con el foco, el
+   anillo lo lleva la cápsula entera (antes no se veía dónde estaba el foco) */
+.search-bar-main:has(.search-input-main:focus),
+.search-box:has(.search-input:focus) { box-shadow: 0 0 0 2px var(--sea), 0 0 0 6px var(--sea-light), var(--sh-3); }
 .btn-search-main {
     padding: 11px var(--s6);
     border-radius: var(--r-pill);
@@ -939,6 +1009,9 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
 
 /* ---- Vacantes: detalle, postulacion y "cargar mas" ---- */
 .job-title-link { all: unset; cursor: pointer; }
+/* Títulos que son enlaces: 2 px de relleno arriba y abajo los llevan a 24 px de
+   alto (WCAG 2.5.8); el margen negativo evita que la línea crezca */
+.job-title-link, .empresa-vacante h3 a, .panel-vacante h3 a, .panel-postulacion h3 a { padding-block: 2px; margin-block: -2px; }
 .job-title-link:hover { color: var(--sea-deep); text-decoration: underline; text-underline-offset: 3px; }
 .job-title-link:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; border-radius: 4px; }
 .btn-ver-detalle {
@@ -992,6 +1065,8 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; }
     .btn-small, .btn-mini-action, .btn-offer-action { min-height: 44px; }
     /* Barra superior: logo y botones de sesion; campo para subir archivos */
     .logo a, .btn-login, .btn-register, input[type="file"] { min-height: 44px; }
+    /* "Ver detalle" de cada vacante */
+    .btn-ver-detalle { min-height: 44px; }
     .btn-remove-skill, .project-link { position: relative; }
     .btn-remove-skill::after, .project-link::after { content: ""; position: absolute; inset: -12px; }
 }
@@ -1057,6 +1132,9 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     overflow: hidden;
 }
 .connection-avatar-circle, .conversation-avatar, .candidate-mini-avatar { border-radius: 50%; }
+/* El logo de la empresa en lugar de la inicial, cuando lo tiene (ui.js, seccion 28) */
+.company-logo-opp > img, .cv-logo > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cv-logo.con-logo { overflow: hidden; }
 
 .card-meta, .result-meta, .card-info, .offer-card-info, .connection-info, .result-salary {
     display: flex;
@@ -1096,28 +1174,36 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: conic-gradient(
-        var(--ring-color, var(--sea)) calc(var(--pct) * 1%),
-        var(--hairline-soft) 0
-    );
     animation: ring-draw .9s var(--ease-out) both;
 }
+/* El aro va en ::before con el centro hueco (mascara): se ve lo que hay detras, sea una tarjeta de
+   vidrio o el recuadro turquesa del detalle. Antes era un disco con un circulo blanco encima, que
+   sobre el vidrio se veia como un parche blanco. La pista es translucida para cualquier fondo.
+   --pct esta registrado sin herencia (@property, abajo): el ::before lo hereda a proposito */
 .match-ring::before {
     content: "";
     position: absolute;
-    inset: 5px;
+    inset: 0;
+    --pct: inherit;
     border-radius: 50%;
-    background: var(--surface);
+    background: conic-gradient(
+        var(--ring-color, var(--sea)) calc(var(--pct) * 1%),
+        var(--ring-pista) 0
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5.5px), #000 calc(100% - 5px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 5.5px), #000 calc(100% - 5px));
 }
 .match-ring > span {
     position: relative;
     font-family: var(--font-display);
     font-size: var(--t-sm);
     font-weight: 700;
-    color: var(--ring-color, var(--sea-deep));
+    color: var(--ring-texto, var(--ring-color, var(--sea-deep)));
     letter-spacing: -0.03em;
 }
-.match-ring[data-level="alto"] { --ring-color: var(--naranja); }
+/* El anillo de los matches altos sigue naranja brillante; el numero, en el naranja para texto: con
+   #FF7618 sobre blanco quedaba en 2.7 a 1 (lo encontro la medicion con pixeles) */
+.match-ring[data-level="alto"] { --ring-color: var(--naranja); --ring-texto: var(--naranja-texto); }
 .match-ring[data-level="medio"] { --ring-color: var(--sea); }
 .match-ring[data-level="bajo"] { --ring-color: var(--ink-muted); }
 .match-ring-sm { width: 44px; height: 44px; }
@@ -1182,7 +1268,7 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .status-badge.cerrada                  { background: var(--hairline-soft); color: var(--ink-muted); }
 /* Las ofertas del perfil de empresa usan .active/.inactive ("Activa" salía gris) */
 .status-badge.active   { background: var(--verde-soft); color: var(--verde-texto); }
-.status-badge.inactive { background: var(--hairline-soft); color: var(--ink-muted); }
+.status-badge.inactive { background: var(--hairline-soft); color: var(--ink-muted); opacity: 1; } /* sin el .inactive generico (opacidad .55): "Cerrada" no se leia */
 
 .role-tag { background: var(--sea-light); color: var(--sea-deep); }
 
@@ -1209,6 +1295,7 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .btn-remove-skill {
     display: inline-flex;
     align-items: center;
+    min-height: 24px;
     margin-left: 5px;
     color: var(--ink-muted);
     transition: color .15s var(--ease);
@@ -1223,8 +1310,8 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     padding: 0 5px;
     border-radius: var(--r-pill);
     background: var(--naranja);
-    color: #fff;
-    font-size: 11px;
+    color: var(--surface-inverse); /* azul marino: el blanco sobre naranja queda en 2.7:1 */
+    font-size: 12px;
     font-weight: 700;
     line-height: 1;
 }
@@ -1525,6 +1612,17 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     border-top: 1px solid var(--hairline-soft);
     background: var(--surface-sunk);
 }
+/* Ventanas de UI.ventana (cambiar contrasena, confirmar, cerrar vacante, foto
+   y portada de la empresa, hoja de vida): los botones van dentro del cuerpo,
+   que tiene margen, y la franja quedaba como una caja suelta. Se estira hasta
+   los bordes y el fondo, como en las demas ventanas, y se queda abajo al
+   hacer scroll */
+.modal-body > .modal-actions,
+.modal-body > form > .modal-actions {
+    position: sticky;
+    bottom: calc(var(--s5) * -1);
+    margin: var(--s5) calc(var(--s5) * -1) calc(var(--s5) * -1);
+}
 /* Formularios del perfil de usuario: van directo en la ventana, sin
    .modal-body, y los campos quedaban pegados al borde. El formulario hace
    de cuerpo: margen interior, scroll si no cabe y botones siempre abajo. */
@@ -1581,6 +1679,49 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .editor-soltar > span { font-size: var(--t-sm); color: var(--ink-3); }
 .editor-enlace { color: var(--sea-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .editor-soltar small { margin-top: 4px; font-size: var(--t-xs); color: var(--ink-muted); }
+/* ---------- Llenar el perfil con la hoja de vida (leer-hoja-de-vida.js) ----------
+   Lo dudoso va en ambar con la etiqueta "Revisa" (el color nunca va solo) */
+.lector-intro { color: var(--ink-2); line-height: 1.6; }
+.lector-soltar { margin-top: var(--s4); }
+.lector-privado { display: flex; align-items: flex-start; gap: var(--s2); margin-top: var(--s4); font-size: var(--t-sm); color: var(--ink-3); }
+.lector-privado .ico { flex: 0 0 auto; margin-top: 2px; color: var(--sea-deep); }
+.lector-leyendo { padding: var(--s5) 0; text-align: center; color: var(--ink-2); }
+.lector-aviso { margin-top: var(--s4); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--sol-soft); color: var(--ink); font-size: var(--t-sm); line-height: 1.5; }
+.lector-nota { margin-top: 6px; font-size: var(--t-sm); color: var(--ink-3); line-height: 1.5; }
+.lector-grupo { min-width: 0; margin: var(--s5) 0 0; padding: 0; border: 0; }
+.lector-grupo legend { padding: 0; margin-bottom: var(--s2); font-family: var(--font-display); font-size: var(--t-md); font-weight: 700; color: var(--ink); }
+.lector-item {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s3);
+    margin-top: var(--s2); padding: var(--s3) var(--s4);
+    border: 1px solid var(--hairline-soft); border-radius: var(--r-md);
+}
+.lector-item.revisa { border-color: var(--sol); border-left-width: 4px; }
+.lector-nombre { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); font-weight: 600; color: var(--ink); cursor: pointer; }
+.lector-etiqueta { padding: 1px 8px; border-radius: var(--r-pill); background: var(--sol-soft); color: var(--sol-deep); font-size: var(--t-xs); font-weight: 700; }
+.lector-campo { margin-top: var(--s2); }
+.lector-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2) var(--s3); margin-top: var(--s2); }
+.lector-campos > label { display: flex; flex-direction: column; gap: 4px; font-size: var(--t-xs); font-weight: 600; color: var(--ink-3); }
+/* El campo no hereda la negrita de su etiqueta (el tamaño lo deja como esta: 16 px en celular) */
+.lector-campos :is(input, textarea) { font-weight: 400; color: var(--ink); }
+.lector-campos .lector-ancho { grid-column: 1 / -1; }
+.lector-campos .lector-actual { flex-direction: row; align-items: center; margin: 0; font-size: var(--t-sm); font-weight: 500; }
+.lector-chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.lector-chip {
+    display: inline-flex; align-items: center; gap: var(--s2);
+    min-height: 40px; padding: 6px var(--s3);
+    border: 1px solid var(--hairline); border-radius: var(--r-pill);
+    font-size: var(--t-sm); color: var(--ink-2); cursor: pointer;
+}
+.lector-chip:has(input:checked) { border-color: var(--sea); background: var(--sea-light); color: var(--ink); }
+.lector-chip.revisa { border-style: dashed; border-color: var(--sol); }
+.lector-chip input[type="checkbox"] { margin: 0; }
+.lector-nivel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); margin-top: var(--s4); font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); }
+.lector-nivel select { width: auto; min-width: 12rem; }
+/* Los botones quedan siempre a la vista al bajar por la lista */
+.lector-acciones { flex-wrap: wrap; align-items: center; }
+.lector-cuenta { margin-right: auto; font-size: var(--t-sm); color: var(--ink-3); }
+@media (max-width: 600px) { .lector-campos { grid-template-columns: minmax(0, 1fr); } }
+
 /* Encuadre: la foto se mueve dentro del marco (solo transform) */
 .editor-encuadre { display: flex; flex-direction: column; gap: var(--s3); }
 .editor-marco {
@@ -2146,6 +2287,9 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .cf-paso h3 { font-size: var(--t-xl); margin: var(--s2) 0 var(--s3); }
 .cf-paso p { font-size: var(--t-md); color: var(--ink-3); max-width: 46ch; }
 .cf-layout.js-scroll .cf-paso:not(.is-activo) { opacity: .35; }
+/* Atenuados quedan por debajo de 4.5:1 (a propósito: se leen al llegar a ellos).
+   Quien pidió más contraste en su sistema los ve todos completos. */
+@media (prefers-contrast: more) { .cf-layout.js-scroll .cf-paso:not(.is-activo) { opacity: 1; } }
 
 @media (max-width: 1080px) {
     .cf-layout { grid-template-columns: 1fr; gap: 0; }
@@ -2154,217 +2298,6 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     .cf-escenario { aspect-ratio: 16 / 10; }
     .cf-escena { padding: var(--s5); gap: var(--s3); }
     .cf-paso { min-height: 55vh; }
-}
-
-/* ---- Fase 2: mapa SVG de Cartagena con puntos que laten por barrio ----
-   El dibujo es SVG; los puntos y los nombres son HTML encima, ubicados en %
-   (--x, --y), para que el texto conserve su tamaño legible en el celular.
-   index.js marca la zona activa (.is-activa) en la lista y en el mapa. */
-.mapa-section { padding: var(--s9) 0; background: var(--surface); }
-.mapa-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
-    gap: var(--s7);
-    align-items: center;
-}
-
-.mapa-ctg {
-    position: relative;
-    overflow: hidden;
-    border-radius: var(--r-lg);
-    background: var(--bg-deep);
-    box-shadow: var(--sh-4);
-}
-.mapa-lienzo { position: relative; aspect-ratio: 6 / 5; }
-.mapa-lienzo svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.mapa-mar { fill: url(#mapa-mar-puntos); }
-#mapa-mar-puntos circle { fill: rgba(255,255,255,.08); }
-.mapa-tierra {
-    fill: var(--mapa-tierra);
-    stroke: var(--mapa-costa);
-    stroke-width: 1.5;
-    stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
-}
-.mapa-laguna {
-    fill: var(--mapa-laguna);
-    stroke: var(--mapa-costa);
-    stroke-width: 1.5;
-    vector-effect: non-scaling-stroke;
-}
-/* Nota debajo del dibujo (no encima: en el celular tapaba los nombres) */
-.mapa-nota {
-    padding: var(--s2) var(--s4) var(--s3);
-    border-top: 1px solid rgba(255,255,255,.08);
-    font-size: var(--t-xs);
-    color: rgba(255,255,255,.6);
-}
-
-/* Brillo naranja: ocupa todo el lienzo y se traslada (solo transform) para
-   que su centro quede sobre la zona activa (--fx, --fy en %). */
-.mapa-foco {
-    position: absolute; inset: 0;
-    background: radial-gradient(circle 120px at 50% 50%, rgba(255,118,24,.3), transparent);
-    opacity: 0;
-    transform: translate(calc((var(--fx, 50) - 50) * 1%), calc((var(--fy, 50) - 50) * 1%));
-    transition: transform .8s var(--ease-out), opacity .5s var(--ease-out);
-    pointer-events: none;
-}
-.mapa-lienzo.con-foco .mapa-foco { opacity: 1; }
-
-/* Nombres del agua y de la isla: decorativos, en cursiva */
-.mapa-agua, .mapa-punto { position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); }
-.mapa-agua {
-    transform: translate(-50%, -50%);
-    max-width: 9em;
-    font-size: var(--t-xs);
-    font-style: italic;
-    line-height: 1.25;
-    letter-spacing: .02em;
-    text-align: center;
-    color: rgba(255,255,255,.55);
-    pointer-events: none;
-}
-
-/* Cada punto es una caja de 36 px centrada en su coordenada (zona para el mouse) */
-.mapa-punto {
-    display: grid; place-items: center;
-    width: 36px; height: 36px;
-    translate: -50% -50%;
-    cursor: pointer;
-}
-.mapa-punto-marca {
-    position: relative;
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    background: var(--sea-luz);
-    box-shadow: 0 0 0 3px var(--bg-deep);
-    transition: transform .35s var(--ease-out);
-}
-/* Latido: un anillo que crece y se desvanece; cada punto con su retraso */
-.mapa-punto-marca::before, .mapa-punto-marca::after {
-    content: "";
-    position: absolute; inset: 0;
-    border-radius: 50%;
-}
-.mapa-punto-marca::before {
-    background: inherit;
-    animation: mapa-latido 2.6s var(--ease-out) infinite;
-    animation-delay: calc(var(--orden) * 650ms);
-}
-.mapa-punto-marca::after { background: var(--naranja); opacity: 0; transition: opacity .3s var(--ease-out); }
-@keyframes mapa-latido {
-    0%       { transform: scale(1);   opacity: .6; }
-    70%, 100% { transform: scale(3.4); opacity: 0; }
-}
-
-.mapa-punto-nombre {
-    position: absolute;
-    padding: 3px 10px;
-    border: 1px solid rgba(255,255,255,.16);
-    border-radius: var(--r-pill);
-    background: rgba(6,26,49,.8);
-    color: #fff;
-    font-size: var(--t-xs); font-weight: 700;
-    white-space: nowrap;
-    isolation: isolate;
-}
-/* Capa naranja del nombre activo: aparece con opacidad, no con color */
-.mapa-punto-nombre::before {
-    content: "";
-    position: absolute; inset: -1px;
-    z-index: -1;
-    border-radius: inherit;
-    background: var(--naranja);
-    opacity: 0;
-    transition: opacity .3s var(--ease-out);
-}
-.mapa-punto[data-lado="izq"]    .mapa-punto-nombre { right: 100%; top: 50%; transform: translateY(-50%); }
-.mapa-punto[data-lado="der"]    .mapa-punto-nombre { left: 100%;  top: 50%; transform: translateY(-50%); }
-.mapa-punto[data-lado="arriba"] .mapa-punto-nombre { bottom: 100%; left: 50%; transform: translateX(-50%); }
-
-/* Zona activa: el punto crece y se vuelve naranja, el latido tambien */
-.mapa-punto.is-activa { z-index: 1; }
-.mapa-punto.is-activa .mapa-punto-marca { transform: scale(1.35); }
-.mapa-punto.is-activa .mapa-punto-marca::after,
-.mapa-punto.is-activa .mapa-punto-nombre::before { opacity: 1; }
-.mapa-punto.is-activa .mapa-punto-marca::before { background: var(--naranja); }
-.mapa-punto.is-activa .mapa-punto-nombre { color: var(--surface-inverse); border-color: transparent; }
-
-/* Entrada: los puntos aparecen uno tras otro cuando el mapa se ve (index.js).
-   "backwards" solo aplica el inicio durante el retraso; al terminar mandan
-   los estilos normales (por ejemplo, el punto activo agrandado). */
-.mapa-ctg.mapa-espera .mapa-punto { opacity: 0; }
-.mapa-ctg.is-entrando .mapa-punto-marca {
-    animation: punto-aparece .55s var(--ease-out) backwards;
-    animation-delay: calc(var(--orden) * 120ms + 150ms);
-}
-.mapa-ctg.is-entrando .mapa-punto-nombre {
-    animation: nombre-aparece .5s var(--ease-out) backwards;
-    animation-delay: calc(var(--orden) * 120ms + 300ms);
-}
-@keyframes punto-aparece  { from { opacity: 0; transform: scale(0); } }
-@keyframes nombre-aparece { from { opacity: 0; } }
-
-/* Lista de zonas: todo el texto siempre visible; la activa se marca */
-.mapa-zonas { display: flex; flex-direction: column; gap: var(--s3); }
-.mapa-zona {
-    position: relative;
-    display: flex; gap: var(--s4); align-items: flex-start;
-    padding: var(--s4) var(--s5);
-    border: 1px solid var(--hairline);
-    border-radius: var(--r-md);
-    background: var(--surface);
-    cursor: pointer;
-    transition: transform .25s var(--ease-out);
-}
-/* Barra naranja a la izquierda de la zona activa (crece con scaleY) */
-.mapa-zona::before {
-    content: "";
-    position: absolute;
-    left: -1px; top: 14px; bottom: 14px;
-    width: 3px;
-    border-radius: var(--r-pill);
-    background: var(--naranja);
-    transform: scaleY(0);
-    transition: transform .3s var(--ease-out);
-}
-.mapa-zona.is-activa { border-color: transparent; box-shadow: var(--sh-3); transform: translateX(4px); }
-.mapa-zona.is-activa::before { transform: scaleY(1); }
-.mapa-zona-icono {
-    display: grid; place-items: center; flex: 0 0 auto;
-    width: 40px; height: 40px;
-    border-radius: var(--r-sm);
-    background: var(--sea-light); color: var(--sea-deep);
-}
-.mapa-zona.is-activa .mapa-zona-icono { background: var(--naranja-soft); color: var(--naranja-texto); }
-.mapa-zona h3 { font-size: var(--t-md); line-height: 1.3; }
-/* El boton ocupa toda la tarjeta con ::after: se puede tocar en cualquier parte */
-.mapa-zona-btn { padding: 0; font: inherit; color: var(--ink); text-align: left; }
-.mapa-zona-btn::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-.mapa-zona-btn:focus-visible { outline: none; }
-.mapa-zona-btn:focus-visible::after { outline: 2.5px solid var(--sea); outline-offset: 3px; }
-.mapa-zona-sector { margin-top: 2px; font-size: var(--t-sm); font-weight: 600; color: var(--sea-deep); }
-.mapa-zona.is-activa .mapa-zona-sector { color: var(--naranja-texto); }
-.mapa-zona-texto { margin-top: var(--s1); font-size: var(--t-sm); color: var(--ink-3); }
-.mapa-enlace { min-height: 44px; margin-top: var(--s3); }
-
-[data-theme="dark"] .mapa-ctg { box-shadow: var(--sh-4), 0 0 0 1px rgba(255,255,255,.06); }
-
-@media (max-width: 1080px) {
-    .mapa-layout { grid-template-columns: 1fr; gap: var(--s6); }
-    .mapa-ctg { width: 100%; max-width: 640px; margin-inline: auto; }
-    .mapa-zonas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
-    .mapa-zona.is-activa { transform: none; }
-}
-@media (max-width: 520px) {
-    /* En el celular el lienzo es pequeño: se quita el nombre de la ciénaga */
-    .mapa-agua-cienaga { display: none; }
-    .mapa-agua { max-width: 6em; } /* "Tierra / Bomba" en dos lineas: no choca con la bahia */
-    .mapa-punto-nombre { padding: 2px 8px; }
-}
-@media (prefers-reduced-motion: reduce) {
-    .mapa-punto-marca::before { display: none; }
 }
 
 .section { padding: var(--s9) 0; }
@@ -2750,6 +2683,35 @@ footer.pie > .container { position: relative; z-index: 1; }
 .campo-clave-ver[aria-pressed="false"] .ico:last-child,
 .campo-clave-ver[aria-pressed="true"] .ico:first-child { display: none; }
 .campo-clave-ver:focus-visible { outline-offset: -4px; }
+
+/* Contrasena nueva (ui.js, seccion 26): fuerza en palabras, lo que se pide y si
+   coinciden. El color nunca va solo: siempre hay texto o palomita. */
+.clave-medidor { margin-top: var(--s2); }
+.clave-barra { height: 6px; border-radius: var(--r-pill); background: var(--hairline-soft); overflow: hidden; }
+.clave-barra > span {
+    display: block; height: 100%;
+    border-radius: inherit;
+    background: var(--rojo);
+    transform-origin: left center;
+    transform: scaleX(0);
+}
+@media (prefers-reduced-motion: no-preference) { .clave-barra > span { transition: transform .3s var(--ease-out); } }
+.clave-medidor[data-nivel="2"] .clave-barra > span { background: var(--sol); }
+.clave-medidor[data-nivel="3"] .clave-barra > span { background: var(--verde); }
+.clave-fuerza { min-height: 1.5em; margin: 6px 0 0; font-size: var(--t-sm); font-weight: 600; color: var(--rojo); }
+.clave-medidor[data-nivel="2"] .clave-fuerza { color: var(--sol-deep); }
+.clave-medidor[data-nivel="3"] .clave-fuerza { color: var(--verde-texto); }
+.clave-reglas { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px var(--s4); font-size: var(--t-sm); color: var(--ink-3); }
+.clave-reglas li { display: inline-flex; align-items: center; gap: 6px; }
+.clave-reglas small { color: var(--ink-muted); font-size: var(--t-xs); }
+/* La palomita solo se ve cuando se cumple; antes, un circulo vacio */
+.clave-reglas .ico { width: 16px; height: 16px; padding: 2px; border: 1.5px solid var(--hairline); border-radius: 50%; color: transparent; }
+.clave-reglas li.cumple { color: var(--verde-texto); }
+.clave-reglas li.cumple .ico { border-color: var(--verde); background: var(--verde); color: #fff; }
+.clave-coinciden { display: flex; align-items: center; gap: 6px; min-height: 1.5em; margin: 6px 0 0; font-size: var(--t-sm); font-weight: 600; }
+.clave-coinciden .ico { width: 16px; height: 16px; }
+.clave-coinciden[data-estado="si"] { color: var(--verde-texto); }
+.clave-coinciden[data-estado="no"] { color: var(--rojo); }
 
 /* Aviso de Bloq Mayus (lo agrega login-personajes.js): flota en la fila de
    la etiqueta "Contrasena", a la derecha. Ese lugar esta libre en los tres
@@ -3383,9 +3345,31 @@ footer.pie > .container { position: relative; z-index: 1; }
 
 /* Vacantes guardadas (perfil): el titulo abre la vacante y la X la quita */
 .guardada-item { cursor: default; align-items: flex-start; }
-.guardada-item h3 a { color: inherit; text-decoration: none; overflow-wrap: break-word; }
-.guardada-item h3 a:hover { color: var(--sea-deep); text-decoration: underline; }
+/* El título lleva a la vacante (guardadas y postulaciones) */
+.company-info-compact h3 a { color: inherit; text-decoration: none; overflow-wrap: break-word; padding-block: 2px; }
+.company-info-compact h3 a:hover { color: var(--sea-deep); text-decoration: underline; }
 .guardada-item .company-info-compact p { font-size: var(--t-sm); color: var(--ink-muted); }
+/* Postulaciones y guardadas de la columna lateral, parejas: el texto de cada
+   postulacion heredaba 15 px (las guardadas, 13) y con esa letra el "·" se
+   quedaba colgando al final de la linea; y las filas iban 16 px mas adentro
+   que el titulo de su tarjeta */
+.profile-right-sidebar .company-item-compact { padding-inline: 0; }
+.profile-right-sidebar .company-info-compact h3 { font-size: var(--t-base); font-weight: 600; line-height: 1.3; }
+/* Con la letra de 15 px el enlace respondia en 22 px de alto (la auditoria pide 24): mas relleno
+   arriba y abajo, que en un texto en linea no empuja nada */
+.profile-right-sidebar .company-info-compact h3 a { padding-block: 4px; }
+.profile-right-sidebar .company-info-compact p:not(.status-badge) { font-size: var(--t-sm); color: var(--ink-muted); }
+
+/* Experiencia y educacion vacias (perfil propio): el porque y el boton que
+   abre su formulario; antes solo decia "Aun no has agregado..." */
+.estado-vacio { display: flex; align-items: flex-start; gap: var(--s4); }
+.estado-vacio-icono {
+    flex: 0 0 auto; display: grid; place-items: center; width: 48px; height: 48px;
+    border-radius: 16px; background: var(--sea-light); color: var(--sea-deep);
+}
+.estado-vacio-icono .ico { width: 22px; height: 22px; }
+.estado-vacio-titulo { margin: 0 0 2px; font-weight: 700; color: var(--ink); }
+.estado-vacio-texto { max-width: 46ch; margin: 0 0 var(--s3); font-size: var(--t-sm); color: var(--ink-muted); }
 .btn-quitar-guardada {
     flex: 0 0 auto;
     display: inline-grid; place-items: center;
@@ -3407,25 +3391,145 @@ footer.pie > .container { position: relative; z-index: 1; }
 }
 .recommend-hint .ico { flex: 0 0 auto; color: var(--sol-deep); margin-top: 2px; }
 .recommend-hint a { color: var(--sea-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+/* "Comparamos tus 3 habilidades con cada vacante...": el trabajo del match, con cifras reales */
+.match-resumen {
+    display: flex; gap: var(--s2); align-items: flex-start;
+    margin-bottom: var(--s3); padding: var(--s3);
+    border-radius: var(--r-md); background: var(--sea-light);
+    color: var(--ink-2); font-size: var(--t-sm); max-width: none;
+}
+.match-resumen .ico { flex: 0 0 auto; color: var(--sea-deep); margin-top: 2px; }
+.match-resumen strong { color: var(--sea-deep); }
 /* Estrellas del nivel de cada habilidad, rellenas con el naranja del logo */
 .skill-level .ico { fill: currentColor; color: var(--naranja-texto); }
 
-/* Perfil de usuario en 3 columnas, como el de empresa: tarjeta, estadisticas,
-   habilidades y progreso a la izquierda; secciones al centro; recomendaciones
-   a la derecha. Antes eran 2 columnas para 3 bloques: el centro caia en la
-   columna angosta y la derecha bajaba a otra fila. */
+/* Perfil de persona en 2 columnas (diseno A, elegido por Luis el 25 de
+   octubre): la ancha con experiencia, educacion y vacantes para ti; la lateral
+   con habilidades, postulaciones y guardadas. Antes eran 3 columnas angostas
+   (300 / centro / 300): la derecha crecia sin fin y el centro quedaba casi
+   vacio. Arriba van las cifras (seccion "Panel del perfil", mas abajo). */
 .profile-layout {
     display: grid;
-    grid-template-columns: 300px minmax(0, 1fr) 300px;
-    gap: var(--s6);
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: var(--s5);
     align-items: start;
 }
-/* Escritorio mediano: las recomendaciones bajan debajo de las secciones */
-@media (width > 1080px) and (width < 1280px) {
-    .profile-layout { grid-template-columns: 300px minmax(0, 1fr); }
-    .profile-right-sidebar { grid-column: 2; position: static; }
-}
+/* La lateral ahora es mas alta que la pantalla: pegada arriba, su parte de
+   abajo no se veia hasta el final (lo mismo que paso con la izquierda) */
+.perfil-panel .profile-right-sidebar { position: static; }
+/* La lateral separa sus tarjetas con gap, como la ancha: antes cada una
+   traia su margen de abajo y Habilidades (.profile-card, que venia de la
+   antigua columna izquierda) no tenia, asi que salia pegada a Postulaciones */
+.perfil-panel .profile-right-sidebar { display: flex; flex-direction: column; gap: var(--s5); }
+.perfil-panel .profile-right-sidebar > * { margin-bottom: 0; }
 
+/* ---- Panel del perfil: cifras arriba ----
+   Ideas del reel "Inventory Management Dashboard" (_code_and_chill_). El
+   vidrio y el fondo de manchas son del sistema de la seccion 30 (Liquid
+   Glass, elegido por Luis el 26 de octubre); antes este bloque tenia su
+   propio vidrio esmerilado y un fondo difuminado solo detras del panel. */
+
+/* Cifras: el progreso (mas ancho) y tres mas */
+.perfil-cifras {
+    display: grid; grid-template-columns: 1.35fr repeat(3, minmax(0, 1fr)); gap: var(--s4);
+    margin-bottom: var(--s5);
+}
+.perfil-cifra { position: relative; display: flex; flex-direction: column; gap: 2px; min-height: 150px; padding: var(--s5); }
+.cifra-icono { position: absolute; top: var(--s4); right: var(--s4); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; }
+.cifra-icono .ico { width: 20px; height: 20px; }
+.cifra-icono.es-mar { background: var(--sea-light); color: var(--sea-deep); }
+.cifra-icono.es-chispa { background: var(--naranja-soft); color: var(--naranja-texto); }
+.cifra-icono.es-verde { background: var(--verde-soft); color: var(--verde-texto); }
+[data-theme="dark"] .cifra-icono.es-mar { color: var(--sea); }
+.cifra-numero { margin: 0; font-family: var(--font-display); font-size: 2.1rem; font-weight: 800; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cifra-etiqueta { margin: 0; font-weight: 600; color: var(--ink); }
+.cifra-nota { margin: 0; font-size: var(--t-sm); color: var(--ink-3); }
+.cifra-ir {
+    display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; min-height: 32px;
+    margin-top: auto; padding-top: var(--s2);
+    color: var(--sea-deep); font-size: var(--t-sm); font-weight: 600; text-decoration: none;
+}
+[data-theme="dark"] .cifra-ir { color: var(--sea); }
+.cifra-ir .ico { width: 16px; height: 16px; transition: transform .2s var(--ease); }
+.cifra-ir:hover .ico { transform: translateX(3px); }
+
+/* Progreso: anillo (como el "Sales goal" del reel) y los pendientes como
+   botones que abren su formulario; lo ya hecho no se repite */
+.cifra-progreso { flex-direction: row; align-items: center; gap: var(--s4); overflow: hidden; }
+/* Naranja: completar el perfil es un logro (CLAUDE.md), como los anillos del
+   reel "Glassy Dashboard V2". El degradado esta en el SVG (#anilloNaranja) */
+.cifra-progreso::before {
+    content: ""; position: absolute; z-index: -1; left: -30px; top: -40px; width: 180px; height: 180px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 118, 24, .3), transparent);
+}
+.cifra-anillo { position: relative; flex: 0 0 auto; width: 92px; height: 92px; }
+.cifra-anillo svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.cifra-anillo circle { fill: none; stroke-width: 4.5; }
+.cifra-anillo .pista { stroke: rgba(255, 118, 24, .16); }
+.cifra-anillo .valor { stroke: url(#anilloNaranja); stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(255, 118, 24, .35)); }
+/* El numero y el "%" son dos piezas: en fila (con grid salian uno encima del otro) */
+.cifra-anillo > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 1.35rem; font-weight: 800; color: var(--ink); }
+.cifra-texto { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.cifra-listo, .perfil-completo .cifra-falta { display: none; }
+.perfil-completo .cifra-listo { display: block; }
+.cifra-progreso .progress-checklist { flex-direction: row; flex-wrap: wrap; gap: 6px; margin: 0; }
+.cifra-progreso .progress-checklist li.completed { display: none; }
+.cifra-progreso .progress-step {
+    width: auto; margin: 0; min-height: 32px; padding: 4px 10px; gap: 4px;
+    border: 1px solid var(--vidrio-borde-fino, var(--hairline)); border-radius: var(--r-pill); background: var(--vidrio-tinte-fino, var(--surface));
+    color: var(--ink-2); font-size: var(--t-xs); font-weight: 600;
+}
+.cifra-progreso .progress-step .ico { width: 14px; height: 14px; margin: 0; color: var(--sea); opacity: 1; }
+.cifra-progreso .progress-step:hover { border-color: var(--sea); background: var(--vidrio-tinte-fino, var(--surface)); color: var(--ink); }
+
+/* Experiencia y educacion: 3 y "Ver todas (N)" (profile.js, limitarLista) */
+.lista-recortada:not(.lista-abierta) > :is(.experience-item, .education-item):nth-child(n+4) { display: none; }
+.ver-todas {
+    display: inline-flex; align-items: center; gap: 4px; min-height: 32px; margin-top: var(--s3);
+    color: var(--sea-deep); font-weight: 600;
+}
+[data-theme="dark"] .ver-todas { color: var(--sea); }
+.ver-todas .ico { width: 16px; height: 16px; transition: transform .2s var(--ease); }
+.ver-todas[aria-expanded="true"] .ico { transform: rotate(180deg); }
+
+/* Vacantes para ti en la columna ancha: dos por fila, el titulo en una linea */
+.perfil-panel #recommendedJobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.perfil-panel #recommendedJobs > :not(.opportunity-item-compact) { grid-column: 1 / -1; }
+.perfil-panel #recommendedJobs .opportunity-item-compact {
+    display: flex; flex-direction: column; margin: 0; padding: var(--s4);
+    border: 1px solid var(--vidrio-borde-fino, var(--hairline)); border-radius: var(--r-md);
+}
+.perfil-panel #recommendedJobs .btn-apply-compact { margin-top: auto; align-self: flex-start; }
+
+/* Habilidades compactas: estrellas chicas sin fondo propio. Antes cada una
+   media 160-220 px y salian una por fila */
+.perfil-panel #userSkills .skill-tag { gap: 6px; padding: 4px 4px 4px 10px; }
+.perfil-panel #userSkills .skill-level { gap: 1px; padding: 0; background: none; border: 0; }
+.perfil-panel #userSkills .skill-level .ico { width: 13px; height: 13px; }
+.perfil-panel #userSkills .btn-remove-skill { justify-content: center; min-width: 24px; margin-left: 0; }
+
+/* Tableta y celular: el progreso ocupa la fila y las otras tres van juntas */
+@media (max-width: 1080px) {
+    .perfil-cifras { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cifra-progreso { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+    .perfil-cifras { gap: var(--s2); }
+    .perfil-cifra:not(.cifra-progreso) { min-height: 0; padding: var(--s3); }
+    .perfil-cifra:not(.cifra-progreso) :is(.cifra-icono, .cifra-nota) { display: none; }
+    .cifra-numero { font-size: 1.6rem; }
+    .perfil-cifra .cifra-etiqueta { font-size: var(--t-sm); line-height: 1.25; }
+    .cifra-anillo { width: 76px; height: 76px; }
+    .perfil-panel #recommendedJobs { grid-template-columns: minmax(0, 1fr); }
+}
+/* Con el dedo, todo lo que se toca mide al menos 44 px (la auditoria lo
+   pide). El titulo de cada postulacion es un enlace de texto: se agranda la
+   zona que responde sin mover nada, como la X de las habilidades */
+@media (pointer: coarse) {
+    .cifra-ir, .ver-todas, .cifra-progreso .progress-step { min-height: 44px; }
+    .company-info-compact h3 a { position: relative; }
+    .company-info-compact h3 a::after { content: ""; position: absolute; inset: -10px -4px; }
+}
 .profile-header, .profile-cover {
     position: relative;
     border-radius: var(--r-lg) var(--r-lg) 0 0;
@@ -3543,8 +3647,8 @@ footer.pie > .container { position: relative; z-index: 1; }
     min-width: 19px; height: 19px;
     padding: 0 5px;
     border-radius: var(--r-pill);
-    background: var(--naranja); color: #fff;
-    font-size: 11px; font-weight: 700; line-height: 1;
+    background: var(--naranja); color: var(--surface-inverse); /* el blanco no se leia (2.7:1) */
+    font-size: 12px; font-weight: 700; line-height: 1;
     font-variant-numeric: tabular-nums;
     animation: badge-in .3s var(--ease-out) both;
 }
@@ -3763,6 +3867,9 @@ a.meta-tag { position: relative; }
     background: var(--surface-sunk);
 }
 .vista-postulaciones[hidden] { display: none; }
+/* Lista/Tablero y "Descargar en Excel" juntos; en pantallas angostas bajan del titulo */
+#candidatos .section-card-header { flex-wrap: wrap; }
+.postulaciones-herramientas { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
 .vista-btn {
     display: inline-flex; align-items: center; gap: 6px;
     min-height: 34px; padding: 0 var(--s3);
@@ -3888,13 +3995,15 @@ a.meta-tag { position: relative; }
     gap: var(--s3);
     padding: var(--s3) var(--s4);
     border-radius: var(--r-md);
-    cursor: pointer;
-    transition: background-color .14s var(--ease);
 }
-.conversation-item:hover, .company-item-compact:hover, .opportunity-item-compact:hover {
-    background: var(--surface-sunk);
-}
+/* La mano y el fondo al pasar solo donde la fila entera se abre (Mensajes). En
+   el perfil, postulaciones, guardadas y recomendadas se abren con su enlace:
+   la mano en toda la fila hacía creer que se podía tocar */
+.conversation-item { cursor: pointer; transition: background-color .14s var(--ease); }
+.conversation-item:hover { background: var(--surface-sunk); }
 .conversation-item.active { background: var(--sea-light); }
+/* Sobre el turquesa claro, el gris de la hora y la vista previa bajaba de 4.5:1 */
+.conversation-item.active :is(.conversation-time, .conversation-preview) { color: var(--ink-2); }
 /* Vacante recomendada (perfil): una debajo de otra, no todo en una fila;
    en fila se salia de la pantalla del celular */
 .opportunity-item-compact { flex-direction: column; align-items: stretch; gap: 4px; }
@@ -3952,6 +4061,9 @@ a.meta-tag { position: relative; }
    columna del nombre quedaba de 0 a 20 px y el cargo se metia debajo de "Mensaje". */
 .connection-header { flex-wrap: wrap; }
 .connection-info { flex: 1 1 12rem; }
+/* Nombre de cada persona: h2 bajo el h1 "Tu red de contactos" (era h3 y saltaba
+   un nivel), con el tamaño que tenía */
+.connection-info h2 { font-size: var(--t-lg); letter-spacing: -0.015em; }
 .connection-type { max-width: 100%; white-space: normal; }
 @media (max-width: 600px) {
     .connection-actions { flex: 1 1 100%; }
@@ -4040,8 +4152,34 @@ a.meta-tag { position: relative; }
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5);
     margin-top: var(--s6);
 }
-.indicador { padding: var(--s5) var(--s6) var(--s6); }
+.indicador { padding: var(--s5) var(--s6) var(--s6); display: flex; flex-direction: column; }
 .indicador h2 { font-size: var(--t-lg); }
+/* "Ver detalle" queda abajo en todas las tarjetas de una misma fila */
+.indicador-abrir { align-self: flex-start; margin-top: auto; padding: var(--s4) 0 0; }
+
+/* Detalle de una gráfica (indicadores.js): crece desde su tarjeta */
+.detalle-resumen { margin-bottom: var(--s4); color: var(--ink-2); line-height: 1.6; }
+.detalle-tabla-marco { overflow-x: auto; }
+.detalle-tabla { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+.detalle-tabla th, .detalle-tabla td { padding: 10px var(--s2); border-bottom: 1px solid var(--hairline-soft); text-align: left; vertical-align: baseline; }
+.detalle-tabla thead th, .detalle-tabla thead .num { font-size: var(--t-xs); font-weight: 700; color: var(--ink-muted); }
+#ventanaIndicador .modal-content:focus { outline: none; }
+.detalle-tabla tbody th { font-weight: 600; color: var(--ink-2); overflow-wrap: anywhere; }
+.detalle-tabla .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink); }
+.detalle-tabla td small { margin-left: 6px; font-size: var(--t-xs); color: var(--ink-muted); }
+.detalle-tabla tr.destacada th { color: var(--naranja-texto); }
+.detalle-tabla a { color: inherit; text-decoration: underline; text-decoration-color: var(--hairline); text-underline-offset: 3px; padding-block: 2px; }
+.detalle-tabla a:hover { color: var(--sea-deep); text-decoration-color: currentColor; }
+.cambio {
+    display: inline-block; min-width: 2.2em; margin-left: 6px; padding: 1px 6px;
+    border-radius: var(--r-pill);
+    font-size: var(--t-xs); font-weight: 700; text-align: center;
+}
+.cambio.sube { background: var(--verde-soft); color: var(--verde-texto); }
+.cambio.baja { background: var(--hairline-soft); color: var(--ink-3); }
+.cambio.igual { background: var(--hairline-soft); color: var(--ink-muted); }
+.detalle-leyenda, .detalle-fuente { margin-top: var(--s3); font-size: var(--t-xs); color: var(--ink-muted); line-height: 1.5; }
+.detalle-leyenda .cambio { margin: 0 4px 0 0; }
 .indicador-nota { margin-top: 4px; font-size: var(--t-sm); color: var(--ink-3); }
 
 .ib-lista { list-style: none; margin: var(--s5) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s4); }
@@ -4142,6 +4280,7 @@ a.meta-tag { position: relative; }
     color: var(--ink);
 }
 .directorio-buscar input:focus { outline: none; border-color: var(--sea); box-shadow: 0 0 0 3px var(--sea-light); }
+@media (pointer: coarse) { .directorio-buscar input { font-size: max(16px, var(--t-base)); } } /* sin zoom en iPhone */
 
 .directorio { padding: var(--s6) 0 var(--s9); }
 .directorio-bloque + .directorio-bloque { margin-top: var(--s7); }
@@ -4211,12 +4350,14 @@ a.meta-tag { position: relative; }
     box-shadow: var(--sh-1);
 }
 .empresa-cabeza .skeleton-title { display: block; width: 240px; }
-/* Portada arriba de la cabecera (la de la marca, o la que eligio la empresa) */
-.empresa-cabeza.con-portada { padding-top: 0; overflow: hidden; }
+/* Portada arriba de la cabecera (la de la marca, o la que eligio la empresa).
+   Igual que la cabecera del perfil de persona: la portada va dentro del
+   margen de la tarjeta, con las esquinas de arriba redondeadas */
+.empresa-cabeza.con-portada { padding: var(--s6); overflow: hidden; }
 .empresa-portada {
-    flex: 0 0 calc(100% + 2 * var(--s6));
-    height: 150px;
-    margin: 0 calc(-1 * var(--s6));
+    flex: 0 0 100%;
+    height: 200px;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
     background:
         var(--grain),
         radial-gradient(circle at 85% 0%, rgba(11,126,140,.45), transparent 60%),
@@ -4227,10 +4368,30 @@ a.meta-tag { position: relative; }
     background-position: center;
 }
 .empresa-portada[style*="background-image"] { background-size: cover; background-blend-mode: normal; }
-.empresa-cabeza.con-portada .empresa-avatar.grande { margin-top: -52px; border: 4px solid var(--surface); box-shadow: var(--sh-2); overflow: hidden; }
 .empresa-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .empresa-cabeza .skeleton-line { display: block; margin-top: 10px; width: 160px; }
 .empresa-avatar.grande { width: 72px; height: 72px; border-radius: var(--r-lg); font-size: var(--t-lg); }
+/* Con portada, el logo va como la foto del perfil de persona: 128 px,
+   montado justo a la mitad sobre la portada y a 16 px de su borde. Antes la
+   fila lo centraba junto al nombre y solo tocaba la portada unos pixeles. El
+   nombre va 24 px a la derecha y 16 px debajo de la portada; detras de un
+   logo con partes transparentes, la tarjeta */
+.empresa-cabeza.con-portada { row-gap: 0; column-gap: var(--s5); align-items: flex-start; }
+.empresa-cabeza.con-portada .empresa-avatar.grande {
+    width: 128px; height: 128px;
+    margin: -64px 0 0 var(--s4);
+    border: 4px solid var(--surface);
+    border-radius: 22px;
+    box-shadow: var(--sh-3);
+    font-size: var(--t-xl);
+    overflow: hidden;
+    /* El turquesa de las iniciales es transparente en oscuro: sin una base
+       opaca, la mitad de arriba dejaba ver la portada */
+    background: linear-gradient(var(--sea-light), var(--sea-light)), var(--surface);
+}
+.empresa-cabeza.con-portada .empresa-avatar.grande:has(> img) { background: var(--surface); }
+.empresa-cabeza.con-portada .empresa-cabeza-texto { padding-top: var(--s4); }
+.empresa-cabeza.con-portada .empresa-cabeza-accion { margin-top: var(--s4); }
 .empresa-cabeza-texto { flex: 1 1 240px; min-width: 0; }
 .empresa-cabeza-texto h1 { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem); overflow-wrap: anywhere; }
 .empresa-cabeza-texto p { margin-top: 4px; color: var(--ink-3); }
@@ -4287,8 +4448,11 @@ a.meta-tag { position: relative; }
 }
 @media (max-width: 600px) {
     .empresa-cabeza, .empresa-bloque { padding: var(--s4); }
-    .empresa-cabeza.con-portada { padding-top: 0; }
-    .empresa-portada { flex-basis: calc(100% + 2 * var(--s4)); margin: 0 calc(-1 * var(--s4)); height: 110px; }
+    /* En el celular, como en el perfil de persona: el logo de 96 px y el
+       nombre debajo */
+    .empresa-cabeza.con-portada { padding: var(--s6); }
+    .empresa-cabeza.con-portada .empresa-avatar.grande { width: 96px; height: 96px; margin-top: -48px; border-radius: var(--r-lg); font-size: var(--t-lg); }
+    .empresa-cabeza.con-portada .empresa-cabeza-texto { padding-top: var(--s4); }
     .empresa-vacante-extra { text-align: left; }
     .directorio-cta { padding: var(--s4); }
 }
@@ -4384,6 +4548,7 @@ a.meta-tag { position: relative; }
 .panel-bloque-titulo a .ico { width: 15px; height: 15px; }
 .panel-bloque-titulo a:hover { text-decoration: underline; }
 [data-theme="dark"] .panel-bloque-titulo a { color: var(--sea); }
+@media (pointer: coarse) { .panel-bloque-titulo a { min-height: 44px; } }
 .panel-nota { margin-top: var(--s2); font-size: var(--t-sm); color: var(--ink-3); }
 .panel-nota a { color: var(--sea-deep); font-weight: 600; }
 .panel-lista { list-style: none; margin: var(--s3) 0 0; padding: 0; }
@@ -4637,7 +4802,8 @@ a.meta-tag { position: relative; }
     transition-delay: var(--reveal-delay, 0ms);
 }
 /* Baraja (vacantes): cada carta empieza escondida bajo la de arriba, un poco
-   mas pequena y girada, y se desliza a su sitio con un rebote suave. Las
+   mas pequena y girada, y se desliza a su sitio frenando suave (sin rebote:
+   el rebote se ve anticuado, segun la revision con impeccable). Las
    cartas que salen van debajo (z-index negativo, ui.js pone --baraja-z);
    la lista aisla esas capas para que no se vayan detras del fondo. */
 .opportunities-list { isolation: isolate; }
@@ -4649,7 +4815,7 @@ a.meta-tag { position: relative; }
 }
 .reveal.baraja.is-visible {
     transform: none;
-    transition: opacity 280ms var(--ease-out), transform 640ms cubic-bezier(.2, 1.15, .35, 1);
+    transition: opacity 280ms var(--ease-out), transform 640ms var(--ease-out);
     transition-delay: var(--reveal-delay, 0ms);
 }
 /* Sin JavaScript nada se queda escondido */
@@ -4666,6 +4832,10 @@ a.meta-tag { position: relative; }
     --dur-2: 260ms;  /* cambios de estado */
     --dur-3: 480ms;  /* entradas al hacer scroll */
     --stagger: 40ms; /* separacion entre tarjetas de una lista */
+    /* Cambio de seccion: la marca del menu viaja y la pagina se desliza.
+       Arranca suave y frena suave, para que el recorrido se vea entero */
+    --dur-viaje: 360ms;
+    --ease-viaje: cubic-bezier(.4, 0, .2, 1);
 }
 
 /* Transiciones entre paginas (View Transitions API). La barra superior y
@@ -4680,6 +4850,63 @@ body > header { view-transition-name: barra-superior; } /* el nombre debe ser un
 @keyframes vt-entrada { from { opacity: 0; transform: translateY(12px); } }
 /* Con transiciones entre paginas, la barra ya no "cae" en cada visita */
 @supports (view-transition-name: none) { .page-enter > header { animation: none; } }
+/* ui.js arma la barra de abajo cuando la foto de la pagina nueva ya se tomo:
+   la de la pagina anterior se queda quieta hasta el final, en vez de
+   apagarse y volver (ya trae la pastilla en la pestana elegida) */
+::view-transition-old(barra-inferior) { animation: none; }
+/* Lo mismo arriba: la barra de la pagina nueva sale como la de un visitante
+   ("Unirse ahora") hasta que ui.js pone la de la sesion. Durante la
+   transicion se ve la de la pagina anterior, quieta, y al terminar la nueva
+   ya esta lista */
+::view-transition-old(barra-superior) { animation: none; }
+::view-transition-new(barra-superior) { animation: none; opacity: 0; }
+/* La linea del menu ya estaba en su sitio: en la pagina nueva no vuelve a crecer */
+html:active-view-transition .nav-links a.active-nav::after,
+html:active-view-transition .nav-links a.active::after { animation: none; }
+/* Al ir a otra seccion del menu, las cosas entran desde ese lado: ui.js
+   anota la direccion y el guion del <head> la vuelve un tipo de la
+   transicion y una clase en <html> (entra-derecha / entra-izquierda) que se
+   quita sola a los 1,4 s. La pagina vieja se corre un poco hacia el otro
+   lado y se apaga; la nueva se corre un poco desde el lado de la opcion
+   (hacia la derecha, entra por la derecha; hacia la izquierda, al reves).
+   Las barras de arriba y de abajo tienen su propio nombre: se quedan
+   quietas. Sin direccion (atras, un enlace fuera del menu) queda el
+   fundido de siempre. */
+@media (prefers-reduced-motion: no-preference) {
+    html:active-view-transition-type(ir-derecha)::view-transition-old(root)   { animation: vt-sale-izquierda var(--dur-viaje) var(--ease-viaje) both; mix-blend-mode: normal; }
+    html:active-view-transition-type(ir-derecha)::view-transition-new(root)   { animation: vt-entra-derecha var(--dur-viaje) var(--ease-viaje) both; mix-blend-mode: normal; }
+    html:active-view-transition-type(ir-izquierda)::view-transition-old(root) { animation: vt-sale-derecha var(--dur-viaje) var(--ease-viaje) both; mix-blend-mode: normal; }
+    html:active-view-transition-type(ir-izquierda)::view-transition-new(root) { animation: vt-entra-izquierda var(--dur-viaje) var(--ease-viaje) both; mix-blend-mode: normal; }
+
+    /* Dentro de la pagina nueva, los bloques (titulo, buscador, pestanas,
+       tarjetas: los hijos de cada .container de las secciones principales)
+       llegan en fila, 60 ms uno tras otro; los de la segunda seccion, 180 ms
+       despues. Sin tocar el HTML de cada pagina */
+    html:is(.entra-derecha, .entra-izquierda) body > :is(section, main) > .container > *,
+    html:is(.entra-derecha, .entra-izquierda) body > :is(section, main) > :not(.container) > .container > * {
+        animation: bloque-entra .42s var(--ease-viaje) both;
+        animation-delay: calc(60ms + var(--desfase, 0ms) + var(--orden, 0) * 60ms);
+    }
+    html.entra-izquierda { --desde: -48px; }
+    body > :is(section, main) ~ :is(section, main),
+    body > :is(section, main) > * + .container { --desfase: 180ms; }
+    body > :is(section, main) .container > :nth-child(2) { --orden: 1; }
+    body > :is(section, main) .container > :nth-child(3) { --orden: 2; }
+    body > :is(section, main) .container > :nth-child(4) { --orden: 3; }
+    body > :is(section, main) .container > :nth-child(5) { --orden: 4; }
+    body > :is(section, main) .container > :nth-child(n+6) { --orden: 5; }
+}
+@keyframes bloque-entra { from { transform: translateX(var(--desde, 48px)); opacity: 0; } }
+@keyframes vt-sale-izquierda  { to   { transform: translateX(-30%); opacity: 0; } }
+@keyframes vt-entra-derecha   { from { transform: translateX(30%); opacity: 0; } }
+@keyframes vt-sale-derecha    { to   { transform: translateX(30%); opacity: 0; } }
+@keyframes vt-entra-izquierda { from { transform: translateX(-30%); opacity: 0; } }
+/* ui.js arma la barra de abajo de la pagina nueva en plena transicion y
+   saldria dentro de la pagina que se desliza: se esconde hasta el final;
+   mientras, se ve la anterior, quieta. Los tipos solo existen en la pagina
+   nueva: la foto de salida no cambia */
+html:active-view-transition-type(ir-derecha) .tabbar,
+html:active-view-transition-type(ir-izquierda) .tabbar { visibility: hidden; }
 
 /* Cambio de tema (ui.js): la foto nueva se revela en circulo desde el boton
    sobre la vieja. Sin el fundido de las paginas, sin mezclar colores y con
@@ -4709,9 +4936,16 @@ html.tema-cambiando .tabbar { view-transition-name: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+    /* Sin movimiento no es sin transicion: nada se desplaza ni cambia de
+       tamano y la pagina solo se funde con la siguiente (como "Reducir
+       movimiento" del celular, que cambia los deslizamientos por fundidos) */
+    ::view-transition-group(*) { animation: none !important; }
+    ::view-transition-old(root) { animation: vt-desvanecer var(--dur-1) var(--ease) both; }
+    ::view-transition-new(root) { animation: vt-aparecer var(--dur-2) var(--ease) both; }
     .ripple { display: none; }
 }
+@keyframes vt-desvanecer { to   { opacity: 0; } }
+@keyframes vt-aparecer   { from { opacity: 0; } }
 
 /* ---------- 25d. Iconos animados ----------
    Cada icono hace su propio gesto cuando el mouse entra en el boton, enlace u
@@ -5136,6 +5370,9 @@ kbd {
     header > nav > .nav-links li:not(:last-child) { display: none; }
 
     body.has-tabbar { padding-bottom: 76px; }
+    /* Lo que recibe el foco con el teclado (o se busca con Ctrl+F) queda arriba
+       de la barra de pestañas y no debajo de ella (WCAG 2.4.11) */
+    html:has(> body.has-tabbar) { scroll-padding-bottom: calc(76px + var(--s4) + env(safe-area-inset-bottom)); }
     .tabbar { display: block; }
 
     .form-grid { grid-template-columns: 1fr; }
@@ -5181,6 +5418,7 @@ kbd {
     --ink-muted:      #7D93AB;
     --hairline:       #24384F;
     --hairline-soft:  #1A2A3E;
+    --ring-pista:     rgba(255, 255, 255, .1);
 
     --bg:             #0B1B2C;
     --surface:        #112238;
@@ -5315,7 +5553,7 @@ kbd {
     border-radius: 50%; animation: spin .7s linear infinite;
 }
 .link-view-all, .btn-view-all {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: center; gap: 6px; min-height: 24px;
     font-size: var(--t-sm); font-weight: 600; color: var(--sea-deep);
 }
 .link-view-all:hover, .btn-view-all:hover { text-decoration: underline; }
@@ -5504,7 +5742,7 @@ kbd {
     .lista-limpiar { width: 40px; height: 40px; }
 }
 /* En el iPhone un campo con letra menor de 16 px hace zoom al tocarlo */
-@media (max-width: 700px) { .lista-campo input { font-size: 16px; } }
+@media (max-width: 700px), (pointer: coarse) { .lista-campo input { font-size: 16px; } }
 .filter-salary-group, .salary-range { display: flex; flex-direction: column; gap: 6px; }
 .range-display { display: flex; justify-content: space-between; font-size: var(--t-sm); }
 .range-label { color: var(--ink-muted); }
@@ -5517,6 +5755,9 @@ kbd {
 .sort-select { min-width: 180px; }
 .results-section { padding: var(--s7) 0 var(--s9); }
 .results-info { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s3); margin-bottom: var(--s5); }
+/* En Vacantes la cuenta va en la barra junto a "Ordenar por", centrada: el margen de abajo (el de los
+   resultados de Inicio) la subia 12 px */
+.opportunities-toolbar .results-info { margin-bottom: 0; }
 .results-count { font-size: var(--t-base); color: var(--ink-muted); }
 .results-count strong { color: var(--ink); }
 
@@ -5553,34 +5794,58 @@ kbd {
 .feature-card h3, .benefit-item h3, .pathway-card h3 { font-size: var(--t-md); margin-bottom: var(--s2); }
 .feature-card p, .benefit-item p, .pathway-card p { color: var(--ink-3); font-size: var(--t-base); }
 
-/* ---- Portada: fotografia real de Cartagena ---- */
-.cartagena-section { padding: var(--s9) 0; }
-.cartagena-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--s5);
+/* ---- Inicio: vacantes cerca de ti (vacantes-cerca.js) ----
+   En lugar de las fotos y el mapa de Cartagena: las vacantes abiertas mas cercanas a la persona, de la mas
+   cerca a la mas lejos. La tarjeta entera se toca (el enlace del cargo se estira encima), pero el lector de
+   pantalla solo lee el cargo como enlace. En el vidrio, las tarjetas son de tinte (seccion 30) */
+.cerca-section { padding: var(--s9) 0; }
+.cerca-controles {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: var(--s3); margin-bottom: var(--s6);
 }
-.cartagena-photo {
+.cerca-ubicacion { min-height: 48px; }
+.cerca-ubicacion[aria-busy="true"] { cursor: progress; }
+.cerca-ciudad { width: min(100%, 300px); }
+.cerca-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--s4); }
+.cerca-tarjeta {
     position: relative;
+    display: flex; flex-direction: column; gap: var(--s2);
+    padding: var(--s5);
+    background: var(--surface);
+    border: 1px solid var(--hairline);
     border-radius: var(--r-lg);
-    overflow: hidden;
-    box-shadow: var(--sh-2);
-    aspect-ratio: 4 / 5;
+    box-shadow: var(--sh-1);
+    transition: transform .24s var(--ease-out);
 }
-.cartagena-photo img {
-    width: 100%; height: 100%;
-    object-fit: cover;
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .cerca-tarjeta:hover { transform: translateY(-2px); }
 }
-.cartagena-photo figcaption {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    padding: var(--s5) var(--s4) var(--s3);
-    background: linear-gradient(to top, rgba(6,26,49,.78), transparent);
-    color: #fff;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: var(--t-md);
+.cerca-distancia {
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    padding: 4px 10px; border-radius: var(--r-pill);
+    background: var(--sea-light); color: var(--sea-deep);
+    font-size: var(--t-sm); font-weight: 600;
 }
+.cerca-distancia .ico { width: 15px; height: 15px; }
+/* En tu misma ciudad: el naranja de la chispa del match */
+.cerca-distancia.es-aqui { background: var(--naranja-soft); color: var(--naranja-texto); }
+.cerca-cargo { font-size: var(--t-md); line-height: 1.3; }
+.cerca-enlace { color: var(--ink); text-decoration: none; }
+.cerca-enlace::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.cerca-enlace:focus-visible { outline: none; }
+.cerca-enlace:focus-visible::after { outline: 2.5px solid var(--sea); outline-offset: 3px; }
+.cerca-empresa { color: var(--ink-3); font-size: var(--t-sm); }
+.cerca-datos {
+    display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4);
+    margin-top: auto; padding-top: var(--s2);
+    font-size: var(--t-sm); color: var(--ink-3);
+}
+.cerca-datos span { display: inline-flex; align-items: center; gap: 6px; }
+.cerca-datos .ico { width: 15px; height: 15px; }
+.cerca-vacio { max-width: 640px; margin-inline: auto; padding: var(--s5); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--hairline); }
+.cerca-pie { max-width: none; margin-top: var(--s5); text-align: center; } /* los <p> llevan 72ch de ancho: sin esto, el enlace quedaba corrido */
+[data-theme="dark"] .cerca-distancia { color: var(--sea-luz); }
+[data-theme="dark"] .cerca-distancia.es-aqui { color: #FFC896; }
 
 .benefits-simple-list, .pathway-features, .choice-points, .plan-features-list, .progress-checklist, .resources-links-list {
     display: flex; flex-direction: column; gap: 9px; margin-top: var(--s4);
@@ -5646,7 +5911,7 @@ kbd {
    cuadrados) y la foto o las iniciales lo llenan, centradas. */
 .profile-avatar {
     position: relative;
-    width: 128px; height: 128px;
+    width: 152px; height: 152px;
     padding: 4px;
     border-radius: 50%;
     background: var(--surface);
@@ -5661,7 +5926,7 @@ kbd {
 .profile-avatar-initials {
     display: flex; align-items: center; justify-content: center; /* profile.js lo muestra con display:flex */
     background: var(--surface-inverse); color: #fff;
-    font-family: var(--font-display); font-size: 2.6rem; font-weight: 700;
+    font-family: var(--font-display); font-size: 3.1rem; font-weight: 700;
     letter-spacing: .02em; line-height: 1;
     /* luz arriba y sombra abajo para que el color plano no se vea como un
        parche (sombra interior: profile.js pisa "background" en linea) */
@@ -5669,15 +5934,36 @@ kbd {
 }
 /* La foto queda con su centro justo en el borde de la portada. Antes la fila
    alineaba todo abajo (flex-end), eso anulaba el margen negativo y la foto
-   apenas tocaba la portada (22 px de 112). */
+   apenas tocaba la portada (22 px de 112). Mide 152 px (Luis la pidio un
+   poco mas grande): sube la mitad, 76 px. Solo la de persona: el logo de
+   "Mi empresa" sigue con su margen. */
 .profile-header-content { align-items: flex-start; padding-inline: var(--s4); }
-.profile-avatar-section { align-self: flex-start; }
+.profile-avatar-section { align-self: flex-start; margin-top: -76px; }
 /* El nombre ocupa el espacio libre, con aire bajo la portada, y "Editar
    perfil" se va al borde derecho */
 .profile-info-header {
     flex: 1 1 320px; min-width: 0;
     align-items: center; justify-content: space-between;
     padding-top: var(--s4);
+}
+/* En pantalla ancha los botones se quedan a la derecha del nombre, como en
+   el sitio publicado. Con cuatro ya no cabian en una fila y bajaban debajo
+   del nombre: el texto se alargaba y la foto parecia mas alta que todo. Si
+   no caben, se acomodan en dos filas ahi mismo */
+@media (min-width: 1081px) {
+    .profile-info-header { flex-wrap: nowrap; }
+    .profile-name-section { flex: 0 0 auto; max-width: calc(100% - 300px); }
+    .profile-info-header .perfil-acciones { flex: 1 1 0; min-width: 260px; justify-content: flex-end; }
+}
+/* "Mas" (ui.js, seccion 29): "Cambiar contrasena" y "Llenar con mi hoja de
+   vida" van en un menu para que los botones quepan en una fila. El menu es el
+   de Mensajes, pero debajo del boton y alineado a su derecha; la cabecera
+   queda por encima de las tarjetas de abajo para que no lo tapen */
+.profile-hero-new { position: relative; z-index: 3; }
+.perfil-mas { position: relative; }
+.perfil-mas .menu-acciones { position: absolute; top: calc(100% + 6px); right: 0; z-index: 5; white-space: nowrap; }
+@media (max-width: 760px) {
+    .perfil-mas .menu-acciones { right: auto; left: 0; }
 }
 .profile-name-section { min-width: 0; }
 .profile-name-section h1, .company-title-section h1 { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem); }
@@ -5941,7 +6227,8 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 .chat-user-details { min-width: 0; }
 .chat-user-status { display: block; font-size: var(--t-xs); color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-user-status:empty { display: none; }
-.chat-user-details h3 { font-size: var(--t-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-titulo-celular { display: none; }
+.chat-user-details h2 { font-size: var(--t-md); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-actions { display: flex; gap: var(--s1); }
 .chat-messages {
     flex: 1; overflow-y: auto;
@@ -5993,7 +6280,14 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    no le quita espacio al nombre; en pantallas tactiles, en su lugar y siempre a
    la vista, del tamano de un dedo */
 .conversation-item { position: relative; }
+/* El nombre es un botón y su ::after cubre la conversación: se abre con clic
+   en cualquier parte y también con el teclado (antes solo con el mouse) */
+.conv-abrir { all: unset; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.conv-abrir::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.conv-abrir:focus-visible { outline: none; }
+.conversation-item:has(.conv-abrir:focus-visible) { outline: 2.5px solid var(--sea); outline-offset: -3px; }
 .conv-menu {
+    z-index: 1; /* encima del ::after de .conv-abrir */
     position: absolute; right: var(--s2); bottom: 6px;
     display: grid; place-items: center;
     width: 30px; height: 30px; border-radius: 50%;
@@ -6163,7 +6457,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 .suggestion-card { display: flex; flex-direction: column; gap: var(--s3); }
 .suggestion-header { justify-content: flex-start; align-items: center; }
 .suggestion-info { flex: 1; min-width: 0; }
-.suggestion-info h3 { font-size: var(--t-md); overflow-wrap: anywhere; }
+.suggestion-info h2 { font-size: var(--t-md); letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .suggestion-headline { font-size: var(--t-sm); color: var(--sea-deep); font-weight: 600; margin-top: 2px; }
 /* Por que se sugiere: misma ciudad, habilidades en comun */
 .suggestion-card .suggestion-reason { display: flex; flex-wrap: wrap; gap: 4px var(--s4); }
@@ -6252,14 +6546,16 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     .quick-filters { grid-template-columns: 1fr; }
     .profile-avatar-section, .company-logo-wrapper { margin-top: -44px; }
     .company-logo-img, .profile-avatar-img { width: 84px; height: 84px; font-size: 1.6rem; }
-    .profile-avatar { width: 96px; height: 96px; }
-    .profile-avatar-section { margin-top: -48px; }
-    .profile-avatar-initials { font-size: 2rem; }
+    .profile-avatar { width: 112px; height: 112px; }
+    .profile-avatar-section { margin-top: -56px; }
+    .profile-avatar-initials { font-size: 2.3rem; }
     .features-grid, .why-grid, .roadmap-grid, .choice-split { grid-template-columns: 1fr; }
     .conversations-sidebar.chat-active { display: none; }
     /* Mensajes: con un chat abierto se ve solo el chat (con boton para volver);
        sin chat abierto, solo la lista (si hay conversaciones) */
     .messages-container.viendo-chat .conversations-sidebar { display: none; }
+    /* Con la lista oculta, el h1 "Mensajes" se iba con ella: este lo reemplaza para el lector de pantalla */
+    .messages-container.viendo-chat .chat-titulo-celular { display: block; }
     .messages-container.tiene-lista:not(.viendo-chat) .chat-area { display: none; }
     .messages-container.viendo-chat .chat-area { height: calc(100dvh - var(--app-bar-h) - 150px); min-height: 380px; }
     .messages-container.viendo-chat .btn-volver-chat { display: inline-grid; place-items: center; }
@@ -6287,3 +6583,360 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     transition: all .16s var(--ease);
 }
 .btn-view-profile:hover { border-color: var(--sea); color: var(--sea-deep); background: var(--sea-light); }
+
+/* =====================================================================
+   30. Vidrio (Liquid Glass)
+   Elegido por Luis el 26 de octubre de 2026 entre tres prototipos: vidrio
+   liquido (borde de luz, grosor y reflejo quieto, como Apple) sobre un fondo
+   de manchas de la marca que se mueven lento. Plan y mediciones en
+   docs/PLAN-PERFIL-GLASS.md. Como funciona:
+   - Solo en paginas con <body class="pagina-vidrio"> (hoy: Mi perfil).
+   - Vidrio "de tinte" en tarjetas y listas, SIN backdrop-filter: sobre las
+     manchas, que ya son borrosas, desenfocar otra vez no se nota (medido:
+     ningun pixel cambia de forma visible) y asi muchas tarjetas no cuestan.
+   - Vidrio "real" (backdrop-filter) solo donde pasa contenido con detalle
+     por detras: la barra de arriba, la de pestanas y los menus.
+   - El borde de luz es un color por lado (claro arriba y a la izquierda,
+     tenue abajo y a la derecha), no un ::before: muchos componentes ya
+     usan ::before y ::after para otros efectos.
+   - isolation: isolate en cada tarjeta: sin backdrop-filter no formaba capa
+     propia y lo que va detras de su contenido (z-index -1, como el brillo
+     del anillo de progreso) quedaba escondido detras de la tarjeta.
+   - Colores medidos con pixeles en el peor momento de las manchas, en claro
+     y en oscuro (pruebas/contraste-vidrio.js): ningun texto bajo 4.5 a 1.
+   ===================================================================== */
+
+/* ---- Tokens del material (fase 2: en todo el sitio, porque la barra, las
+   pestanas, los menus, las ventanas y los avisos son de vidrio en todas las
+   paginas). Claro: ---- */
+:root {
+    --vidrio-base: #EAF0F6;
+    --vidrio-tinte: rgba(255, 255, 255, .56);
+    --vidrio-tinte-grueso: rgba(255, 255, 255, .64);
+    --vidrio-tinte-fino: rgba(255, 255, 255, .52);
+    --vidrio-borde-fino: rgba(255, 255, 255, .75);
+    --vidrio-luz-1: rgba(255, 255, 255, .95);   /* filo de arriba y de la izquierda */
+    --vidrio-luz-2: rgba(255, 255, 255, .3);    /* filo de abajo y de la derecha */
+    --vidrio-grosor: inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 -1px 0 rgba(8, 32, 60, .05);
+    --vidrio-brillo-fino: inset 0 1px 0 rgba(255, 255, 255, .5);
+    --vidrio-reflejo: rgba(255, 255, 255, .34);
+    --vidrio-sombra: 0 14px 34px -16px rgba(8, 32, 60, .26), 0 2px 6px -2px rgba(8, 32, 60, .07);
+    --vidrio-sombra-grueso: 0 28px 64px -24px rgba(8, 32, 60, .36), 0 6px 14px -6px rgba(8, 32, 60, .1);
+    /* Barra y pestanas: por detras puede pasar de todo (la portada azul de Inicio, el papel blanco
+       de la hoja de vida, el pie oscuro), asi que el tinte aguanta el peor caso. Con .74 los enlaces
+       de la barra quedaban en 4.1 sobre la portada; el calculo pide .81 o mas */
+    --vidrio-barra: rgba(255, 255, 255, .84);
+    --vidrio-pestanas: rgba(255, 255, 255, .86);
+    /* Menus y ventanas: mas tinte que las tarjetas (van sobre contenido con detalle o sobre el
+       fondo oscurecido de la ventana, y llevan texto chico y formularios) */
+    --vidrio-menu: rgba(255, 255, 255, .8);
+    --vidrio-hoja: rgba(255, 255, 255, .86);
+    --vidrio-pie: rgba(246, 249, 252, .78);     /* franja de botones de las ventanas */
+    --vidrio-aviso: rgba(8, 32, 60, .84);       /* los avisos son azul marino en los dos temas */
+    --vidrio-esqueleto: rgba(8, 32, 60, .07);
+    --vidrio-grano: .035;
+    /* Texto gris sobre vidrio: un poco mas oscuro (el vidrio deja pasar el color de atras) */
+    --vidrio-gris: #4C6480;
+}
+/* ---- Oscuro. Se separa con luz, no con sombra (en oscuro la sombra casi no
+   se ve), y el tinte sube lo necesario: con .50 una mancha turquesa detras
+   aclaraba el vidrio y 11 textos bajaban de 4.5 ---- */
+[data-theme="dark"] {
+    --vidrio-base: #0A1522;
+    --vidrio-tinte: rgba(18, 36, 60, .62);
+    --vidrio-tinte-grueso: rgba(20, 40, 66, .68);
+    --vidrio-tinte-fino: rgba(255, 255, 255, .05);
+    --vidrio-borde-fino: rgba(255, 255, 255, .09);
+    --vidrio-luz-1: rgba(255, 255, 255, .24);
+    --vidrio-luz-2: rgba(255, 255, 255, .05);
+    --vidrio-grosor: inset 0 1px 0 rgba(255, 255, 255, .09), inset 0 -1px 0 rgba(0, 0, 0, .3);
+    --vidrio-brillo-fino: inset 0 1px 0 rgba(255, 255, 255, .05);
+    --vidrio-reflejo: rgba(255, 255, 255, .06);
+    --vidrio-sombra: 0 18px 40px -18px rgba(0, 0, 0, .6);
+    --vidrio-sombra-grueso: 0 30px 70px -24px rgba(0, 0, 0, .72);
+    --vidrio-barra: rgba(10, 21, 34, .84);       /* con .60, sobre el papel blanco de la hoja de vida los enlaces quedaban en 2.0 */
+    --vidrio-pestanas: rgba(10, 21, 34, .82);
+    --vidrio-menu: rgba(20, 40, 66, .8);
+    --vidrio-hoja: rgba(17, 34, 56, .88);
+    --vidrio-pie: rgba(13, 29, 48, .8);
+    --vidrio-aviso: rgba(8, 32, 60, .86);
+    --vidrio-esqueleto: rgba(255, 255, 255, .07);
+    --vidrio-grano: .05;
+    --vidrio-gris: #B2C3D6;
+}
+/* ---- Pagina de vidrio (fondo vivo y tarjetas de vidrio): su fondo y el gris del texto ---- */
+.pagina-vidrio { --ink-muted: var(--vidrio-gris); background-color: var(--vidrio-base); }
+[data-theme="dark"] .pagina-vidrio { --ink-3: #BFCDDD; }
+
+/* ---- Fondo vivo: manchas de la marca que se mueven lento por toda la pantalla ----
+   Va en el HTML de la pagina (asi esta desde el primer cuadro, sin parpadeo).
+   --reloj lo pone el guion del <head> con la hora: cada mancha arranca en el
+   punto de su recorrido que le toca a esa hora, y al pasar de una pagina con
+   vidrio a otra las manchas siguen donde iban en vez de volver a empezar.
+   Solo transform (CLAUDE.md) y sin filter: el degradado ya nace difuminado
+   (un filter en algo que se mueve obliga a redibujarlo en cada cuadro). */
+.fondo-vivo { display: none; }
+.pagina-vidrio .fondo-vivo { display: block; position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.fondo-vivo::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: var(--vidrio-grano); }
+.fondo-vivo > span {
+    position: absolute; width: var(--t); height: var(--t); border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(var(--c) / var(--a)), rgb(var(--c) / calc(var(--a) * .55)) 45%, rgb(var(--c) / 0) 100%);
+    will-change: transform;
+    animation: var(--ruta) var(--dur) ease-in-out infinite alternate;
+    animation-delay: calc(var(--reloj, 0ms) * -1);
+}
+.mancha-1 { --c: 43 182 198; --a: .42; --t: 58vmax; left: -16vmax; top: -20vmax;   --ruta: deriva-1; --dur: 52s; }
+.mancha-2 { --c: 43 102 224; --a: .22; --t: 46vmax; right: -14vmax; top: 6vh;      --ruta: deriva-2; --dur: 64s; }
+.mancha-3 { --c: 11 126 140; --a: .28; --t: 52vmax; left: 14vw; bottom: -24vmax;   --ruta: deriva-3; --dur: 58s; }
+.mancha-4 { --c: 255 118 24; --a: .24; --t: 32vmax; right: 6vw; top: 40vh;         --ruta: deriva-4; --dur: 46s; }
+.mancha-5 { --c: 95 208 220; --a: .32; --t: 40vmax; left: 42vw; top: 18vh;         --ruta: deriva-5; --dur: 70s; }
+/* En oscuro las manchas brillan; el naranja, pequeno y mas claro para no verse cafe */
+[data-theme="dark"] .mancha-1 { --a: .32; }
+[data-theme="dark"] .mancha-2 { --a: .3; }
+[data-theme="dark"] .mancha-3 { --a: .42; }
+[data-theme="dark"] .mancha-4 { --c: 255 136 48; --a: .2; --t: 24vmax; }
+[data-theme="dark"] .mancha-5 { --a: .2; }
+@keyframes deriva-1 { 0% { transform: translate3d(0, 0, 0) scale(1); } 35% { transform: translate3d(22vw, 12vh, 0) scale(1.12); } 70% { transform: translate3d(8vw, 38vh, 0) scale(.94); } 100% { transform: translate3d(30vw, 24vh, 0) scale(1.06); } }
+@keyframes deriva-2 { 0% { transform: translate3d(0, 0, 0) scale(1); } 40% { transform: translate3d(-26vw, 18vh, 0) scale(1.1); } 75% { transform: translate3d(-10vw, 42vh, 0) scale(.96); } 100% { transform: translate3d(-34vw, 8vh, 0) scale(1.08); } }
+@keyframes deriva-3 { 0% { transform: translate3d(0, 0, 0) scale(1); } 30% { transform: translate3d(18vw, -20vh, 0) scale(1.08); } 65% { transform: translate3d(-12vw, -34vh, 0) scale(.95); } 100% { transform: translate3d(24vw, -10vh, 0) scale(1.12); } }
+@keyframes deriva-4 { 0% { transform: translate3d(0, 0, 0) scale(1); } 45% { transform: translate3d(-24vw, -16vh, 0) scale(1.14); } 100% { transform: translate3d(-8vw, 26vh, 0) scale(.92); } }
+@keyframes deriva-5 { 0% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(-20vw, 30vh, 0) scale(1.1); } 100% { transform: translate3d(16vw, 12vh, 0) scale(.95); } }
+/* En el celular, 3 manchas */
+@media (max-width: 760px) { .mancha-2, .mancha-5 { display: none; } }
+/* Sin pausa con una ventana abierta: la regla ".pagina-vidrio:has(.modal[style*='flex'])" obligaba a
+   revisar toda la pagina cada vez que algo cambiaba su estilo en linea, y en Inicio (que lo hace sin
+   parar) un celular lento bajaba de 90 a 64 fps. Las manchas solo mueven transform: casi no cuestan */
+/* Movimiento reducido: quietas en su lugar */
+@media (prefers-reduced-motion: reduce) { .fondo-vivo > span { animation: none; } }
+
+/* ---- Vidrio de tinte: tarjetas (normal) y cabeceras (grueso). Fase 1: Mi perfil; fase 3: Mi empresa
+   (secciones, laterales y vacantes) y el perfil publico de empresa (bloques). Ojo: en esta lista solo
+   clases sueltas; :is() toma la fuerza de su selector mas fuerte, y un "padre hijo" le ganaba al filo
+   turquesa de "Primeros pasos" y al vidrio grueso de las cabeceras (por eso :where() en las cifras) ---- */
+.pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card,
+    .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
+    .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
+    .stat-box, .roadmap-card, .benefit-item, .pathway-card, .panel-bloque, .choice-card, .cerca-tarjeta, .cerca-vacio,
+    :where(.indicadores-cifras) > li, .indicador) {
+    isolation: isolate;
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte);
+    border: 1px solid;
+    border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
+    border-radius: 24px;
+    box-shadow: var(--vidrio-grosor), var(--vidrio-sombra);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.pagina-vidrio :is(.profile-header-card, .company-header-card, .empresa-cabeza) {
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte-grueso);
+    border-radius: 28px;
+    box-shadow: var(--vidrio-grosor), var(--vidrio-sombra-grueso);
+}
+/* "Primeros pasos" (Mi empresa) conserva su filo turquesa sobre el vidrio: es la que llama a actuar */
+.pagina-vidrio .primeros-pasos { border-color: var(--sea); }
+/* Las tarjetas suben un poco con el mouse (Luis, 7 de octubre); los botones no se mueven. Las secciones
+   grandes de Mi empresa no: adentro se arrastran las tarjetas del tablero de postulaciones */
+.pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .sidebar-widget, .empresa-bloque,
+    .connection-card, .suggestion-card) { transition: transform .24s var(--ease-out); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .sidebar-widget, .empresa-bloque,
+        .connection-card, .suggestion-card):hover { transform: translateY(-2px); }
+}
+
+/* ---- Vidrio fino: lo que va dentro de una tarjeta (tampoco desenfoca) ----
+   :where() no suma fuerza: asi el color de cada uno al pasar el mouse sigue mandando */
+.pagina-vidrio :where(.apps-summary, #recommendedJobs .opportunity-item-compact, .cifra-progreso .progress-step,
+    #userSkills .skill-tag, .btn-edit-profile, .btn-add-skill, .profile-section .section-header .btn-icon,
+    .tablero-tarjeta, .primeros-pasos-boton) {
+    background: var(--vidrio-tinte-fino);
+    border-color: var(--vidrio-borde-fino);
+    box-shadow: var(--vidrio-brillo-fino);
+}
+/* Columnas del tablero: solo el fondo. Su borde punteado es transparente y se vuelve turquesa cuando
+   se arrastra una tarjeta encima (.encima); con el borde del vidrio se veria punteado siempre */
+.pagina-vidrio :where(.tablero-columna) { background: var(--vidrio-tinte-fino); }
+.pagina-vidrio .apps-summary > div + div { border-left-color: var(--vidrio-borde-fino); }
+
+/* ---- Fase 4: Vacantes, Empresas, Conexiones y Mensajes ---- */
+/* La franja blanca de arriba (titulo, frase y buscador) pasa a ser una repisa de vidrio a lo ancho:
+   el texto sigue sobre vidrio y no suelto sobre las manchas */
+.pagina-vidrio :is(.opportunities-header, .directorio-cabecera, .connections-header,
+    .indicadores-cabecera, .registro-section) {
+    background: linear-gradient(180deg, var(--vidrio-reflejo), transparent 70%), var(--vidrio-tinte);
+    border-bottom-color: var(--vidrio-luz-2);
+}
+/* Inicio, de la ola de la portada a la invitacion del final: una sola lamina de vidrio. Con una repisa
+   por seccion (cada una con su brillo arriba y su raya abajo) y la franja de las cifras sin vidrio, se
+   veian franjas horizontales de bordes duros. Ahora todas llevan el mismo tinte, sin rayas entre ellas
+   (las separa el espacio). Con sesion, la lamina empieza bajo la franja oscura del panel de inicio (sus
+   tarjetas iban directo sobre las manchas). Para visitantes, bajo la ola de la portada el vidrio nace del
+   mismo color de la ola (--surface) y se funde en 140 px: sin eso, bajo la ola quedaba una linea recta */
+.pagina-vidrio :is(.panel-inicio, .search-section, .results-section, .impact-stats, .como-funciona, .benefits-section,
+    .cerca-section, .usuarios-empresas, .innovation-section) {
+    background: var(--vidrio-tinte); border-block-width: 0;
+}
+.pagina-vidrio .hero:not([hidden]) + .search-section { background: linear-gradient(180deg, var(--surface), transparent 140px), var(--vidrio-tinte); }
+/* Fase 5 (Inicio e Indicadores): la portada, la franja del panel de inicio y la invitacion del final
+   siguen azul oscuro (superficies de la marca, como el pie). El carrusel 3D sigue solido: en 3D las
+   tarjetas translucidas se verian unas a traves de otras. Los recuadros punteados, con el tinte de las
+   tarjetas (con el vidrio fino, casi transparente en oscuro, su texto quedaba en 4.45) */
+.pagina-vidrio :is(.indicadores-powerbi, .indicadores-vacio) { background: var(--vidrio-tinte); }
+/* Fase 6: entrar y registrarse. La columna del formulario es de vidrio (la de los personajes sigue azul
+   oscuro); las paginas de registro son una repisa de vidrio y su tarjeta de formulario va encima en vidrio
+   grueso. Esa tarjeta se pinta con ".registro-section > .container > .registro-form": hace falta la misma
+   fuerza para que gane el vidrio. Los campos para escribir siguen solidos */
+.pagina-vidrio .auth-panel { background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte); }
+.pagina-vidrio .registro-section > .container > .registro-form {
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte-grueso);
+    border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
+    box-shadow: var(--vidrio-grosor), var(--vidrio-sombra-grueso);
+}
+/* "Como funciona" en el celular: la tarjeta oscura se queda pegada arriba y su sombra pasa sobre el texto
+   de los pasos al bajar (con --ink-3 quedaba en 4.3 ese instante): un tono mas oscuro */
+.pagina-vidrio .cf-paso p { color: var(--ink-2); }
+.pagina-vidrio .directorio-cta { background: var(--vidrio-tinte-fino); }
+/* Mensajes: el fondo del chat deja ver el vidrio; las burbujas siguen solidas (las tuyas turquesa, las
+   recibidas blancas) para leerse perfecto. La barra para escribir es de vidrio fino y su campo, solido */
+.pagina-vidrio .chat-messages { background: transparent; }
+.pagina-vidrio .chat-input { background: var(--vidrio-tinte-fino); }
+.pagina-vidrio .conversation-item:not(.active):hover { background: var(--vidrio-hover); }
+/* Texto que iba suelto sobre las manchas (medido: 3.4 a 4.3 en claro): las pestanas y los titulos de
+   seccion del directorio van sobre una repisa de vidrio, y la cuenta de vacantes sobre una pastilla */
+.pagina-vidrio :is(.tab-list, .connections-tabs, .directorio-titulo) {
+    padding-inline: var(--s4); border-radius: var(--r-md);
+    background: var(--vidrio-tinte);
+}
+.pagina-vidrio .directorio-titulo { padding-block: var(--s3); }
+/* Los mensajes de "vacio" ("No hay sugerencias disponibles") iban sueltos sobre las manchas: 3.1 en claro */
+.pagina-vidrio .no-results-message {
+    border: 1px solid; border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
+    border-radius: var(--r-lg); background: var(--vidrio-tinte); box-shadow: var(--vidrio-grosor);
+}
+.pagina-vidrio :is(.indicadores-promedio, .indicadores-hora) { width: fit-content; } /* Indicadores: sueltos entre tarjetas (3.6 a 4.4) */
+.pagina-vidrio :is(.results-count, .indicadores-promedio, .indicadores-hora) {
+    padding: 6px var(--s3); border: 1px solid var(--vidrio-borde-fino); border-radius: var(--r-pill);
+    background: var(--vidrio-tinte); box-shadow: var(--vidrio-brillo-fino);
+}
+/* En oscuro, el recuadro "Comparamos tus habilidades..." con su texto en blanco (con el gris quedaba en 3.9) */
+[data-theme="dark"] .pagina-vidrio :is(.match-resumen, .recommend-hint) { color: var(--ink); }
+[data-theme="dark"] .pagina-vidrio :is(.match-resumen strong, .recommend-hint a) { color: #A3ECF3; }
+
+/* ---- El logo de la empresa con aro de vidrio real, como la foto del perfil ---- */
+.pagina-vidrio :is(.company-logo-img, .empresa-cabeza.con-portada .empresa-avatar.grande) {
+    border-color: var(--vidrio-tinte-grueso);
+    -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%);
+    box-shadow: var(--vidrio-grosor), 0 12px 28px -10px rgba(8, 32, 60, .35);
+}
+
+/* ---- La foto con un aro de vidrio real: atras esta la portada, que si tiene detalle ---- */
+.pagina-vidrio .profile-avatar {
+    background: var(--vidrio-tinte-grueso);
+    -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%);
+    box-shadow: var(--vidrio-grosor), 0 12px 28px -10px rgba(8, 32, 60, .35);
+}
+
+/* ---- Vidrio real en TODO el sitio (fase 2): la capa de controles que flota sobre el
+   contenido, como en Liquid Glass. Las tarjetas de cada pagina llegan en las fases 3 a 6 ---- */
+/* Barra de arriba y pestanas del celular: por debajo pasa todo el contenido al bajar
+   (antes: 82 % y 94 % de blanco con 16 px de desenfoque) */
+/* Etiquetas de las pestanas: con su gris de siempre (--ink-muted) el tinte tendria que ser 94 % (casi
+   solido) para aguantar el pie oscuro pasando por detras; con --ink-3, como los enlaces de la barra, basta 86 % */
+.tabbar a:not(.is-active) { color: var(--ink-3); }
+body > header, [data-theme="dark"] body > header {
+    background: var(--vidrio-barra);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+}
+.tabbar, [data-theme="dark"] .tabbar {
+    background: var(--vidrio-pestanas);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+}
+/* Menus: el "..." de Mensajes y el "Mas" del perfil, la campana y las listas desplegables de la
+   marca (filtros de Vacantes...). Pasan sobre contenido con detalle: vidrio grueso real */
+:is(.menu-acciones, .notifications-dropdown, .lista-panel) {
+    --ink-muted: var(--vidrio-gris);
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-menu);
+    border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
+    box-shadow: var(--vidrio-grosor), var(--vidrio-sombra-grueso);
+    -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
+}
+.menu-acciones { border-radius: 18px; }
+/* Al pasar el mouse, un velo y no un gris solido (sobre el vidrio se veia como un parche) */
+:root { --vidrio-hover: rgba(8, 32, 60, .06); }
+[data-theme="dark"] { --vidrio-hover: rgba(255, 255, 255, .07); }
+.menu-acciones button:hover, .menu-acciones button:focus-visible, .notification-item:not(.unread):hover { background: var(--vidrio-hover); }
+
+/* Ventanas (las de UI.ventana y las viejas del perfil), la paleta Ctrl+K y la tarjeta del
+   recorrido guiado: van sobre el fondo oscurecido y llevan formularios, asi que el tinte es alto
+   (86 %). Los campos para escribir siguen solidos */
+:is(.modal-content, .modal-content-small, .cmdk-panel, .recorrido-tarjeta) {
+    --ink-muted: var(--vidrio-gris);
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-hoja);
+    border: 1px solid;
+    border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
+    box-shadow: var(--vidrio-grosor), var(--vidrio-sombra-grueso);
+    -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%);
+}
+/* La franja de botones de abajo: lo que pasa por debajo al hacer scroll se desenfoca (con un
+   tinte solo, el formulario se veria a traves) */
+.modal-actions {
+    background: var(--vidrio-pie);
+    -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+}
+/* Avisos: azul marino translucido en los dos temas, con la letra blanca de siempre */
+.toast {
+    background: linear-gradient(160deg, rgba(255, 255, 255, .1), transparent 42%), var(--vidrio-aviso);
+    border: 1px solid;
+    border-color: rgba(255, 255, 255, .22) rgba(255, 255, 255, .06) rgba(255, 255, 255, .06) rgba(255, 255, 255, .22);
+    -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+}
+/* Esqueletos de carga dentro del vidrio: un velo, no un gris solido */
+.pagina-vidrio .skeleton { background: var(--vidrio-esqueleto); }
+.pagina-vidrio .skeleton-card {
+    background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte);
+    border-color: var(--vidrio-luz-1) var(--vidrio-luz-2) var(--vidrio-luz-2) var(--vidrio-luz-1);
+}
+
+/* ---- Turquesa como texto en oscuro: sobre el vidrio, el luminoso (con #2BB6C6 bajaba a 4.1) ---- */
+[data-theme="dark"] .pagina-vidrio :is(.cifra-ir, .ver-todas, .btn-view-all, .profile-headline,
+    .profile-section .section-header .btn-icon, .btn-add-skill) { color: var(--sea-luz); }
+/* Sobre su propio fondo turquesa (insignias "1 de 3", inicial de la empresa) hace falta aun mas
+   claro: con --sea-luz quedaban en 4.35 y 4.46. Las insignias naranja y gris conservan su color */
+[data-theme="dark"] .pagina-vidrio :is(.match-badge-small:not(.match-excellent, .match-fair), .company-logo-compact,
+    .company-logo-opp, .empresa-cuenta, .primeros-pasos-cuenta,
+    .connection-avatar-circle, .conversation-avatar, .empresa-avatar, .chat-avatar, .candidate-mini-avatar,
+    .etiqueta-vacante.es-nueva, .card-skills .skill.is-common, .status-planned, .auth-eyebrow) { color: #A3ECF3; } /* fase 4: "Nueva" y "ya tienes" en 3.6 a 4.2; fase 5: "Proximo" en 4.3 */
+/* La pestana activa del celular, en oscuro: el turquesa luminoso (con #2BB6C6 sobre su fondo turquesa, 4.4) */
+[data-theme="dark"] .tabbar a.is-active { color: var(--sea-luz); } /* fase 3: "4", "2 de 5" y "H" quedaban en 3.8 a 4.4 */
+[data-theme="dark"] .pagina-vidrio .meta-tag.es-verificada { color: #7FE3B8; } /* "Empresa verificada": con #3FCB93 quedaba en 4.36 */
+[data-theme="dark"] .pagina-vidrio .match-badge-small.match-excellent { color: #FFC896; } /* el naranja de siempre quedaba en 3.7 */
+
+/* ---- Texto suelto sobre las manchas (sin tarjeta debajo): una pastilla de vidrio fino. El enlace
+   "Todas las empresas" del perfil publico quedaba entre 3.9 y 4.5 segun la mancha que pasara ---- */
+.pagina-vidrio .empresa-volver {
+    padding-inline: var(--s4);
+    border: 1px solid var(--vidrio-borde-fino); border-radius: var(--r-pill);
+    background: var(--vidrio-tinte-fino); box-shadow: var(--vidrio-brillo-fino);
+}
+[data-theme="dark"] .pagina-vidrio .empresa-volver { background: var(--vidrio-tinte); color: var(--sea-luz); }
+
+/* ---- Quien pide menos transparencia, alto contraste o imprime: solido y sin manchas ---- */
+@media (prefers-reduced-transparency: reduce) {
+    .pagina-vidrio .fondo-vivo { display: none; }
+    .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card, .skeleton-card,
+        .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
+        .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
+        .opportunities-header, .directorio-cabecera, .connections-header,
+        .stat-box, .roadmap-card, .benefit-item, .pathway-card, .panel-bloque, .choice-card, .cerca-tarjeta, .cerca-vacio,
+        :where(.indicadores-cifras) > li, .indicador, .panel-inicio, .search-section, .impact-stats, .benefits-section, .innovation-section,
+        .cerca-section,
+        .indicadores-cabecera, .como-funciona, .usuarios-empresas, .results-section,
+        .registro-section, .auth-panel),
+    .pagina-vidrio .registro-section > .container > .registro-form,
+    :is(.menu-acciones, .notifications-dropdown, .lista-panel, .modal-content, .modal-content-small, .cmdk-panel, .recorrido-tarjeta) {
+        background: var(--surface); border-color: var(--hairline); -webkit-backdrop-filter: none; backdrop-filter: none;
+    }
+    body > header, [data-theme="dark"] body > header, .tabbar, [data-theme="dark"] .tabbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .modal-actions { background: var(--surface-sunk); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .toast { background: var(--surface-inverse); border-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (forced-colors: active) { .pagina-vidrio .fondo-vivo { display: none; } }
+@media print { .fondo-vivo { display: none !important; } .pagina-vidrio { background: #fff; } }
