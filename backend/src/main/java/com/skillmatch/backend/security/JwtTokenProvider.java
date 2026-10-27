@@ -157,16 +157,12 @@ public class JwtTokenProvider {
                     .build()
                     .parseSignedClaims(authToken);
             return !tokenBlacklistService.isBlacklisted(authToken);
-        } catch (SecurityException ex) {
-            logger.error("Invalid JWT signature: {}", ex.getMessage(), ex);
-        } catch (MalformedJwtException ex) {
-            logger.error("Invalid JWT token: {}", ex.getMessage(), ex);
         } catch (ExpiredJwtException ex) {
-            logger.error("Expired JWT token: {}", ex.getMessage(), ex);
-        } catch (UnsupportedJwtException ex) {
-            logger.error("Unsupported JWT token: {}", ex.getMessage(), ex);
-        } catch (IllegalArgumentException ex) {
-            logger.error("JWT claims string is empty: {}", ex.getMessage(), ex);
+            // Normal: tokens de sesiones viejas. No ensucia los logs de producción.
+            logger.debug("Token vencido");
+        } catch (SecurityException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException ex) {
+            // Firma mala o token roto: puede ser alguien probando. Una línea, sin traza.
+            logger.warn("Token rechazado ({}): {}", ex.getClass().getSimpleName(), ex.getMessage());
         }
         return false;
     }
