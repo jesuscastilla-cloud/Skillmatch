@@ -163,6 +163,10 @@ Restaura en la base local `skillmatch-restaurada` y muestra cuántos documentos 
 lo que se espera (por ejemplo, que `users` tenga más o menos las cuentas que hay en el sitio). Después, borrar esa
 base local: `mongosh mongodb://localhost:27017/skillmatch-restaurada --eval 'db.dropDatabase()'`.
 
+Si sale el aviso `This archive came from MongoDB 8.0..., but you are restoring to 8.3...`: Atlas y el MongoDB
+local tienen versiones distintas. Para esta prueba no importa (lo que se comprueba es que la copia se lee completa
+y trae los datos). En un desastre real se restaura en Atlas, que tiene la misma versión de la copia.
+
 **Desastre real** (restaurar sobre Atlas):
 1. Suspender el servicio en Render (para que nadie escriba mientras tanto).
 2. Restaurar primero en local y revisar que la copia esté bien (como la prueba mensual).

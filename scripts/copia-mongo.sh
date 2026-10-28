@@ -53,16 +53,20 @@ echo "Copiando la base..."
 "$MONGODUMP" --config="$TMP/config.yaml" --archive --gzip --quiet \
   | cifrar --symmetric --cipher-algo AES256 --output "$ARCHIVO"
 
-# Una copia que no se puede leer no es una copia: se descifra y se hace un simulacro de restauración
+# Una copia que no se puede leer no es una copia. Dos comprobaciones:
 echo "Comprobando la copia..."
-# (sin --quiet: si falla, su mensaje dice por qué)
-if ! cifrar --decrypt --quiet "$ARCHIVO" 2>/dev/null | "$MONGORESTORE" --archive --gzip --dryRun 2>"$TMP/err" >/dev/null; then
-  echo "--- Lo que dijo mongorestore:" >&2
+fallo() {
+  echo "--- $1:" >&2
   grep -v "^$" "$TMP/err" | tail -n 15 >&2
   echo "ERROR: la copia no se pudo comprobar. Se borra para no confiar en ella." >&2
   rm -f "$ARCHIVO"
   exit 1
-fi
+}
+# 1. Descifrarla COMPLETA: gpg revisa al final que ningún byte se haya dañado
+cifrar --decrypt --quiet "$ARCHIVO" 2>"$TMP/err" >/dev/null || fallo "Lo que dijo gpg"
+# 2. Simulacro de restauración: revisa la estructura. Solo lee el comienzo y se cierra,
+#    así que el "Broken pipe" de gpg en ese momento no cuenta (ya se comprobó en el paso 1)
+{ cifrar --decrypt --quiet "$ARCHIVO" 2>/dev/null || true; }   | "$MONGORESTORE" --archive --gzip --dryRun 2>"$TMP/err" >/dev/null || fallo "Lo que dijo mongorestore"
 echo "Copia lista: $ARCHIVO ($(du -h "$ARCHIVO" | cut -f1))"
 
 # Rotación: solo las COPIAS_GUARDAR más recientes

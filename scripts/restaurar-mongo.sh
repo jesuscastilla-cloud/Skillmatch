@@ -42,6 +42,14 @@ descifrar() {
   fi
 }
 
+# Antes de tocar ninguna base: descifrarla completa. gpg revisa al final que no esté dañada;
+# si se restaurara de una vez, el daño se notaría cuando ya hay datos a medias.
+if ! descifrar > /dev/null 2>"$TMP/err"; then
+  grep -v "^$" "$TMP/err" | tail -n 5 >&2
+  echo "ERROR: la copia está dañada o la clave no es la correcta. No se restauró nada." >&2
+  exit 1
+fi
+
 # Qué base trae la copia (el simulacro lista "base.colección")
 if [ -z "${BASE_ORIGEN:-}" ]; then
   BASE_ORIGEN="$( { descifrar | "$MONGORESTORE" --archive --gzip --dryRun -v 2>&1 \
