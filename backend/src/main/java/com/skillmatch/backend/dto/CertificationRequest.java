@@ -3,6 +3,8 @@ package com.skillmatch.backend.dto;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import com.skillmatch.backend.validation.EntradaSegura;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,6 +32,7 @@ public class CertificationRequest {
     @Size(max = 100, message = "{validation.certification.credentialId.max}")
     private String credentialId;
 
+    @Pattern(regexp = EntradaSegura.REGEX_ENLACE, message = "El enlace del certificado debe empezar por http:// o https://")
     private String credentialUrl;
 
     @Size(max = 500, message = "{validation.certification.description.max}")

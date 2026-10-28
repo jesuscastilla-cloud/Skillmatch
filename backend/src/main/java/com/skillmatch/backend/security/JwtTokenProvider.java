@@ -19,6 +19,8 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -34,6 +36,11 @@ public class JwtTokenProvider {
 
     private SecretKey signingKey;
 
+    /** Claves de ejemplo publicadas en el repositorio: nunca sirven para firmar. */
+    static final Set<String> CLAVES_PUBLICAS = Set.of(
+            "skillmatch-secreto-solo-para-desarrollo-local-no-usar-en-produccion",
+            "cambia-esto-por-una-cadena-larga-y-aleatoria-de-mas-de-32-caracteres");
+
     @PostConstruct
     private void init() {
         String secreto = jwtProperties.getSecret();
@@ -48,6 +55,12 @@ public class JwtTokenProvider {
                 "Genera una con: openssl rand -base64 48");
         }
 
+        if (CLAVES_PUBLICAS.contains(secreto.trim())) {
+            throw new IllegalStateException(
+                "JWT_SECRET tiene un valor de ejemplo que esta publicado en el repositorio. " +
+                "Genera una clave propia con: openssl rand -base64 48");
+        }
+
         if (jwtProperties.getExpiration() == null || jwtProperties.getExpiration() <= 0) {
             throw new IllegalStateException(
                 "jwt.expiration (JWT_EXPIRATION) debe ser un numero de milisegundos mayor que 0.");
@@ -59,7 +72,10 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(Authentication authentication) {
-        UserDetailsImpl user = (UserDetailsImpl) authentication.getPrincipal();
+        return generateToken((UserDetailsImpl) authentication.getPrincipal());
+    }
+
+    public String generateToken(UserDetailsImpl user) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
 
@@ -68,16 +84,23 @@ public class JwtTokenProvider {
                 .collect(Collectors.toList());
 
         return Jwts.builder()
-                .subject(user.getUsername())
+                // Identificador único: dos logins en el mismo segundo no dan el mismo token
+                // (si no, cerrar sesión en un dispositivo cerraría también el otro)
+                .id(UUID.randomUUID().toString())
+                // El sujeto es el ID de la cuenta (no cambia; las cuentas de teléfono no tienen correo).
+                // Los tokens de antes de la fase 9 llevaban el correo: CustomUserDetailsService acepta los dos.
+                .subject(user.getId())
                 .claim("userId", user.getId())
                 .claim("roles", roles)
+                .claim("ver", user.getTokenVersion())
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(signingKey)
                 .compact();
     }
 
-    public String getUsernameFromToken(String token) {
+    /** A quién pertenece el token: el ID de la cuenta (o el correo, en tokens anteriores a la fase 9). */
+    public String getSubjectFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(signingKey)
                 .build()
@@ -95,6 +118,17 @@ public class JwtTokenProvider {
                 .getPayload();
 
         return claims.get("userId", String.class);
+    }
+
+    /** Versión de sesiones escrita en el token. Los tokens viejos no la traen: cuentan como 0. */
+    public int getTokenVersionFromJwt(String token) {
+        Integer version = Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("ver", Integer.class);
+        return version == null ? 0 : version;
     }
 
     public long getExpirationMillis() {
@@ -130,16 +164,12 @@ public class JwtTokenProvider {
                     .build()
                     .parseSignedClaims(authToken);
             return !tokenBlacklistService.isBlacklisted(authToken);
-        } catch (SecurityException ex) {
-            logger.error("Invalid JWT signature: {}", ex.getMessage(), ex);
-        } catch (MalformedJwtException ex) {
-            logger.error("Invalid JWT token: {}", ex.getMessage(), ex);
         } catch (ExpiredJwtException ex) {
-            logger.error("Expired JWT token: {}", ex.getMessage(), ex);
-        } catch (UnsupportedJwtException ex) {
-            logger.error("Unsupported JWT token: {}", ex.getMessage(), ex);
-        } catch (IllegalArgumentException ex) {
-            logger.error("JWT claims string is empty: {}", ex.getMessage(), ex);
+            // Normal: tokens de sesiones viejas. No ensucia los logs de producción.
+            logger.debug("Token vencido");
+        } catch (SecurityException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException ex) {
+            // Firma mala o token roto: puede ser alguien probando. Una línea, sin traza.
+            logger.warn("Token rechazado ({}): {}", ex.getClass().getSimpleName(), ex.getMessage());
         }
         return false;
     }

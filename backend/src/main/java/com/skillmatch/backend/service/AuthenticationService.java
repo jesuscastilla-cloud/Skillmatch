@@ -9,14 +9,21 @@ import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.TokenBlacklistService;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,20 +37,43 @@ public class AuthenticationService {
     private final CompanyRepository companyRepository;
     private final JwtTokenProvider tokenProvider;
     private final TokenBlacklistService tokenBlacklistService;
+    private final LoginAttemptService loginAttemptService;
+    private final MongoTemplate mongoTemplate;
 
     public AuthResponse login(LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(
-                loginRequest.getEmail(),
-                loginRequest.getPassword()
-            )
-        );
+        // Bloqueo por cuenta: 5 contraseñas equivocadas en 15 min bloquean el correo
+        loginAttemptService.checkNotLocked(loginRequest.getEmail());
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                    loginRequest.getEmail(),
+                    loginRequest.getPassword()
+                )
+            );
+        } catch (BadCredentialsException e) {
+            loginAttemptService.recordFailure(loginRequest.getEmail());
+            throw e;
+        }
+        loginAttemptService.reset(loginRequest.getEmail());
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = tokenProvider.generateToken(authentication);
 
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        return respuesta(user, jwt);
+    }
+
+    /** Sesión para una cuenta que ya probó quién es por otro camino (Google). */
+    public AuthResponse sesionPara(User user) {
+        return respuesta(user, tokenProvider.generateToken(UserDetailsImpl.build(user)));
+    }
+
+    private AuthResponse respuesta(User user, String jwt) {
+        // Solo este campo ($set): no pisa cambios del perfil que ocurran al mismo tiempo
+        mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(user.getId())),
+                new Update().set("lastLoginAt", LocalDateTime.now()).unset("avisoInactividadEn"), User.class);
 
         String primaryRole = resolvePrimaryRole(user);
         String companyId = null;
@@ -54,7 +84,7 @@ public class AuthenticationService {
         }
 
         long expiresAt = System.currentTimeMillis() + tokenProvider.getExpirationMillis();
-        log.info("Login exitoso: email={}, rol={}", user.getEmail(), primaryRole);
+        log.info("Login exitoso: id={}, rol={}", user.getId(), primaryRole);
         AuthResponse response = new AuthResponse(jwt, user.getId(), companyId, user.getEmail(),
             user.getFirstName(), user.getLastName(), primaryRole);
         response.setExpiresAt(expiresAt);

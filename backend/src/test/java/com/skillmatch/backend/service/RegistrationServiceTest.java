@@ -5,9 +5,17 @@ import com.skillmatch.backend.dto.RegisterRequest;
 import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.model.Consentimiento;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.mockito.ArgumentCaptor;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
+import com.skillmatch.backend.validation.ValidadorCorreo;
+import com.skillmatch.backend.model.RegistroPendiente;
+import com.skillmatch.backend.repository.RegistroPendienteRepository;
+import com.skillmatch.backend.security.UserDetailsImpl;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +41,10 @@ class RegistrationServiceTest {
     @Mock private CompanyRepository companyRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtTokenProvider tokenProvider;
+    @Mock private ValidadorCorreo validadorCorreo;
+    @Mock private RegistroPendienteRepository registrosPendientes;
+    @Mock private CodigoCorreoService codigos;
+    @Mock private CorreoService correo;
 
     @InjectMocks
     private RegistrationService registrationService;
@@ -42,8 +54,10 @@ class RegistrationServiceTest {
 
     @BeforeEach
     void setUp() {
-        userRequest = new RegisterRequest("user@test.com", "password123", "Ana", "García", "3001234567", "USER");
-        empresaRequest = new RegisterRequest("empresa@test.com", "password123", "TechCorp", "SAS", "3009876543", "EMPRESA");
+        // Por defecto el correo puede recibir mensajes (el DNS se prueba en ValidadorCorreoTest)
+        lenient().when(validadorCorreo.puedeRecibir(anyString())).thenReturn(true);
+        userRequest = new RegisterRequest("user@test.com", "Clave-de-prueba-1", "Ana", "García", "3001234567", "USER");
+        empresaRequest = new RegisterRequest("empresa@test.com", "Clave-de-prueba-1", "TechCorp", "SAS", "3009876543", "EMPRESA");
     }
 
     @Test
@@ -110,6 +124,181 @@ class RegistrationServiceTest {
                 .isInstanceOf(DuplicateResourceException.class)
                 .hasMessageContaining("email");
 
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_contrasenaComun_seRechazaSinCrearCuenta() {
+        userRequest.setPassword("Cartagena");
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Elige otra");
+        verify(userRepository, never()).save(any());
+    }
+
+    // ─── Consentimiento (Ley 1581) ────────────────────────────────────────────
+
+    @Test
+    void register_conCasillas_guardaLaPruebaDelConsentimiento() {
+        userRequest.setAceptaPolitica(true);
+        userRequest.setMayorDeEdad(true);
+        ArgumentCaptor<User> guardado = registrarYCapturar();
+
+        assertThat(guardado.getValue().getConsentimientos())
+                .extracting(Consentimiento::getTipo, Consentimiento::getVersion)
+                .containsExactly(tuple(Consentimiento.POLITICA_DATOS, "0.1"), tuple(Consentimiento.MAYOR_DE_EDAD, "0.1"));
+        assertThat(guardado.getValue().getConsentimientos()).allSatisfy(c -> assertThat(c.getFecha()).isNotNull());
+    }
+
+    @Test
+    void register_sinCasillas_mientrasNoSeExige_creaLaCuenta() {
+        ArgumentCaptor<User> guardado = registrarYCapturar();
+
+        assertThat(guardado.getValue().getConsentimientos()).isEmpty();
+    }
+
+    @Test
+    void register_sinAceptarPolitica_cuandoSeExige_noCreaLaCuenta() {
+        ReflectionTestUtils.setField(registrationService, "exigirConsentimiento", true);
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("política");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_personaSinMayoriaDeEdad_cuandoSeExige_noCreaLaCuenta() {
+        ReflectionTestUtils.setField(registrationService, "exigirConsentimiento", true);
+        userRequest.setAceptaPolitica(true);
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("mayor de edad");
+        verify(userRepository, never()).save(any());
+    }
+
+    private ArgumentCaptor<User> registrarYCapturar() {
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId("user-id-10");
+            return u;
+        });
+        Authentication mockAuth = mock(Authentication.class);
+        when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
+        when(tokenProvider.generateToken(mockAuth)).thenReturn("jwt.token");
+        when(tokenProvider.getExpirationMillis()).thenReturn(86400000L);
+
+        registrationService.register(userRequest);
+
+        ArgumentCaptor<User> guardado = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(guardado.capture());
+        return guardado;
+    }
+
+    @Test
+    void register_correoQueNoPuedeRecibir_seRechaza() {
+        when(validadorCorreo.puedeRecibir("user@test.com")).thenReturn(false);
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(ValidadorCorreo.MENSAJE);
+        verify(userRepository, never()).save(any());
+    }
+
+    // ─── Registro con código: no hay cuentas a medias ─────────────────────────
+
+    @Test
+    void iniciarRegistro_guardaPendienteYEnviaCodigo_sinCrearCuenta() {
+        when(userRepository.existsByEmail("user@test.com")).thenReturn(false);
+        when(passwordEncoder.encode("Clave-de-prueba-1")).thenReturn("hash");
+        when(codigos.generar("user@test.com", CodigoCorreoService.REGISTRO)).thenReturn(Optional.of("482913"));
+
+        registrationService.iniciarRegistro(userRequest);
+
+        ArgumentCaptor<RegistroPendiente> pendiente = ArgumentCaptor.forClass(RegistroPendiente.class);
+        verify(registrosPendientes).save(pendiente.capture());
+        assertThat(pendiente.getValue().getPasswordHash()).isEqualTo("hash");
+        assertThat(pendiente.getValue().getExpiresAt()).isNotNull();
+        verify(correo).enviar(eq("user@test.com"), anyString(), contains("482913"));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void iniciarRegistro_correoYaRegistrado_respondeIgualYAvisaAlDueno() {
+        when(userRepository.existsByEmail("user@test.com")).thenReturn(true);
+        when(codigos.generar("user@test.com", "AVISO_CUENTA_EXISTENTE")).thenReturn(Optional.of("x"));
+
+        registrationService.iniciarRegistro(userRequest); // no lanza: misma respuesta que un correo nuevo
+
+        verify(correo).enviar(eq("user@test.com"), contains("Alguien intentó"), anyString());
+        verify(registrosPendientes, never()).save(any());
+        verify(codigos, never()).generar("user@test.com", CodigoCorreoService.REGISTRO);
+    }
+
+    @Test
+    void confirmarRegistro_codigoMalo_noCreaNada() {
+        when(codigos.verificar("user@test.com", CodigoCorreoService.REGISTRO, "000000")).thenReturn(false);
+
+        assertThatThrownBy(() -> registrationService.confirmarRegistro("user@test.com", "000000"))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void confirmarRegistro_codigoBueno_creaCuentaVerificadaYAbreSesion() {
+        when(codigos.verificar("user@test.com", CodigoCorreoService.REGISTRO, "482913")).thenReturn(true);
+        when(registrosPendientes.findById("user@test.com")).thenReturn(Optional.of(new RegistroPendiente(
+                "user@test.com", "hash", "Ana", "García", "3001234567", "USER", List.of(), new java.util.Date())));
+        when(userRepository.existsByEmail("user@test.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId("nuevo-id");
+            return u;
+        });
+        when(tokenProvider.generateToken(any(UserDetailsImpl.class))).thenReturn("jwt.token");
+
+        AuthResponse result = registrationService.confirmarRegistro("user@test.com", "482913");
+
+        ArgumentCaptor<User> guardado = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(guardado.capture());
+        assertThat(guardado.getValue().getEmailVerified()).isTrue();
+        assertThat(guardado.getValue().getPassword()).isEqualTo("hash");
+        assertThat(result.getToken()).isEqualTo("jwt.token");
+        assertThat(result.getRole()).isEqualTo("USER");
+        verify(registrosPendientes).deleteById("user@test.com");
+        verifyNoInteractions(authenticationManager);
+    }
+
+    // ─── Teléfono ─────────────────────────────────────────────────────────────
+
+    @Test
+    void register_guardaElTelefonoEnFormatoInternacional() {
+        userRequest.setPhone("300 123 4567");
+        ArgumentCaptor<User> guardado = registrarYCapturar();
+
+        assertThat(guardado.getValue().getPhone()).isEqualTo("+573001234567");
+    }
+
+    @Test
+    void register_telefonoDeOtraCuenta_seRechaza() {
+        when(userRepository.existsByPhone("+573001234567")).thenReturn(true);
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("otra cuenta");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_telefonoInvalido_seRechaza() {
+        userRequest.setPhone("12345");
+
+        assertThatThrownBy(() -> registrationService.register(userRequest))
+                .isInstanceOf(IllegalArgumentException.class);
         verify(userRepository, never()).save(any());
     }
 }

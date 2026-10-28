@@ -7,6 +7,7 @@ import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.validation.Telefonos;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -17,7 +18,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +35,9 @@ public class CompanyService {
     private final JobService jobService;
     private final ApplicationService applicationService;
     private final MongoTemplate mongoTemplate;
+
+    /** Las búsquedas de empresas no tienen paginación: se cortan aquí. */
+    static final int MAX_RESULTADOS = 100;
 
     public CompanyResponse createCompany(CompanyRequest request) {
         if (request.getEmail() == null || request.getEmail().isBlank()) {
@@ -126,11 +129,11 @@ public class CompanyService {
         if (keyword == null || keyword.isBlank()) return getActiveCompanies();
         Criteria criteria = Criteria.where("active").is(true)
                 .orOperator(
-                        Criteria.where("name").regex(keyword, "i"),
-                        Criteria.where("description").regex(keyword, "i"),
-                        Criteria.where("industry").regex(keyword, "i")
+                        Criteria.where("name").regex(BusquedaSegura.literal(keyword), "i"),
+                        Criteria.where("description").regex(BusquedaSegura.literal(keyword), "i"),
+                        Criteria.where("industry").regex(BusquedaSegura.literal(keyword), "i")
                 );
-        return mongoTemplate.find(new Query(criteria), Company.class).stream()
+        return mongoTemplate.find(new Query(criteria).limit(MAX_RESULTADOS), Company.class).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -139,10 +142,10 @@ public class CompanyService {
         List<Criteria> conditions = new ArrayList<>();
         conditions.add(Criteria.where("active").is(true));
         if (industry != null && !industry.isBlank()) conditions.add(Criteria.where("industry").is(industry));
-        if (location != null && !location.isBlank()) conditions.add(Criteria.where("location").regex(location, "i"));
+        if (location != null && !location.isBlank()) conditions.add(Criteria.where("location").regex(BusquedaSegura.literal(location), "i"));
         if (size != null && !size.isBlank()) conditions.add(Criteria.where("size").is(size));
         Criteria criteria = new Criteria().andOperator(conditions.toArray(new Criteria[0]));
-        return mongoTemplate.find(new Query(criteria), Company.class).stream()
+        return mongoTemplate.find(new Query(criteria).limit(MAX_RESULTADOS), Company.class).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -186,17 +189,12 @@ public class CompanyService {
         long totalApplications = applicationService.countApplicationsByCompany(companyId);
         long pendingApplications = applicationService.countPendingApplicationsByCompany(companyId);
 
-        LocalDateTime createdAt = company.getCreatedAt();
-        long daysSinceCreation = createdAt != null ? ChronoUnit.DAYS.between(createdAt, LocalDateTime.now()) : 0;
-        long profileViews = 100 + (totalJobs * 15L) + (totalApplications * 3L) + (daysSinceCreation * 5L);
-
         double responseRate = 0;
         if (totalApplications > 0) {
             responseRate = ((totalApplications - pendingApplications) * 100.0) / totalApplications;
         }
 
         Map<String, Object> stats = new HashMap<>();
-        stats.put("profileViews", profileViews);
         stats.put("activeJobs", activeJobs);
         stats.put("totalJobs", totalJobs);
         stats.put("totalApplications", totalApplications);
@@ -229,7 +227,8 @@ public class CompanyService {
         company.setLogo(request.getLogo());
         company.setWebsite(request.getWebsite());
         company.setEmail(request.getEmail());
-        company.setPhone(request.getPhone());
+        // Se valida igual, pero puede repetirse: la empresa puede usar el número de quien la registró
+        company.setPhone(Telefonos.normalizarOpcional(request.getPhone()));
         company.setFoundedYear(request.getFoundedYear());
         company.setBenefits(request.getBenefits());
         return company;

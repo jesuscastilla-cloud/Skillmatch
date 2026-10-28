@@ -78,29 +78,44 @@ public class ApplicationService {
         return mapToResponse(saved, user, job, company);
     }
 
-    public ApplicationResponse getApplicationById(String id) {
+    /**
+     * Solo la ven quien se postuló, la empresa dueña de la vacante o un ADMIN.
+     * A cualquier otro se le responde "no encontrada" (404, no 403) para no
+     * confirmar que ese ID existe.
+     */
+    public ApplicationResponse getApplicationById(String id, String requesterId, boolean isAdmin) {
         Application application = applicationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Postulación no encontrada con ID: " + id));
-        return loadAndMapSingle(application);
+                .orElseThrow(() -> new ResourceNotFoundException("Postulación no encontrada"));
+
+        boolean isApplicant = requesterId.equals(application.getUserId());
+        boolean isJobOwner = jobRepository.findById(application.getJobId())
+                .flatMap(job -> companyRepository.findById(job.getCompanyId()))
+                .map(company -> requesterId.equals(company.getUserId()))
+                .orElse(false);
+
+        if (!isAdmin && !isApplicant && !isJobOwner) {
+            throw new ResourceNotFoundException("Postulación no encontrada");
+        }
+
+        ApplicationResponse response = loadAndMapSingle(application);
+        if (!isAdmin && !isJobOwner) {
+            response.setNotes(null); // las notas son internas de la empresa
+        }
+        return response;
     }
 
     public List<ApplicationResponse> getApplicationsByUser(String userId) {
-        return mapList(applicationRepository.findByUserId(userId));
+        List<ApplicationResponse> applications = mapList(applicationRepository.findByUserId(userId));
+        applications.forEach(app -> app.setNotes(null)); // las notas son internas de la empresa
+        return applications;
     }
 
-    public List<ApplicationResponse> getApplicationsByJob(String jobId) {
-        return mapList(applicationRepository.findByJobId(jobId));
-    }
-
-    public List<ApplicationResponse> getApplicationsByJob(String jobId, String requesterId) {
+    /** La empresa dueña de la vacante, o un ADMIN que modera, ve sus postulaciones. */
+    public List<ApplicationResponse> getApplicationsByJob(String jobId, String requesterId, boolean isAdmin) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado con ID: " + jobId));
-        verifyJobOwnership(job, requesterId);
+        if (!isAdmin) verifyJobOwnership(job, requesterId);
         return mapList(applicationRepository.findByJobId(jobId));
-    }
-
-    public List<ApplicationResponse> getApplicationsByCompany(String companyId) {
-        return mapList(findByCompanyId(companyId));
     }
 
     public List<ApplicationResponse> getApplicationsByCompany(String companyId, String requesterId) {
@@ -108,8 +123,9 @@ public class ApplicationService {
         return mapList(findByCompanyId(companyId));
     }
 
-    public Page<ApplicationResponse> getApplicationsByCompany(String companyId, String requesterId, Pageable pageable) {
-        verifyCompanyOwnership(companyId, requesterId);
+    public Page<ApplicationResponse> getApplicationsByCompany(String companyId, String requesterId,
+                                                              boolean isAdmin, Pageable pageable) {
+        if (!isAdmin) verifyCompanyOwnership(companyId, requesterId);
         List<String> jobIds = jobRepository.findByCompanyId(companyId)
                 .stream().map(Job::getId).collect(Collectors.toList());
         if (jobIds.isEmpty()) return Page.empty(pageable);
@@ -120,8 +136,22 @@ public class ApplicationService {
         return new PageImpl<>(mapList(apps), pageable, total);
     }
 
-    public List<ApplicationResponse> getApplicationsByStatus(String status) {
-        return mapList(applicationRepository.findByStatus(ApplicationStatus.fromValue(status)));
+    /** Una empresa solo ve las postulaciones a sus propias vacantes; un ADMIN, todas. */
+    public List<ApplicationResponse> getApplicationsByStatus(String status, String requesterId, boolean isAdmin) {
+        ApplicationStatus appStatus = ApplicationStatus.fromValue(status);
+        if (isAdmin) {
+            return mapList(applicationRepository.findByStatus(appStatus));
+        }
+
+        List<String> jobIds = companyRepository.findByUserId(requesterId)
+                .map(company -> jobRepository.findByCompanyId(company.getId()).stream()
+                        .map(Job::getId)
+                        .collect(Collectors.toList()))
+                .orElse(List.of());
+        if (jobIds.isEmpty()) return List.of();
+
+        Query query = new Query(Criteria.where("jobId").in(jobIds).and("status").is(appStatus));
+        return mapList(mongoTemplate.find(query, Application.class));
     }
 
     public ApplicationResponse updateStatus(String id, String status, String notes, String requesterId) {
@@ -174,7 +204,11 @@ public class ApplicationService {
                 Application.class);
     }
 
-    public long countApplicationsByJob(String jobId) {
+    /** Solo la empresa dueña de la vacante, o un ADMIN, sabe cuántos se postularon. */
+    public long countApplicationsByJob(String jobId, String requesterId, boolean isAdmin) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado con ID: " + jobId));
+        if (!isAdmin) verifyJobOwnership(job, requesterId);
         long total = applicationRepository.countByJobId(jobId);
         log.debug("Total de postulaciones para job {}: {}", jobId, total);
         return total;

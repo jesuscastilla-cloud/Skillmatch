@@ -20,7 +20,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExperienceController {
 
-    private final ExperienceService experienceService = null;
+    // Sin "= null": @RequiredArgsConstructor solo inyecta los final que no tienen valor
+    private final ExperienceService experienceService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")

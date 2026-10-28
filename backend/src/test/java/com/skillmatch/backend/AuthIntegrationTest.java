@@ -53,7 +53,7 @@ class AuthIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         // Register once
         String body = """
-                {"email":"dup@test.com","password":"password123","firstName":"Test",
+                {"email":"dup@test.com","password":"Clave-de-prueba-1","firstName":"Test",
                  "lastName":"User","userType":"USER"}
                 """;
         HttpEntity<String> request = new HttpEntity<>(body, headers);

@@ -98,6 +98,9 @@ public class SavedJobController {
             @PathVariable String jobId,
             @RequestBody NotesRequest request,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        if (request.notes() != null && request.notes().length() > 1000) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Las notas no pueden tener más de 1000 caracteres"));
+        }
         try {
             return ResponseEntity.ok(savedJobService.updateNotes(requireUser(currentUser), jobId, request.notes()));
         } catch (RuntimeException e) {

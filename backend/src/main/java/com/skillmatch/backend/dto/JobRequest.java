@@ -45,13 +45,17 @@ public class JobRequest {
     @Size(max = 100, message = "{validation.job.duration.max}")
     private String duration;
     
-    private List<String> requirements;
+    @Size(max = 50, message = "Máximo 50 elementos por lista")
+    private List<@Size(max = 500, message = "Cada elemento puede tener máximo 500 caracteres") String> requirements;
     
-    private List<String> responsibilities;
+    @Size(max = 50, message = "Máximo 50 elementos por lista")
+    private List<@Size(max = 500, message = "Cada elemento puede tener máximo 500 caracteres") String> responsibilities;
     
-    private List<String> skills;
+    @Size(max = 50, message = "Máximo 50 elementos por lista")
+    private List<@Size(max = 500, message = "Cada elemento puede tener máximo 500 caracteres") String> skills;
     
-    private List<String> benefits;
+    @Size(max = 50, message = "Máximo 50 elementos por lista")
+    private List<@Size(max = 500, message = "Cada elemento puede tener máximo 500 caracteres") String> benefits;
     
     @FutureOrPresent(message = "{validation.job.expiration.future}")
     private LocalDateTime expirationDate;

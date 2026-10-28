@@ -3,6 +3,7 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.ApplicationRequest;
 import com.skillmatch.backend.dto.ApplicationResponse;
 import com.skillmatch.backend.dto.MessageResponse;
+import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +42,9 @@ public class ApplicationController {
                     .body(applicationService.createApplication(userId, request));
         } catch (AccessDeniedException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(ex.getMessage()));
+        } catch (DuplicateResourceException e) {
+            // 409 con el mismo texto: oportunidades.js reconoce "Ya te has postulado"
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new MessageResponse("Error al crear postulación: " + e.getMessage()));
@@ -49,12 +53,15 @@ public class ApplicationController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> getApplicationById(@PathVariable String id) {
+    public ResponseEntity<?> getApplicationById(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.ok(applicationService.getApplicationById(id));
+            return ResponseEntity.ok(applicationService.getApplicationById(
+                    id, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new MessageResponse("Postulación no encontrada: " + e.getMessage()));
+                    .body(new MessageResponse("Postulación no encontrada"));
         }
     }
 
@@ -78,7 +85,8 @@ public class ApplicationController {
             @PathVariable String jobId,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.ok(applicationService.getApplicationsByJob(jobId, requireUser(currentUser)));
+            return ResponseEntity.ok(applicationService.getApplicationsByJob(
+                    jobId, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
@@ -96,7 +104,7 @@ public class ApplicationController {
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Page<ApplicationResponse> apps = applicationService.getApplicationsByCompany(
-                    companyId, requireUser(currentUser), pageable);
+                    companyId, requireUser(currentUser), hasRole(currentUser, "ADMIN"), pageable);
             return ResponseEntity.ok(apps);
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
@@ -108,8 +116,11 @@ public class ApplicationController {
 
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<List<ApplicationResponse>> getApplicationsByStatus(@PathVariable String status) {
-        return ResponseEntity.ok(applicationService.getApplicationsByStatus(status));
+    public ResponseEntity<List<ApplicationResponse>> getApplicationsByStatus(
+            @PathVariable String status,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        return ResponseEntity.ok(applicationService.getApplicationsByStatus(
+                status, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
     }
 
     @Operation(summary = "Actualizar estado", description = "La empresa cambia el estado de una postulación")
@@ -120,6 +131,9 @@ public class ApplicationController {
             @RequestParam String status,
             @RequestParam(required = false) String notes,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        if (notes != null && notes.length() > 1000) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Las notas no pueden tener más de 1000 caracteres"));
+        }
         try {
             return ResponseEntity.ok(applicationService.updateStatus(id, status, notes, requireUser(currentUser)));
         } catch (AccessDeniedException e) {
@@ -137,7 +151,8 @@ public class ApplicationController {
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             String requesterId = requireUser(currentUser);
-            boolean isAdmin = hasRole(currentUser, "ADMIN") || hasRole(currentUser, "EMPRESA");
+            // Solo ADMIN: una empresa no puede borrar postulaciones de nadie
+            boolean isAdmin = hasRole(currentUser, "ADMIN");
             applicationService.deleteApplication(id, requesterId, isAdmin);
             return ResponseEntity.ok(new MessageResponse("Postulación eliminada exitosamente"));
         } catch (AccessDeniedException e) {
@@ -150,8 +165,11 @@ public class ApplicationController {
 
     @GetMapping("/job/{jobId}/count")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<Long> countApplicationsByJob(@PathVariable String jobId) {
-        return ResponseEntity.ok(applicationService.countApplicationsByJob(jobId));
+    public ResponseEntity<Long> countApplicationsByJob(
+            @PathVariable String jobId,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        return ResponseEntity.ok(applicationService.countApplicationsByJob(
+                jobId, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
     }
 
     @GetMapping("/check")

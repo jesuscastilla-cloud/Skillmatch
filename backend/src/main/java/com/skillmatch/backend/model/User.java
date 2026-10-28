@@ -1,10 +1,10 @@
 package com.skillmatch.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,16 +25,24 @@ public class User implements UserDetails {
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    // Único entre las cuentas que lo tienen (índice parcial en MongoIndexConfig).
+    // Puede faltar en cuentas creadas con teléfono (fase 9).
     private String email;
 
+    // Nunca sale en un JSON, aunque alguien devuelva un User por error.
+    // No afecta a MongoDB: Spring Data guarda el campo igual.
+    @JsonIgnore
     private String password;
 
     private String firstName;
 
     private String lastName;
 
+    // Formato internacional E.164 ("+573001234567"), único entre cuentas (ver Telefonos)
     private String phone;
+
+    // true cuando confirmó el número con un código por SMS o WhatsApp (fase 9)
+    private Boolean phoneVerified;
 
     private String headline;
 
@@ -57,6 +65,29 @@ public class User implements UserDetails {
     private List<Certification> certifications = new ArrayList<>();
 
     private Boolean enabled = true;
+
+    // Versión de las sesiones: cambiar la contraseña la sube y todos los
+    // tokens con la versión anterior dejan de valer (ver JwtAuthenticationFilter)
+    @JsonIgnore
+    private Integer tokenVersion = 0;
+
+    // Prueba de las autorizaciones aceptadas (Ley 1581). Ver RegistrationService.
+    private List<Consentimiento> consentimientos = new ArrayList<>();
+
+    // Última vez que entró: base para borrar cuentas inactivas (24 meses, fase 8)
+    private LocalDateTime lastLoginAt;
+
+    // true cuando probó que recibe correo en su dirección (código de registro o de
+    // recuperación). Las cuentas anteriores a la fase 8 quedan en null.
+    private Boolean emailVerified;
+
+    // Identificador fijo que Google da a la persona ("sub"). No cambia aunque cambie
+    // su correo de Google. null si nunca entró con Google.
+    @JsonIgnore
+    private String googleId;
+
+    // Cuándo se le avisó que su cuenta inactiva se borrará (RetencionDatos). Entrar lo limpia.
+    private LocalDateTime avisoInactividadEn;
 
     private LocalDateTime createdAt;
 

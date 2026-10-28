@@ -33,9 +33,13 @@ public class JobController {
     @Operation(summary = "Crear oferta", description = "Crea una nueva oferta laboral (solo empresas)")
     @PostMapping
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request) {
+    public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request,
+                                       @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(jobService.createJob(request));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(jobService.createJob(request, currentUser.getId(), isAdmin(currentUser)));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new MessageResponse("Error al crear oferta: " + e.getMessage()));
@@ -48,7 +52,7 @@ public class JobController {
                                        @Valid @RequestBody JobRequest request,
                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.ok(jobService.updateJob(id, request, currentUser.getId()));
+            return ResponseEntity.ok(jobService.updateJob(id, request, currentUser.getId(), isAdmin(currentUser)));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
@@ -63,7 +67,7 @@ public class JobController {
                                           @RequestParam String status,
                                           @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.ok(jobService.changeStatus(id, status, currentUser.getId()));
+            return ResponseEntity.ok(jobService.changeStatus(id, status, currentUser.getId(), isAdmin(currentUser)));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
@@ -77,7 +81,7 @@ public class JobController {
     public ResponseEntity<?> deleteJob(@PathVariable String id,
                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            jobService.deleteJob(id, currentUser.getId());
+            jobService.deleteJob(id, currentUser.getId(), isAdmin(currentUser));
             return ResponseEntity.ok(new MessageResponse("Oferta eliminada exitosamente"));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
@@ -149,8 +153,14 @@ public class JobController {
         return ResponseEntity.ok(jobService.getJobsByCompany(companyId));
     }
 
+    private boolean isAdmin(UserDetailsImpl user) {
+        return user.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
     private Pageable buildPageable(int page, int size, String sortBy, String direction) {
-        Sort sort = "asc".equalsIgnoreCase(direction) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        // Solo campos conocidos: un nombre cualquiera daba un error interno con detalles
+        String campo = JobService.campoDeOrden(sortBy);
+        Sort sort = "asc".equalsIgnoreCase(direction) ? Sort.by(campo).ascending() : Sort.by(campo).descending();
         return PageRequest.of(page, size, sort);
     }
 }

@@ -1,0 +1,2 @@
+# Los scripts de bash con saltos de línea de Windows (CRLF) fallan: siempre LF
+*.sh text eol=lf

@@ -4,8 +4,10 @@ import com.skillmatch.backend.dto.ChatMessageResponse;
 import com.skillmatch.backend.dto.MessageRequest;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.exception.UnauthorizedException;
+import com.skillmatch.backend.model.ConnectionStatus;
 import com.skillmatch.backend.model.Message;
 import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.repository.ConnectionRepository;
 import com.skillmatch.backend.repository.MessageRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +32,8 @@ import static org.mockito.Mockito.*;
 class MessageServiceTest {
 
     @Mock private MessageRepository messageRepository;
+    @Mock private ConnectionRepository connectionRepository;
+    @Mock private LimiteEnvios limiteEnvios;
     @Mock private UserRepository userRepository;
     @Mock private NotificationService notificationService;
     @Mock private MongoTemplate mongoTemplate;
@@ -78,6 +82,20 @@ class MessageServiceTest {
 
         assertThat(response.getSenderId()).isEqualTo("user-id-1");
         assertThat(response.getReceiverId()).isEqualTo("user-id-2");
+    }
+
+    @Test
+    void sendMessage_conBloqueo_noGuardaNiNotifica() {
+        MessageRequest req = new MessageRequest("user-id-2", "Hola!", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(sender));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
+        when(connectionRepository.existsBetween("user-id-1", "user-id-2", ConnectionStatus.BLOCKED)).thenReturn(true);
+
+        assertThatThrownBy(() -> messageService.sendMessage("user-id-1", req))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("No puedes enviar mensajes a esta persona");
+        verify(messageRepository, never()).save(any());
+        verifyNoInteractions(notificationService);
     }
 
     @Test
@@ -136,7 +154,8 @@ class MessageServiceTest {
     void getConversation_returnsMappedList() {
         Message m1 = buildMessage("msg-id-11", sender, receiver);
         Message m2 = buildMessage("msg-id-12", receiver, sender);
-        when(mongoTemplate.find(any(), eq(Message.class))).thenReturn(List.of(m1, m2));
+        // MongoDB los entrega del más nuevo al más viejo; el servicio los devuelve en orden de lectura
+        when(mongoTemplate.find(any(), eq(Message.class))).thenReturn(List.of(m2, m1));
         when(userRepository.findAllById(any())).thenReturn(List.of(sender, receiver));
 
         List<ChatMessageResponse> result = messageService.getConversation("user-id-1", "user-id-2");
@@ -144,6 +163,19 @@ class MessageServiceTest {
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getId()).isEqualTo("msg-id-11");
         assertThat(result.get(1).getId()).isEqualTo("msg-id-12");
+    }
+
+    @Test
+    void getConversation_pideSoloLosMasRecientes() {
+        when(mongoTemplate.find(any(), eq(Message.class))).thenReturn(List.of());
+
+        messageService.getConversation("user-id-1", "user-id-2");
+
+        ArgumentCaptor<org.springframework.data.mongodb.core.query.Query> query =
+                ArgumentCaptor.forClass(org.springframework.data.mongodb.core.query.Query.class);
+        verify(mongoTemplate).find(query.capture(), eq(Message.class));
+        assertThat(query.getValue().getLimit()).isEqualTo(MessageService.MAX_CONVERSACION);
+        assertThat(query.getValue().getSortObject().get("sentAt")).isEqualTo(-1);
     }
 
     @Test

@@ -2,11 +2,13 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.ConnectionRequest;
 import com.skillmatch.backend.dto.MessageResponse;
-import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.exception.TooManyAttemptsException;
+import com.skillmatch.backend.dto.UserSummaryResponse;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.ConnectionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,6 +29,8 @@ public class ConnectionController {
                                                     @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             return ResponseEntity.ok(connectionService.sendConnectionRequest(currentUser.getId(), request));
+        } catch (TooManyAttemptsException e) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new MessageResponse(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -123,7 +127,7 @@ public class ConnectionController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> getSuggestions(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            List<User> suggestions = connectionService.getSuggestions(currentUser.getId());
+            List<UserSummaryResponse> suggestions = connectionService.getSuggestions(currentUser.getId());
             return ResponseEntity.ok(suggestions);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));

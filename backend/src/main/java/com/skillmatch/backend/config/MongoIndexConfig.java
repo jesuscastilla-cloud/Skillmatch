@@ -9,10 +9,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.CompoundIndexDefinition;
 import org.springframework.data.mongodb.core.index.Index;
+import org.springframework.data.mongodb.core.index.PartialIndexFilter;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.index.TextIndexDefinition;
 import org.springframework.stereotype.Component;
 
 import org.bson.Document;
+
+import java.time.Duration;
 
 @Slf4j
 @Component
@@ -27,9 +31,20 @@ public class MongoIndexConfig implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         log.info("Verificando indices de MongoDB...");
 
-        // users
+        // users: correo y teléfono únicos, pero PARCIALES: solo entre cuentas que los tienen.
+        // Una cuenta creada con teléfono no tiene correo; con un índice normal, "sin correo"
+        // contaría como un valor más y solo podría existir una.
+        safe("users", () -> reemplazarSiNoEsParcial("users", "email_1"));
         safe("users", () -> mongoTemplate.indexOps("users")
-                .createIndex(new Index("email", Sort.Direction.ASC).unique()));
+                .createIndex(new Index("email", Sort.Direction.ASC).unique()
+                        .partial(PartialIndexFilter.of(Criteria.where("email").type(2)))));
+        safe("users", () -> mongoTemplate.indexOps("users")
+                .createIndex(new Index("phone", Sort.Direction.ASC).unique()
+                        .partial(PartialIndexFilter.of(Criteria.where("phone").type(2)))));
+        // Una cuenta de Google solo puede estar unida a una cuenta de SkillMatch
+        safe("users", () -> mongoTemplate.indexOps("users")
+                .createIndex(new Index("googleId", Sort.Direction.ASC).unique()
+                        .partial(PartialIndexFilter.of(Criteria.where("googleId").type(2)))));
 
         // companies
         safe("companies", () -> mongoTemplate.indexOps("companies")
@@ -75,7 +90,42 @@ public class MongoIndexConfig implements ApplicationRunner {
         safe("notifications", () -> mongoTemplate.indexOps("notifications")
                 .createIndex(new CompoundIndexDefinition(new Document("userId", 1).append("isRead", 1))));
 
+        // revoked_tokens: MongoDB borra cada registro cuando llega su expiresAt (TTL)
+        safe("revoked_tokens", () -> mongoTemplate.indexOps("revoked_tokens")
+                .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
+
+        // login_attempts: el contador de fallos se borra solo a los 15 minutos (TTL)
+        safe("login_attempts", () -> mongoTemplate.indexOps("login_attempts")
+                .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
+
+        // notifications: se borran solas a los 90 días (plazo de retención, ver RetencionDatos)
+        safe("notifications", () -> mongoTemplate.indexOps("notifications")
+                .createIndex(new Index("createdAt", Sort.Direction.ASC).expire(Duration.ofDays(90))));
+
+        // codigos_correo: cada código se borra solo al vencer (15 minutos)
+        safe("codigos_correo", () -> mongoTemplate.indexOps("codigos_correo")
+                .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
+
+        // registros_pendientes: un registro sin confirmar se borra a los 30 minutos
+        safe("registros_pendientes", () -> mongoTemplate.indexOps("registros_pendientes")
+                .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
+
+        // canjes_google: el código de un solo uso de "Entrar con Google" vence al minuto
+        safe("canjes_google", () -> mongoTemplate.indexOps("canjes_google")
+                .createIndex(new Index("expiresAt", Sort.Direction.ASC).expire(Duration.ZERO)));
+
         log.info("Indices de MongoDB verificados.");
+    }
+
+    /** Borra el índice si existe sin filtro parcial (el de antes), para crearlo de nuevo parcial. */
+    private void reemplazarSiNoEsParcial(String coleccion, String nombre) {
+        mongoTemplate.indexOps(coleccion).getIndexInfo().stream()
+                .filter(i -> i.getName().equals(nombre) && i.getPartialFilterExpression() == null)
+                .findFirst()
+                .ifPresent(i -> {
+                    mongoTemplate.indexOps(coleccion).dropIndex(nombre);
+                    log.info("Índice {} de '{}' se recrea como parcial", nombre, coleccion);
+                });
     }
 
     /**

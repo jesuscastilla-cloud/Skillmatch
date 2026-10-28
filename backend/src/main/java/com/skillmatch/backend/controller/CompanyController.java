@@ -3,6 +3,7 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.CompanyRequest;
 import com.skillmatch.backend.dto.CompanyResponse;
 import com.skillmatch.backend.dto.MessageResponse;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.CompanyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +15,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -89,9 +91,10 @@ public class CompanyController {
 
     @Operation(summary = "Obtener empresa", description = "Devuelve el perfil público de una empresa por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCompany(@PathVariable String id) {
+    public ResponseEntity<?> getCompany(@PathVariable String id,
+                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            return ResponseEntity.ok(companyService.getCompanyById(id));
+            return ResponseEntity.ok(ocultarContacto(companyService.getCompanyById(id), currentUser));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("Error: " + e.getMessage()));
         }
@@ -101,29 +104,62 @@ public class CompanyController {
     @GetMapping
     public ResponseEntity<Page<CompanyResponse>> getAllCompanies(
             @RequestParam(required = false) String status,
-            @PageableDefault(size = 10, sort = "name") Pageable pageable) {
-        if ("active".equals(status)) {
-            return ResponseEntity.ok(companyService.getActiveCompanies(pageable));
-        }
-        return ResponseEntity.ok(companyService.getAllCompanies(pageable));
+            @PageableDefault(size = 10, sort = "name") Pageable pageable,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        Page<CompanyResponse> companies = "active".equals(status)
+                ? companyService.getActiveCompanies(pageable)
+                : companyService.getAllCompanies(pageable);
+        return ResponseEntity.ok(companies.map(c -> ocultarContacto(c, currentUser)));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<CompanyResponse>> searchCompanies(@RequestParam String keyword) {
-        return ResponseEntity.ok(companyService.searchCompanies(keyword));
+    public ResponseEntity<List<CompanyResponse>> searchCompanies(
+            @RequestParam String keyword,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        List<CompanyResponse> companies = companyService.searchCompanies(keyword);
+        companies.forEach(c -> ocultarContacto(c, currentUser));
+        return ResponseEntity.ok(companies);
     }
 
     @GetMapping("/filter")
     public ResponseEntity<List<CompanyResponse>> filterCompanies(
             @RequestParam(required = false) String industry,
             @RequestParam(required = false) String location,
-            @RequestParam(required = false) String size) {
-        return ResponseEntity.ok(companyService.getCompaniesByFilters(industry, location, size));
+            @RequestParam(required = false) String size,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        List<CompanyResponse> companies = companyService.getCompaniesByFilters(industry, location, size);
+        companies.forEach(c -> ocultarContacto(c, currentUser));
+        return ResponseEntity.ok(companies);
+    }
+
+    /**
+     * El correo y el teléfono de una empresa solo los ve su dueño o un ADMIN.
+     * Estas rutas son públicas: sin sesión, currentUser llega null.
+     */
+    private CompanyResponse ocultarContacto(CompanyResponse company, UserDetailsImpl currentUser) {
+        boolean puedeVerContacto = currentUser != null
+                && (currentUser.getId().equals(company.getUserId()) || isAdmin(currentUser));
+        if (!puedeVerContacto) {
+            company.setEmail(null);
+            company.setPhone(null);
+        }
+        return company;
+    }
+
+    private boolean isAdmin(UserDetailsImpl user) {
+        return user != null
+                && user.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 
     @GetMapping("/{id}/statistics")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getCompanyStatistics(@PathVariable String id) {
+    public ResponseEntity<?> getCompanyStatistics(@PathVariable String id,
+                                                  @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        // Cifras internas: solo el dueño de la empresa o un ADMIN
+        if (!isAdmin(currentUser) && !companyService.isOwner(id, currentUser.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new MessageResponse("No tienes permiso para ver estas estadísticas"));
+        }
         try {
             return ResponseEntity.ok(companyService.getCompanyStatistics(id));
         } catch (Exception e) {

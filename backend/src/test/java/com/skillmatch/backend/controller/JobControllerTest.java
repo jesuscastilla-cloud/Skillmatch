@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -127,7 +128,7 @@ class JobControllerTest {
 
     @Test
     void changeStatus_wrongOwner_returnsForbidden() throws Exception {
-        when(jobService.changeStatus(eq("job-a-id"), eq("CERRADA"), eq("empresa-b-user-id")))
+        when(jobService.changeStatus(eq("job-a-id"), eq("CERRADA"), eq("empresa-b-user-id"), eq(false)))
                 .thenThrow(new AccessDeniedException("No tienes permiso para modificar esta oferta"));
 
         mockMvc.perform(patch("/api/jobs/job-a-id/status")
@@ -141,7 +142,7 @@ class JobControllerTest {
         // Mínimo válido: companyId @NotBlank, title @NotBlank, type @Pattern(empleo|práctica|freelance)
         String body = "{\"companyId\":\"comp-b\",\"title\":\"Dev\",\"type\":\"empleo\"}";
 
-        when(jobService.updateJob(eq("job-a-id"), any(JobRequest.class), eq("empresa-b-user-id")))
+        when(jobService.updateJob(eq("job-a-id"), any(JobRequest.class), eq("empresa-b-user-id"), eq(false)))
                 .thenThrow(new AccessDeniedException("No tienes permiso para modificar esta oferta"));
 
         mockMvc.perform(put("/api/jobs/job-a-id")
@@ -149,6 +150,19 @@ class JobControllerTest {
                         .content(body))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("No tienes permiso para modificar esta oferta"));
+    }
+
+    @Test
+    void createJob_aNombreDeOtraEmpresa_returnsForbidden() throws Exception {
+        String body = "{\"companyId\":\"comp-a\",\"title\":\"Dev\",\"type\":\"empleo\"}";
+        when(jobService.createJob(any(JobRequest.class), eq("empresa-b-user-id"), eq(false)))
+                .thenThrow(new AccessDeniedException("No puedes publicar vacantes a nombre de otra empresa"));
+
+        mockMvc.perform(post("/api/jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("No puedes publicar vacantes a nombre de otra empresa"));
     }
 
     private UserDetailsImpl buildEmpresaPrincipal(String userId) {
