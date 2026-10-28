@@ -27,16 +27,21 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 | 5. Validación de entradas | Hecha | A6, B4, M5, M6, M12, M3, B3, A8 (con migración de correos al arrancar). Queda: algunos controladores todavía arman "Error al ...: " + mensaje en sus propios `catch`; con el manejador nuevo ya no llegan fallos de Java por ahí, pero conviene limpiarlos |
 | 6. Mensajes y conexiones | Hecha | M8: el bloqueo impide escribir (en los dos sentidos); 20 mensajes/min y 500/día, 30 solicitudes/día por cuenta; la conversación devuelve los 1000 mensajes más recientes. Pendientes 2.4: una solicitud rechazada se puede reenviar a los 30 días (quien rechazó, de inmediato). Se mantiene que cualquiera puede escribir a cualquiera (así está diseñado el frontend). El frontend todavía no tiene botón "Bloquear". Si una conversación pasara de 1000 mensajes, "Eliminar conversación" dejaría los más viejos: la solución es un `DELETE /api/messages/conversation/{id}` (pendientes 2.11) |
 | 7. Datos personales | Hecha (backend) | Prueba del consentimiento (`User.consentimientos`, exigible con `PRIVACIDAD_EXIGIR_CONSENTIMIENTO`), `GET /api/users/me/export`, `DELETE /api/users/me` (borra todos los mensajes; empresa anónima), notificaciones 90 días (TTL), postulaciones 12 meses tras cerrar la vacante (tarea diaria), `lastLoginAt`. Pendiente: borrado de cuentas inactivas 24 meses (necesita correo, fase 8) y los botones y la política en el frontend (`docs/CAMBIOS-FRONTEND.md`, F6 a F9) |
-| 8. Correo | Hecha (backend) | Envío con Brevo (`CorreoService`, modo prueba en local). Correos válidos: MX real y lista de desechables. Códigos de 6 dígitos (15 min, 5 intentos, huella SHA-256). "Olvidé mi contraseña". Registro con código sin cuentas a medias y sin enumeración (interruptor `REGISTRO_VERIFICAR_CORREO`). Aviso y borrado de cuentas inactivas (24 meses). Pendiente: crear la cuenta de Brevo y el frontend (F10, F11). Teléfono (SMS/WhatsApp) va en la fase 9 y es de pago; Google en la 10 |
+| 8. Correo | Hecha (backend) | Envío por SMTP con el Gmail del proyecto y contraseña de aplicación (`CorreoService`, modo prueba en local). Correos válidos: MX real y lista de desechables. Códigos de 6 dígitos (15 min, 5 intentos, huella SHA-256). "Olvidé mi contraseña". Registro con código sin cuentas a medias y sin enumeración (interruptor `REGISTRO_VERIFICAR_CORREO`). Aviso y borrado de cuentas inactivas (24 meses). Correo activo en Render desde el 27 de octubre (Gmail del proyecto). Pendiente: el frontend (F10, F11). Teléfono (SMS/WhatsApp) va en la fase 9 y es de pago; Google en la 10 |
 | 9. Teléfono | Hecha (backend) | Teléfono validado con libphonenumber, guardado en E.164 y único (con migración). Servicio de SMS/WhatsApp con Twilio (`MensajeTelefonoService`), apagado. El token identifica por ID de cuenta (los viejos con correo siguen sirviendo; cambiar el correo ya no cierra la sesión). Correo opcional en la base (índices únicos parciales). Registro y entrada con código por teléfono y agregar teléfono a la cuenta, detrás de `TELEFONO_HABILITADO`. Pendiente: proveedor de pago y frontend (F12). Las cuentas de solo teléfono no reciben aviso de inactividad (sería por SMS) y por eso no se borran por inactividad |
-| 10. Google | Hecha (backend) | "Continuar con Google" del lado del servidor (`spring-boot-starter-oauth2-client`): state, nonce y PKCE; solo correos que Google da por verificados; no se guardan los tokens de Google. Une por `googleId` y, si no, por correo; si la cuenta unida nunca había verificado su correo, se le quita la contraseña y se cierran sus sesiones (contra el pre-registro) y se le avisa por correo. Cuentas nuevas ya verificadas, persona o empresa según el botón, con las mismas reglas de consentimiento. El frontend recibe un código de un solo uso (1 minuto, en el `#` de la URL) y lo canjea por la sesión. Límite de intentos también en la ida y vuelta (se arregló el orden del filtro). Apagado sin `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`. Pendiente: credenciales y frontend (F13) |
+| 10. Google | Hecha (backend) | "Continuar con Google" del lado del servidor (`spring-boot-starter-oauth2-client`): state, nonce y PKCE; solo correos que Google da por verificados; no se guardan los tokens de Google. Une por `googleId` y, si no, por correo; si la cuenta unida nunca había verificado su correo, se le quita la contraseña y se cierran sus sesiones (contra el pre-registro) y se le avisa por correo. Cuentas nuevas ya verificadas, persona o empresa según el botón, con las mismas reglas de consentimiento. El frontend recibe un código de un solo uso (1 minuto, en el `#` de la URL) y lo canjea por la sesión. Límite de intentos también en la ida y vuelta (se arregló el orden del filtro). Apagado sin `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`. Activo en Render desde el 27 de octubre, en modo Prueba (solo los Gmail agregados como usuarios de prueba). Pendiente: frontend (F13) |
 | 11. Operación | Hecha | `docs/OPERACION.md`: accesos, incidentes (niveles, pasos, comandos para cerrar sesiones o desactivar una cuenta, qué buscar en los logs, plantilla), copias, rotación de secretos paso a paso y aviso de brechas a la SIC y a las personas (con plantillas; **verificar con abogado**). `scripts/copia-mongo.sh` (copia cifrada AES-256 y comprobada; guarda las 4 últimas para cumplir los 30 días de la política; se niega a guardar en el repo) y `scripts/restaurar-mongo.sh` (por defecto en una base local aparte; sobre Atlas pide confirmar). Probado contra MongoDB local: misma cantidad de documentos en cada colección, índices iguales, clave equivocada rechazada. Pendiente: llenar los `[completar]` y hacer la primera copia de Atlas |
 
 **Para activar Google (fase 10), gratis:**
 1. En https://console.cloud.google.com crear un proyecto (por ejemplo "SkillMatch").
-2. "APIs y servicios" > "Pantalla de consentimiento de OAuth": tipo **Externo**, nombre "SkillMatch", correo de
-   soporte, logo opcional, enlace a la política (`/pages/politica-datos.html`). Permisos: solo `openid`, `email`
-   y `profile` (no requieren revisión de Google). Publicarla ("En producción") para que entre cualquier persona.
+2. "Google Auth Platform" (antes "Pantalla de consentimiento de OAuth"): tipo **Externo**, nombre "SkillMatch",
+   correo de soporte y de contacto `skillmatchproject@gmail.com`. **Sin logo** (con logo Google pide una revisión
+   de días). Permisos: solo `openid`, `email` y `profile`.
+   - **Hoy queda en modo "Prueba"**: en "Público" > "Usuarios de prueba" se agregan a mano los Gmail que pueden
+     entrar (hasta 100). Quien no esté en la lista no puede entrar con Google. Agregar a cada compañero o
+     profesor **antes** de que lo pruebe.
+   - Publicarla exige página principal, política de privacidad y un **dominio autorizado propio**; con el dominio
+     de Render no se pudo. Queda para cuando el proyecto tenga dominio.
 3. "Credenciales" > "Crear credenciales" > "ID de cliente de OAuth" > **Aplicación web**. En "URI de
    redireccionamiento autorizados" poner exactamente:
    - `https://skillmatch-yz37.onrender.com/login/oauth2/code/google`
@@ -54,11 +59,15 @@ para arreglarlo todo, más las funciones nuevas pedidas (entrar con Google, núm
 3. Cuando el frontend tenga los botones (F12): `TELEFONO_HABILITADO=true`.
 4. Nunca `SMS_MODO_PRUEBA=true` en Render.
 
-**Para activar la fase 8 en Render:**
-1. Crear la cuenta en Brevo, verificar el remitente (el correo o dominio desde el que se envía) y sacar la
-   "SMTP key" (Ajustes > SMTP y API).
-2. En Render: `MAIL_USERNAME` (el usuario SMTP de Brevo), `MAIL_PASSWORD` (la SMTP key) y `MAIL_FROM`
-   (por ejemplo `SkillMatch <no-responder@tu-dominio>`, que debe ser el remitente verificado).
+**Para activar la fase 8 en Render (hecho el 27 de octubre con el Gmail del proyecto):**
+1. En el Gmail del proyecto (`skillmatchproject@gmail.com`): activar la verificación en dos pasos y crear una
+   "contraseña de aplicación" en https://myaccount.google.com/apppasswords.
+2. En Render: `MAIL_HOST=smtp.gmail.com`, `MAIL_USERNAME` (el Gmail), `MAIL_PASSWORD` (la contraseña de
+   aplicación, sin espacios) y `MAIL_FROM` (`SkillMatch <el mismo Gmail>`).
+   - Probarla antes desde el PC: `smtplib` de Python contra `smtp.gmail.com:587` con `starttls` y `login`.
+   - **Brevo no sirvió**: exige un dominio propio (de pago) para el remitente. Si algún día hay dominio, se puede
+     cambiar a Brevo solo con las variables (`MAIL_HOST=smtp-relay.brevo.com`, el login SMTP y la "SMTP key",
+     que empieza por `xsmtpsib-`; la que empieza por `xkeysib-` es la API key y no sirve aquí).
 3. Cuando el frontend tenga la pantalla del código (F10): `REGISTRO_VERIFICAR_CORREO=true`.
 4. Nunca poner `CORREO_MODO_PRUEBA=true` en Render (escribiría los códigos en el log).
 
@@ -566,9 +575,9 @@ Las tres respetan la regla "nada de pago" y la CSP (ningún script externo en el
 4. **Bloquear correos desechables** (`mailinator.com`, `10minutemail`...) con una lista guardada en el repositorio.
 5. **Verificar el correo** con un enlace: es lo único que prueba que el correo es de quien se registra. Además permite
    "Olvidé mi contraseña", que **hoy no existe**.
-   - Para enviar correos hace falta un servidor SMTP. Opciones gratis con límite diario: una cuenta de Gmail con
-     "contraseña de aplicación" (~500 al día) o el plan gratis de Brevo (300 al día).
-   - **Decisión pendiente:** cuál usar, y si una cuenta sin verificar puede postularse o publicar vacantes.
+   - Para enviar correos hace falta un servidor SMTP. **Decidido:** Gmail del proyecto con "contraseña de
+     aplicación" (~500 al día). Brevo (300 al día) exige dominio propio.
+   - **Decidido:** no hay cuentas sin verificar (registro con código, `REGISTRO_VERIFICAR_CORREO`).
 
 ---
 

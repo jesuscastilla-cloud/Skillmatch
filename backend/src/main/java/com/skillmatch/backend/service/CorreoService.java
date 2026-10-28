@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service;
 /**
  * Envía los correos de SkillMatch (códigos de verificación, recuperación, avisos).
  *
- * - Con MAIL_USERNAME y MAIL_PASSWORD (Brevo): envía de verdad.
+ * - Con MAIL_USERNAME y MAIL_PASSWORD (Gmail del proyecto): envía de verdad.
  * - Sin ellos y con CORREO_MODO_PRUEBA=true (solo en local): escribe el correo en el
- *   log, para probar sin cuenta de Brevo.
+ *   log, para probar sin cuenta de correo.
  * - Sin ellos y sin modo prueba: no envía nada y avisa en el log SIN el contenido
  *   (así un código nunca queda en los logs de producción).
  *

@@ -10,7 +10,7 @@ $env:JWT_SECRET  = "skillmatch-clave-local-de-desarrollo-no-usar-en-produccion-2
 # Swagger (mapa de la API) en http://localhost:8080/swagger-ui.html; en produccion queda apagado
 $env:SWAGGER_ENABLED = "true"
 
-# Sin Brevo: los correos (con sus codigos) se escriben en esta consola
+# Sin correo configurado: los correos (con sus codigos) se escriben en esta consola
 $env:CORREO_MODO_PRUEBA = "true"
 # Sin Twilio: los codigos por telefono tambien salen en esta consola
 $env:SMS_MODO_PRUEBA = "true"

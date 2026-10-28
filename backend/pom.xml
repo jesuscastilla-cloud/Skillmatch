@@ -55,7 +55,7 @@
             <version>8.13.40</version>
         </dependency>
 
-        <!-- Envío de correos (códigos de verificación y recuperación), vía SMTP de Brevo -->
+        <!-- Envío de correos (códigos de verificación y recuperación), vía SMTP (Gmail) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>

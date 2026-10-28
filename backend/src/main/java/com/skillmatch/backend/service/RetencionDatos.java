@@ -34,7 +34,7 @@ public class RetencionDatos {
     static final int MESES_POSTULACIONES = 12;
     static final int MESES_AVISO_INACTIVA = 23;
     static final int DIAS_ENTRE_AVISO_Y_BORRADO = 30;
-    /** Avisos por día: el plan gratis de Brevo da 300 correos diarios y los códigos también cuentan. */
+    /** Avisos por día: Gmail permite unos 500 correos diarios y los códigos también cuentan. */
     static final int MAX_AVISOS_POR_DIA = 200;
 
     private final MongoTemplate mongoTemplate;
