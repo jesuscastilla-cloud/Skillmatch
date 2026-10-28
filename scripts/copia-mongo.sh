@@ -55,8 +55,10 @@ echo "Copiando la base..."
 
 # Una copia que no se puede leer no es una copia: se descifra y se hace un simulacro de restauración
 echo "Comprobando la copia..."
-if ! cifrar --decrypt --quiet "$ARCHIVO" | "$MONGORESTORE" --archive --gzip --dryRun --quiet 2>"$TMP/err"; then
-  cat "$TMP/err" >&2
+# (sin --quiet: si falla, su mensaje dice por qué)
+if ! cifrar --decrypt --quiet "$ARCHIVO" 2>/dev/null | "$MONGORESTORE" --archive --gzip --dryRun 2>"$TMP/err" >/dev/null; then
+  echo "--- Lo que dijo mongorestore:" >&2
+  grep -v "^$" "$TMP/err" | tail -n 15 >&2
   echo "ERROR: la copia no se pudo comprobar. Se borra para no confiar en ella." >&2
   rm -f "$ARCHIVO"
   exit 1
