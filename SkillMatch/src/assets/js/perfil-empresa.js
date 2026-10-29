@@ -577,6 +577,12 @@ function setupEventListeners() {
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => SkillMatchUI.cambiarContrasena());
 
+    // Descargar los datos y eliminar la cuenta (F7 y F8): también son de ui.js
+    const descargarDatosBtn = document.getElementById('descargarDatosBtn');
+    if (descargarDatosBtn) descargarDatosBtn.addEventListener('click', () => SkillMatchUI.descargarMisDatos());
+    const eliminarCuentaBtn = document.getElementById('eliminarCuentaBtn');
+    if (eliminarCuentaBtn) eliminarCuentaBtn.addEventListener('click', () => SkillMatchUI.eliminarCuenta());
+
     // "Como funciona": el recorrido por Mi empresa cuando se quiera
     const botonRecorrido = document.getElementById('recorridoEmpresaBtn');
     if (botonRecorrido) botonRecorrido.addEventListener('click', () => recorridoMiEmpresa(true));

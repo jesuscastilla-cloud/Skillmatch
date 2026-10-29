@@ -72,7 +72,9 @@ Estado: ⬜ pendiente · ✅ hecho
 - **Si cambia la política:** subir la versión en `pages/politica-datos.html` ("Versión 0.1") **y** en Render
   (`PRIVACIDAD_VERSION_POLITICA`).
 
-### ⬜ F7. Botón "Descargar mis datos"
+### ✅ F7. Botón "Descargar mis datos"
+- **Hecho:** `SkillMatchUI.descargarMisDatos()` en `ui.js` (Blob + `<a download>`), en el menú "Más" de Mi perfil y
+  de Mi empresa (que ahora tiene ese menú, con "Cambiar contraseña"). La política (sección 7) lo explica.
 - **Backend:** `GET /api/users/me/export` (con sesión) devuelve un JSON con todo lo de la persona: perfil,
   habilidades, experiencia, estudios, certificaciones, consentimientos, postulaciones, vacantes guardadas, conexiones,
   mensajes, notificaciones y, si es empresa, la empresa. Trae `Content-Disposition: attachment;
@@ -83,7 +85,11 @@ Estado: ⬜ pendiente · ✅ hecho
 - **Qué hacer:** `fetchWithAuth('/users/me/export')`, convertir la respuesta en `Blob` y descargarla con un `<a download>`
   (un enlace directo no manda el token mientras exista F4).
 
-### ⬜ F8. Botón "Eliminar mi cuenta"
+### ✅ F8. Botón "Eliminar mi cuenta"
+- **Hecho:** `SkillMatchUI.eliminarCuenta()` en `ui.js`: ventana con lo que se borra (distinto para personas y
+  empresas), "Descargar mis datos" antes, la contraseña con el ojo y el botón rojo; tras el 200, `limpiarSesion()`
+  y vuelta a `index.html` con el aviso. Mismo menú "Más" que F7. Las cuentas creadas con Google reciben el mensaje
+  del backend que pide crear una contraseña con "¿Olvidaste tu contraseña?".
 - **Backend:** `DELETE /api/users/me` con cuerpo `{"password": "<contraseña actual>"}`.
   - 200 `{"message": "Tu cuenta y tus datos fueron eliminados"}` y borra la cookie de sesión.
   - 400 `{"message": "La contraseña no es correcta"}`; 429 tras 5 intentos fallidos (mismo bloqueo que el login).
@@ -100,7 +106,8 @@ Estado: ⬜ pendiente · ✅ hecho
 - **Hecho (versión 0.2):** correo de contacto `skillmatchproject@gmail.com`, datos de Google, última entrada y
   prueba de la autorización, Gmail y Google como servicios, copias cifradas y los plazos de retención.
   **Falta:** los datos del responsable (`[por completar]`), la revisión con un abogado y, cuando existan F7 y F8,
-  decir en la sección 7 que se hacen desde el perfil. **En Render:** `PRIVACIDAD_VERSION_POLITICA=0.2`.
+  decir en la sección 7 que se hacen desde el perfil (hecho con F7/F8: versión 0.3).
+  **En Render:** `PRIVACIDAD_VERSION_POLITICA=0.3`.
 Lo que hace el backend ahora y la política todavía no dice. Al cambiarla, subir la versión ("Versión 0.1") aquí y en
 Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los datos, hay que pedir de nuevo la autorización.
 - **Sección 7 (Cómo ejercer tus derechos):** agregar que desde el perfil se puede **descargar todos tus datos** (F7)

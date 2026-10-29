@@ -64,8 +64,18 @@
                             <div class="company-meta-tags" id="companyMeta"></div>
                         </div>
                         <div class="perfil-acciones">
-                            <button type="button" class="btn-edit-profile" id="changePasswordBtn"><i data-ico="lock"></i> Cambiar contraseña</button>
                             <button type="button" class="btn-edit-profile" id="recorridoEmpresaBtn"><i data-ico="bulb"></i> Cómo funciona</button>
+                            <!-- "Más": la cuenta (menú de ui.js, sección 29, como en Mi perfil).
+                                 Los botones conservan sus id: perfil-empresa.js los busca así -->
+                            <div class="perfil-mas" id="empresaMas">
+                                <button type="button" class="btn-edit-profile" id="empresaMasBtn" data-menu="empresaMasMenu" aria-haspopup="menu" aria-expanded="false" aria-controls="empresaMasMenu"><i data-ico="more"></i> Más</button>
+                                <div class="menu-acciones" id="empresaMasMenu" role="menu" aria-label="Más opciones de la cuenta" hidden>
+                                    <button type="button" role="menuitem" id="changePasswordBtn"><i data-ico="lock"></i><span>Cambiar contraseña</span></button>
+                                    <!-- Derechos sobre los datos (Ley 1581): las ventanas son de ui.js (F7 y F8) -->
+                                    <button type="button" role="menuitem" id="descargarDatosBtn"><i data-ico="download"></i><span>Descargar mis datos</span></button>
+                                    <button type="button" role="menuitem" id="eliminarCuentaBtn" class="es-peligro"><i data-ico="trash"></i><span>Eliminar la cuenta</span></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
