@@ -62,6 +62,36 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     document.getElementById('prev-step-emp-2').addEventListener('click', () => mostrar(0));
 
+    /** Con la cuenta ya creada: guarda la sesión, la descripción y lleva al perfil. */
+    async function terminar(datos) {
+        if (datos.token) saveToken(datos.token);
+        // userType: sin él, hasta volver a entrar, el sitio la trataba como
+        // una persona (por ejemplo, le mostraba "Postularme" en Vacantes)
+        saveUserData({
+            id: datos.id,
+            companyId: datos.companyId || null,
+            firstName: datos.firstName,
+            lastName: datos.lastName,
+            email: datos.email,
+            role: datos.role,
+            userType: 'empresa'
+        });
+
+        // La descripción va a "Acerca de nosotros" (antes se pedía y se perdía)
+        let guardada = false;
+        if (datos.companyId) {
+            guardada = await fetchWithAuth(`/companies/${datos.companyId}/description`, {
+                method: 'PATCH',
+                body: JSON.stringify({ description: valor('empresa-descripcion') })
+            }).then(r => r.ok).catch(() => false);
+        }
+
+        alert(guardada
+            ? '¡Bienvenido a SkillMatch! Ya puedes publicar tu primera vacante.'
+            : 'La cuenta quedó creada, pero la descripción no se guardó. Agrégala en "Acerca de nosotros".');
+        window.location.href = 'perfil-empresa.html';
+    }
+
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
         if (actual === 0) {
@@ -88,7 +118,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     firstName: valor('empresa-nombre'),
                     lastName: 'Empresa',
                     phone: valor('empresa-telefono'),
-                    userType: 'EMPRESA'
+                    userType: 'EMPRESA',
+                    // Prueba de la autorización (Ley 1581): el servidor guarda qué se aceptó, versión y fecha
+                    aceptaPolitica: document.getElementById('empresa-terminos').checked
                 })
             });
 
@@ -101,33 +133,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const datos = await respuesta.json();
-            if (datos.token) saveToken(datos.token);
-            // userType: sin él, hasta volver a entrar, el sitio la trataba como
-            // una persona (por ejemplo, le mostraba "Postularme" en Vacantes)
-            saveUserData({
-                id: datos.id,
-                companyId: datos.companyId || null,
-                firstName: datos.firstName,
-                lastName: datos.lastName,
-                email: datos.email,
-                role: datos.role,
-                userType: 'empresa'
-            });
-
-            // La descripción va a "Acerca de nosotros" (antes se pedía y se perdía)
-            let guardada = false;
-            if (datos.companyId) {
-                guardada = await fetchWithAuth(`/companies/${datos.companyId}/description`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ description: valor('empresa-descripcion') })
-                }).then(r => r.ok).catch(() => false);
+            // 202: el servidor pide confirmar el correo (F10); la cuenta se crea con el código
+            if (respuesta.status === 202) {
+                RegistroCodigo.mostrar({
+                    correo: valor('empresa-email'),
+                    ocultar: [form, document.querySelector('.google-registro')],
+                    alEntrar: terminar,
+                    alCorregir: () => {
+                        boton.disabled = false;
+                        boton.textContent = 'Crear la cuenta';
+                        mostrar(0);
+                    }
+                });
+                return;
             }
 
-            alert(guardada
-                ? '¡Bienvenido a SkillMatch! Ya puedes publicar tu primera vacante.'
-                : 'La cuenta quedó creada, pero la descripción no se guardó. Agrégala en "Acerca de nosotros".');
-            window.location.href = 'perfil-empresa.html';
+            await terminar(await respuesta.json());
         } catch (err) {
             error(1, 'No pudimos conectar con SkillMatch. Revisa tu conexión e intenta de nuevo.');
             boton.disabled = false;

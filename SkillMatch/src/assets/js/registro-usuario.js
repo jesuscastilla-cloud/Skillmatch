@@ -57,6 +57,43 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     document.getElementById('prev-step-2').addEventListener('click', () => mostrar(0));
 
+    /** Con la cuenta ya creada: guarda la sesión, lo del paso 2 y lleva al perfil. */
+    async function terminar(datos) {
+        saveToken(datos.token);
+        saveUserData({
+            id: datos.id,
+            companyId: null,
+            firstName: datos.firstName,
+            lastName: datos.lastName,
+            email: datos.email,
+            role: datos.role || 'USER',
+            userType: 'usuario'
+        });
+
+        // Lo del paso 2 se guarda en el perfil recién creado
+        const perfil = {};
+        if (valor('usuario-titular')) perfil.headline = valor('usuario-titular');
+        if (valor('usuario-ciudad')) perfil.location = valor('usuario-ciudad');
+        if (valor('usuario-sobre-mi')) perfil.bio = valor('usuario-sobre-mi');
+        const guardados = [];
+        if (Object.keys(perfil).length) {
+            guardados.push(fetchWithAuth(`/users/${datos.id}`, { method: 'PUT', body: JSON.stringify(perfil) }));
+        }
+        etiquetas.obtener().forEach(nombre => {
+            guardados.push(fetchWithAuth(`/users/${datos.id}/skills`, {
+                method: 'POST',
+                body: JSON.stringify({ name: nombre, level: 'INTERMEDIO' })
+            }));
+        });
+        const resultados = await Promise.all(guardados.map(p => p.then(r => r.ok).catch(() => false)));
+        const fallas = resultados.filter(ok => !ok).length;
+
+        alert(fallas
+            ? 'Tu perfil quedó creado, pero algunos datos no se guardaron. Complétalos desde tu perfil.'
+            : '¡Bienvenido a SkillMatch! Tu perfil quedó creado.');
+        window.location.href = 'perfil-usuario.html';
+    }
+
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
         // Enter en el paso 1 pasa al siguiente en vez de enviar
@@ -91,7 +128,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     firstName: valor('usuario-nombre'),
                     lastName: valor('usuario-apellidos'),
                     phone: valor('usuario-telefono'),
-                    userType: 'USER'
+                    userType: 'USER',
+                    // Prueba de la autorización (Ley 1581): el servidor guarda qué se aceptó, versión y fecha
+                    aceptaPolitica: document.getElementById('usuario-terminos').checked,
+                    mayorDeEdad: document.getElementById('usuario-mayor').checked
                 })
             });
 
@@ -105,40 +145,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const datos = await respuesta.json();
-            saveToken(datos.token);
-            saveUserData({
-                id: datos.id,
-                companyId: null,
-                firstName: datos.firstName,
-                lastName: datos.lastName,
-                email: datos.email,
-                role: datos.role || 'USER',
-                userType: 'usuario'
-            });
-
-            // Lo del paso 2 se guarda en el perfil recién creado
-            const perfil = {};
-            if (valor('usuario-titular')) perfil.headline = valor('usuario-titular');
-            if (valor('usuario-ciudad')) perfil.location = valor('usuario-ciudad');
-            if (valor('usuario-sobre-mi')) perfil.bio = valor('usuario-sobre-mi');
-            const guardados = [];
-            if (Object.keys(perfil).length) {
-                guardados.push(fetchWithAuth(`/users/${datos.id}`, { method: 'PUT', body: JSON.stringify(perfil) }));
+            // 202: el servidor pide confirmar el correo (F10); la cuenta se crea con el código
+            if (respuesta.status === 202) {
+                RegistroCodigo.mostrar({
+                    correo: valor('usuario-email'),
+                    ocultar: [form, document.querySelector('.google-registro')],
+                    alEntrar: terminar,
+                    alCorregir: () => {
+                        boton.disabled = false;
+                        boton.textContent = 'Crear mi perfil';
+                        mostrar(0);
+                    }
+                });
+                return;
             }
-            etiquetas.obtener().forEach(nombre => {
-                guardados.push(fetchWithAuth(`/users/${datos.id}/skills`, {
-                    method: 'POST',
-                    body: JSON.stringify({ name: nombre, level: 'INTERMEDIO' })
-                }));
-            });
-            const resultados = await Promise.all(guardados.map(p => p.then(r => r.ok).catch(() => false)));
-            const fallas = resultados.filter(ok => !ok).length;
 
-            alert(fallas
-                ? 'Tu perfil quedó creado, pero algunos datos no se guardaron. Complétalos desde tu perfil.'
-                : '¡Bienvenido a SkillMatch! Tu perfil quedó creado.');
-            window.location.href = 'perfil-usuario.html';
+            await terminar(await respuesta.json());
         } catch (err) {
             error(1, 'No pudimos conectar con SkillMatch. Revisa tu conexión e intenta de nuevo.');
             boton.disabled = false;

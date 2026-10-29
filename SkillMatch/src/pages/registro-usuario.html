@@ -55,6 +55,13 @@
         <div class="container">
             <h1>Crea tu perfil</h1>
             <p class="registro-intro">Dos pasos y listo. Todo lo puedes cambiar después desde tu perfil.</p>
+            <!-- Crear el perfil con Google (F6/F13): auth.js lo muestra si el servidor tiene Google.
+                 Tocarlo con el aviso al lado es la autorización (acepta=1&mayor=1) -->
+            <div class="google-entrar google-registro" hidden>
+                <a class="btn btn-secondary btn-full btn-google" href="#" data-params="acepta=1&amp;mayor=1"><i data-ico="google"></i> Crear mi perfil con Google</a>
+                <p class="form-hint">Al continuar con Google confirmas que tienes 18 años o más, que leíste la <a href="politica-datos.html" target="_blank" rel="noopener">política de tratamiento de datos<span class="sr-only"> (se abre en otra pestaña)</span></a> y que autorizas a SkillMatch a usar tus datos para crear tu perfil, mostrarlo a las personas y empresas registradas y enviar tus postulaciones.</p>
+                <div class="divider">o con tu correo</div>
+            </div>
             <!-- Antes habia un tercer paso y campos (area, estudios, aspiracion, hoja de
                  vida en PDF...) que nunca se guardaban: solo se pide lo que se guarda -->
             <form id="form-registro-usuario" class="registro-form" novalidate>
@@ -152,6 +159,24 @@
                     </div>
                 </div>
             </form>
+            <!-- Registro con código (F10): registro-codigo.js lo muestra si el servidor pide confirmar el correo -->
+            <form id="registro-codigo" class="registro-form" novalidate hidden>
+                <div class="form-section">
+                    <h2 class="section-title">Confirma tu correo</h2>
+                    <p class="recuperar-nota" id="registro-codigo-nota" role="status"></p>
+                    <div class="form-group">
+                        <label for="registro-codigo-campo">Código de 6 números</label>
+                        <input type="text" id="registro-codigo-campo" name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+                        <small class="input-help">Vence en 15 minutos. Si no te llega, revisa la carpeta de spam.</small>
+                    </div>
+                </div>
+                <p class="error-text" role="alert" hidden></p>
+                <button type="submit" class="btn btn-primary btn-full">Confirmar y crear mi perfil</button>
+                <div class="recuperar-acciones">
+                    <button type="button" id="registro-codigo-reenviar">Pedir otro código</button>
+                    <button type="button" id="registro-codigo-corregir">Corregir mis datos</button>
+                </div>
+            </form>
             <!-- Como en los logins: entrar si ya hay cuenta o cambiar de tipo de cuenta
                  (antes solo quedaba el boton atras del navegador) -->
             <p class="auth-switch">¿Ya tienes cuenta? <a href="login-usuario.html">Inicia sesión</a></p>
@@ -168,7 +193,10 @@
 
     <!-- Scripts -->
     <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/registro-codigo.js"></script>
     <script src="../assets/js/registro-usuario.js"></script>
+    <!-- Solo para el botón de Google (prepararBotonGoogle) -->
+    <script src="../assets/js/auth.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>
 </html>
