@@ -208,7 +208,7 @@ async function logout() {
     limpiarSesion();
 
     const path = window.location.pathname;
-    const isPublicPage = /index\.html|login|registro|seleccionar-registro/.test(path);
+    const isPublicPage = /index\.html|login|registro|seleccionar-registro|recuperar/.test(path);
     if (!isPublicPage) {
         window.location.href = 'index.html';
     }

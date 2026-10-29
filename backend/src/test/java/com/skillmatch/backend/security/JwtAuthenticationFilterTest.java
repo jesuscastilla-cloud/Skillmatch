@@ -27,6 +27,7 @@ class JwtAuthenticationFilterTest {
 
     @Mock private JwtTokenProvider tokenProvider;
     @Mock private UserDetailsService userDetailsService;
+    @Mock private AuthCookieService authCookieService;
 
     @InjectMocks
     private JwtAuthenticationFilter filter;
@@ -53,7 +54,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void cuentaDesactivada_responde401YNoSigue() throws Exception {
+    void cuentaDesactivada_sigueSinSesion() throws Exception {
         when(tokenProvider.validateToken("token")).thenReturn(true);
         when(tokenProvider.getSubjectFromToken("token")).thenReturn("ana@test.com");
         when(userDetailsService.loadUserByUsername("ana@test.com")).thenReturn(buildUser(false, "EMPRESA"));
@@ -62,13 +63,14 @@ class JwtAuthenticationFilterTest {
         MockFilterChain chain = new MockFilterChain();
         filter.doFilter(requestWithToken(), response, chain);
 
-        assertThat(response.getStatus()).isEqualTo(401);
-        assertThat(chain.getRequest()).isNull();
+        // Sigue como visitante: si la ruta exige sesión, Spring responde 401 después
+        assertThat(chain.getRequest()).isNotNull();
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(authCookieService, never()).clearAuthCookie(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
-    void tokenDeVersionAnterior_responde401() throws Exception {
+    void tokenDeVersionAnterior_sigueSinSesion() throws Exception {
         // La contraseña se cambió: la cuenta va en versión 1 y el token es de la 0
         UserDetailsImpl user = buildUser(true, "USER", 1);
         when(tokenProvider.validateToken("token")).thenReturn(true);
@@ -80,8 +82,38 @@ class JwtAuthenticationFilterTest {
         MockFilterChain chain = new MockFilterChain();
         filter.doFilter(requestWithToken(), response, chain);
 
-        assertThat(response.getStatus()).isEqualTo(401);
-        assertThat(chain.getRequest()).isNull();
+        assertThat(chain.getRequest()).isNotNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    void cookieQueYaNoVale_seBorraYLaPaginaPublicaCarga() throws Exception {
+        // Después de recuperar la contraseña, el navegador sigue mandando la cookie vieja
+        when(tokenProvider.validateToken("viejo")).thenThrow(new IllegalArgumentException("vencido"));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/pages/recuperar.html");
+        request.setCookies(new jakarta.servlet.http.Cookie("auth_token", "viejo"));
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+        filter.doFilter(request, response, chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(200);
+        verify(authCookieService).clearAuthCookie(response);
+    }
+
+    @Test
+    void cookieVencidaOFalsa_tambienSeBorra() throws Exception {
+        when(tokenProvider.validateToken("falso")).thenReturn(false);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/pages/index.html");
+        request.setCookies(new jakarta.servlet.http.Cookie("auth_token", "falso"));
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+        filter.doFilter(request, response, chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+        verify(authCookieService).clearAuthCookie(response);
     }
 
     private MockHttpServletRequest requestWithToken() {

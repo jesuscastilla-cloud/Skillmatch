@@ -5532,6 +5532,14 @@ kbd {
 .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: currentColor; opacity: .3; }
 /* "Continuar con Google" (F13): separado del botón que viene debajo */
 .google-entrar { margin-bottom: var(--s3); }
+/* "¿Olvidaste tu contraseña?" (F11), bajo el campo de contraseña */
+.olvide-clave { display: block; margin-top: var(--s2); text-align: right; font-size: var(--t-sm); font-weight: 600; }
+/* recuperar.html: "Te enviamos un código a ..." y "Pedir otro código" */
+.recuperar-nota { margin-bottom: var(--s4); font-size: var(--t-sm); color: var(--ink-3); }
+.recuperar-acciones { display: flex; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; margin-top: var(--s4); font-size: var(--t-sm); }
+.recuperar-acciones button { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--sea-deep); cursor: pointer; }
+.recuperar-acciones button:hover:not(:disabled) { color: var(--sea); }
+.recuperar-acciones button:disabled { color: var(--ink-muted); cursor: default; }
 .success { color: var(--verde); font-weight: 600; }
 .inactive { opacity: .55; }
 .btn-full, .btn-block { width: 100%; }

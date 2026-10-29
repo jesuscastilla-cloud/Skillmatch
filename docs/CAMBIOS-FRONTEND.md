@@ -111,7 +111,12 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
 
 ## De la fase 8 (correo)
 
-### ⬜ F11. "¿Olvidaste tu contraseña?"
+### ✅ F11. "¿Olvidaste tu contraseña?"
+- **Hecho:** enlace bajo la contraseña en los tres login; página `pages/recuperar.html` con `assets/js/recuperar.js`
+  (paso 1 correo, paso 2 código + contraseña nueva, "Pedir otro código" al minuto, "Usar otro correo"). Al
+  cambiarla se borra la sesión guardada en el navegador. De paso se arregló el backend: una cookie con un token
+  que ya no vale (por ejemplo tras recuperar la contraseña) bloqueaba TODO el sitio con 401; ahora se ignora y
+  se borra (`JwtAuthenticationFilter`).
 - **Backend:**
   1. `POST /api/auth/forgot-password` `{"email"}` → siempre 200 con
      "Si ese correo tiene una cuenta en SkillMatch, te enviamos un código..." (no revela si existe la cuenta).

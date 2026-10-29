@@ -2,6 +2,7 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.security.AuthCookieService;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.ApplicationService;
@@ -46,6 +47,9 @@ class ApplicationControllerTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private AuthCookieService authCookieService;
 
     @BeforeEach
     void setUpSecurityContext() {

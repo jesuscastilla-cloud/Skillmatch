@@ -3,6 +3,7 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.CompanyResponse;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.security.AuthCookieService;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.CompanyService;
@@ -48,6 +49,9 @@ class CompanyControllerTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private AuthCookieService authCookieService;
 
     @Test
     void getCompany_existingId_returnsCompany() throws Exception {
