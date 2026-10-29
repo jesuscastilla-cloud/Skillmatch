@@ -64,8 +64,11 @@ async function prepararBotonGoogle() {
     const base = API_CONFIG.BASE_URL.replace(/\/api\/?$/, '');
     bloques.forEach(bloque => {
         const enlace = bloque.querySelector('.btn-google');
-        const tipo = enlace.getAttribute('data-tipo');
-        enlace.href = `${base}/oauth2/authorization/google${tipo ? '?tipo=' + encodeURIComponent(tipo) : ''}`;
+        // data-tipo="EMPRESA" (login de empresas) o data-params="tipo=EMPRESA&acepta=1" (registros)
+        const params = new URLSearchParams(enlace.getAttribute('data-params') || '');
+        if (enlace.getAttribute('data-tipo')) params.set('tipo', enlace.getAttribute('data-tipo'));
+        const consulta = params.toString();
+        enlace.href = `${base}/oauth2/authorization/google${consulta ? '?' + consulta : ''}`;
         bloque.hidden = false;
     });
 }

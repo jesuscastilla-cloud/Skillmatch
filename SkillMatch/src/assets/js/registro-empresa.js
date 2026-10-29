@@ -88,7 +88,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     firstName: valor('empresa-nombre'),
                     lastName: 'Empresa',
                     phone: valor('empresa-telefono'),
-                    userType: 'EMPRESA'
+                    userType: 'EMPRESA',
+                    // Prueba de la autorización (Ley 1581): el servidor guarda qué se aceptó, versión y fecha
+                    aceptaPolitica: document.getElementById('empresa-terminos').checked
                 })
             });
 

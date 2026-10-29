@@ -91,7 +91,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     firstName: valor('usuario-nombre'),
                     lastName: valor('usuario-apellidos'),
                     phone: valor('usuario-telefono'),
-                    userType: 'USER'
+                    userType: 'USER',
+                    // Prueba de la autorización (Ley 1581): el servidor guarda qué se aceptó, versión y fecha
+                    aceptaPolitica: document.getElementById('usuario-terminos').checked,
+                    mayorDeEdad: document.getElementById('usuario-mayor').checked
                 })
             });
 

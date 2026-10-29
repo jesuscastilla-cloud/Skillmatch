@@ -5532,6 +5532,9 @@ kbd {
 .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: currentColor; opacity: .3; }
 /* "Continuar con Google" (F13): separado del botón que viene debajo */
 .google-entrar { margin-bottom: var(--s3); }
+/* En los registros va arriba del formulario, más angosto y con su aviso */
+.google-registro { max-width: 480px; margin: var(--s5) auto var(--s4); }
+.google-registro .form-hint { margin-top: var(--s2); text-align: center; }
 /* "¿Olvidaste tu contraseña?" (F11), bajo el campo de contraseña */
 .olvide-clave { display: block; margin-top: var(--s2); text-align: right; font-size: var(--t-sm); font-weight: 600; }
 /* recuperar.html: "Te enviamos un código a ..." y "Pedir otro código" */

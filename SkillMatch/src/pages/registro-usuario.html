@@ -55,6 +55,13 @@
         <div class="container">
             <h1>Crea tu perfil</h1>
             <p class="registro-intro">Dos pasos y listo. Todo lo puedes cambiar después desde tu perfil.</p>
+            <!-- Crear el perfil con Google (F6/F13): auth.js lo muestra si el servidor tiene Google.
+                 Tocarlo con el aviso al lado es la autorización (acepta=1&mayor=1) -->
+            <div class="google-entrar google-registro" hidden>
+                <a class="btn btn-secondary btn-full btn-google" href="#" data-params="acepta=1&amp;mayor=1"><i data-ico="google"></i> Crear mi perfil con Google</a>
+                <p class="form-hint">Al continuar con Google confirmas que tienes 18 años o más, que leíste la <a href="politica-datos.html" target="_blank" rel="noopener">política de tratamiento de datos<span class="sr-only"> (se abre en otra pestaña)</span></a> y que autorizas a SkillMatch a usar tus datos para crear tu perfil, mostrarlo a las personas y empresas registradas y enviar tus postulaciones.</p>
+                <div class="divider">o con tu correo</div>
+            </div>
             <!-- Antes habia un tercer paso y campos (area, estudios, aspiracion, hoja de
                  vida en PDF...) que nunca se guardaban: solo se pide lo que se guarda -->
             <form id="form-registro-usuario" class="registro-form" novalidate>
@@ -169,6 +176,8 @@
     <!-- Scripts -->
     <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/registro-usuario.js"></script>
+    <!-- Solo para el botón de Google (prepararBotonGoogle) -->
+    <script src="../assets/js/auth.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>
 </html>
