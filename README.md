@@ -8,8 +8,8 @@
 
 <p>
   <a href="https://skillmatch-yz37.onrender.com"><img alt="Sitio en vivo" src="https://img.shields.io/badge/sitio-en%20vivo-20B2C4?style=for-the-badge&logo=render&logoColor=white"></a>
-  <a href="#-empezar-en-local"><img alt="Empezar en local" src="https://img.shields.io/badge/empezar-en%20local-0B1B2C?style=for-the-badge&logo=git&logoColor=white"></a>
-  <a href="#-documentación"><img alt="Documentación" src="https://img.shields.io/badge/documentación-docs%2F-FF7618?style=for-the-badge&logo=readthedocs&logoColor=white"></a>
+  <a href="#empezar-en-local"><img alt="Empezar en local" src="https://img.shields.io/badge/empezar-en%20local-0B1B2C?style=for-the-badge&logo=git&logoColor=white"></a>
+  <a href="#documentación"><img alt="Documentación" src="https://img.shields.io/badge/documentación-docs%2F-FF7618?style=for-the-badge&logo=readthedocs&logoColor=white"></a>
 </p>
 
 <p>
@@ -28,24 +28,45 @@
 
 ## Contenido
 
-- [Qué es SkillMatch](#-qué-es-skillmatch)
-- [Lo que puedes hacer](#-lo-que-puedes-hacer)
-- [Cómo se ve](#-cómo-se-ve)
-- [Cómo funciona por dentro](#-cómo-funciona-por-dentro)
-- [Seguridad y datos personales](#-seguridad-y-datos-personales)
-- [Empezar en local](#-empezar-en-local)
-- [Pruebas](#-pruebas)
-- [Despliegue](#-despliegue)
-- [Estructura del repositorio](#-estructura-del-repositorio)
-- [Documentación](#-documentación)
-- [Minería de Datos I](#-minería-de-datos-i)
-- [Cómo trabajamos](#-cómo-trabajamos)
-- [Historia del proyecto](#-historia-del-proyecto)
-- [Equipo](#-equipo)
+<table>
+<tr>
+<th align="left" width="33%">Producto</th>
+<th align="left" width="33%">Desarrollo</th>
+<th align="left" width="34%">Proyecto</th>
+</tr>
+<tr valign="top">
+<td>
+
+1. [Qué es SkillMatch](#qué-es-skillmatch)
+2. [Lo que puedes hacer](#lo-que-puedes-hacer)
+3. [Cómo se ve](#cómo-se-ve)
+4. [Cómo funciona por dentro](#cómo-funciona-por-dentro)
+5. [Seguridad y datos personales](#seguridad-y-datos-personales)
+
+</td>
+<td>
+
+6. [Empezar en local](#empezar-en-local)
+7. [Pruebas](#pruebas)
+8. [Despliegue](#despliegue)
+9. [Estructura del repositorio](#estructura-del-repositorio)
+10. [Documentación](#documentación)
+
+</td>
+<td>
+
+11. [Minería de Datos I](#minería-de-datos-i)
+12. [Cómo trabajamos](#cómo-trabajamos)
+13. [Historia del proyecto](#historia-del-proyecto)
+14. [Equipo](#equipo)
+
+</td>
+</tr>
+</table>
 
 ---
 
-## 🎯 Qué es SkillMatch
+## Qué es SkillMatch
 
 Buscar trabajo suele ser postularse a ciegas: mandas la hoja de vida y no sabes si de verdad encajas.
 **SkillMatch** compara las habilidades de tu perfil con las que pide cada vacante de Cartagena y la región, y te
@@ -58,21 +79,21 @@ salir de la plataforma.
 <tr>
 <td width="33%" valign="top">
 
-**🔍 Para quien busca trabajo**<br>
+**Para quien busca trabajo**<br>
 Perfil con habilidades, experiencia y estudios; vacantes ordenadas según lo que sabes hacer y el seguimiento de cada
 postulación.
 
 </td>
 <td width="33%" valign="top">
 
-**🏢 Para las empresas**<br>
+**Para las empresas**<br>
 Publicar vacantes, revisar candidatos en un tablero, descargar las postulaciones en Excel y escribirles a las
 personas.
 
 </td>
 <td width="33%" valign="top">
 
-**📊 Para la ciudad**<br>
+**Para la ciudad**<br>
 Indicadores públicos del mercado laboral: qué tipo de trabajo hay, dónde, con qué salario y qué piden las empresas.
 
 </td>
@@ -81,7 +102,7 @@ Indicadores públicos del mercado laboral: qué tipo de trabajo hay, dónde, con
 
 ---
 
-## ✨ Lo que puedes hacer
+## Lo que puedes hacer
 
 <details open>
 <summary><b>Si buscas trabajo</b></summary>
@@ -126,7 +147,7 @@ Indicadores públicos del mercado laboral: qué tipo de trabajo hay, dónde, con
 
 ---
 
-## 📸 Cómo se ve
+## Cómo se ve
 
 > Las capturas cambian solas con el tema de GitHub: en modo oscuro ves el sitio oscuro y en modo claro, el claro.
 
@@ -179,7 +200,7 @@ Indicadores públicos del mercado laboral: qué tipo de trabajo hay, dónde, con
 
 ---
 
-## 🧩 Cómo funciona por dentro
+## Cómo funciona por dentro
 
 Un **solo servicio** en Render sirve las páginas y la API desde el mismo dominio. Así no hay problemas de CORS ni dos
 despliegues que mantener sincronizados.
@@ -209,7 +230,7 @@ flowchart LR
 
 ---
 
-## 🔐 Seguridad y datos personales
+## Seguridad y datos personales
 
 El backend pasó por una **auditoría completa en 11 fases** ([informe](docs/AUDITORIA-BACKEND.md)), probada contra
 MongoDB con ataques reales. Algunas de las protecciones:
@@ -227,7 +248,7 @@ MongoDB con ataques reales. Algunas de las protecciones:
 
 ---
 
-## 🚀 Empezar en local
+## Empezar en local
 
 **Necesitas:** Java 17 o superior ([Adoptium](https://adoptium.net)), MongoDB Community 7 u 8
 ([descarga](https://www.mongodb.com/try/download/community)) y VS Code con la extensión **Live Server**.
@@ -277,7 +298,7 @@ y en [`.env.example`](.env.example).
 
 ---
 
-## 🧪 Pruebas
+## Pruebas
 
 **Backend** (JUnit 5 + Mockito):
 
@@ -300,7 +321,7 @@ Qué prueba cada archivo y cómo agregar una prueba: [docs/PRUEBAS-FRONTEND.md](
 
 ---
 
-## ☁️ Despliegue
+## Despliegue
 
 Render despliega solo **cada push a `main`** con el `Dockerfile` de la raíz, que compila el backend y mete el
 frontend dentro del mismo `.jar`. La guía paso a paso (MongoDB Atlas, clave JWT, Render y cómo comprobarlo) está en
@@ -309,7 +330,7 @@ frontend dentro del mismo `.jar`. La guía paso a paso (MongoDB Atlas, clave JWT
 
 ---
 
-## 🗂️ Estructura del repositorio
+## Estructura del repositorio
 
 ```text
 Skillmatch/
@@ -334,7 +355,7 @@ Skillmatch/
 
 ---
 
-## 📚 Documentación
+## Documentación
 
 | Documento | Para qué sirve |
 |---|---|
@@ -353,7 +374,7 @@ Skillmatch/
 
 ---
 
-## 📈 Minería de Datos I
+## Minería de Datos I
 
 ¿Las habilidades que pide una vacante permiten predecir su categoría laboral? Es la base del porcentaje de
 compatibilidad. Con 1.167 vacantes y regresión logística, el modelo acierta el **73 %** en el conjunto de prueba
@@ -364,7 +385,7 @@ Entregas: [propuesta del modelo](documentos/propuesta_modelo.pdf) · [informe me
 
 ---
 
-## 🤝 Cómo trabajamos
+## Cómo trabajamos
 
 - **`main` es el sitio en vivo:** nunca se trabaja directo en ella. Todo cambio va en una rama y entra por un PR.
 - **Ramas con prefijo** según lo que tocan:
@@ -390,11 +411,12 @@ Entregas: [propuesta del modelo](documentos/propuesta_modelo.pdf) · [informe me
 
 ---
 
-## 🕰️ Historia del proyecto
+## Historia del proyecto
 
 | Fecha | Hito |
 |---|---|
-| Sep 2026 | Primera versión desplegada: backend Spring Boot + MongoDB y la interfaz nueva |
+| Sep 2025 | Inicio del proyecto: la idea de SkillMatch, el problema del empleo en Cartagena y las primeras pantallas |
+| Sep 2026 | Versión con la interfaz nueva, el backend en Spring Boot + MongoDB y el despliegue en Render |
 | Sep 2026 | Identidad de marca: naranja del logo como acento, modo oscuro y plan de la interfaz |
 | Oct 2026 | Fase visual ([#1](https://github.com/jesuscastilla-cloud/Skillmatch/pull/1)–[#10](https://github.com/jesuscastilla-cloud/Skillmatch/pull/10)): portada con el match en vivo, vacantes en baraja, mensajes, red, Mi empresa, PWA, indicadores propios, hoja de vida en PDF y pruebas con Playwright |
 | Oct 2026 | Estilo de vidrio (*Liquid Glass*) en todo el sitio y "Vacantes cerca de ti" |
@@ -404,7 +426,7 @@ Entregas: [propuesta del modelo](documentos/propuesta_modelo.pdf) · [informe me
 
 ---
 
-## 👥 Equipo
+## Equipo
 
 | | |
 |---|---|
