@@ -137,7 +137,11 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
   pasos: correo → código + contraseña nueva (reusar `UI.claveNueva` de `ui.js`, el medidor de contraseña).
 - **Probar en local sin correo configurado:** con `start.ps1` el código sale escrito en la consola del backend.
 
-### ⬜ F10. Registro con código (sin cuentas a medias)
+### ✅ F10. Registro con código (sin cuentas a medias)
+- **Hecho:** `assets/js/registro-codigo.js` (compartido) muestra el paso del código cuando el registro responde 202:
+  campo de 6 números, "Pedir otro código" (cada 60 s) y "Corregir mis datos". `registro-usuario.js` y
+  `registro-empresa.js` llevan lo de después del registro a `terminar(datos)`, que se llama con el 200 de hoy o con el
+  200 de `/register/verify`. Falta: poner `REGISTRO_VERIFICAR_CORREO=true` en Render.
 - **Backend (con `REGISTRO_VERIFICAR_CORREO=true`):**
   1. `POST /api/auth/register` (mismos campos de hoy, más F6) → **202** `{"message": "Te enviamos un código de 6
      números..."}`. **No** crea la cuenta ni abre sesión. Responde igual si el correo ya tenía cuenta (al dueño le

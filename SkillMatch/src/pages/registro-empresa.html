@@ -130,6 +130,24 @@
                   </div>
                 </div>
             </form>
+            <!-- Registro con código (F10): registro-codigo.js lo muestra si el servidor pide confirmar el correo -->
+            <form id="registro-codigo" class="registro-form" novalidate hidden>
+                <div class="form-section">
+                    <h2 class="section-title">Confirma tu correo</h2>
+                    <p class="recuperar-nota" id="registro-codigo-nota" role="status"></p>
+                    <div class="form-group">
+                        <label for="registro-codigo-campo">Código de 6 números</label>
+                        <input type="text" id="registro-codigo-campo" name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+                        <small class="input-help">Vence en 15 minutos. Si no te llega, revisa la carpeta de spam.</small>
+                    </div>
+                </div>
+                <p class="error-text" role="alert" hidden></p>
+                <button type="submit" class="btn btn-primary btn-full">Confirmar y crear la cuenta</button>
+                <div class="recuperar-acciones">
+                    <button type="button" id="registro-codigo-reenviar">Pedir otro código</button>
+                    <button type="button" id="registro-codigo-corregir">Corregir mis datos</button>
+                </div>
+            </form>
             <!-- Como en los logins: entrar si ya hay cuenta o cambiar de tipo de cuenta
                  (antes solo quedaba el boton atras del navegador) -->
             <p class="auth-switch">¿Ya tienes cuenta de empresa? <a href="login-empresa.html">Inicia sesión</a></p>
@@ -145,6 +163,7 @@
     </footer>
 
     <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/registro-codigo.js"></script>
     <script src="../assets/js/registro-empresa.js"></script>
     <!-- Solo para el botón de Google (prepararBotonGoogle) -->
     <script src="../assets/js/auth.js"></script>
