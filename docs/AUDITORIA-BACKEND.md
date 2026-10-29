@@ -330,7 +330,7 @@ Las rutas son relativas a `backend/src/main/java/com/skillmatch/backend/`.
   `onrender.com`, `netlify.app`, `vercel.app`, `github.io` y `railway.app`. Cualquiera puede publicar una página gratis
   en esos dominios. Además, la protección CSRF está desactivada y la sesión va en una cookie.
 - **Hoy lo frena** que la cookie es `SameSite=Lax` y que `onrender.com` está en la "lista de sufijos públicos", así que
-  el navegador no manda la cookie desde otro subdominio. Pero `DESPLIEGUE.md` recomienda `COOKIE_SAME_SITE=None` cuando
+  el navegador no manda la cookie desde otro subdominio. Pero `docs/DESPLIEGUE.md` recomienda `COOKIE_SAME_SITE=None` cuando
   el frontend va en otro dominio: con eso, **cualquier página en esos dominios podría actuar como el usuario y leer
   sus datos**.
 - **Arreglo:** como el frontend va dentro del mismo jar, en producción no hace falta CORS: dejar por defecto solo

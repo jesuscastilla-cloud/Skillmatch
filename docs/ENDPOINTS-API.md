@@ -1,3 +1,7 @@
+> **Documento de la primera versión de la API.** No incluye lo agregado después (Google, recuperar la contraseña,
+> datos personales...). La referencia al día es Swagger: con el backend local encendido,
+> http://localhost:8080/swagger-ui.html (`start.ps1` lo activa).
+
 # 📋 RESUMEN DE ENDPOINTS - SkillMatch Backend
 
 ## 🔒 Autenticación
