@@ -18,8 +18,8 @@ Revisar cada 6 meses y quitar a quien ya no trabaje en el proyecto.
 | Render | Servidor y variables de entorno (secretos) | [completar] | [sí/no] |
 | MongoDB Atlas | La base de datos | [completar] | [sí/no] |
 | GitHub | El código; cada push a `main` despliega | [completar] | [sí/no] |
-| Google Cloud | "Continuar con Google" (fase 10) | [completar] | [sí/no] |
-| Brevo | Correos (fase 8) | [completar] | [sí/no] |
+| Google Cloud | "Continuar con Google" (fase 10), proyecto de `skillmatchproject@gmail.com` | [completar] | [sí/no] |
+| Gmail del proyecto | Envía los correos (`skillmatchproject@gmail.com`, contraseña de aplicación) | [completar] | Obligatoria (sin ella no hay contraseña de aplicación) |
 | Twilio | SMS / WhatsApp (fase 9, si se activa) | [completar] | [sí/no] |
 
 - **Responsable de datos** (quien decide y avisa en un incidente): [completar nombre y correo].
@@ -46,13 +46,13 @@ entrando a cuentas ajenas, la base borrada, el sitio caído, un correo raro de "
 
 ### 2.2 Paso a paso
 
-1. **Anotar la hora** en que se detectó y quién lo detectó. Todo lo que siga va en el registro (2.5).
+1. **Anotar la hora** en que se detectó y quién lo detectó. Todo lo que siga va en el registro (2.6).
 2. **Contener** (detener el daño), según el caso, con los comandos de 2.3:
    - Una cuenta tomada → cerrar sus sesiones y, si hace falta, desactivarla.
    - Se filtró `JWT_SECRET` → rotarlo (cierra **todas** las sesiones).
    - Se filtró la contraseña de MongoDB → cambiarla en Atlas y actualizar `MONGODB_URI` en Render.
    - No se sabe qué pasa pero hay daño → **suspender el servicio** en Render ("Suspend Service").
-3. **Evaluar:** qué datos, de cuántas personas, desde cuándo. Buscar en los logs (2.4) y en la base.
+3. **Evaluar:** qué datos, de cuántas personas, desde cuándo. Buscar en los logs (2.5) y en la base.
 4. **Avisar** si hubo datos personales en riesgo (sección 5). El plazo corre desde que se detectó.
 5. **Corregir** la causa (en una rama, nunca directo en `main`) y restaurar desde una copia si hace falta (3.4).
 6. **Escribir qué pasó**, sin culpar a nadie: causa, arreglo, cómo evitar que se repita.
@@ -78,7 +78,30 @@ db.users.updateOne({ email: "persona@correo.com" }, { $set: { enabled: true } })
 
 Cerrar **todas** las sesiones de **todo** el sitio: rotar `JWT_SECRET` (4.2).
 
-### 2.4 Qué buscar en los logs de Render
+### 2.4 El sitio no conecta con MongoDB (lo que pasó el 27 de octubre)
+
+El log de Render dice `Conexion MongoDB : FALLO -> Exception authenticating ...` y el despliegue termina en
+"Timed Out" (Render espera a que `/api/health` responda sano). Atlas recibe la conexión y **rechaza el usuario
+o la contraseña**. En orden:
+
+1. **Comprobar desde el PC la URI exacta de Render** (cópiala con el ojo de Render; comillas simples en
+   PowerShell). Ojo: `ping` responde aunque no haya sesión, así que **no prueba la contraseña**. Usar:
+   ```powershell
+   mongosh 'la-uri-de-Render' --eval "printjson(db.runCommand({connectionStatus:1}).authInfo.authenticatedUsers)"
+   ```
+   Debe mostrar el usuario. `bad auth` = el problema está en la URI o en Atlas, no en el código.
+2. **El usuario de la URI debe existir en ese clúster** (Atlas > Database Access del proyecto cuyo clúster es el
+   de la URI). Aquel día la URI usaba un usuario que no era el de la base; la pista fue `mechanism=SCRAM-SHA-1`
+   en el error: el driver baja a SHA-1 cuando el servidor no conoce al usuario.
+3. Sin espacios en la URI (por ejemplo antes de la `@`), y los símbolos de la contraseña codificados
+   (`@` → `%40`, `#` → `%23`). Las contraseñas autogeneradas de Atlas no tienen símbolos.
+4. Si el usuario y la contraseña están bien y aún falla: el log escribe `Pista de la clave` (largo y huella
+   SHA-256) para compararla con la que funciona en el PC, sin mostrarla.
+
+Mientras tanto el sitio sigue con el último despliegue bueno, pero si ese usaba la contraseña vieja tampoco
+llega a la base: arreglarlo es urgente.
+
+### 2.5 Qué buscar en los logs de Render
 
 Render > el servicio > **Logs**, con el buscador. El plan gratis guarda pocos días: si hay un incidente, copiar
 los logs relevantes **ya** (y guardarlos fuera del repositorio, porque pueden tener IPs).
@@ -94,7 +117,7 @@ los logs relevantes **ya** (y guardarlos fuera del repositorio, porque pueden te
 | `Contraseña actualizada` / `Contraseña recuperada` | Cambios de contraseña (cierran las otras sesiones) |
 | `Retención:` | Lo que borraron las tareas nocturnas (postulaciones viejas, cuentas inactivas) |
 
-### 2.5 Registro del incidente (plantilla)
+### 2.6 Registro del incidente (plantilla)
 
 Copiar en un documento privado (no en el repositorio si tiene datos personales):
 
@@ -197,7 +220,7 @@ openssl rand -base64 48
 | `JWT_SECRET` | [completar] | +6 meses | |
 | Contraseña de MongoDB (`MONGODB_URI`) | [completar] | +6 meses | |
 | `GOOGLE_CLIENT_SECRET` | [completar] | +6 meses | |
-| `MAIL_PASSWORD` (Brevo) | [completar] | +6 meses | |
+| `MAIL_PASSWORD` (contraseña de aplicación de Gmail) | [completar] | +6 meses | |
 | `TWILIO_AUTH_TOKEN` (si se usa) | [completar] | +6 meses | |
 | `COPIA_CLAVE` (copias) | [completar] | Si se filtra | |
 
@@ -218,8 +241,10 @@ openssl rand -base64 48
 - **`GOOGLE_CLIENT_SECRET`:**
   1. Google Cloud > APIs y servicios > Credenciales > el ID de cliente > "Agregar secreto".
   2. Poner el nuevo en Render. Cuando el sitio funcione con él, **desactivar y borrar** el viejo en Google Cloud.
-- **`MAIL_PASSWORD` (Brevo):** Brevo > SMTP y API > generar una "SMTP key" nueva > ponerla en Render > borrar la
-  vieja en Brevo.
+- **`MAIL_PASSWORD` (contraseña de aplicación de Gmail):** con `skillmatchproject@gmail.com` en
+  https://myaccount.google.com/apppasswords crear una nueva > ponerla en Render > cuando el correo funcione,
+  borrar la vieja en esa misma página. Si se filtra la contraseña **del Gmail**, cambiarla también: las
+  contraseñas de aplicación se borran solas al cambiarla, así que luego crear otra y ponerla en Render.
 - **`TWILIO_AUTH_TOKEN`:** Twilio > Account > API keys & tokens > "Request a secondary token" > ponerlo en Render >
   "Promote" > borrar el viejo.
 - **`COPIA_CLAVE`:** las copias viejas siguen con la clave vieja. Hacer una copia nueva con la clave nueva y, cuando
@@ -280,7 +305,7 @@ Si tienes preguntas, escríbenos a [correo de contacto].
 [Nombre del responsable de datos] — SkillMatch
 ```
 
-Enviarlo por correo (Brevo) a las cuentas afectadas. Si son muchas, mostrar además un aviso en el sitio.
+Enviarlo por correo (desde el Gmail del proyecto) a las cuentas afectadas. Si son muchas, mostrar además un aviso en el sitio.
 
 ---
 
@@ -289,7 +314,7 @@ Enviarlo por correo (Brevo) a las cuentas afectadas. Si son muchas, mostrar adem
 | Cada | Qué | Sección |
 |---|---|---|
 | Semana | Copia cifrada de la base | 3.3 |
-| Semana | Mirar los logs de Render buscando `Error interno [` y `Límite de intentos` | 2.4 |
+| Semana | Mirar los logs de Render buscando `Error interno [` y `Límite de intentos` | 2.5 |
 | Mes | Probar la restauración de la última copia en local | 3.4 |
 | 6 meses | Rotar secretos y revisar quién tiene acceso | 4, 1 |
 | Año | Revisar con el abogado la política de datos y este documento | 5 |

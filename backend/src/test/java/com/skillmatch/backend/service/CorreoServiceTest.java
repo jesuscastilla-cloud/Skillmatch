@@ -18,10 +18,10 @@ class CorreoServiceTest {
     private final JavaMailSender sender = mock(JavaMailSender.class);
 
     @Test
-    void conBrevo_enviaElCorreo() {
+    void conCorreoConfigurado_enviaElCorreo() {
         when(proveedor.getIfAvailable()).thenReturn(sender);
         when(proveedor.getObject()).thenReturn(sender);
-        CorreoService correo = new CorreoService(proveedor, "usuario@smtp-brevo.com", "SkillMatch <no-responder@x.co>", false);
+        CorreoService correo = new CorreoService(proveedor, "skillmatch@gmail.com", "SkillMatch <no-responder@x.co>", false);
 
         assertThat(correo.enviar("ana@correo.co", "Tu código", "123456")).isTrue();
 
@@ -32,7 +32,7 @@ class CorreoServiceTest {
     }
 
     @Test
-    void sinBrevoEnModoPrueba_noEnviaPeroResponde() {
+    void sinCorreoEnModoPrueba_noEnviaPeroResponde() {
         CorreoService correo = new CorreoService(proveedor, "", "SkillMatch", true);
 
         assertThat(correo.configurado()).isFalse();
@@ -41,18 +41,18 @@ class CorreoServiceTest {
     }
 
     @Test
-    void sinBrevoNiModoPrueba_noEnvia() {
+    void sinCorreoNiModoPrueba_noEnvia() {
         CorreoService correo = new CorreoService(proveedor, "", "SkillMatch", false);
 
         assertThat(correo.enviar("ana@correo.co", "Tu código", "123456")).isFalse();
     }
 
     @Test
-    void siBrevoFalla_devuelveFalseSinRomper() {
+    void siElCorreoFalla_devuelveFalseSinRomper() {
         when(proveedor.getIfAvailable()).thenReturn(sender);
         when(proveedor.getObject()).thenReturn(sender);
         doThrow(new MailSendException("timeout")).when(sender).send(any(SimpleMailMessage.class));
-        CorreoService correo = new CorreoService(proveedor, "usuario@smtp-brevo.com", "SkillMatch", false);
+        CorreoService correo = new CorreoService(proveedor, "skillmatch@gmail.com", "SkillMatch", false);
 
         assertThat(correo.enviar("ana@correo.co", "Tu código", "123456")).isFalse();
     }

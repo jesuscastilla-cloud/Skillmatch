@@ -102,7 +102,7 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
   - notificaciones: 90 días;
   - postulaciones: 12 meses después de que se cierra la vacante;
   - cuentas sin entrar en 24 meses: a los 23 llega un correo de aviso; si no entra en 30 días, se borran
-    (activo desde la fase 8, solo con Brevo configurado; las cuentas ADMIN no se borran);
+    (activo desde la fase 8, solo con el correo configurado; las cuentas ADMIN no se borran);
   - al eliminar la cuenta se borran también los mensajes enviados y recibidos.
 - **Sección 2 (Qué datos guardamos):** agregar la fecha de la última entrada y la prueba de la autorización
   (qué aceptaste, versión de la política y fecha).
@@ -123,7 +123,7 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
 - **Dónde:** enlace "¿Olvidaste tu contraseña?" en `pages/login-usuario.html`, `pages/login-empresa.html` y
   `pages/login.html`; página nueva (p. ej. `pages/recuperar-clave.html` con su `assets/js/recuperar-clave.js`) con dos
   pasos: correo → código + contraseña nueva (reusar `UI.claveNueva` de `ui.js`, el medidor de contraseña).
-- **Probar en local sin Brevo:** con `start.ps1` el código sale escrito en la consola del backend.
+- **Probar en local sin correo configurado:** con `start.ps1` el código sale escrito en la consola del backend.
 
 ### ⬜ F10. Registro con código (sin cuentas a medias)
 - **Backend (con `REGISTRO_VERIFICAR_CORREO=true`):**
@@ -138,7 +138,7 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
   `inputmode="numeric"`, botón "Reenviar código"); al confirmar, hacer lo mismo que hoy tras un registro exitoso
   (`saveToken`, `saveUserData`, redirigir). Si es 200 (backend con el interruptor apagado), seguir como hoy.
   Así el mismo frontend sirve antes y después de activar el interruptor.
-- **Después de publicarlo:** con Brevo configurado (`MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`), poner
+- **Después de publicarlo:** con el correo configurado (`MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`; ya está), poner
   `REGISTRO_VERIFICAR_CORREO=true` en Render.
 
 ---
