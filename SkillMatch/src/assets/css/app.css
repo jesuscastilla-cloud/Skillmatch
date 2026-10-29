@@ -5530,6 +5530,8 @@ kbd {
     color: var(--ink-muted); font-size: var(--t-sm);
 }
 .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: currentColor; opacity: .3; }
+/* "Continuar con Google" (F13): separado del botón que viene debajo */
+.google-entrar { margin-bottom: var(--s3); }
 .success { color: var(--verde); font-weight: 600; }
 .inactive { opacity: .55; }
 .btn-full, .btn-block { width: 100%; }
