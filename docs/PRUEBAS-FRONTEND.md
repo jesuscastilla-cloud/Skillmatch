@@ -1,5 +1,8 @@
 # Pruebas del frontend de SkillMatch
 
+> Todo lo de esta guía está en la carpeta [`pruebas/`](../pruebas/). Las rutas de las tablas (`casos/...`,
+> `apoyo/...`) son relativas a esa carpeta.
+
 Pruebas automáticas con [Playwright](https://playwright.dev) (gratis, de Microsoft). Abren las páginas en
 **Edge**, hacen lo que haría una persona (entrar, buscar, filtrar, abrir una vacante, escribir un mensaje...) y
 revisan que el resultado sea el correcto, en **computador y celular**.
