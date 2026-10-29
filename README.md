@@ -186,17 +186,19 @@ despliegues que mantener sincronizados.
 
 ```mermaid
 flowchart LR
-    U["Navegador<br/>(computador, celular o app instalada)"] -->|HTTPS| R
-
-    subgraph R["Render · contenedor Docker"]
-        direction TB
-        F["Páginas<br/>HTML + CSS + JS"]
-        A["API REST<br/>Spring Boot 3.5 · Java 17"]
+    U["Navegador: computador, celular o app instalada"]
+    subgraph RENDER["Render: un contenedor Docker"]
+        F["Páginas HTML, CSS y JS"]
+        A["API REST Spring Boot 3.5"]
     end
-
-    A -->|datos| M[("MongoDB Atlas")]
-    A -->|códigos y avisos| G["Gmail (SMTP)"]
-    A <-->|entrar con Google| O["Google OAuth 2.0"]
+    M[("MongoDB Atlas")]
+    G["Gmail SMTP"]
+    O["Google OAuth 2.0"]
+    U -- "HTTPS" --> F
+    U -- "HTTPS /api" --> A
+    A -- "datos" --> M
+    A -- "códigos y avisos" --> G
+    A -- "entrar con Google" --> O
 ```
 
 | Capa | Tecnología | Notas |
@@ -214,7 +216,7 @@ flowchart LR
 El backend pasó por una **auditoría completa en 11 fases** ([informe](docs/AUDITORIA-BACKEND.md)), probada contra
 MongoDB con ataques reales. Algunas de las protecciones:
 
-| | |
+| Tema | Cómo se protege |
 |---|---|
 | **Sesiones** | JWT en cookie `httpOnly` y `Secure`, que se invalida de verdad al cerrar sesión o cambiar la contraseña |
 | **Fuerza bruta** | Límite de intentos por IP y bloqueo por cuenta tras 5 contraseñas equivocadas |
