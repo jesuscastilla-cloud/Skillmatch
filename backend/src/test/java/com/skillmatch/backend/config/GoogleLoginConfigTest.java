@@ -2,6 +2,7 @@ package com.skillmatch.backend.config;
 
 import com.skillmatch.backend.controller.JobController;
 import com.skillmatch.backend.security.GoogleLoginHandler;
+import com.skillmatch.backend.security.AuthCookieService;
 import com.skillmatch.backend.security.JwtAuthenticationEntryPoint;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.service.GoogleAuthService.Intencion;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** SecurityConfig con Google ENCENDIDO (credenciales de prueba): la ida y la vuelta. */
 @WebMvcTest(controllers = JobController.class)
-@Import({SecurityConfig.class, JwtAuthenticationEntryPoint.class})
+@Import({SecurityConfig.class, JwtAuthenticationEntryPoint.class, AuthCookieService.class})
 @TestPropertySource(properties = {
         "app.cors.allowed-origins=http://localhost:*",
         "app.google.client-id=id-de-prueba.apps.googleusercontent.com",

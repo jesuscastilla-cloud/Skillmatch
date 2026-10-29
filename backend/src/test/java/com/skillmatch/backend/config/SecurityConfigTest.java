@@ -1,6 +1,7 @@
 package com.skillmatch.backend.config;
 
 import com.skillmatch.backend.controller.JobController;
+import com.skillmatch.backend.security.AuthCookieService;
 import com.skillmatch.backend.security.JwtAuthenticationEntryPoint;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.service.JobService;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Usa una ruta pública cualquiera (/api/jobs/recent) para mirar la respuesta.
  */
 @WebMvcTest(controllers = JobController.class)
-@Import({SecurityConfig.class, JwtAuthenticationEntryPoint.class})
+@Import({SecurityConfig.class, JwtAuthenticationEntryPoint.class, AuthCookieService.class})
 @TestPropertySource(properties =
         "app.cors.allowed-origins=http://localhost:*,http://127.0.0.1:*,https://skillmatch-yz37.onrender.com")
 class SecurityConfigTest {
