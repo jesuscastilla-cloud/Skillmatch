@@ -55,7 +55,10 @@ Estado: ⬜ pendiente · ✅ hecho
 
 ## De la fase 7 (datos personales)
 
-### ⬜ F6. Enviar las casillas del registro (consentimiento)
+### ✅ F6. Enviar las casillas del registro (consentimiento)
+- **Hecho:** los dos registros envían `aceptaPolitica` (y `mayorDeEdad` las personas). Además, arriba de cada
+  registro va "Crear mi perfil con Google" / "Registrar mi empresa con Google" con el aviso de autorización al lado
+  (`acepta=1&mayor=1`, `tipo=EMPRESA&acepta=1`). **Falta en Render:** `PRIVACIDAD_EXIGIR_CONSENTIMIENTO=true`.
 - **Backend:** `POST /api/auth/register` acepta `aceptaPolitica` (true/false) y, para personas, `mayorDeEdad`.
   Guarda la prueba (qué se aceptó, versión de la política y fecha) en `User.consentimientos`.
 - **Dónde:**
@@ -93,7 +96,11 @@ Estado: ⬜ pendiente · ✅ hecho
   y ofrecer primero "Descargar mis datos" (F7). Después del 200: `limpiarSesion()` y volver a `index.html`.
 - **Enlazarlo** desde `pages/politica-datos.html`, en la parte de los derechos (suprimir).
 
-### ⬜ F9. Actualizar la política de datos (`pages/politica-datos.html`)
+### ✅ F9. Actualizar la política de datos (`pages/politica-datos.html`)
+- **Hecho (versión 0.2):** correo de contacto `skillmatchproject@gmail.com`, datos de Google, última entrada y
+  prueba de la autorización, Gmail y Google como servicios, copias cifradas y los plazos de retención.
+  **Falta:** los datos del responsable (`[por completar]`), la revisión con un abogado y, cuando existan F7 y F8,
+  decir en la sección 7 que se hacen desde el perfil. **En Render:** `PRIVACIDAD_VERSION_POLITICA=0.2`.
 Lo que hace el backend ahora y la política todavía no dice. Al cambiarla, subir la versión ("Versión 0.1") aquí y en
 Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los datos, hay que pedir de nuevo la autorización.
 - **Sección 7 (Cómo ejercer tus derechos):** agregar que desde el perfil se puede **descargar todos tus datos** (F7)
