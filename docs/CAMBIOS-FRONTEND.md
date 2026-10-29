@@ -170,7 +170,10 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
 
 ## De la fase 10 (Google)
 
-### ⬜ F13. Botón "Continuar con Google"
+### ✅ F13. Botón "Continuar con Google" (hecho en las páginas de login; en el registro va con F6)
+- **Hecho:** botón en `login.html`, `login-usuario.html` y `login-empresa.html` (este con `data-tipo="EMPRESA"`),
+  oculto si el servidor no tiene Google; icono `google` en `ui.js`; `auth.js` canjea `#google=` y muestra
+  `#google-error=` (función compartida `completarEntrada`). Falta: el botón en los registros, junto con F6.
 - **Antes de mostrarlo:** `GET /api/auth/google/disponible` → `{"disponible": true|false}`. Con `false` (sin
   credenciales de Google en el servidor), no mostrar el botón.
 - **El botón es un enlace normal** (sin scripts de Google: la CSP los bloquea y no hacen falta):
