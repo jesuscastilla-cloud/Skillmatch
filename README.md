@@ -186,19 +186,17 @@ despliegues que mantener sincronizados.
 
 ```mermaid
 flowchart LR
-    U["Navegador: computador, celular o app instalada"]
-    subgraph RENDER["Render: un contenedor Docker"]
-        F["Páginas HTML, CSS y JS"]
-        A["API REST Spring Boot 3.5"]
+    U["Navegador<br/>(computador, celular o app instalada)"] -->|HTTPS| R
+
+    subgraph R["Render · contenedor Docker"]
+        direction TB
+        F["Páginas<br/>HTML + CSS + JS"]
+        A["API REST<br/>Spring Boot 3.5 · Java 17"]
     end
-    M[("MongoDB Atlas")]
-    G["Gmail SMTP"]
-    O["Google OAuth 2.0"]
-    U -- "HTTPS" --> F
-    U -- "HTTPS /api" --> A
-    A -- "datos" --> M
-    A -- "códigos y avisos" --> G
-    A -- "entrar con Google" --> O
+
+    A -->|datos| M[("MongoDB Atlas")]
+    A -->|códigos y avisos| G["Gmail (SMTP)"]
+    A <-->|entrar con Google| O["Google OAuth 2.0"]
 ```
 
 | Capa | Tecnología | Notas |
