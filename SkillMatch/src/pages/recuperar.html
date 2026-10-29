@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar contraseña - SkillMatch Cartagena</title>
+    <meta name="description" content="Crea una contraseña nueva para tu cuenta de SkillMatch con un código que te llega al correo.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');document.documentElement.style.setProperty('--reloj',Date.now()%864e5+'ms');addEventListener('pagereveal',function(e){var v=e.viewTransition,d;try{d=JSON.parse(sessionStorage.getItem('skillmatch_deslizar'));sessionStorage.removeItem('skillmatch_deslizar');}catch(x){}if(d&&d.a===location.pathname&&Date.now()-d.t<15000){if(v&&v.types)v.types.add('ir-'+d.dir);var h=document.documentElement,c='entra-'+d.dir;h.classList.add(c);setTimeout(function(){h.classList.remove(c);},1400);}});})();</script>
+</head>
+<body class="pagina-vidrio">
+    <!-- Fondo vivo del vidrio (app.css, seccion 30): manchas de la marca que se mueven lento.
+         Va en el HTML para estar desde el primer cuadro; el guion del <head> pone --reloj. -->
+    <div class="fondo-vivo" aria-hidden="true"><span class="mancha-1"></span><span class="mancha-2"></span><span class="mancha-3"></span><span class="mancha-4"></span><span class="mancha-5"></span></div>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <header>
+        <nav class="container" aria-label="Principal">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
+                </div>
+                <ul class="nav-links nav-principales">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="index.html#como-funciona">Cómo funciona</a></li>
+                    <li><a href="empresas.html">Empresas</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="login.html" class="btn-login">Iniciar sesión</a></li>
+                <li><a href="seleccionar-registro.html" class="btn-register">Unirse ahora</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="auth-shell" id="main">
+        <div class="auth-panel">
+            <div class="login-container">
+                <div class="welcome-text" style="text-align:left; margin-bottom:32px">
+                    <h1 style="font-size:2.25rem">Crea una contraseña nueva</h1>
+                    <p>Te enviamos un código al correo de tu cuenta para comprobar que eres tú.</p>
+                </div>
+                <div class="login-form registro-form active">
+                    <h2 id="recuperar-titulo">Recuperar contraseña</h2>
+
+                    <!-- Mensajes: recuperar.js los muestra; role los anuncia al lector de pantalla -->
+                    <div id="error-message" role="alert"></div>
+                    <div id="success-message" role="status"></div>
+
+                    <!-- Paso 1: el correo -->
+                    <form id="recuperar-paso1" novalidate>
+                        <div class="form-group">
+                            <label for="recuperar-email">Correo electrónico de tu cuenta</label>
+                            <input type="email" id="recuperar-email" name="email" autocomplete="email" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Enviarme el código</button>
+                    </form>
+
+                    <!-- Paso 2: el código y la contraseña nueva -->
+                    <form id="recuperar-paso2" novalidate hidden>
+                        <p class="recuperar-nota" id="recuperar-nota"></p>
+                        <div class="form-group">
+                            <label for="recuperar-codigo">Código de 6 números</label>
+                            <input type="text" id="recuperar-codigo" name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="recuperar-clave">Contraseña nueva</label>
+                            <input type="password" id="recuperar-clave" name="newPassword" autocomplete="new-password" minlength="8" maxlength="72" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="recuperar-clave2">Repite la contraseña nueva</label>
+                            <input type="password" id="recuperar-clave2" autocomplete="new-password" maxlength="72" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Cambiar contraseña</button>
+                        <div class="recuperar-acciones">
+                            <button type="button" id="recuperar-reenviar">Pedir otro código</button>
+                            <button type="button" id="recuperar-otro-correo">Usar otro correo</button>
+                        </div>
+                    </form>
+
+                    <!-- Listo -->
+                    <a href="login.html" class="btn btn-primary btn-full" id="recuperar-ir-login" hidden>Iniciar sesión</a>
+
+                    <p class="auth-switch">¿Te acordaste? <a href="login.html">Volver a iniciar sesión</a></p>
+                </div>
+            </div>
+        </div>
+
+        <aside class="auth-aside">
+            <h2>Tu cuenta sigue siendo tuya</h2>
+            <p style="margin-top:16px">El código vence en 15 minutos y solo sirve una vez. Al cambiar la contraseña
+               se cierran las sesiones abiertas en otros equipos.</p>
+            <ul class="auth-points">
+                <li><i data-ico="check"></i> Si entraste con Google, aquí creas tu primera contraseña</li>
+                <li><i data-ico="check"></i> Si no te llega, revisa la carpeta de spam</li>
+            </ul>
+        </aside>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+            <p>Una bolsa de empleo para todos los sectores de Cartagena de Indias.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/recuperar.js"></script>
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>
