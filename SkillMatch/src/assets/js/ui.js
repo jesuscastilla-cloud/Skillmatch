@@ -2321,6 +2321,101 @@
         });
     };
 
+    /** "Descargar mis datos" (docs/CAMBIOS-FRONTEND.md, F7): todo lo de la cuenta en un
+     *  JSON. Va por fetchWithAuth y no por un enlace directo, que no manda el token. */
+    UI.descargarMisDatos = function () {
+        if (!datosSesion() || typeof fetchWithAuth !== 'function') return Promise.resolve(false);
+        return fetchWithAuth('/users/me/export').then(function (r) {
+            if (!r.ok) throw new Error('export ' + r.status);
+            return r.blob();
+        }).then(function (contenido) {
+            const url = URL.createObjectURL(contenido);
+            const enlace = document.createElement('a');
+            enlace.href = url;
+            enlace.download = 'mis-datos-skillmatch.json';
+            document.body.appendChild(enlace);
+            enlace.click();
+            enlace.remove();
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+            UI.aviso('Listo: descargamos el archivo mis-datos-skillmatch.json con todos tus datos.', 'ok');
+            return true;
+        }).catch(function () {
+            UI.aviso('No se pudieron descargar tus datos. Intenta de nuevo.', 'error');
+            return false;
+        });
+    };
+
+    /** "Eliminar mi cuenta" (F8): definitivo; pide la contraseña y ofrece antes la copia de los datos. */
+    UI.eliminarCuenta = function () {
+        const datos = datosSesion();
+        if (!datos || typeof fetchWithAuth !== 'function') return;
+        const esEmpresa = datos.userType === 'empresa';
+        const queSeBorra = esEmpresa
+            ? '<li>La cuenta, sus conexiones, sus mensajes (los enviados y los recibidos) y sus avisos.</li>' +
+              '<li>Las vacantes se cierran y la empresa queda como "Empresa eliminada".</li>'
+            : '<li>Tu perfil, tus habilidades, tu experiencia y tus estudios.</li>' +
+              '<li>Tus postulaciones, tus vacantes guardadas y tus conexiones.</li>' +
+              '<li>Tus mensajes, los que enviaste y los que recibiste: también desaparecen de las conversaciones de la otra persona.</li>';
+        const v = UI.ventana({
+            id: 'ventanaEliminarCuenta',
+            titulo: 'Eliminar mi cuenta',
+            icono: 'trash',
+            cuerpo:
+                '<form class="form-contrasena" novalidate>' +
+                  '<p class="confirmar-texto">Esto es definitivo: no se puede deshacer. Se borra:</p>' +
+                  '<ul class="eliminar-lista">' + queSeBorra + '</ul>' +
+                  '<p class="confirmar-texto">Si quieres conservar una copia, descárgala antes. ' +
+                    '<button type="button" class="btn-enlace" data-descargar>' + svgIcon('download') + ' Descargar mis datos</button></p>' +
+                  '<div class="form-group"><label for="claveEliminar">Escribe tu contraseña para confirmar</label>' +
+                    '<input type="password" id="claveEliminar" autocomplete="current-password" required></div>' +
+                  '<p class="error-text" role="alert" hidden></p>' +
+                  '<div class="modal-actions">' +
+                    '<button type="button" class="btn-secondary-modal" data-cancelar>Cancelar</button>' +
+                    '<button type="submit" class="btn-primary-modal btn-peligro">Eliminar mi cuenta</button>' +
+                  '</div>' +
+                '</form>'
+        });
+        const form = v.cuerpo.querySelector('form');
+        const error = form.querySelector('.error-text');
+        const boton = form.querySelector('[type="submit"]');
+        const descargar = form.querySelector('[data-descargar]');
+        function problema(texto) { error.textContent = texto || ''; error.hidden = !texto; }
+        function listo() { boton.disabled = false; boton.textContent = 'Eliminar mi cuenta'; }
+        ojoDeClave(form.querySelector('#claveEliminar'));
+        form.querySelector('[data-cancelar]').addEventListener('click', v.cerrar);
+        descargar.addEventListener('click', function () {
+            descargar.disabled = true;
+            UI.descargarMisDatos().then(function () { descargar.disabled = false; });
+        });
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const clave = form.querySelector('#claveEliminar').value;
+            if (!clave) return problema('Escribe tu contraseña para confirmar.');
+            problema('');
+            boton.disabled = true;
+            boton.textContent = 'Eliminando…';
+            fetchWithAuth('/users/me', {
+                method: 'DELETE',
+                body: JSON.stringify({ password: clave })
+            }).then(function (r) {
+                if (r.ok) {
+                    // El servidor ya borró la cookie; aquí se borra lo del navegador
+                    limpiarSesion();
+                    alert('Tu cuenta y tus datos fueron eliminados.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                return r.json().catch(function () { return {}; }).then(function (cuerpo) {
+                    problema(cuerpo.message || 'No se pudo eliminar la cuenta. Intenta de nuevo.');
+                    listo();
+                });
+            }).catch(function () {
+                problema('No pudimos conectar con SkillMatch. Revisa tu conexión e intenta de nuevo.');
+                listo();
+            });
+        });
+    };
+
     /** Mensajes sin leer: un numero junto a "Mensajes" en la barra de arriba y
      *  en la de abajo del celular. Se revisa al abrir la pagina, cada minuto
      *  con la pestana a la vista y cuando mensajes.js lee una conversacion. */

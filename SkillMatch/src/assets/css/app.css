@@ -536,6 +536,12 @@ header .notifications-btn { border-radius: var(--r-pill); border-color: var(--ha
 .btn-primary-modal.btn-peligro:hover { filter: none; opacity: .92; }
 [data-theme="dark"] .btn-primary-modal.btn-peligro { color: var(--surface-inverse); }
 .confirmar-texto { margin-bottom: var(--s5); color: var(--ink-2); line-height: 1.6; }
+/* "Eliminar mi cuenta" (ui.js): lo que se borra y el enlace para descargar antes los datos */
+.eliminar-lista { margin: calc(-1 * var(--s3)) 0 var(--s5); padding-left: 1.25em; color: var(--ink-2); line-height: 1.6; list-style: disc; }
+.btn-enlace { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--sea-deep); cursor: pointer; }
+.btn-enlace:hover:not(:disabled) { color: var(--sea); }
+.btn-enlace:disabled { color: var(--ink-muted); cursor: default; }
+.btn-enlace .ico { width: 18px; height: 18px; }
 /* Cerrar una vacante: lo que pasa, antes de confirmar (perfil-empresa.js) */
 .cierre-consecuencias { list-style: none; margin: calc(var(--s3) * -1) 0 var(--s5); padding: 0; display: grid; gap: var(--s3); }
 .cierre-consecuencias li { display: flex; gap: var(--s3); align-items: flex-start; color: var(--ink-2); line-height: 1.5; }
@@ -5971,8 +5977,9 @@ kbd {
 /* "Mas" (ui.js, seccion 29): "Cambiar contrasena" y "Llenar con mi hoja de
    vida" van en un menu para que los botones quepan en una fila. El menu es el
    de Mensajes, pero debajo del boton y alineado a su derecha; la cabecera
-   queda por encima de las tarjetas de abajo para que no lo tapen */
-.profile-hero-new { position: relative; z-index: 3; }
+   queda por encima de las tarjetas de abajo para que no lo tapen. En Mi
+   empresa el menu tiene la cuenta: contrasena, descargar datos y eliminar */
+.profile-hero-new, .company-hero-new { position: relative; z-index: 3; }
 .perfil-mas { position: relative; }
 .perfil-mas .menu-acciones { position: absolute; top: calc(100% + 6px); right: 0; z-index: 5; white-space: nowrap; }
 @media (max-width: 760px) {
