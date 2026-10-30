@@ -17,7 +17,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.mongodb.client.result.UpdateResult;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.List;
 import java.util.Map;
@@ -316,6 +319,40 @@ class MessageServiceTest {
 
         assertThatThrownBy(() -> messageService.deleteMessage("msg-id-10", "user-id-99"))
                 .isInstanceOf(UnauthorizedException.class);
+    }
+
+    // ─── deleteConversation (F5) ──────────────────────────────────────────────
+
+    @Test
+    void deleteConversation_marksBothDirectionsOnMySideAndRemovesFullyDeleted() {
+        when(mongoTemplate.updateMulti(any(Query.class), any(Update.class), eq(Message.class)))
+                .thenReturn(UpdateResult.acknowledged(3, 3L, null), UpdateResult.acknowledged(2, 2L, null));
+
+        long borrados = messageService.deleteConversation("user-id-1", "user-id-2");
+
+        assertThat(borrados).isEqualTo(5);
+        ArgumentCaptor<Query> consultas = ArgumentCaptor.forClass(Query.class);
+        ArgumentCaptor<Update> cambios = ArgumentCaptor.forClass(Update.class);
+        verify(mongoTemplate, times(2)).updateMulti(consultas.capture(), cambios.capture(), eq(Message.class));
+        // Los que envié: marca de mi lado como remitente; los que recibí: como destinatario
+        assertThat(consultas.getAllValues().get(0).getQueryObject())
+                .containsEntry("senderId", "user-id-1").containsEntry("receiverId", "user-id-2");
+        assertThat(cambios.getAllValues().get(0).getUpdateObject().toJson()).contains("deletedBySender");
+        assertThat(consultas.getAllValues().get(1).getQueryObject())
+                .containsEntry("senderId", "user-id-2").containsEntry("receiverId", "user-id-1");
+        assertThat(cambios.getAllValues().get(1).getUpdateObject().toJson()).contains("deletedByReceiver");
+        // Solo desaparecen los que ya borraron los dos
+        ArgumentCaptor<Query> borrado = ArgumentCaptor.forClass(Query.class);
+        verify(mongoTemplate).remove(borrado.capture(), eq(Message.class));
+        assertThat(borrado.getValue().getQueryObject())
+                .containsEntry("deletedBySender", true).containsEntry("deletedByReceiver", true);
+    }
+
+    @Test
+    void deleteConversation_withoutOtherUser_throws() {
+        assertThatThrownBy(() -> messageService.deleteConversation("user-id-1", " "))
+                .isInstanceOf(IllegalArgumentException.class);
+        verifyNoInteractions(mongoTemplate);
     }
 
     @Test
