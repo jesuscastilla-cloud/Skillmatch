@@ -21,6 +21,10 @@ module.exports = defineConfig({
     use: {
         baseURL: `http://localhost:${PUERTO}/pages/`,
         channel: 'msedge',
+        // Sin GPU: con la aceleración gráfica, Edge sin ventana dibujaba unos 3 cuadros por
+        // segundo en algunos equipos y cada clic esperaba para siempre a que el botón
+        // "quedara quieto" (Playwright compara dos cuadros seguidos). Así dibuja 60.
+        launchOptions: { args: ['--disable-gpu'] },
         locale: 'es-CO',
         timezoneId: 'America/Bogota',
         // El service worker guarda copias de las paginas: en pruebas se bloquea
