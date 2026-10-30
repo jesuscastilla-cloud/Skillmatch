@@ -14,7 +14,7 @@
 
     let datos = null;
     try {
-        datos = localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
+        datos = haySesion() ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
     } catch (e) { datos = null; }
     const panel = document.getElementById('panelInicio');
     if (!datos || !datos.id || !panel) return;

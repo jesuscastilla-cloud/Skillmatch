@@ -285,7 +285,7 @@ test('entrar y registrarse: la columna del formulario y las tarjetas son de vidr
     expect((await deVidrio(page.locator('.auth-aside'))).translucido, 'columna de los personajes').toBe(false);
     expect(await deVidrio(page.locator('input[type="email"]').first()), 'campo').toEqual({ translucido: false, desenfoca: false });
     await page.goto('registro-usuario.html');
-    expect(await deVidrio(page.locator('.registro-section > .container > .registro-form')), 'tarjeta del registro').toEqual({ translucido: true, desenfoca: false });
+    expect(await deVidrio(page.locator('.registro-section > .container > .registro-form:not([hidden])')), 'tarjeta del registro').toEqual({ translucido: true, desenfoca: false });
     await page.goto('seleccionar-registro.html');
     expect(await deVidrio(page.locator('.choice-card').first()), 'tarjeta de elegir').toEqual({ translucido: true, desenfoca: false });
 });

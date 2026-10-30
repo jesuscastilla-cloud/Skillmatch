@@ -61,15 +61,8 @@ function abrirPestana(id) {
 
 function getCurrentUserId() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    if (userData.id) return userData.id;
-    try {
-        const token = localStorage.getItem('token');
-        if (token) {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            return payload.userId || null;
-        }
-    } catch (e) { /* token malformed */ }
-    return null;
+    // (Antes, sin id, se sacaba del token; el token ya no se guarda en el navegador)
+    return userData.id || null;
 }
 
 function updateTabCount(spanId, count) {

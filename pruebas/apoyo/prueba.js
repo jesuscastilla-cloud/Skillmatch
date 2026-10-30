@@ -1,7 +1,7 @@
 // Base de todas las pruebas: cada una trae su API falsa (datos nuevos), junta los
 // errores de la pagina y puede entrar como persona, empresa o visitante.
 const base = require('@playwright/test');
-const { crearApi, tokenPara } = require('./api-falsa');
+const { crearApi, cookieDeSesion } = require('./api-falsa');
 
 const CUENTAS = {
     persona: { id: 'u-valentina', firstName: 'Valentina', lastName: 'Herrera', email: 'valentina@prueba.test', role: 'USER', userType: 'usuario', companyId: null },
@@ -31,21 +31,23 @@ const test = base.test.extend({
  */
 async function entrarComo(context, quien, extra = {}) {
     const datos = CUENTAS[quien] || null;
-    await context.addInitScript(({ token, datos, extra }) => {
+    // Como en el sitio: la sesión es la cookie httpOnly y en el navegador queda cuándo vence (F4)
+    if (datos) await cookieDeSesion(context, datos.id);
+    await context.addInitScript(({ datos, extra }) => {
         if (sessionStorage.getItem('__sesionDePrueba')) return;
         sessionStorage.setItem('__sesionDePrueba', '1');
         try {
-            if (token) {
-                localStorage.setItem('token', token);
+            if (datos) {
+                localStorage.setItem('skillmatch_sesion_vence', String(Date.now() + 86400000));
                 localStorage.setItem('userData', JSON.stringify(datos));
             } else {
-                localStorage.removeItem('token');
+                localStorage.removeItem('skillmatch_sesion_vence');
                 localStorage.removeItem('userData');
             }
             ['inicio-persona', 'inicio-empresa', 'mi-empresa'].forEach(c => localStorage.setItem('skillmatch_recorrido_' + c, 'visto'));
             Object.entries(extra).forEach(([k, v]) => localStorage.setItem(k, v));
         } catch (e) { /* sin almacenamiento */ }
-    }, { token: datos ? tokenPara(datos.id) : null, datos, extra });
+    }, { datos, extra });
 }
 
 module.exports = { test, expect: base.expect, entrarComo, CUENTAS };

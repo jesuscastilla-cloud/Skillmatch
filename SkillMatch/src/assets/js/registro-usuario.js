@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /** Con la cuenta ya creada: guarda la sesión, lo del paso 2 y lleva al perfil. */
     async function terminar(datos) {
-        saveToken(datos.token);
+        guardarSesion(datos.expiresAt); // el token queda solo en la cookie httpOnly (F4)
         saveUserData({
             id: datos.id,
             companyId: null,

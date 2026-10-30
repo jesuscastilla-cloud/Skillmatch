@@ -10,7 +10,7 @@
 const { chromium } = require('@playwright/test');
 const { spawn } = require('node:child_process');
 const { mkdirSync, writeFileSync } = require('node:fs');
-const { crearApi, tokenPara } = require('./apoyo/api-falsa');
+const { crearApi, tokenPara, cookieDeSesion } = require('./apoyo/api-falsa');
 const { CUENTAS } = require('./apoyo/prueba');
 
 const PUERTO = 5510;
@@ -319,6 +319,7 @@ async function recorrerConTeclado(page) {
         const api = crearApi();
         await api.conectar(contexto);
         const datos = CUENTAS[quien] || null;
+        if (datos) await cookieDeSesion(contexto, datos.id); // la sesión va en la cookie (F4)
         await contexto.addInitScript(({ token, datos, tema, letra }) => {
             if (token) { localStorage.setItem('token', token); localStorage.setItem('userData', JSON.stringify(datos)); }
             localStorage.setItem('skillmatch_theme', tema);

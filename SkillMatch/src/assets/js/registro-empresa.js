@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /** Con la cuenta ya creada: guarda la sesión, la descripción y lleva al perfil. */
     async function terminar(datos) {
-        if (datos.token) saveToken(datos.token);
+        guardarSesion(datos.expiresAt); // el token queda solo en la cookie httpOnly (F4)
         // userType: sin él, hasta volver a entrar, el sitio la trataba como
         // una persona (por ejemplo, le mostraba "Postularme" en Vacantes)
         saveUserData({

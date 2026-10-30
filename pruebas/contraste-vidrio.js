@@ -14,7 +14,7 @@
 // Sale con error si algun texto queda bajo AA.
 const { chromium } = require('@playwright/test');
 const { spawn } = require('node:child_process');
-const { crearApi, tokenPara } = require('./apoyo/api-falsa');
+const { crearApi, tokenPara, cookieDeSesion } = require('./apoyo/api-falsa');
 const { CUENTAS } = require('./apoyo/prueba');
 
 const [pagina = 'perfil-usuario.html', quien = 'persona'] = process.argv.slice(2);
@@ -125,7 +125,8 @@ async function medirFoto(b64) {
             const contexto = await navegador.newContext({ ...disp, deviceScaleFactor: 1, locale: 'es-CO', timezoneId: 'America/Bogota', serviceWorkers: 'block', colorScheme: tema === 'oscuro' ? 'dark' : 'light' });
             const api = crearApi();
             await api.conectar(contexto);
-            const datos = CUENTAS[quien] || null;
+                const datos = CUENTAS[quien] || null;
+            if (datos) await cookieDeSesion(contexto, datos.id); // la sesión va en la cookie (F4)
             await contexto.addInitScript(({ token, datos, tema }) => {
                 if (token) { localStorage.setItem('token', token); localStorage.setItem('userData', JSON.stringify(datos)); }
                 localStorage.setItem('skillmatch_theme', tema === 'oscuro' ? 'dark' : 'light');

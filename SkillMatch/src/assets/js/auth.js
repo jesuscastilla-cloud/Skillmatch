@@ -6,7 +6,7 @@ function completarEntrada(data) {
     const errorMessage = document.getElementById('error-message');
     const successMessage = document.getElementById('success-message');
 
-    saveToken(data.token);
+    guardarSesion(data.expiresAt); // el token queda solo en la cookie httpOnly (F4)
 
     const role = data.role || 'USER';
     const isEmpresa = role === 'EMPRESA' || role === 'ROLE_EMPRESA';

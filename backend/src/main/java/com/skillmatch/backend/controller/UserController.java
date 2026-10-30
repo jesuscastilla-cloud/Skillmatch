@@ -157,6 +157,8 @@ public class UserController {
             Map<String, Object> body = new HashMap<>();
             body.put("message", "Contraseña actualizada exitosamente");
             body.put("token", token);
+            // Cuándo vence la cookie nueva: el frontend lo guarda para saber si hay sesión (F4)
+            body.put("expiresAt", System.currentTimeMillis() + tokenProvider.getExpirationMillis());
             return ResponseEntity.ok(body);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));

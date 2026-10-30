@@ -35,7 +35,7 @@ async function loadSavedOpportunities() {
 // que mas encajan" eran simplemente las mas recientes.)
 async function cargarHabilidadesPersona() {
     const datos = sesionActual();
-    if (!datos || !datos.id || datos.userType === 'empresa' || !localStorage.getItem('token')) return;
+    if (!datos || !datos.id || datos.userType === 'empresa' || !haySesion()) return;
     try {
         const respuesta = await fetchWithAuth(`${API_BASE_URL}/users/${encodeURIComponent(datos.id)}/skills`);
         if (respuesta.ok) habilidadesPersona = new Set((await respuesta.json()).map(h => sinTildes(h.name)));

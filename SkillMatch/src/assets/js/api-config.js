@@ -59,9 +59,10 @@ function resolverBaseUrl() {
 
     // 3. En este equipo o en la red local: el backend escucha en el 8080
     //    (desde el celular, http://192.168.0.12:5500 -> http://192.168.0.12:8080/api)
+    //    Con el mismo nombre que la pagina (127.0.0.1 o localhost): para el navegador
+    //    son sitios distintos y la cookie de la sesion solo viaja dentro del mismo
     if (enLocal) {
-        const equipo = (host === '' || host === '127.0.0.1' || host === '[::1]' || host === '::1') ? 'localhost' : host;
-        return 'http://' + equipo + ':8080/api';
+        return 'http://' + (host || 'localhost') + ':8080/api';
     }
 
     // 4. Mismo origen que la pagina
@@ -135,11 +136,36 @@ const ESPERA_SERVIDOR_MS = 4000;
     window.SkillMatchServidor = estado;
 })();
 
-/* ---------- Sesion ---------- */
+/* ---------- Sesion ----------
+ * El token (JWT) vive SOLO en la cookie httpOnly "auth_token" (docs/CAMBIOS-FRONTEND.md,
+ * F4): ningun script puede leerlo, ni uno ajeno que se colara en la pagina. Aqui solo
+ * quedan los datos visibles de la cuenta (userData) y cuando vence la sesion, para saber
+ * si hay sesion sin preguntarle al servidor. */
 
-function saveToken(token) {
-    if (token) localStorage.setItem('token', token);
+const SESION_VENCE_KEY = 'skillmatch_sesion_vence';
+const SESION_POR_DEFECTO_MS = 24 * 60 * 60 * 1000; // jwt.expiration del backend
+
+/** Tras entrar, registrarse o cambiar la contrasena: expiresAt viene en la respuesta. */
+function guardarSesion(expiresAt) {
+    const vence = Number(expiresAt) > Date.now() ? Number(expiresAt) : Date.now() + SESION_POR_DEFECTO_MS;
+    localStorage.setItem(SESION_VENCE_KEY, String(vence));
 }
+
+function haySesion() {
+    return Number(localStorage.getItem(SESION_VENCE_KEY) || 0) > Date.now() && !!localStorage.getItem('userData');
+}
+
+// Las sesiones abiertas antes de F4 guardaban aqui el token: se pasa su vencimiento
+// a la marca nueva y se borra (la cookie de esa sesion sigue valiendo)
+(function migrarSesionVieja() {
+    const viejo = localStorage.getItem('token');
+    if (!viejo) return;
+    try {
+        const carga = JSON.parse(atob(viejo.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        if (carga.exp) localStorage.setItem(SESION_VENCE_KEY, String(carga.exp * 1000));
+    } catch (_) { /* token roto: queda sin sesion */ }
+    localStorage.removeItem('token');
+})();
 
 function saveUserData(userData) {
     localStorage.setItem('userData', JSON.stringify(userData));
@@ -156,14 +182,7 @@ function getUserData() {
 }
 
 function isAuthenticated() {
-    const token = localStorage.getItem('token');
-    if (!token) return false;
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.exp * 1000 > Date.now();
-    } catch (_) {
-        return false;
-    }
+    return haySesion();
 }
 
 /**
@@ -190,18 +209,18 @@ function urlSegura(url) {
 
 function limpiarSesion() {
     localStorage.removeItem('token');
+    localStorage.removeItem(SESION_VENCE_KEY);
     localStorage.removeItem('userData');
     localStorage.removeItem('companyOffers');
     localStorage.removeItem('skillmatch_saved_opportunities');
 }
 
 async function logout() {
-    const token = localStorage.getItem('token');
     try {
+        // La cookie va sola; el servidor la anula y la borra
         await fetch(`${API_BASE_URL}/auth/logout`, {
             method: 'POST',
-            credentials: 'include',
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            credentials: 'include'
         });
     } catch (_) { /* aunque falle el servidor, cerramos sesion en el navegador */ }
 
@@ -217,14 +236,14 @@ async function logout() {
 /* ---------- Peticiones ---------- */
 
 async function fetchWithAuth(url, options = {}) {
-    const token = localStorage.getItem('token');
+    // La sesion viaja en la cookie (credentials: 'include'), no en un encabezado
+    const conSesion = haySesion();
 
     // Acepta tanto '/jobs' como la URL completa
     const destino = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
 
     const headers = {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         ...options.headers
     };
 
@@ -239,8 +258,8 @@ async function fetchWithAuth(url, options = {}) {
         headers
     });
 
-    // Token vencido o invalido: cerrar sesion y volver al login
-    if (response.status === 401 && token) {
+    // Sesion vencida o anulada: cerrar sesion y volver al login
+    if (response.status === 401 && conSesion) {
         limpiarSesion();
         const path = window.location.pathname;
         if (!/index\.html|login|registro|seleccionar-registro/.test(path)) {

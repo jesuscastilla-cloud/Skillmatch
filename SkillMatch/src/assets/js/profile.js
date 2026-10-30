@@ -31,16 +31,8 @@ function getUserData() {
     }
     
     const parsed = JSON.parse(userData);
-    let id = parsed?.id || parsed?.userId;
-    if (!id) {
-        try {
-            const token = localStorage.getItem('token');
-            if (token) {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                id = payload.userId || null;
-            }
-        } catch (e) { /* token malformed */ }
-    }
+    // (Antes, sin id, se sacaba del token; el token ya no se guarda en el navegador)
+    const id = parsed?.id || parsed?.userId;
     return { ...parsed, id, isOtherUser: false };
 }
 

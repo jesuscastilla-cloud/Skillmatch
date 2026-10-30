@@ -13,7 +13,7 @@ const NIVELES_HABILIDAD = { BASICO: 'Básico', INTERMEDIO: 'Intermedio', AVANZAD
 
 function sesionHoja() {
     try {
-        return localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
+        return haySesion() ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
     } catch (e) {
         return null;
     }
