@@ -16,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -146,6 +147,34 @@ public class MessageService {
         } else {
             messageRepository.save(message);
         }
+    }
+
+    /**
+     * "Eliminar conversación" de una vez (docs/CAMBIOS-FRONTEND.md, F5). Como deleteMessage:
+     * se borra solo del lado de quien la elimina (la otra persona la sigue viendo) y los
+     * mensajes que ya borraron los dos desaparecen. Antes el frontend borraba de a uno
+     * y la conversación solo trae los últimos MAX_CONVERSACION: los viejos quedaban.
+     * Devuelve cuántos mensajes quedaron borrados de su lado.
+     */
+    public long deleteConversation(String userId, String otherUserId) {
+        if (otherUserId == null || otherUserId.isBlank()) {
+            throw new IllegalArgumentException("El ID de la otra persona no puede ser nulo");
+        }
+        long enviados = mongoTemplate.updateMulti(
+                new Query(Criteria.where("senderId").is(userId).and("receiverId").is(otherUserId)
+                        .and("deletedBySender").is(false)),
+                new Update().set("deletedBySender", true), Message.class).getModifiedCount();
+        long recibidos = mongoTemplate.updateMulti(
+                new Query(Criteria.where("senderId").is(otherUserId).and("receiverId").is(userId)
+                        .and("deletedByReceiver").is(false)),
+                new Update().set("deletedByReceiver", true), Message.class).getModifiedCount();
+        mongoTemplate.remove(new Query(new Criteria().orOperator(
+                Criteria.where("senderId").is(userId).and("receiverId").is(otherUserId),
+                Criteria.where("senderId").is(otherUserId).and("receiverId").is(userId))
+                .and("deletedBySender").is(true).and("deletedByReceiver").is(true)), Message.class);
+        log.debug("Conversación de userId={} con otherUserId={} eliminada de su lado ({} mensajes)",
+                userId, otherUserId, enviados + recibidos);
+        return enviados + recibidos;
     }
 
     public long getUnreadCount(String userId) {

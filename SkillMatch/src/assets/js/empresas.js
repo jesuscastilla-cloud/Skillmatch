@@ -22,7 +22,7 @@ const plural = (n, uno, varios) => `${numero(n)} ${n === 1 ? uno : varios}`;
 
 function sesionActual() {
     try {
-        return localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
+        return haySesion() ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
     } catch (e) {
         return null;
     }

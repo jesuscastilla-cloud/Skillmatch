@@ -66,5 +66,7 @@ test('Cerrar sesión borra la sesión y lleva a la portada', async ({ page, cont
     await page.goto('conexiones.html');
     await page.locator('[data-cerrar-sesion]').first().evaluate(a => a.click());
     await expect(page).toHaveURL(/index\.html/);
-    expect(await page.evaluate(() => [localStorage.getItem('token'), localStorage.getItem('userData')])).toEqual([null, null]);
+    expect(await page.evaluate(() => [localStorage.getItem('skillmatch_sesion_vence'), localStorage.getItem('userData')])).toEqual([null, null]);
+    // El servidor borró la cookie de la sesión (F4: el token solo vive ahí)
+    expect((await context.cookies()).some(c => c.name === 'auth_token' && c.value)).toBe(false);
 });

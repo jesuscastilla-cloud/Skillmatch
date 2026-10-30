@@ -61,15 +61,8 @@ function abrirPestana(id) {
 
 function getCurrentUserId() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    if (userData.id) return userData.id;
-    try {
-        const token = localStorage.getItem('token');
-        if (token) {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            return payload.userId || null;
-        }
-    } catch (e) { /* token malformed */ }
-    return null;
+    // (Antes, sin id, se sacaba del token; el token ya no se guarda en el navegador)
+    return userData.id || null;
 }
 
 function updateTabCount(spanId, count) {
@@ -128,8 +121,10 @@ function displayConnections(connections) {
         return;
     }
 
+    nombresConexion = {};
     container.innerHTML = connections.map(conn => {
         const isRequester = String(conn.userId) === String(currentUserId);
+        nombresConexion[conn.id] = isRequester ? conn.connectedUserName : conn.userName;
         const name     = isRequester ? conn.connectedUserName  : conn.userName;
         const headline = isRequester ? conn.connectedUserHeadline : conn.userHeadline;
         const otherId  = isRequester ? conn.connectedUserId    : conn.userId;
@@ -149,6 +144,7 @@ function displayConnections(connections) {
                     <div class="connection-actions">
                         <button class="btn btn-primary btn-small" onclick="goToMessages('${otherId}')"><i data-ico="chat"></i> Mensaje</button>
                         <button class="btn btn-secondary btn-small" onclick="viewProfile('${otherId}')">Ver perfil</button>
+                        <button class="btn btn-secondary btn-small btn-bloquear" onclick="bloquearConexion('${escaparHtml(conn.id)}')"><i data-ico="lock"></i> Bloquear</button>
                     </div>
                 </div>
                 ${conn.message ? `<div class="connection-body"><p class="connection-note">${escaparHtml(conn.message)}</p></div>` : ''}
@@ -388,6 +384,31 @@ async function rejectConnection(connectionId) {
         }
     } catch (error) {
         showToast('Error al rechazar solicitud', 'error');
+    }
+}
+
+// El nombre de cada conexión por su id: la confirmación de "Bloquear" lo usa
+// (no va dentro del onclick, donde un nombre con comillas rompería el HTML)
+let nombresConexion = {};
+
+/** Bloquear (F2): ya no pueden escribirse ni enviarse solicitudes. Hoy no hay cómo deshacerlo. */
+async function bloquearConexion(connectionId) {
+    const nombre = nombresConexion[connectionId] || 'esta persona';
+    const si = await SkillMatchUI.confirmar({
+        titulo: `¿Bloquear a ${nombre}?`,
+        texto: `No podrán escribirse ni enviarse solicitudes, y ${nombre} sale de tus conexiones. Por ahora no se puede deshacer.`,
+        aceptar: 'Bloquear',
+        peligro: true
+    });
+    if (!si) return;
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/connections/${encodeURIComponent(connectionId)}/block`, { method: 'PATCH' });
+        if (!response.ok) throw new Error();
+        showToast(`Bloqueaste a ${escaparHtml(nombre)}.`);
+        loadMyConnections();
+        loadSuggestions();
+    } catch (error) {
+        showToast('No se pudo bloquear. Intenta de nuevo.', 'error');
     }
 }
 

@@ -490,7 +490,13 @@ async function sendMessage() {
             })
         });
 
-        if (!response.ok) throw new Error('Error al enviar mensaje');
+        if (!response.ok) {
+            // El motivo lo dice el servidor: 403 bloqueo, 429 muchos mensajes seguidos.
+            // Lo escrito se queda en la caja para enviarlo después.
+            const cuerpo = await response.json().catch(() => ({}));
+            SkillMatchUI.aviso(escaparHtml(cuerpo.message || 'No se pudo enviar el mensaje. Intenta de nuevo.'), 'error');
+            return;
+        }
         input.value = '';
         await loadMessages(currentConversationUserId, true);
         scrollToBottom();
@@ -623,17 +629,10 @@ async function eliminarConversacion(conv) {
     });
     if (!si) return;
     try {
-        const respuesta = await fetchWithAuth(`${API_BASE_URL}/messages/conversation/${encodeURIComponent(conv.otherUserId)}`);
+        // Toda la conversación en un solo pedido (F5). Antes se borraba mensaje por
+        // mensaje y, como solo llegan los 1000 más recientes, los más viejos quedaban
+        const respuesta = await fetchWithAuth(`${API_BASE_URL}/messages/conversation/${encodeURIComponent(conv.otherUserId)}`, { method: 'DELETE' });
         if (!respuesta.ok) throw new Error();
-        const mensajes = await respuesta.json();
-        let fallas = 0;
-        // De cinco en cinco, para no llenar el servidor de pedidos a la vez
-        for (let i = 0; i < mensajes.length; i += 5) {
-            const resultados = await Promise.all(mensajes.slice(i, i + 5).map(m =>
-                fetchWithAuth(`${API_BASE_URL}/messages/${encodeURIComponent(m.id)}`, { method: 'DELETE' }).then(r => r.ok).catch(() => false)));
-            fallas += resultados.filter(ok => !ok).length;
-        }
-        if (fallas) throw new Error();
         const archivadas = leerArchivadas();
         delete archivadas[conv.otherUserId];
         guardarArchivadas(archivadas);

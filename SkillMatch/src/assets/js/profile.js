@@ -31,16 +31,8 @@ function getUserData() {
     }
     
     const parsed = JSON.parse(userData);
-    let id = parsed?.id || parsed?.userId;
-    if (!id) {
-        try {
-            const token = localStorage.getItem('token');
-            if (token) {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                id = payload.userId || null;
-            }
-        } catch (e) { /* token malformed */ }
-    }
+    // (Antes, sin id, se sacaba del token; el token ya no se guarda en el navegador)
+    const id = parsed?.id || parsed?.userId;
     return { ...parsed, id, isOtherUser: false };
 }
 
@@ -574,6 +566,22 @@ function estadoVacio(icono, titulo, porque, abre, accion) {
     </div>`;
 }
 
+/** "ene 2025" a partir de "2025-01-01". Con new Date("2025-01-01") la fecha se lee en
+ *  UTC y en Colombia (5 horas antes) quedaba en el mes anterior; sin fecha salía "dic 1969". */
+function mesAnio(fecha) {
+    if (!fecha) return '';
+    const m = String(fecha).match(/^(\d{4})-(\d{2})/);
+    const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, 1) : new Date(fecha);
+    return isNaN(d) ? '' : d.toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
+}
+
+/** Desde y hasta de una experiencia o un estudio; sin fecha de fin, "Actualidad". */
+function periodoFechas(item) {
+    const startDate = mesAnio(item.startDate) || 'Sin fecha';
+    const endDate = item.isCurrent || !item.endDate ? 'Actualidad' : (mesAnio(item.endDate) || 'Actualidad');
+    return { startDate, endDate };
+}
+
 // Mostrar experiencias
 function displayExperiences(experiences) {
     const container = document.getElementById('experienceContainer');
@@ -591,9 +599,8 @@ function displayExperiences(experiences) {
     }
 
     container.innerHTML = experiences.map(exp => {
-        const startDate = new Date(exp.startDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
-        const endDate = exp.isCurrent ? 'Actualidad' : new Date(exp.endDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
-        
+        const { startDate, endDate } = periodoFechas(exp);
+
         return `
             <div class="experience-item">
                 <div class="experience-badge"><i data-ico="briefcase"></i></div>
@@ -729,8 +736,7 @@ function displayEducations(educations) {
     }
 
     container.innerHTML = educations.map(edu => {
-        const startDate = new Date(edu.startDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
-        const endDate = edu.isCurrent ? 'Actualidad' : new Date(edu.endDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
+        const { startDate, endDate } = periodoFechas(edu);
         
         return `
             <div class="education-item">

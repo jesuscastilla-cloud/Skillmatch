@@ -5,13 +5,15 @@ const { crearDatos, haceDias } = require('./datos');
 
 const BASE = 'http://localhost:8080/api';
 
-// Token "JWT" de mentira: api-config.js solo lee la fecha de vencimiento
+// Token "JWT" de mentira. Como en el backend, viaja en la cookie httpOnly "auth_token"
+// (el frontend ya no lo guarda ni lo envía en Authorization: docs/CAMBIOS-FRONTEND.md, F4)
 const b64 = obj => Buffer.from(JSON.stringify(obj)).toString('base64url');
 function tokenPara(userId) {
     return `${b64({ alg: 'none' })}.${b64({ sub: userId, exp: 4102444800 })}.prueba`;
 }
 function quienPide(cabeceras) {
-    const auth = cabeceras.authorization || '';
+    const cookie = (cabeceras.cookie || '').match(/(?:^|;\s*)auth_token=([^;]+)/);
+    const auth = cookie ? cookie[1] : (cabeceras.authorization || '');
     const partes = auth.replace(/^Bearer\s+/i, '').split('.');
     if (partes.length < 2) return null;
     try { return JSON.parse(Buffer.from(partes[1], 'base64url').toString()).sub || null; } catch (e) { return null; }
@@ -229,6 +231,17 @@ function crearApi(opciones = {}) {
             if (m.deletedBySender && m.deletedByReceiver) d.mensajes = d.mensajes.filter(x => x !== m);
             return [200, { message: 'Mensaje eliminado' }];
         }],
+        // Toda la conversación de una vez, solo de mi lado (F5)
+        ['DELETE', /^\/messages\/conversation\/([^/]+)$/, (p, q, c, yo) => {
+            d.mensajes.forEach(m => {
+                if (m.senderId === yo && m.receiverId === p[1]) m.deletedBySender = true;
+                if (m.senderId === p[1] && m.receiverId === yo) m.deletedByReceiver = true;
+            });
+            d.mensajes = d.mensajes.filter(m => !(m.deletedBySender && m.deletedByReceiver));
+            return [200, { message: 'Conversación eliminada' }];
+        }],
+        // Entrar con Google (F13): la API falsa no tiene credenciales de Google
+        ['GET', /^\/auth\/google\/disponible$/, () => [200, { disponible: false }]],
 
         // Avisos (notificaciones)
         ['GET', /^\/notifications$/, (p, q, c, yo) => [200, d.avisos.filter(n => n.userId === yo).sort(porFecha('createdAt'))]],
@@ -294,12 +307,25 @@ function crearApi(opciones = {}) {
             };
             if (pedido.method() === 'OPTIONS') return ruta.fulfill({ status: 204, headers: cors });
             if (estado.demora) await new Promise(r => setTimeout(r, estado.demora));
-            const [codigo, cuerpo] = responder(pedido.method(), pedido.url(), pedido.headers(), pedido.postData());
-            await ruta.fulfill({ status: codigo, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+            // headers() no trae la cookie y allHeaders() se queda esperando en una ruta
+            // interceptada: la cookie se lee del navegador, que es la que enviaría
+            const sesion = (await contexto.cookies(pedido.url())).find(k => k.name === 'auth_token' && k.value);
+            const cabecerasPedido = { ...pedido.headers(), cookie: sesion ? `auth_token=${sesion.value}` : '' };
+            const [codigo, cuerpo] = responder(pedido.method(), pedido.url(), cabecerasPedido, pedido.postData());
+            const cabeceras = { ...cors, 'Content-Type': 'application/json' };
+            // Como el backend: entrar o registrarse deja la cookie; cerrar sesión la borra
+            if (codigo === 200 && cuerpo && cuerpo.token) cabeceras['Set-Cookie'] = `auth_token=${cuerpo.token}; Path=/; HttpOnly; SameSite=Lax`;
+            if (/\/auth\/logout$/.test(pedido.url())) cabeceras['Set-Cookie'] = 'auth_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax';
+            await ruta.fulfill({ status: codigo, headers: cabeceras, body: JSON.stringify(cuerpo) });
         });
     }
 
     return { estado, conectar, tokenPara, usuario };
 }
 
-module.exports = { crearApi, tokenPara, BASE };
+/** La sesión de una cuenta de prueba: la cookie que el backend deja al entrar. */
+async function cookieDeSesion(contexto, userId) {
+    await contexto.addCookies([{ name: 'auth_token', value: tokenPara(userId), domain: 'localhost', path: '/', httpOnly: true, sameSite: 'Lax' }]);
+}
+
+module.exports = { crearApi, tokenPara, cookieDeSesion, BASE };

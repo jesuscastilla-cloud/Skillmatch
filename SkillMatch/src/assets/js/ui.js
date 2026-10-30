@@ -204,7 +204,7 @@
                 // logout() (api-config.js) avisa al backend y borra los datos guardados
                 Promise.resolve(window.logout()).then(salir, salir);
             } else {
-                ['token', 'userData', 'companyOffers', 'skillmatch_saved_opportunities'].forEach(function (k) {
+                ['token', 'skillmatch_sesion_vence', 'userData', 'companyOffers', 'skillmatch_saved_opportunities'].forEach(function (k) {
                     try { localStorage.removeItem(k); } catch (err) { /* sin almacenamiento */ }
                 });
                 salir();
@@ -213,7 +213,7 @@
 
         let datos = null;
         try {
-            datos = localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
+            datos = sesionActiva() ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
         } catch (err) { datos = null; }
 
         // Barra escrita para una persona con sesion (Vacantes, Conexiones,
@@ -876,7 +876,7 @@
         });
         lista.push({ grupo: 'Ir a', ico: 'building', titulo: 'Empresas', claves: 'empresas directorio companias negocios', href: 'empresas.html' });
         lista.push({ grupo: 'Ir a', ico: 'chart', titulo: 'Indicadores del mercado', claves: 'indicadores estadisticas cifras salarios', href: 'dashboard.html' });
-        if (!localStorage.getItem('token')) {
+        if (!sesionActiva()) {
             lista.push({ grupo: 'Cuenta', ico: 'user', titulo: 'Iniciar sesión', claves: 'entrar login acceder', href: 'login.html' });
             lista.push({ grupo: 'Cuenta', ico: 'sparkle', titulo: 'Crear mi perfil', claves: 'registro registrarme cuenta nueva', href: 'seleccionar-registro.html' });
         }
@@ -2245,8 +2245,17 @@
         });
     };
 
+    /** ¿Hay sesion? La misma cuenta que haySesion() de api-config.js, pero sin depender de
+     *  ese archivo (seleccionar-registro y sin-conexion cargan ui.js sin el). El token vive
+     *  solo en la cookie httpOnly (F4); aqui queda cuando vence. */
+    function sesionActiva() {
+        try {
+            return Number(localStorage.getItem('skillmatch_sesion_vence') || 0) > Date.now() && !!localStorage.getItem('userData');
+        } catch (e) { return false; }
+    }
+
     function datosSesion() {
-        try { return localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null; } catch (e) { return null; }
+        try { return sesionActiva() ? JSON.parse(localStorage.getItem('userData') || 'null') : null; } catch (e) { return null; }
     }
 
     /** Cambiar la contrasena (personas y empresas). Antes no habia como:
@@ -2303,7 +2312,7 @@
                 if (r.ok) {
                     // El servidor cierra las demás sesiones y entrega un token nuevo para esta
                     return r.json().catch(function () { return {}; }).then(function (cuerpo) {
-                        if (cuerpo.token) saveToken(cuerpo.token);
+                        if (typeof guardarSesion === 'function') guardarSesion(cuerpo.expiresAt);
                         v.cerrar();
                         UI.aviso('Listo: tu contraseña quedó cambiada y cerramos tu sesión en otros dispositivos.', 'ok');
                     });

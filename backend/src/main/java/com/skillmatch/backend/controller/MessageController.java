@@ -105,6 +105,23 @@ public class MessageController {
         }
     }
 
+    /** Eliminar toda la conversación de una vez, solo de mi lado (F5). */
+    @DeleteMapping("/conversation/{otherUserId}")
+    @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
+    public ResponseEntity<?> deleteConversation(
+            @PathVariable String otherUserId,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        try {
+            if (otherUserId.equals("undefined")) {
+                return ResponseEntity.badRequest().body(new MessageResponse("ID de la conversación inválido"));
+            }
+            messageService.deleteConversation(requireUser(currentUser), otherUserId);
+            return ResponseEntity.ok(new MessageResponse("Conversación eliminada"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+
     @GetMapping("/unread-count")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> getUnreadCount(@AuthenticationPrincipal UserDetailsImpl currentUser) {

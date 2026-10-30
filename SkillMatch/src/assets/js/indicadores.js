@@ -425,7 +425,7 @@ async function cargarIndicadores() {
         // El boton depende de quien mira: una empresa publica la suya, una persona
         // con sesion no tiene nada que publicar, un visitante puede registrar su empresa
         let datos = null;
-        try { datos = localStorage.getItem('token') ? JSON.parse(localStorage.getItem('userData') || 'null') : null; } catch (e) { /* sin almacenamiento */ }
+        try { datos = haySesion() ? JSON.parse(localStorage.getItem('userData') || 'null') : null; } catch (e) { /* sin almacenamiento */ }
         const accion = document.getElementById('indicadoresVacioAccion');
         if (datos && datos.userType === 'empresa') {
             accion.href = 'perfil-empresa.html?nueva=1';

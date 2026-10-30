@@ -40,7 +40,8 @@
     const leerLocal = clave => { try { return localStorage.getItem(clave); } catch (e) { return null; } };
     let datos = null;
     try { datos = JSON.parse(leerLocal('userData') || 'null'); } catch (e) { datos = null; }
-    const conSesion = !!(leerLocal('token') && datos && datos.id);
+    // El token vive solo en la cookie httpOnly (F4): aqui queda cuando vence la sesion
+    const conSesion = !!(Number(leerLocal('skillmatch_sesion_vence') || 0) > Date.now() && datos && datos.id);
     const esEmpresa = conSesion && (String(datos.role || '').toUpperCase() === 'EMPRESA' || datos.userType === 'empresa');
     if (esEmpresa) { seccion.hidden = true; return; }
 
