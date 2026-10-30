@@ -490,7 +490,13 @@ async function sendMessage() {
             })
         });
 
-        if (!response.ok) throw new Error('Error al enviar mensaje');
+        if (!response.ok) {
+            // El motivo lo dice el servidor: 403 bloqueo, 429 muchos mensajes seguidos.
+            // Lo escrito se queda en la caja para enviarlo después.
+            const cuerpo = await response.json().catch(() => ({}));
+            SkillMatchUI.aviso(escaparHtml(cuerpo.message || 'No se pudo enviar el mensaje. Intenta de nuevo.'), 'error');
+            return;
+        }
         input.value = '';
         await loadMessages(currentConversationUserId, true);
         scrollToBottom();
