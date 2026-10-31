@@ -1,5 +1,7 @@
 package com.skillmatch.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.skillmatch.backend.validation.EntradaSegura;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,6 +39,7 @@ public class JobRequest {
     private Double salaryMax;
 
     @Size(max = 100, message = "{validation.job.location.max}")
+    @Pattern(regexp = EntradaSegura.REGEX_LUGAR, message = EntradaSegura.MENSAJE_LUGAR)
     private String location;
 
     @Pattern(regexp = "presencial|remoto|híbrido", message = "{validation.job.modality.pattern}")
@@ -59,4 +62,10 @@ public class JobRequest {
     
     @FutureOrPresent(message = "{validation.job.expiration.future}")
     private LocalDateTime expirationDate;
+
+    @JsonIgnore
+    @AssertTrue(message = "El salario máximo no puede ser menor que el mínimo.")
+    public boolean isRangoSalarialValido() {
+        return salaryMin == null || salaryMax == null || salaryMax >= salaryMin;
+    }
 }

@@ -17,6 +17,17 @@ public final class EntradaSegura {
     /** Una foto del editor (≤ 320 KB) ocupa ~440.000 caracteres en base64. */
     public static final int MAX_IMAGEN = 600_000;
 
+    /**
+     * Una ciudad o un lugar (vacío también vale): letras, números, espacios y , . ( ) / - '.
+     * "Cartagena de Indias", "Turbaco, Bolívar", "Bocagrande (Cartagena)".
+     */
+    public static final String REGEX_LUGAR = "^$|^[\\p{L}\\p{M}\\d][\\p{L}\\p{M}\\d .,()/'’–-]{0,99}$";
+    public static final String MENSAJE_LUGAR = "La ciudad solo puede tener letras, números, espacios y , . ( ) / -";
+
+    /** Una habilidad: letras, números, espacios y + # . / & ( ) -, para "C#", "C++", "Node.js". */
+    public static final String REGEX_HABILIDAD = "^[\\p{L}\\p{M}\\d.#+][\\p{L}\\p{M}\\d +#./&()'’-]{0,79}$";
+    public static final String MENSAJE_HABILIDAD = "La habilidad solo puede tener letras, números, espacios y + # . / & ( ) -";
+
     /** Solo enlaces web, para usar en @Pattern (vacío también vale). */
     public static final String REGEX_ENLACE = "^$|^https?://\\S{1,490}$";
 

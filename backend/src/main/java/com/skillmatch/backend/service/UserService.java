@@ -8,6 +8,7 @@ import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.validation.Credenciales;
 import com.skillmatch.backend.validation.EntradaSegura;
+import com.skillmatch.backend.validation.Nombres;
 import com.skillmatch.backend.validation.Telefonos;
 import com.skillmatch.backend.validation.ValidadorCorreo;
 import lombok.RequiredArgsConstructor;
@@ -53,8 +54,19 @@ public class UserService {
     public User updateProfile(String userId, UpdateProfileRequest request) {
         User user = getUserById(userId);
 
-        if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
-        if (request.getLastName() != null) user.setLastName(request.getLastName());
+        // Mismas reglas de nombres que el registro (en una empresa, el nombre es el de la empresa)
+        boolean esEmpresa = user.getRoles() != null && user.getRoles().contains("EMPRESA");
+        if (request.getFirstName() != null) {
+            String nombre = Nombres.limpiar(request.getFirstName());
+            if (esEmpresa) Nombres.validarEmpresa(nombre);
+            else if (!Nombres.esNombreDePersona(nombre)) throw new IllegalArgumentException("El nombre " + Nombres.MENSAJE_PERSONA + ".");
+            user.setFirstName(nombre);
+        }
+        if (request.getLastName() != null && !esEmpresa) {
+            String apellidos = Nombres.limpiar(request.getLastName());
+            if (!Nombres.esNombreDePersona(apellidos)) throw new IllegalArgumentException("El apellido " + Nombres.MENSAJE_PERSONA + ".");
+            user.setLastName(apellidos);
+        }
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (!validadorCorreo.puedeRecibir(request.getEmail())) {
                 throw new IllegalArgumentException(ValidadorCorreo.MENSAJE);

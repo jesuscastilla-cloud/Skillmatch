@@ -476,8 +476,13 @@ async function addSkill(event) {
     const user = getUserData();
     if (!user) return;
     
-    const skillName = document.getElementById('skillName').value.trim();
+    const skillName = Validar.limpiar(document.getElementById('skillName').value);
     const skillLevel = document.getElementById('skillLevel').value;
+    const enHabilidad = Validar.habilidad(skillName);
+    if (enHabilidad) {
+        alert(enHabilidad);
+        return;
+    }
 
 
     try {
@@ -647,10 +652,16 @@ async function addExperience(event) {
         startDate: document.getElementById('expStartDate').value,
         endDate: isCurrent ? null : document.getElementById('expEndDate').value,
         isCurrent: isCurrent,
-        location: document.getElementById('expLocation').value,
+        location: Validar.limpiar(document.getElementById('expLocation').value),
         description: document.getElementById('expDescription').value
     };
-    
+    // Fechas que tengan sentido (fin después del inicio, nada en el futuro) y una ciudad válida
+    const problema = Validar.fechas(data.startDate, data.endDate, isCurrent, 'experiencia') || Validar.lugar(data.location);
+    if (problema) {
+        alert(problema);
+        return;
+    }
+
     
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/experiences`, {
@@ -787,6 +798,12 @@ async function addEducation(event) {
         isCurrent: isCurrent,
         description: document.getElementById('eduDescription').value
     };
+    // Un estudio puede terminar en el futuro (fecha de grado), pero no antes de empezar
+    const enFechas = Validar.fechas(data.startDate, data.endDate, isCurrent, 'estudio');
+    if (enFechas) {
+        alert(enFechas);
+        return;
+    }
 
 
     try {
@@ -1457,15 +1474,24 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             const formData = {
-                firstName: document.getElementById('editFirstName').value,
-                lastName: document.getElementById('editLastName').value,
+                firstName: Validar.limpiar(document.getElementById('editFirstName').value),
+                lastName: Validar.limpiar(document.getElementById('editLastName').value),
                 email: document.getElementById('editEmail').value,
                 phone: document.getElementById('editPhone').value,
                 headline: document.getElementById('editHeadline').value,
-                location: document.getElementById('editLocation').value,
+                location: Validar.limpiar(document.getElementById('editLocation').value),
                 bio: document.getElementById('editBio').value
             };
-            
+
+            // Las mismas reglas que el servidor: se avisa antes de enviar
+            const problema = Validar.persona(formData.firstName, 'El nombre')
+                || Validar.persona(formData.lastName, 'El apellido')
+                || Validar.lugar(formData.location);
+            if (problema) {
+                alert(problema);
+                return;
+            }
+
             updateProfile(formData);
         });
     }

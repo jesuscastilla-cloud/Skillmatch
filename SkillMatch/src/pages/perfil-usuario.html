@@ -230,11 +230,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="editFirstName">Nombre *</label>
-                        <input type="text" id="editFirstName" required>
+                        <input type="text" id="editFirstName" autocomplete="given-name" maxlength="50" required>
                     </div>
                     <div class="form-group">
                         <label for="editLastName">Apellido *</label>
-                        <input type="text" id="editLastName" required>
+                        <input type="text" id="editLastName" autocomplete="family-name" maxlength="50" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -251,7 +251,7 @@
                 </div>
                 <div class="form-group">
                     <label for="editLocation">Ubicación</label>
-                    <input type="text" id="editLocation" placeholder="Ej.: Cartagena, Bolívar">
+                    <input type="text" id="editLocation" maxlength="100" placeholder="Ej.: Cartagena, Bolívar">
                 </div>
                 <div class="form-group">
                     <label for="editBio">Biografía</label>
@@ -317,7 +317,7 @@
             <form id="addSkillForm">
                 <div class="form-group">
                     <label for="skillName">Nombre de la habilidad *</label>
-                    <input type="text" id="skillName" placeholder="Ej.: Atención al cliente, Excel, Inglés" required>
+                    <input type="text" id="skillName" maxlength="80" placeholder="Ej.: Atención al cliente, Excel, Inglés" required>
                 </div>
                 <div class="form-group">
                     <label for="skillLevel">Nivel de dominio *</label>
@@ -371,7 +371,7 @@
                 </div>
                 <div class="form-group">
                     <label for="expLocation">Ubicación</label>
-                    <input type="text" id="expLocation" placeholder="Ciudad, País">
+                    <input type="text" id="expLocation" maxlength="100" placeholder="Ciudad, País">
                 </div>
                 <div class="form-group">
                     <label for="expDescription">Descripción</label>

@@ -13,6 +13,7 @@ import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.validation.Credenciales;
+import com.skillmatch.backend.validation.Nombres;
 import com.skillmatch.backend.validation.Telefonos;
 import com.skillmatch.backend.validation.ValidadorCorreo;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,7 @@ public class RegistrationService {
     private boolean exigirConsentimiento;
 
     public AuthResponse register(RegisterRequest registerRequest) {
+        prepararNombres(registerRequest);
         if (Credenciales.esClaveComun(registerRequest.getPassword())) {
             throw new IllegalArgumentException("Esa contraseña es de las primeras que prueba cualquiera. Elige otra.");
         }
@@ -124,6 +126,7 @@ public class RegistrationService {
      * desde fuera no se puede saber si un correo está registrado.
      */
     public void iniciarRegistro(RegisterRequest request) {
+        prepararNombres(request);
         if (Credenciales.esClaveComun(request.getPassword())) {
             throw new IllegalArgumentException("Esa contraseña es de las primeras que prueba cualquiera. Elige otra.");
         }
@@ -189,6 +192,20 @@ public class RegistrationService {
                 savedUser.getFirstName(), savedUser.getLastName(), pendiente.getUserType());
         response.setExpiresAt(System.currentTimeMillis() + tokenProvider.getExpirationMillis());
         return response;
+    }
+
+    /**
+     * Limpia los nombres (espacios de más, caracteres invisibles) y revisa que sean
+     * nombres de verdad: personas con letras, - y '; empresas también con números y & . , ( ).
+     */
+    static void prepararNombres(RegisterRequest request) {
+        request.setFirstName(Nombres.limpiar(request.getFirstName()));
+        request.setLastName(Nombres.limpiar(request.getLastName()));
+        if ("EMPRESA".equalsIgnoreCase(request.getUserType())) {
+            Nombres.validarEmpresa(request.getFirstName());
+        } else {
+            Nombres.validarPersona(request.getFirstName(), request.getLastName());
+        }
     }
 
     /** Otro código para un registro pendiente (uno por minuto). Responde igual siempre. */

@@ -1,5 +1,7 @@
 package com.skillmatch.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -34,4 +36,21 @@ public class EducationRequest {
 
     @Size(max = 2000, message = "La descripción no puede tener más de 2000 caracteres")
     private String description;
+
+    /** La primera fecha que se acepta: antes de esto es un error al escribir. */
+    private static final LocalDate MAS_ANTIGUA = LocalDate.of(1950, 1, 1);
+
+    // Un estudio puede empezar pronto (ya inscrito) y terminar años después (fecha de grado esperada)
+    @JsonIgnore
+    @AssertTrue(message = "La fecha de inicio debe estar entre 1950 y el próximo año.")
+    public boolean isInicioValido() {
+        return startDate == null || (!startDate.isBefore(MAS_ANTIGUA) && !startDate.isAfter(LocalDate.now().plusYears(1)));
+    }
+
+    @JsonIgnore
+    @AssertTrue(message = "La fecha de fin no puede ser antes del inicio ni más de 10 años en el futuro.")
+    public boolean isFinValido() {
+        if (Boolean.TRUE.equals(isCurrent) || endDate == null) return true;
+        return !endDate.isAfter(LocalDate.now().plusYears(10)) && (startDate == null || !endDate.isBefore(startDate));
+    }
 }

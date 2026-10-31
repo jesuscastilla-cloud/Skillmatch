@@ -71,6 +71,12 @@ public class User implements UserDetails {
     @JsonIgnore
     private Integer tokenVersion = 0;
 
+    // La única sesión abierta (el identificador "jti" de su token). Entrar en otro
+    // dispositivo lo reemplaza y la sesión anterior deja de valer (SesionUnicaService).
+    // null en cuentas que no han vuelto a entrar desde este cambio: sus tokens siguen valiendo.
+    @JsonIgnore
+    private String sesionActiva;
+
     // Prueba de las autorizaciones aceptadas (Ley 1581). Ver RegistrationService.
     private List<Consentimiento> consentimientos = new ArrayList<>();
 

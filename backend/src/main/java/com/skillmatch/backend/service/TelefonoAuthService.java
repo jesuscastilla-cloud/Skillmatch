@@ -13,6 +13,7 @@ import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.validation.Credenciales;
+import com.skillmatch.backend.validation.Nombres;
 import com.skillmatch.backend.validation.Telefonos;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -88,15 +89,19 @@ public class TelefonoAuthService {
         if (Credenciales.esClaveComun(request.getPassword())) {
             throw new IllegalArgumentException("Esa contraseña es de las primeras que prueba cualquiera. Elige otra.");
         }
-        RegisterRequest datos = new RegisterRequest(null, request.getPassword(), request.getFirstName(),
-                request.getLastName(), telefono, "USER", request.getAceptaPolitica(), request.getMayorDeEdad());
+        // Las mismas reglas de nombres que el registro con correo
+        String nombre = Nombres.limpiar(request.getFirstName());
+        String apellidos = Nombres.limpiar(request.getLastName());
+        Nombres.validarPersona(nombre, apellidos);
+        RegisterRequest datos = new RegisterRequest(null, request.getPassword(), nombre,
+                apellidos, telefono, "USER", request.getAceptaPolitica(), request.getMayorDeEdad());
         List<Consentimiento> consentimientos = registrationService.consentimientos(datos, true);
 
         // Si ya tiene cuenta: misma respuesta y sin enviar nada (un aviso por SMS cuesta)
         if (userRepository.existsByPhone(telefono)) return;
 
         registrosPendientes.save(new RegistroPendiente(PREFIJO_PENDIENTE + telefono,
-                passwordEncoder.encode(request.getPassword()), request.getFirstName(), request.getLastName(),
+                passwordEncoder.encode(request.getPassword()), nombre, apellidos,
                 telefono, "USER", consentimientos, Date.from(Instant.now().plus(Duration.ofMinutes(30)))));
         enviarCodigo(telefono, REGISTRO, "Tu código para crear tu cuenta en SkillMatch es");
     }

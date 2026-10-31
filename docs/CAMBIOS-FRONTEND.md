@@ -237,3 +237,23 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
   cuenta" (F8) responden 400 con el mensaje "Tu cuenta no tiene contraseña (entraste con Google). Crea una con
   ¿Olvidaste tu contraseña?..."; mostrarlo tal cual y ofrecer el enlace a F11.
 - **"Descargar mis datos"** (F7) ahora trae `cuentaUnidaAGoogle: true|false`.
+
+---
+
+## Sesión única y validaciones
+
+### ✅ F14. Una sola sesión por cuenta
+- **Backend:** cada token anota su `jti` como la sesión activa de la cuenta (`User.sesionActiva`, `SesionUnicaService`).
+  Entrar en otro dispositivo (correo, Google, teléfono, registro o cambio de contraseña) cierra la sesión anterior: el
+  401 trae `{"motivo": "OTRA_SESION", "message": "Tu sesión se cerró porque entraste desde otro dispositivo..."}`.
+  Las cuentas que no han vuelto a entrar desde el cambio conservan su sesión hasta que entren de nuevo.
+- **Hecho:** `fetchWithAuth` (`api-config.js`) muestra ese aviso una vez y lleva al login.
+
+### ✅ F15. Validación de nombres y datos
+- **Backend:** clase `Nombres` (personas: letras, espacios, - y ', 2 a 50; empresas: también números y & . , ( ),
+  hasta 100), en el registro (correo y teléfono) y al editar el perfil; los nombres de Google se ajustan. Fechas de
+  experiencia y estudios coherentes, salario máximo ≥ mínimo, caracteres permitidos en habilidades y ciudades. Los
+  errores de validación traen además `message` con el primer problema.
+- **Hecho:** `Validar` en `api-config.js` (mismas reglas) en los registros y en el perfil (nombres, ciudad,
+  habilidades, fechas); `maxlength` en los campos; los formularios con contraseña usan `method="post"` para que,
+  si el JavaScript falla, la contraseña no quede en la dirección.

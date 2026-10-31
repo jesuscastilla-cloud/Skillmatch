@@ -8,6 +8,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.UserRepository;
 import com.skillmatch.backend.security.TokenBlacklistService;
 import com.skillmatch.backend.validation.Credenciales;
+import com.skillmatch.backend.validation.Nombres;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -34,7 +35,6 @@ import java.util.List;
 public class GoogleAuthService {
 
     static final Duration VIGENCIA_CANJE = Duration.ofMinutes(1);
-    private static final int MAX_NOMBRE = 100;
     private static final int MAX_FOTO = 500;
     private static final SecureRandom AZAR = new SecureRandom();
 
@@ -151,8 +151,11 @@ public class GoogleAuthService {
         // Las mismas reglas de consentimiento que el registro con correo
         RegisterRequest solicitud = new RegisterRequest();
         solicitud.setEmail(email);
-        solicitud.setFirstName(recortar(datos.nombre(), email.substring(0, email.indexOf('@'))));
-        solicitud.setLastName(recortar(datos.apellido(), ""));
+        // El nombre viene de Google: en vez de rechazarlo, se quitan los caracteres que
+        // no van en un nombre (emojis, números, símbolos) y se recorta a 50
+        String delCorreo = Nombres.ajustarPersona(email.substring(0, email.indexOf('@')), "Usuario");
+        solicitud.setFirstName(Nombres.ajustarPersona(datos.nombre(), delCorreo));
+        solicitud.setLastName(Nombres.ajustarPersona(datos.apellido(), ""));
         solicitud.setUserType(tipo);
         solicitud.setAceptaPolitica(intencion.aceptaPolitica());
         solicitud.setMayorDeEdad(intencion.mayorDeEdad());
@@ -184,11 +187,6 @@ public class GoogleAuthService {
         }
         log.info("Nuevo {} registrado con Google: id={}", tipo, guardado.getId());
         return guardado;
-    }
-
-    private static String recortar(String texto, String siVacio) {
-        String t = texto == null || texto.isBlank() ? siVacio : texto.trim();
-        return t.length() > MAX_NOMBRE ? t.substring(0, MAX_NOMBRE) : t;
     }
 
     // ─── Código de un solo uso para el frontend ──────────────────────────────

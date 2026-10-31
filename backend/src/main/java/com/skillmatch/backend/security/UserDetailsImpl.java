@@ -17,16 +17,18 @@ public class UserDetailsImpl implements UserDetails {
     private final String password;
     private final Boolean enabled;
     private final int tokenVersion;
+    private final String sesionActiva;
     private final Collection<? extends GrantedAuthority> authorities;
 
     private UserDetailsImpl(String id, String email, String password,
-                            Boolean enabled, int tokenVersion,
+                            Boolean enabled, int tokenVersion, String sesionActiva,
                             Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.enabled = enabled;
         this.tokenVersion = tokenVersion;
+        this.sesionActiva = sesionActiva;
         this.authorities = authorities;
     }
 
@@ -41,6 +43,7 @@ public class UserDetailsImpl implements UserDetails {
                 user.getPassword(),
                 user.getEnabled(),
                 user.getTokenVersion() == null ? 0 : user.getTokenVersion(),
+                user.getSesionActiva(),
                 grantedAuthorities
         );
     }
