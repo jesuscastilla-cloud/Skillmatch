@@ -54,8 +54,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex,
                                                  WebRequest request) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new MessageResponse("Acceso denegado: " + ex.getMessage()));
+        // Nuestros mensajes ya dicen por qué ("No puedes publicar vacantes a nombre de otra
+        // empresa"); el de Spring cuando falla un @PreAuthorize es "Access Denied", en inglés
+        String mensaje = ex.getMessage() == null || ex.getMessage().startsWith("Access Denied")
+                ? "No tienes permiso para hacer esto."
+                : ex.getMessage();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(mensaje));
     }
 
     // 4. Validación de campos (@Valid)

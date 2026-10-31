@@ -78,8 +78,37 @@ class ApplicationControllerTest {
     }
 
     @Test
+    void updateApplicationStatus_lasNotasVanEnElCuerpo_noEnLaDireccion() throws Exception {
+        when(applicationService.updateStatus(eq("app-a-id"), eq("revisada"), eq("Llamar el lunes"), eq("empresa-b-user-id")))
+                .thenReturn(new com.skillmatch.backend.dto.ApplicationResponse());
+
+        mockMvc.perform(patch("/api/applications/app-a-id/status")
+                        .param("status", "revisada")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"notes\":\"Llamar el lunes\"}"))
+                .andExpect(status().isOk());
+        verify(applicationService).updateStatus("app-a-id", "revisada", "Llamar el lunes", "empresa-b-user-id");
+
+        // Notas en la dirección ya no se leen
+        mockMvc.perform(patch("/api/applications/app-a-id/status")
+                        .param("status", "revisada").param("notes", "secreto"))
+                .andExpect(status().isOk());
+        verify(applicationService).updateStatus("app-a-id", "revisada", null, "empresa-b-user-id");
+    }
+
+    @Test
+    void updateApplicationStatus_notasMuyLargas_400() throws Exception {
+        mockMvc.perform(patch("/api/applications/app-a-id/status")
+                        .param("status", "revisada")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"notes\":\"" + "x".repeat(1001) + "\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Las notas no pueden tener más de 1000 caracteres"));
+    }
+
+    @Test
     void updateApplicationStatus_wrongOwner_returnsForbidden() throws Exception {
-        // notes llega null porque el test no envía el @RequestParam(required=false) notes
+        // Sin cuerpo: las notas llegan null
         when(applicationService.updateStatus(
                 eq("app-a-id"), eq("aceptada"), isNull(), eq("empresa-b-user-id")))
                 .thenThrow(new AccessDeniedException("No tienes permiso para acceder a estas postulaciones"));

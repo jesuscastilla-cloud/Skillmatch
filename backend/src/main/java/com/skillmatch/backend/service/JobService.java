@@ -2,11 +2,13 @@ package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.JobRequest;
 import com.skillmatch.backend.dto.JobResponse;
+import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.model.Job;
 import com.skillmatch.backend.model.JobStatus;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.JobRepository;
+import com.skillmatch.backend.validation.RevisionVacante;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,9 +42,9 @@ public class JobService {
 
     public JobResponse createJob(JobRequest request, String requesterId, boolean isAdmin) {
         String companyId = request.getCompanyId();
-        if (companyId == null) throw new RuntimeException("El ID de la compañía no puede ser nulo");
+        if (companyId == null) throw new IllegalArgumentException("El ID de la compañía no puede ser nulo");
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Compañía no encontrada con ID: " + companyId));
+                .orElseThrow(() -> new ResourceNotFoundException("Compañía no encontrada"));
 
         // Solo el dueño de la empresa (o un ADMIN) publica a su nombre
         if (!isAdmin && !requesterId.equals(company.getUserId())) {
@@ -50,6 +53,7 @@ public class JobService {
         }
 
         validateSalaryRange(request);
+        revisarVacante(request);
 
         Job job = buildJobFromRequest(new Job(), request);
         job.setCompanyId(companyId);
@@ -67,6 +71,7 @@ public class JobService {
         Job job = findJobOrThrow(id);
         verifyOwnership(job, requesterId, isAdmin);
         validateSalaryRange(request);
+        revisarVacante(request);
         buildJobFromRequest(job, request);
         job.setUpdatedAt(LocalDateTime.now());
         Company company = companyRepository.findById(job.getCompanyId()).orElse(null);
@@ -77,6 +82,11 @@ public class JobService {
         Job job = findJobOrThrow(id);
         verifyOwnership(job, requesterId, isAdmin);
         JobStatus jobStatus = JobStatus.fromValue(status);
+        // Reabrir con la fecha vencida la cerraría sola esta misma noche: primero hay que cambiarla
+        if (jobStatus == JobStatus.ABIERTA
+                && (job.getExpirationDate() == null || job.getExpirationDate().isBefore(LocalDateTime.now()))) {
+            throw new IllegalArgumentException("La fecha de cierre de esta vacante ya pasó. Cámbiala antes de reabrirla.");
+        }
         job.setStatus(jobStatus);
         job.setActive(jobStatus != JobStatus.CERRADA);
         job.setUpdatedAt(LocalDateTime.now());
@@ -201,15 +211,31 @@ public class JobService {
     }
 
     private Job findJobOrThrow(String id) {
-        if (id == null) throw new RuntimeException("El ID del job no puede ser nulo");
+        if (id == null) throw new IllegalArgumentException("El ID de la vacante no puede ser nulo");
         return jobRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Job no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Vacante no encontrada"));
+    }
+
+    /**
+     * Lo mismo que revisa la página antes de publicar (RevisionVacante): fecha de cierre
+     * entre hoy y 6 meses, y nada de edad, sexo, estado civil, foto ni datos de contacto.
+     */
+    private void revisarVacante(JobRequest request) {
+        String cierre = RevisionVacante.problemaDeCierre(request.getExpirationDate());
+        if (cierre != null) throw new IllegalArgumentException(cierre);
+        List<String> textos = new ArrayList<>(Arrays.asList(request.getTitle(), request.getDescription(), request.getDuration()));
+        for (List<String> lista : Arrays.asList(request.getRequirements(), request.getResponsibilities(),
+                request.getBenefits(), request.getSkills())) {
+            if (lista != null) textos.addAll(lista);
+        }
+        String texto = RevisionVacante.problemasDelTexto(textos);
+        if (texto != null) throw new IllegalArgumentException(texto);
     }
 
     private void validateSalaryRange(JobRequest request) {
         if (request.getSalaryMin() != null && request.getSalaryMax() != null
                 && request.getSalaryMin() > request.getSalaryMax()) {
-            throw new RuntimeException("El salario mínimo no puede ser mayor al salario máximo");
+            throw new IllegalArgumentException("El salario mínimo no puede ser mayor al salario máximo");
         }
     }
 

@@ -608,3 +608,21 @@ una se explica por qué.
   `localhost:27017` (`src/test/resources/application.properties`).
 - **Compilación:** `cd backend && ./mvnw -q -DskipTests package` antes de cada commit (regla 4 de `CLAUDE.md`).
 - **A mano:** las tablas de la sección 2 sirven de lista de comprobación con Postman o `curl` contra el servidor local.
+
+---
+
+## Revisión final (30 de octubre de 2026)
+
+Revisión de todas las rutas como lo haría un tester (saltándose la página). Los permisos estaban bien; se cerraron 8
+puntos y se comprobaron contra el backend real:
+
+| # | Qué pasaba | Ahora |
+| --- | --- | --- |
+| 1 | La API aceptaba vacantes sin fecha de cierre o a años | Fecha obligatoria entre hoy y 6 meses; no se reabre una vencida |
+| 2 | Las reglas de la vacante (Ley 931: edad, sexo, estado civil, foto; datos de contacto) solo estaban en la página | También en el servidor (`RevisionVacante`), con el mismo mensaje |
+| 3 | Se podía postular a una vacante vencida hasta el cierre de las 2 a. m. | Se revisa la fecha al postularse |
+| 4 | Las notas de la empresa viajaban en la dirección (`?notes=`) | Van en el cuerpo |
+| 5 | "Acerca de nosotros" aceptaba hasta 1 MB | Hasta 5000 caracteres |
+| 6 | El tope de 1 MB se saltaba enviando por partes | 411 si no dice su tamaño |
+| 7 | Listados de hasta 2000 por página; página negativa daba error en inglés | Máximo 50 en toda la API; se ajusta |
+| 8 | Rutas de empresas, vacantes y postulaciones respondían "Error: ..." con texto interno y códigos equivocados | Responde el manejador general (404, 403 en español, 400) |

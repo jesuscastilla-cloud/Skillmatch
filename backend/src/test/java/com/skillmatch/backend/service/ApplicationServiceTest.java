@@ -110,7 +110,20 @@ class ApplicationServiceTest {
 
         assertThatThrownBy(() -> applicationService.createApplication("user-id-1", request))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("no está disponible");
+                .hasMessageContaining("ya no recibe postulaciones");
+    }
+
+    @Test
+    void createApplication_vacanteVencidaQueAunNoSeCierra_noRecibe() {
+        // Venció ayer; la tarea de las 2 a. m. todavía no la cierra
+        openJob.setExpirationDate(java.time.LocalDateTime.now().minusDays(1));
+        ApplicationRequest request = new ApplicationRequest("job-id-5", null, null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+
+        assertThatThrownBy(() -> applicationService.createApplication("user-id-1", request))
+                .hasMessageContaining("ya cerró");
+        verify(applicationRepository, never()).save(any());
     }
 
     @Test

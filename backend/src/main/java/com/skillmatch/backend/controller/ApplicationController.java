@@ -3,12 +3,12 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.ApplicationRequest;
 import com.skillmatch.backend.dto.ApplicationResponse;
 import com.skillmatch.backend.dto.MessageResponse;
-import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,19 +36,11 @@ public class ApplicationController {
     public ResponseEntity<?> createApplication(
             @Valid @RequestBody ApplicationRequest request,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            String userId = requireUser(currentUser);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(applicationService.createApplication(userId, request));
-        } catch (AccessDeniedException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(ex.getMessage()));
-        } catch (DuplicateResourceException e) {
-            // 409 con el mismo texto: oportunidades.js reconoce "Ya te has postulado"
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(e.getMessage()));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new MessageResponse("Error al crear postulación: " + e.getMessage()));
-        }
+        // Los errores los responde GlobalExceptionHandler con el mensaje tal cual: 409 si ya se
+        // postuló (oportunidades.js reconoce "Ya te has postulado"), 400 si la vacante cerró
+        String userId = requireUser(currentUser);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(applicationService.createApplication(userId, request));
     }
 
     @GetMapping("/{id}")
@@ -56,27 +48,15 @@ public class ApplicationController {
     public ResponseEntity<?> getApplicationById(
             @PathVariable String id,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            return ResponseEntity.ok(applicationService.getApplicationById(
-                    id, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new MessageResponse("Postulación no encontrada"));
-        }
+        return ResponseEntity.ok(applicationService.getApplicationById(
+                id, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
     }
 
     @Operation(summary = "Mis postulaciones", description = "Devuelve todas las postulaciones del usuario autenticado")
     @GetMapping("/my-applications")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> getMyApplications(@AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            return ResponseEntity.ok(applicationService.getApplicationsByUser(requireUser(currentUser)));
-        } catch (AccessDeniedException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(ex.getMessage()));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new MessageResponse("Error al obtener postulaciones: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(applicationService.getApplicationsByUser(requireUser(currentUser)));
     }
 
     @GetMapping("/job/{jobId}")
@@ -84,15 +64,8 @@ public class ApplicationController {
     public ResponseEntity<?> getApplicationsByJob(
             @PathVariable String jobId,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            return ResponseEntity.ok(applicationService.getApplicationsByJob(
-                    jobId, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new MessageResponse("Error al obtener postulaciones: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(applicationService.getApplicationsByJob(
+                jobId, requireUser(currentUser), hasRole(currentUser, "ADMIN")));
     }
 
     @Operation(summary = "Postulaciones por empresa", description = "Devuelve las postulaciones recibidas por la empresa (paginado, solo dueño)")
@@ -102,16 +75,9 @@ public class ApplicationController {
             @PathVariable String companyId,
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            Page<ApplicationResponse> apps = applicationService.getApplicationsByCompany(
-                    companyId, requireUser(currentUser), hasRole(currentUser, "ADMIN"), pageable);
-            return ResponseEntity.ok(apps);
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new MessageResponse("Error al obtener postulaciones: " + e.getMessage()));
-        }
+        Page<ApplicationResponse> apps = applicationService.getApplicationsByCompany(
+                companyId, requireUser(currentUser), hasRole(currentUser, "ADMIN"), pageable);
+        return ResponseEntity.ok(apps);
     }
 
     @GetMapping("/status/{status}")
@@ -129,19 +95,16 @@ public class ApplicationController {
     public ResponseEntity<?> updateStatus(
             @PathVariable String id,
             @RequestParam String status,
-            @RequestParam(required = false) String notes,
+            @Valid @RequestBody(required = false) NotasRequest cuerpo,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        if (notes != null && notes.length() > 1000) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Las notas no pueden tener más de 1000 caracteres"));
-        }
-        try {
-            return ResponseEntity.ok(applicationService.updateStatus(id, status, notes, requireUser(currentUser)));
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new MessageResponse("Error al actualizar estado: " + e.getMessage()));
-        }
+        // Las notas son internas de la empresa: van en el cuerpo, no en la dirección (?notes=),
+        // que queda en los registros del servidor. Los errores los responde GlobalExceptionHandler
+        String notes = cuerpo == null ? null : cuerpo.notes();
+        return ResponseEntity.ok(applicationService.updateStatus(id, status, notes, requireUser(currentUser)));
+    }
+
+    /** Notas internas de la empresa sobre una postulación. */
+    record NotasRequest(@Size(max = 1000, message = "Las notas no pueden tener más de 1000 caracteres") String notes) {
     }
 
     @DeleteMapping("/{id}")
@@ -149,18 +112,11 @@ public class ApplicationController {
     public ResponseEntity<?> deleteApplication(
             @PathVariable String id,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            String requesterId = requireUser(currentUser);
-            // Solo ADMIN: una empresa no puede borrar postulaciones de nadie
-            boolean isAdmin = hasRole(currentUser, "ADMIN");
-            applicationService.deleteApplication(id, requesterId, isAdmin);
-            return ResponseEntity.ok(new MessageResponse("Postulación eliminada exitosamente"));
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new MessageResponse("Error al eliminar postulación: " + e.getMessage()));
-        }
+        String requesterId = requireUser(currentUser);
+        // Solo ADMIN: una empresa no puede borrar postulaciones de nadie
+        boolean isAdmin = hasRole(currentUser, "ADMIN");
+        applicationService.deleteApplication(id, requesterId, isAdmin);
+        return ResponseEntity.ok(new MessageResponse("Postulación eliminada exitosamente"));
     }
 
     @GetMapping("/job/{jobId}/count")

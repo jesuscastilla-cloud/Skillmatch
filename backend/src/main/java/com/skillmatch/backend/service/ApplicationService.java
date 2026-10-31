@@ -55,7 +55,11 @@ public class ApplicationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado con ID: " + jobId));
 
         if (!Boolean.TRUE.equals(job.getActive()) || job.getStatus() != JobStatus.ABIERTA) {
-            throw new RuntimeException("El job no está disponible para postulaciones");
+            throw new IllegalArgumentException("Esta vacante ya no recibe postulaciones.");
+        }
+        // Las vacantes vencidas se cierran solas a las 2 a. m.: hasta entonces ya no reciben postulaciones
+        if (job.getExpirationDate() != null && job.getExpirationDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Esta vacante ya cerró: su fecha límite pasó.");
         }
         if (applicationRepository.existsByUserIdAndJobId(userId, jobId)) {
             throw new DuplicateResourceException("Ya te has postulado a esta oferta");
