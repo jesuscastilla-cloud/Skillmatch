@@ -21,6 +21,12 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                          AuthenticationException authException) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=UTF-8");
+        // Si la sesión se cerró porque entró en otro dispositivo, el frontend lo dice así
+        if (Boolean.TRUE.equals(request.getAttribute(SesionUnicaService.ATRIBUTO_REEMPLAZADA))) {
+            response.getWriter().write("{\"message\":\"" + SesionUnicaService.MENSAJE_REEMPLAZADA
+                    + "\",\"motivo\":\"OTRA_SESION\"}");
+            return;
+        }
         response.getWriter().write("{\"message\":\"Necesitas iniciar sesión\"}");
     }
 }

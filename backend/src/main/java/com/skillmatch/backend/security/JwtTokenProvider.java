@@ -34,6 +34,9 @@ public class JwtTokenProvider {
     @Autowired
     private TokenBlacklistService tokenBlacklistService;
 
+    @Autowired
+    private SesionUnicaService sesionUnicaService;
+
     private SecretKey signingKey;
 
     /** Claves de ejemplo publicadas en el repositorio: nunca sirven para firmar. */
@@ -83,10 +86,12 @@ public class JwtTokenProvider {
                 .map(a -> a.getAuthority().replace("ROLE_", ""))
                 .collect(Collectors.toList());
 
-        return Jwts.builder()
-                // Identificador único: dos logins en el mismo segundo no dan el mismo token
-                // (si no, cerrar sesión en un dispositivo cerraría también el otro)
-                .id(UUID.randomUUID().toString())
+        // Identificador único: dos logins en el mismo segundo no dan el mismo token.
+        // También identifica la sesión: queda como la única abierta de la cuenta y
+        // la del otro dispositivo deja de valer (SesionUnicaService)
+        String sesionId = UUID.randomUUID().toString();
+        String token = Jwts.builder()
+                .id(sesionId)
                 // El sujeto es el ID de la cuenta (no cambia; las cuentas de teléfono no tienen correo).
                 // Los tokens de antes de la fase 9 llevaban el correo: CustomUserDetailsService acepta los dos.
                 .subject(user.getId())
@@ -97,6 +102,18 @@ public class JwtTokenProvider {
                 .expiration(expiryDate)
                 .signWith(signingKey)
                 .compact();
+        sesionUnicaService.registrar(user.getId(), sesionId);
+        return token;
+    }
+
+    /** La sesión a la que pertenece el token (su jti). Los tokens muy viejos no lo traen: null. */
+    public String getSessionIdFromJwt(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getId();
     }
 
     /** A quién pertenece el token: el ID de la cuenta (o el correo, en tokens anteriores a la fase 9). */

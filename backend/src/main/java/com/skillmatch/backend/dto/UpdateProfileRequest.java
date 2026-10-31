@@ -1,5 +1,7 @@
 package com.skillmatch.backend.dto;
 
+import com.skillmatch.backend.validation.EntradaSegura;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import com.skillmatch.backend.validation.Credenciales;
@@ -29,6 +31,7 @@ public class UpdateProfileRequest {
     private String headline;
 
     @Size(max = 100, message = "La ubicación no puede tener más de 100 caracteres")
+    @Pattern(regexp = EntradaSegura.REGEX_LUGAR, message = EntradaSegura.MENSAJE_LUGAR)
     private String location;
 
     @Size(max = 500, message = "La biografía no puede tener más de 500 caracteres")

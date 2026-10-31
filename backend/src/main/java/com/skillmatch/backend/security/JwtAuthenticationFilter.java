@@ -62,6 +62,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     && tokenProvider.getTokenVersionFromJwt(jwt) != user.getTokenVersion()) {
                 throw new CredentialsExpiredException("Token de una versión anterior");
             }
+            // Una sola sesión por cuenta: si entró en otro dispositivo, esta ya no vale
+            if (userDetails instanceof UserDetailsImpl user
+                    && !SesionUnicaService.esLaActiva(user.getSesionActiva(), tokenProvider.getSessionIdFromJwt(jwt))) {
+                request.setAttribute(SesionUnicaService.ATRIBUTO_REEMPLAZADA, Boolean.TRUE);
+                throw new CredentialsExpiredException("Sesión reemplazada por una más nueva");
+            }
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

@@ -22,6 +22,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -60,12 +61,15 @@ public class GlobalExceptionHandler {
     // 4. Validación de campos (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
+        Map<String, String> errors = new LinkedHashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
-            String field   = ((FieldError) error).getField();
+            String field   = error instanceof FieldError campo ? campo.getField() : error.getObjectName();
             String message = error.getDefaultMessage();
             errors.put(field, message);
         });
+        // Además, "message" con el primer problema: las pantallas leen ese campo y antes,
+        // sin él, mostraban un "No se pudo crear la cuenta" sin decir qué faltaba
+        if (!errors.isEmpty()) errors.put("message", errors.values().iterator().next());
         return ResponseEntity.badRequest().body(errors);
     }
 

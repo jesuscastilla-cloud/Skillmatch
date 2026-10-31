@@ -87,6 +87,47 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    void sesionReemplazadaPorOtroDispositivo_sigueSinSesionYLoAnota() throws Exception {
+        // La cuenta entró después en el celular: su sesión activa es "s-celular"
+        User u = new User();
+        u.setId("user-id-1");
+        u.setEmail("ana@test.com");
+        u.setEnabled(true);
+        u.setRoles(java.util.List.of("USER"));
+        u.setSesionActiva("s-celular");
+        when(tokenProvider.validateToken("token")).thenReturn(true);
+        when(tokenProvider.getSubjectFromToken("token")).thenReturn("ana@test.com");
+        when(userDetailsService.loadUserByUsername("ana@test.com")).thenReturn(UserDetailsImpl.build(u));
+        when(tokenProvider.getSessionIdFromJwt("token")).thenReturn("s-computador");
+
+        MockHttpServletRequest request = requestWithToken();
+        MockFilterChain chain = new MockFilterChain();
+        filter.doFilter(request, new MockHttpServletResponse(), chain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        // Para que el 401 diga por qué (JwtAuthenticationEntryPoint)
+        assertThat(request.getAttribute(SesionUnicaService.ATRIBUTO_REEMPLAZADA)).isEqualTo(Boolean.TRUE);
+    }
+
+    @Test
+    void laSesionActiva_entra() throws Exception {
+        User u = new User();
+        u.setId("user-id-1");
+        u.setEmail("ana@test.com");
+        u.setEnabled(true);
+        u.setRoles(java.util.List.of("USER"));
+        u.setSesionActiva("s-celular");
+        when(tokenProvider.validateToken("token")).thenReturn(true);
+        when(tokenProvider.getSubjectFromToken("token")).thenReturn("ana@test.com");
+        when(userDetailsService.loadUserByUsername("ana@test.com")).thenReturn(UserDetailsImpl.build(u));
+        when(tokenProvider.getSessionIdFromJwt("token")).thenReturn("s-celular");
+
+        filter.doFilter(requestWithToken(), new MockHttpServletResponse(), new MockFilterChain());
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+    }
+
+    @Test
     void cookieQueYaNoVale_seBorraYLaPaginaPublicaCarga() throws Exception {
         // Después de recuperar la contraseña, el navegador sigue mandando la cookie vieja
         when(tokenProvider.validateToken("viejo")).thenThrow(new IllegalArgumentException("vencido"));
