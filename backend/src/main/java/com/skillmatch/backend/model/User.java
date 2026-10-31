@@ -77,6 +77,11 @@ public class User implements UserDetails {
     @JsonIgnore
     private String sesionActiva;
 
+    // El correo nuevo mientras se confirma con el código que le llegó (CambioCorreoService).
+    // El correo de la cuenta no cambia hasta escribir ese código.
+    @JsonIgnore
+    private String correoPendiente;
+
     // Prueba de las autorizaciones aceptadas (Ley 1581). Ver RegistrationService.
     private List<Consentimiento> consentimientos = new ArrayList<>();
 

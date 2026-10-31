@@ -67,15 +67,12 @@ public class UserService {
             if (!Nombres.esNombreDePersona(apellidos)) throw new IllegalArgumentException("El apellido " + Nombres.MENSAJE_PERSONA + ".");
             user.setLastName(apellidos);
         }
-        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-            if (!validadorCorreo.puedeRecibir(request.getEmail())) {
-                throw new IllegalArgumentException(ValidadorCorreo.MENSAJE);
-            }
-            if (userRepository.existsByEmail(request.getEmail())) {
-                throw new IllegalArgumentException("El email ya está en uso");
-            }
-            user.setEmail(request.getEmail());
-            companyService.syncOwnerEmail(userId, request.getEmail());
+        // El correo ya no cambia aquí: hay que confirmarlo con un código (CambioCorreoService,
+        // POST /api/users/me/email/code y /verify). Antes cambiaba de una vez y un error al
+        // escribirlo dejaba a la persona sin acceso
+        if (request.getEmail() != null && !request.getEmail().isBlank()
+                && !Credenciales.normalizarCorreo(request.getEmail()).equals(user.getEmail())) {
+            throw new IllegalArgumentException("Para cambiar tu correo usa \"Cambiar correo\": te enviamos un código al correo nuevo.");
         }
         if (request.getPhone() != null) {
             // Vacío lo quita; si cambia, deja de estar verificado y no puede ser el de otra cuenta

@@ -1,5 +1,7 @@
 package com.skillmatch.backend.controller;
 
+import com.skillmatch.backend.dto.CodigoSesionRequest;
+import com.skillmatch.backend.dto.CorreoRequest;
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.dto.UpdatePasswordRequest;
 import com.skillmatch.backend.dto.UpdateProfileRequest;
@@ -7,6 +9,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.security.AuthCookieService;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
+import com.skillmatch.backend.service.CambioCorreoService;
 import com.skillmatch.backend.service.DatosPersonalesService;
 import com.skillmatch.backend.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,6 +32,26 @@ public class UserController {
     private final JwtTokenProvider tokenProvider;
     private final AuthCookieService authCookieService;
     private final DatosPersonalesService datosPersonalesService;
+    private final CambioCorreoService cambioCorreoService;
+
+    /** Cambiar el correo, paso 1: le llega un código al correo nuevo (el de la cuenta no cambia todavía). */
+    @PostMapping("/me/email/code")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MessageResponse> pedirCodigoCorreo(@Valid @RequestBody CorreoRequest request,
+                                                             @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        cambioCorreoService.pedirCodigo(currentUser.getId(), request.getEmail());
+        return ResponseEntity.ok(new MessageResponse(CambioCorreoService.MENSAJE_ENVIADO));
+    }
+
+    /** Cambiar el correo, paso 2: con el código, el correo nuevo pasa a ser el de la cuenta. */
+    @PostMapping("/me/email/verify")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> confirmarCorreo(@Valid @RequestBody CodigoSesionRequest request,
+                                                               @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        User user = cambioCorreoService.confirmar(currentUser.getId(), request.getCodigo().trim());
+        return ResponseEntity.ok(Map.of("message", "Listo: el correo de tu cuenta ahora es " + user.getEmail() + ".",
+                "email", user.getEmail()));
+    }
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
@@ -156,7 +179,6 @@ public class UserController {
             authCookieService.setAuthCookie(response, token);
             Map<String, Object> body = new HashMap<>();
             body.put("message", "Contraseña actualizada exitosamente");
-            body.put("token", token);
             // Cuándo vence la cookie nueva: el frontend lo guarda para saber si hay sesión (F4)
             body.put("expiresAt", System.currentTimeMillis() + tokenProvider.getExpirationMillis());
             return ResponseEntity.ok(body);
