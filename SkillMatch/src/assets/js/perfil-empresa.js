@@ -78,10 +78,11 @@ function loadCompanyData() {
         // Beneficios: solo si la empresa los guardo (texto separado por comas o lineas)
         const lista = String(company.benefits || '').split(/[\n,;]+/).map(b => b.trim()).filter(Boolean);
         const tarjeta = document.getElementById('companyBenefitsCard');
-        if (tarjeta && lista.length) {
+        if (tarjeta) {
             const ul = document.getElementById('companyBenefits');
             ul.replaceChildren(...lista.map(b => { const li = document.createElement('li'); li.textContent = b; return li; }));
-            tarjeta.hidden = false;
+            // Si los quita en "Editar datos", la tarjeta se va
+            tarjeta.hidden = !lista.length;
         }
     })
     .catch(() => {
@@ -577,11 +578,19 @@ function setupEventListeners() {
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => SkillMatchUI.cambiarContrasena());
 
+    // Cambiar el correo con un código (ui.js): el de la empresa sigue al de la cuenta
+    const cambiarCorreoBtn = document.getElementById('cambiarCorreoBtn');
+    if (cambiarCorreoBtn) cambiarCorreoBtn.addEventListener('click', () => SkillMatchUI.cambiarCorreo());
+
     // Descargar los datos y eliminar la cuenta (F7 y F8): también son de ui.js
     const descargarDatosBtn = document.getElementById('descargarDatosBtn');
     if (descargarDatosBtn) descargarDatosBtn.addEventListener('click', () => SkillMatchUI.descargarMisDatos());
     const eliminarCuentaBtn = document.getElementById('eliminarCuentaBtn');
     if (eliminarCuentaBtn) eliminarCuentaBtn.addEventListener('click', () => SkillMatchUI.eliminarCuenta());
+
+    // "Editar datos": nombre, sector, tamaño, ciudad, web, teléfono, año y beneficios
+    const botonDatos = document.getElementById('editarDatosEmpresaBtn');
+    if (botonDatos) botonDatos.addEventListener('click', abrirDatosEmpresa);
 
     // "Como funciona": el recorrido por Mi empresa cuando se quiera
     const botonRecorrido = document.getElementById('recorridoEmpresaBtn');
@@ -760,6 +769,112 @@ async function reabrirVacante(offer) {
 // MODALES
 // ========================================
 
+// ---- Editar los datos de la empresa ----
+// Antes solo se podía cambiar la descripción (el resto era del administrador).
+// PATCH /companies/{id}: vacío quita el dato; el nombre también es el de la cuenta.
+const SECTORES_EMPRESA = ['Turismo y hotelería', 'Restaurantes y comida', 'Comercio', 'Construcción', 'Logística y puerto',
+    'Tecnología', 'Salud', 'Educación', 'Servicios', 'Industria', 'Agro', 'Finanzas'];
+
+function abrirDatosEmpresa() {
+    const c = currentCompanyData || {};
+    const tamanos = [['', 'Sin decir'], ['micro', '1 a 10 personas'], ['small', '11 a 50 personas'],
+        ['medium', '51 a 200 personas'], ['large', 'Más de 200 personas']];
+    const tamano = String(c.size || '').toLowerCase();
+    const ciudad = /^no especificad/i.test(c.location || '') ? '' : (c.location || '');
+    createModal('Editar datos de la empresa', `
+        <div class="form-group">
+            <label for="datoNombre">Nombre de la empresa</label>
+            <input type="text" id="datoNombre" maxlength="100" autocomplete="organization" value="${sanitize(c.name || '')}" required>
+            <small>Letras, números, espacios y & . , ( ) -. Por ejemplo: Hotel Puerta del Mar S.A.S.</small>
+        </div>
+        <div class="form-group">
+            <label for="datoSector">Sector (opcional)</label>
+            <input type="text" id="datoSector" maxlength="60" list="sectoresEmpresa" value="${sanitize(c.industry || '')}">
+            <datalist id="sectoresEmpresa">${SECTORES_EMPRESA.map(s => `<option value="${s}">`).join('')}</datalist>
+        </div>
+        <div class="form-group">
+            <label for="datoTamano">Tamaño (opcional)</label>
+            <select id="datoTamano">${tamanos.map(([v, t]) => `<option value="${v}"${v === tamano ? ' selected' : ''}>${t}</option>`).join('')}</select>
+        </div>
+        <div class="form-group">
+            <label for="datoCiudad">Ciudad (opcional)</label>
+            <input type="text" id="datoCiudad" maxlength="100" list="ciudadesEmpresa" value="${sanitize(ciudad)}">
+            <datalist id="ciudadesEmpresa">${CIUDADES_OFERTA.map(ciudad => `<option value="${ciudad}">`).join('')}</datalist>
+        </div>
+        <div class="form-group">
+            <label for="datoWeb">Sitio web (opcional)</label>
+            <input type="url" id="datoWeb" maxlength="200" inputmode="url" placeholder="Ej.: www.miempresa.com" value="${sanitize(c.website || '')}">
+        </div>
+        <div class="form-group">
+            <label for="datoTelefono">Teléfono de contacto (opcional)</label>
+            <input type="tel" id="datoTelefono" maxlength="25" inputmode="tel" autocomplete="tel" value="${sanitize(c.phone || '')}">
+            <small>Solo lo ves tú; las personas te escriben por SkillMatch.</small>
+        </div>
+        <div class="form-group">
+            <label for="datoAnio">Año de fundación (opcional)</label>
+            <input type="number" id="datoAnio" min="1800" max="${new Date().getFullYear()}" inputmode="numeric" value="${c.foundedYear || ''}">
+        </div>
+        <div class="form-group">
+            <label for="datoBeneficios">Beneficios para quienes trabajan ahí (opcional)</label>
+            <textarea id="datoBeneficios" rows="3" maxlength="2000" placeholder="Uno por línea. Ej.: Alimentación incluida">${sanitize(c.benefits || '')}</textarea>
+        </div>
+        <p class="error-text" id="datosEmpresaError" role="alert" hidden></p>
+    `, guardarDatosEmpresa);
+}
+
+async function guardarDatosEmpresa() {
+    const valor = id => Validar.limpiar(document.getElementById(id).value);
+    const aviso = document.getElementById('datosEmpresaError');
+    const problema = texto => { aviso.textContent = texto || ''; aviso.hidden = !texto; };
+
+    let web = valor('datoWeb');
+    if (web && !/^https?:\/\//i.test(web)) web = 'https://' + web;   // "www.empresa.com" también vale
+    const anio = valor('datoAnio');
+    const datos = {
+        name: valor('datoNombre'),
+        industry: valor('datoSector'),
+        size: document.getElementById('datoTamano').value,
+        location: valor('datoCiudad'),
+        website: web,
+        phone: valor('datoTelefono'),
+        foundedYear: anio ? Number(anio) : 0,
+        benefits: document.getElementById('datoBeneficios').value.trim()
+    };
+
+    // Las mismas reglas que el servidor: se avisa antes de enviar
+    const ahora = new Date().getFullYear();
+    const error = Validar.empresa(datos.name)
+        || (Validar.lugar(datos.industry) ? 'El sector solo puede tener letras, números, espacios y , . ( ) / -' : '')
+        || Validar.lugar(datos.location)
+        || (web && !/^https?:\/\/\S+\.\S+$/i.test(web) ? 'Escribe el sitio web completo, por ejemplo www.miempresa.com' : '')
+        || (anio && (!Number.isInteger(Number(anio)) || Number(anio) < 1800 || Number(anio) > ahora) ? `El año de fundación debe estar entre 1800 y ${ahora}.` : '');
+    if (error) return problema(error);
+    problema('');
+
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const boton = document.getElementById('modalSaveBtn');
+    boton.disabled = true;
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/companies/${encodeURIComponent(userData.companyId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify(datos)
+        });
+        const cuerpo = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            boton.disabled = false;
+            return problema(cuerpo.message || 'No se pudieron guardar los datos. Intenta de nuevo.');
+        }
+        // El nombre de la cuenta (barra de arriba, mensajes) es el de la empresa
+        saveUserData({ ...userData, firstName: cuerpo.name });
+        closeModal(true);
+        showNotification('Listo: los datos de la empresa quedaron guardados.');
+        loadCompanyData();
+    } catch (e) {
+        boton.disabled = false;
+        problema('No pudimos conectar con SkillMatch. Revisa tu conexión e intenta de nuevo.');
+    }
+}
+
 function openEditAboutModal() {
     const aboutElement = document.getElementById('companyAbout');
     const aboutText = aboutElement?.querySelector('p')?.textContent || '';
@@ -767,7 +882,7 @@ function openEditAboutModal() {
     createModal('Editar "Acerca de nosotros"', `
         <div class="form-group">
             <label for="editAboutText">Descripción de la empresa</label>
-            <textarea id="editAboutText" rows="6" maxlength="2000">${aboutText}</textarea>
+            <textarea id="editAboutText" rows="6" maxlength="2000">${sanitize(aboutText)}</textarea>
             <small>Describe tu empresa, misión, visión y valores</small>
         </div>
     `, () => {

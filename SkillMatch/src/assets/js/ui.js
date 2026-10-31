@@ -2330,6 +2330,112 @@
         });
     };
 
+    /** "Cambiar correo" (personas y empresas): el correo nuevo se confirma con el código
+     *  que le llega; hasta entonces la cuenta sigue con el de antes. Al correo anterior
+     *  le llega un aviso. Antes cambiaba de una vez desde "Editar perfil". */
+    UI.cambiarCorreo = function () {
+        const datos = datosSesion();
+        if (!datos || typeof fetchWithAuth !== 'function') return;
+        const v = UI.ventana({
+            id: 'ventanaCorreo',
+            titulo: 'Cambiar correo',
+            icono: 'mail',
+            cuerpo:
+                '<form class="form-contrasena" novalidate data-paso="1">' +
+                  '<p class="confirmar-texto">Tu correo ahora es <strong>' + escaparHtml(String(datos.email || 'sin correo')) + '</strong>. ' +
+                    'Te enviamos un código al correo nuevo para comprobar que es tuyo.</p>' +
+                  '<div class="form-group" data-paso-1><label for="correoNuevo">Correo nuevo</label>' +
+                    '<input type="email" id="correoNuevo" autocomplete="email" maxlength="254" required></div>' +
+                  '<div class="form-group" data-paso-2 hidden><label for="correoCodigo">Código de 6 números</label>' +
+                    '<input type="text" id="correoCodigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6">' +
+                    '<small class="input-help">Vence en 15 minutos. Si no llega, revisa la carpeta de spam. ' +
+                    '<button type="button" class="btn-enlace" data-reenviar>Pedir otro código</button></small></div>' +
+                  '<p class="error-text" role="alert" hidden></p>' +
+                  '<div class="modal-actions">' +
+                    '<button type="button" class="btn-secondary-modal" data-cancelar>Cancelar</button>' +
+                    '<button type="submit" class="btn-primary-modal">Enviarme el código</button>' +
+                  '</div>' +
+                '</form>'
+        });
+        const form = v.cuerpo.querySelector('form');
+        const error = form.querySelector('.error-text');
+        const boton = form.querySelector('[type="submit"]');
+        const reenviar = form.querySelector('[data-reenviar]');
+        const campoCorreo = form.querySelector('#correoNuevo');
+        const campoCodigo = form.querySelector('#correoCodigo');
+        let correo = '';
+        let reloj = 0;
+        function problema(texto) { error.textContent = texto || ''; error.hidden = !texto; }
+        function ocupado(si, texto) { boton.disabled = si; boton.textContent = texto; }
+        function esperarReenvio() {
+            let quedan = 60;
+            clearInterval(reloj);
+            reenviar.disabled = true;
+            reenviar.textContent = 'Pedir otro código (' + quedan + ' s)';
+            reloj = setInterval(function () {
+                quedan -= 1;
+                if (quedan > 0) { reenviar.textContent = 'Pedir otro código (' + quedan + ' s)'; return; }
+                clearInterval(reloj);
+                reenviar.disabled = false;
+                reenviar.textContent = 'Pedir otro código';
+            }, 1000);
+        }
+        function enviar(ruta, cuerpo) {
+            return fetchWithAuth(ruta, { method: 'POST', body: JSON.stringify(cuerpo) })
+                .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); });
+        }
+        function pedirCodigo() {
+            return enviar('/users/me/email/code', { email: correo }).then(function (res) {
+                if (!res.ok) throw new Error(res.j.message || 'No se pudo enviar el código. Intenta de nuevo.');
+                esperarReenvio();
+            });
+        }
+
+        form.querySelector('[data-cancelar]').addEventListener('click', function () { clearInterval(reloj); v.cerrar(); });
+        reenviar.addEventListener('click', function () {
+            reenviar.disabled = true;
+            pedirCodigo().then(function () { problema(''); UI.aviso('Te enviamos otro código. Usa el más reciente.', 'ok'); })
+                .catch(function (e) { problema(e.message); reenviar.disabled = false; });
+        });
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (form.dataset.paso === '1') {
+                correo = campoCorreo.value.trim().toLowerCase();
+                if (!correo || !campoCorreo.checkValidity()) return problema('Escribe un correo válido, por ejemplo nombre@gmail.com.');
+                if (correo === String(datos.email || '').toLowerCase()) return problema('Ese ya es el correo de tu cuenta.');
+                problema('');
+                ocupado(true, 'Enviando…');
+                pedirCodigo().then(function () {
+                    form.dataset.paso = '2';
+                    form.querySelector('[data-paso-1]').hidden = true;
+                    form.querySelector('[data-paso-2]').hidden = false;
+                    form.querySelector('.confirmar-texto').textContent = 'Escribe el código que enviamos a ' + correo + '. Tu correo cambia cuando lo confirmes.';
+                    ocupado(false, 'Confirmar el cambio');
+                    campoCodigo.focus();
+                }).catch(function (err) { problema(err.message); ocupado(false, 'Enviarme el código'); });
+                return;
+            }
+            const codigo = campoCodigo.value.replace(/\s/g, '');
+            if (!/^\d{6}$/.test(codigo)) return problema('El código tiene 6 números.');
+            problema('');
+            ocupado(true, 'Confirmando…');
+            enviar('/users/me/email/verify', { codigo: codigo }).then(function (res) {
+                if (!res.ok) { problema(res.j.message || 'No se pudo cambiar el correo. Intenta de nuevo.'); ocupado(false, 'Confirmar el cambio'); return; }
+                // Lo que se muestra de la cuenta en este navegador
+                if (typeof saveUserData === 'function') saveUserData(Object.assign({}, datos, { email: res.j.email }));
+                const campoPerfil = document.getElementById('editEmail');
+                if (campoPerfil) campoPerfil.value = res.j.email;
+                clearInterval(reloj);
+                v.cerrar();
+                UI.aviso(escaparHtml(res.j.message || 'Listo: tu correo quedó cambiado.'), 'ok');
+            }).catch(function () {
+                problema('No pudimos conectar con SkillMatch. Revisa tu conexión e intenta de nuevo.');
+                ocupado(false, 'Confirmar el cambio');
+            });
+        });
+        campoCorreo.focus();
+    };
+
     /** "Descargar mis datos" (docs/CAMBIOS-FRONTEND.md, F7): todo lo de la cuenta en un
      *  JSON. Va por fetchWithAuth y no por un enlace directo, que no manda el token. */
     UI.descargarMisDatos = function () {

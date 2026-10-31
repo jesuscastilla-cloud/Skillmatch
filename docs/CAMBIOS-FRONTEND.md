@@ -257,3 +257,20 @@ Render (`PRIVACIDAD_VERSION_POLITICA`); si cambia **para qué** se usan los dato
 - **Hecho:** `Validar` en `api-config.js` (mismas reglas) en los registros y en el perfil (nombres, ciudad,
   habilidades, fechas); `maxlength` en los campos; los formularios con contraseña usan `method="post"` para que,
   si el JavaScript falla, la contraseña no quede en la dirección.
+
+### ✅ F16. La empresa edita sus datos
+- **Backend:** `PATCH /api/companies/{id}` (dueño o ADMIN): nombre, sector, tamaño (`micro|small|medium|large`),
+  ciudad, sitio web, teléfono, año de fundación (0 lo quita) y beneficios. null no cambia; "" quita. Cambiar el
+  nombre también cambia el de la cuenta. Correo, `isVerified` y `active` no se cambian aquí.
+- **Hecho:** botón "Editar datos" en Mi empresa (`abrirDatosEmpresa` en `perfil-empresa.js`).
+
+### ✅ F17. Cambiar el correo con un código
+- **Backend:** `POST /api/users/me/email/code` `{"email"}` → código al correo nuevo (responde igual si ya tiene cuenta y
+  a su dueño le llega un aviso); `POST /api/users/me/email/verify` `{"codigo"}` → cambia el correo (verificado),
+  el de la empresa y avisa al correo anterior. `PUT /api/users/{id}` ya no cambia el correo (400 si llega otro).
+- **Hecho:** `SkillMatchUI.cambiarCorreo()` en `ui.js`, en el menú "Más" de Mi perfil y de Mi empresa; en "Editar
+  perfil" el correo es de solo lectura con el enlace a ese cambio.
+
+### ✅ F18. El token ya no va en el cuerpo de las respuestas
+- **Backend:** login, registro, Google, teléfono y cambio de contraseña ponen el token solo en la cookie httpOnly
+  (`AuthResponse.token` con `@JsonIgnore`). El frontend ya usaba solo `expiresAt` (F4).

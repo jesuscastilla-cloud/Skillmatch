@@ -1443,6 +1443,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => SkillMatchUI.cambiarContrasena());
 
+    // Cambiar el correo con un código (ui.js): en el menú "Más" y junto al correo en "Editar perfil"
+    ['cambiarCorreoBtn', 'editCambiarCorreoBtn'].forEach(id => {
+        const boton = document.getElementById(id);
+        if (boton) boton.addEventListener('click', () => SkillMatchUI.cambiarCorreo());
+    });
+
     // Descargar mis datos y eliminar la cuenta (F7 y F8): también son de ui.js
     const descargarDatosBtn = document.getElementById('descargarDatosBtn');
     if (descargarDatosBtn) descargarDatosBtn.addEventListener('click', () => SkillMatchUI.descargarMisDatos());

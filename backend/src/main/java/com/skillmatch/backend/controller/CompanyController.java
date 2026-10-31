@@ -2,6 +2,7 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.CompanyRequest;
 import com.skillmatch.backend.dto.CompanyResponse;
+import com.skillmatch.backend.dto.DatosEmpresaRequest;
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.CompanyService;
@@ -70,6 +71,17 @@ public class CompanyController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
         }
+    }
+
+    @Operation(summary = "Editar los datos de la empresa",
+               description = "El dueño (o un ADMIN) cambia nombre, sector, tamaño, ciudad, sitio web, teléfono, año y beneficios. "
+                       + "Campos opcionales: null no cambia, \"\" quita. Correo, verificada y activa no se cambian aquí")
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @companyService.isOwner(#id, authentication.principal.id)")
+    public ResponseEntity<CompanyResponse> updateCompanyData(@PathVariable String id,
+                                                             @Valid @RequestBody DatosEmpresaRequest datos) {
+        // Los errores (nombre que no vale, teléfono inválido) los responde GlobalExceptionHandler con su mensaje
+        return ResponseEntity.ok(companyService.actualizarDatos(id, datos));
     }
 
     @Operation(summary = "Actualizar descripción", description = "El dueño de la empresa o un ADMIN actualiza la descripción del perfil")

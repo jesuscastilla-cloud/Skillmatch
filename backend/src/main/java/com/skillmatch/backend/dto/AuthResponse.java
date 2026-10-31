@@ -1,5 +1,6 @@
 package com.skillmatch.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -7,7 +8,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuthResponse {
 
+    // El token viaja SOLO en la cookie httpOnly que pone el controlador (AuthCookieService):
+    // en el cuerpo solo serviría para que un script ajeno lo leyera (auditoría B1). El
+    // frontend dejó de usarlo con F4; el navegador guarda solo expiresAt.
+    @JsonIgnore
     private String token;
+    @JsonIgnore
     private String type = "Bearer";
     private String id;
     private String companyId;

@@ -142,6 +142,26 @@ function crearApi(opciones = {}) {
                 responseRate: posts.length ? Math.round(100 * posts.filter(a => a.status !== 'pendiente').length / posts.length) : 0 }];
         }],
         ['GET', /^\/companies\/([^/]+)$/, p => { const c = empresa(p[1]); return c ? [200, respCompania(c)] : [404, { message: 'Empresa no encontrada' }]; }],
+        // Editar los datos de la empresa (PATCH /companies/{id}): null no cambia, '' quita
+        ['PATCH', /^\/companies\/([^/]+)$/, (p, q, c, yo) => {
+            const e = empresa(p[1]); if (!e) return [404, {}]; if (e.userId !== yo) return [403, { message: 'No es tu empresa' }];
+            for (const k of ['name', 'industry', 'size', 'location', 'website', 'phone', 'benefits', 'description']) if (c[k] != null) e[k] = c[k] === '' ? null : c[k];
+            if (c.foundedYear != null) e.foundedYear = c.foundedYear || null;
+            const u = usuario(e.userId); if (u && c.name) u.firstName = c.name;
+            return [200, respCompania(e)];
+        }],
+        // Cambiar el correo con un código (en la API falsa el código siempre es 123456)
+        ['POST', /^\/users\/me\/email\/code$/, (p, q, c, yo) => {
+            const u = usuario(yo); if (!u) return [401, {}];
+            u.correoPendiente = String(c.email || '').toLowerCase();
+            return [200, { message: 'Te enviamos un código de 6 números al correo nuevo.' }];
+        }],
+        ['POST', /^\/users\/me\/email\/verify$/, (p, q, c, yo) => {
+            const u = usuario(yo);
+            if (!u || !u.correoPendiente || c.codigo !== '123456') return [400, { message: 'El código no es correcto o ya venció. Pide uno nuevo.' }];
+            u.email = u.correoPendiente; u.correoPendiente = null;
+            return [200, { message: 'Listo: el correo de tu cuenta ahora es ' + u.email + '.', email: u.email }];
+        }],
         ['PATCH', /^\/companies\/([^/]+)\/description$/, (p, q, c) => { const e = empresa(p[1]); if (!e) return [404, {}]; e.description = c.description; return [200, respCompania(e)]; }],
 
         // Postulaciones

@@ -59,6 +59,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 || uri.equals("/api/auth/reset-password")
                 || uri.startsWith("/api/auth/phone/")
                 || uri.startsWith("/api/users/me/phone/")
+                || uri.startsWith("/api/users/me/email/")
                 || uri.startsWith("/api/auth/google/")
                 || uri.startsWith("/oauth2/authorization/")
                 || uri.startsWith("/login/oauth2/")

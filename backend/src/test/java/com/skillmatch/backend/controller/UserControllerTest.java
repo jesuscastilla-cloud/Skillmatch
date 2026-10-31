@@ -5,6 +5,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.security.AuthCookieService;
 import com.skillmatch.backend.security.JwtTokenProvider;
 import com.skillmatch.backend.security.UserDetailsImpl;
+import com.skillmatch.backend.service.CambioCorreoService;
 import com.skillmatch.backend.service.DatosPersonalesService;
 import com.skillmatch.backend.service.UserService;
 import org.junit.jupiter.api.AfterEach;
@@ -45,6 +46,9 @@ class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private CambioCorreoService cambioCorreoService;
 
     @MockitoBean
     private UserDetailsService userDetailsService;
@@ -134,7 +138,9 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"currentPassword\":\"actual-123\",\"newPassword\":\"nueva-12345\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("token-nuevo"));
+                // El token nuevo va solo en la cookie; en el cuerpo, cuándo vence
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andExpect(jsonPath("$.expiresAt").exists());
 
         verify(authCookieService).setAuthCookie(any(), eq("token-nuevo"));
     }
