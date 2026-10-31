@@ -207,6 +207,77 @@ function urlSegura(url) {
     return /^(https?:\/\/|\/|\.{1,2}\/)/i.test(u) ? escaparHtml(u) : '#';
 }
 
+/* ---------- Validaciones ----------
+ * Las mismas reglas que el backend (validation/Nombres y EntradaSegura): aquí avisan
+ * antes de enviar; el servidor las vuelve a revisar. Cada una devuelve el problema
+ * en palabras, o '' si está bien. */
+
+const Validar = {
+    /** Quita invisibles (de control o de ancho cero), une espacios repetidos y recorta. */
+    limpiar(texto) {
+        return String(texto == null ? '' : texto).normalize('NFC')
+            .replace(/[\u0000-\u001F\u007F-\u009F\u00AD\u200B-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g, '')
+            .replace(/\s+/g, ' ').trim();
+    },
+    /** Nombre o apellido de una persona: letras, espacios, - y ', entre 2 y 50. */
+    persona(texto, campo = 'El nombre') {
+        const v = Validar.limpiar(texto);
+        if (!v) return `${campo} es obligatorio.`;
+        if ([...v].length < 2 || [...v].length > 50) return `${campo} debe tener entre 2 y 50 caracteres.`;
+        if (!/^[\p{L}\p{M}]+(?:[ '’-][\p{L}\p{M}]+)*$/u.test(v)) {
+            return `${campo} solo puede tener letras, espacios, guion (-) y apóstrofo (').`;
+        }
+        return '';
+    },
+    /** Nombre de una empresa: además números y & . , ( ), hasta 100. */
+    empresa(texto) {
+        const v = Validar.limpiar(texto);
+        const letras = [...v].filter(c => /[\p{L}\d]/u.test(c)).length;
+        if (!v || letras < 2) return 'Escribe el nombre de la empresa.';
+        if ([...v].length > 100) return 'El nombre de la empresa puede tener hasta 100 caracteres.';
+        if (!/^[\p{L}\p{M}\d(][\p{L}\p{M}\d .,&'’()-]*$/u.test(v)) {
+            return 'El nombre de la empresa solo puede tener letras, números, espacios y & . , ( ) -';
+        }
+        return '';
+    },
+    /** Una ciudad (vacía vale): letras, números, espacios y , . ( ) / - '. */
+    lugar(texto) {
+        const v = Validar.limpiar(texto);
+        if (!v) return '';
+        return /^[\p{L}\p{M}\d][\p{L}\p{M}\d .,()/'’–-]{0,99}$/u.test(v) ? '' : 'La ciudad solo puede tener letras, números, espacios y , . ( ) / -';
+    },
+    /** Una habilidad: letras, números, espacios y + # . / & ( ) -, para "C#", "C++" o "Node.js". */
+    habilidad(texto) {
+        const v = Validar.limpiar(texto);
+        if (!v) return 'Escribe la habilidad.';
+        return /^[\p{L}\p{M}\d.#+][\p{L}\p{M}\d +#./&()'’-]{0,79}$/u.test(v) ? '' : 'La habilidad solo puede tener letras, números, espacios y + # . / & ( ) -';
+    },
+    /**
+     * Fechas de una experiencia ('experiencia') o un estudio ('estudio'), como "2025-01-31".
+     * Experiencia: inicio y fin hasta hoy. Estudio: inicio hasta el próximo año y fin
+     * (grado esperado) hasta 10 años adelante. Desde 1950 en los dos.
+     */
+    fechas(inicio, fin, actual, tipo) {
+        if (!inicio) return 'Escribe la fecha de inicio.';
+        const hoy = new Date().toISOString().slice(0, 10);
+        const anio = Number(hoy.slice(0, 4));
+        const masTarde = (n) => (anio + n) + hoy.slice(4);
+        const maxInicio = tipo === 'estudio' ? masTarde(1) : hoy;
+        if (inicio < '1950-01-01' || inicio > maxInicio) {
+            return tipo === 'estudio' ? 'La fecha de inicio debe estar entre 1950 y el próximo año.'
+                : 'La fecha de inicio no puede ser en el futuro ni antes de 1950.';
+        }
+        if (!actual && fin) {
+            if (fin < inicio) return 'La fecha de fin no puede ser antes del inicio.';
+            if (fin > (tipo === 'estudio' ? masTarde(10) : hoy)) {
+                return tipo === 'estudio' ? 'La fecha de fin no puede ser más de 10 años en el futuro.'
+                    : 'La fecha de fin no puede ser en el futuro. Si sigues ahí, marca "Trabajo actual".';
+            }
+        }
+        return '';
+    }
+};
+
 function limpiarSesion() {
     localStorage.removeItem('token');
     localStorage.removeItem(SESION_VENCE_KEY);
@@ -260,6 +331,14 @@ async function fetchWithAuth(url, options = {}) {
 
     // Sesion vencida o anulada: cerrar sesion y volver al login
     if (response.status === 401 && conSesion) {
+        // Una sola sesion por cuenta: si entro en otro dispositivo, se dice asi
+        // (alert de ui.js: el aviso pasa a la pagina del login)
+        // (una vez, aunque varias consultas respondan 401 al mismo tiempo)
+        const cuerpo = await response.clone().json().catch(() => ({}));
+        if (cuerpo.motivo === 'OTRA_SESION' && !fetchWithAuth.avisoOtraSesion) {
+            fetchWithAuth.avisoOtraSesion = true;
+            alert(cuerpo.message);
+        }
         limpiarSesion();
         const path = window.location.pathname;
         if (!/index\.html|login|registro|seleccionar-registro/.test(path)) {

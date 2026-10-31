@@ -24,7 +24,7 @@ public class SesionUnicaService {
     public static final String ATRIBUTO_REEMPLAZADA = "skillmatch.sesionReemplazada";
 
     public static final String MENSAJE_REEMPLAZADA =
-            "Tu sesión se cerró porque entraste desde otro dispositivo. Si no fuiste tú, cambia tu contraseña.";
+            "Tu sesión se cerró porque entraste desde otro dispositivo. Si no fuiste tú, inicia sesión y cambia tu contraseña.";
 
     private final MongoTemplate mongoTemplate;
 

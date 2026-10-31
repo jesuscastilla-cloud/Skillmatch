@@ -48,7 +48,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function validarEmpresa() {
-        if (valor('empresa-nombre').length < 2) return 'Escribe el nombre de la empresa.';
+        const enNombre = Validar.empresa(valor('empresa-nombre'));
+        if (enNombre) return enNombre;
         if (!/^\+?[\d\s-]{7,20}$/.test(valor('empresa-telefono'))) return 'Escribe un teléfono válido, solo con números.';
         if (valor('empresa-descripcion').length < 20) return 'Cuéntanos un poco más sobre la empresa (al menos 20 caracteres).';
         if (!document.getElementById('empresa-terminos').checked) return 'Para crear la cuenta debes aceptar la política de tratamiento de datos.';

@@ -42,6 +42,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!valor('usuario-nombre') || !valor('usuario-apellidos') || !valor('usuario-email') || !valor('usuario-telefono')) {
             return 'Completa tu nombre, tus apellidos, tu correo y tu teléfono.';
         }
+        // Solo letras, espacios, - y ' (las mismas reglas que el servidor)
+        const enNombre = Validar.persona(valor('usuario-nombre'), 'El nombre')
+            || Validar.persona(valor('usuario-apellidos'), 'El apellido');
+        if (enNombre) return enNombre;
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor('usuario-email'))) return 'Escribe un correo válido, por ejemplo nombre@gmail.com.';
         if (!/^\+?[\d\s-]{7,20}$/.test(valor('usuario-telefono'))) return 'Escribe un teléfono válido, solo con números.';
         const clave = document.getElementById('usuario-pass').value;
@@ -138,8 +142,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!respuesta.ok) {
                 const cuerpo = await respuesta.json().catch(() => ({}));
                 const mensaje = cuerpo.message || cuerpo.error || 'No se pudo crear la cuenta.';
-                // Un correo repetido se corrige en el paso 1
-                if (/correo|email/i.test(mensaje)) { mostrar(0); error(0, mensaje); } else { error(1, mensaje); }
+                // Un correo repetido o un nombre que no vale se corrigen en el paso 1
+                if (/correo|email|nombre|apellido/i.test(mensaje)) { mostrar(0); error(0, mensaje); } else { error(1, mensaje); }
                 boton.disabled = false;
                 boton.textContent = 'Crear mi perfil';
                 return;

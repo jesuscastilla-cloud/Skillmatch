@@ -64,7 +64,7 @@
             </div>
             <!-- Antes habia un tercer paso y campos (area, estudios, aspiracion, hoja de
                  vida en PDF...) que nunca se guardaban: solo se pide lo que se guarda -->
-            <form id="form-registro-usuario" class="registro-form" novalidate>
+            <form id="form-registro-usuario" class="registro-form" method="post" novalidate>
                 <div class="stepper" aria-label="Progreso del registro">
                     <div class="step active" data-step="1"><span class="step-index">1</span><span class="step-label">Tu cuenta</span></div>
                     <div class="step" data-step="2"><span class="step-index">2</span><span class="step-label">Tu perfil</span></div>
@@ -76,11 +76,11 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="usuario-nombre">Nombre</label>
-                            <input type="text" id="usuario-nombre" name="nombre" autocomplete="given-name" maxlength="100" required>
+                            <input type="text" id="usuario-nombre" name="nombre" autocomplete="given-name" maxlength="50" required>
                         </div>
                         <div class="form-group">
                             <label for="usuario-apellidos">Apellidos</label>
-                            <input type="text" id="usuario-apellidos" name="apellidos" autocomplete="family-name" maxlength="100" required>
+                            <input type="text" id="usuario-apellidos" name="apellidos" autocomplete="family-name" maxlength="50" required>
                         </div>
                         <div class="form-group">
                             <label for="usuario-email">Correo electrónico</label>
