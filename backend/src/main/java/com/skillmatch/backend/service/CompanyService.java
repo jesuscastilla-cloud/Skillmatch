@@ -7,6 +7,8 @@ import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.dto.DatosEmpresaRequest;
+import com.skillmatch.backend.validation.Nombres;
 import com.skillmatch.backend.validation.Telefonos;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -173,6 +175,43 @@ public class CompanyService {
         Company updated = companyRepository.save(company);
         log.info("Descripción actualizada para empresa id={}", id);
         return mapToResponse(updated);
+    }
+
+    /**
+     * El dueño cambia los datos de su empresa (antes solo podía cambiar la descripción:
+     * PUT era solo para ADMIN). null = no cambia; "" quita los opcionales.
+     * El nombre también es el de la cuenta: se cambia en los dos lados.
+     */
+    public CompanyResponse actualizarDatos(String id, DatosEmpresaRequest datos) {
+        Company company = findCompanyOrThrow(id);
+
+        if (datos.getName() != null) {
+            String nombre = Nombres.limpiar(datos.getName());
+            Nombres.validarEmpresa(nombre);
+            company.setName(nombre);
+            userRepository.findById(company.getUserId()).ifPresent(dueno -> {
+                dueno.setFirstName(nombre);
+                dueno.setUpdatedAt(LocalDateTime.now());
+                userRepository.save(dueno);
+            });
+        }
+        if (datos.getIndustry() != null) company.setIndustry(vacioANull(Nombres.limpiar(datos.getIndustry())));
+        if (datos.getSize() != null) company.setSize(vacioANull(datos.getSize()));
+        if (datos.getLocation() != null) company.setLocation(vacioANull(Nombres.limpiar(datos.getLocation())));
+        if (datos.getWebsite() != null) company.setWebsite(vacioANull(datos.getWebsite().trim()));
+        if (datos.getPhone() != null) company.setPhone(Telefonos.normalizarOpcional(datos.getPhone()));
+        if (datos.getFoundedYear() != null) company.setFoundedYear(datos.getFoundedYear() == 0 ? null : datos.getFoundedYear());
+        if (datos.getBenefits() != null) company.setBenefits(vacioANull(datos.getBenefits().trim()));
+        if (datos.getDescription() != null) company.setDescription(vacioANull(datos.getDescription().trim()));
+
+        company.setUpdatedAt(LocalDateTime.now());
+        Company guardada = companyRepository.save(company);
+        log.info("Datos actualizados por el dueño para empresa id={}", id);
+        return mapToResponse(guardada);
+    }
+
+    private static String vacioANull(String texto) {
+        return texto == null || texto.isBlank() ? null : texto;
     }
 
     public boolean isOwner(String companyId, String userId) {
