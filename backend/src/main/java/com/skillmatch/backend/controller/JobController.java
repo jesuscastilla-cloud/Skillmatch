@@ -15,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -35,15 +34,8 @@ public class JobController {
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
     public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request,
                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(jobService.createJob(request, currentUser.getId(), isAdmin(currentUser)));
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new MessageResponse("Error al crear oferta: " + e.getMessage()));
-        }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(jobService.createJob(request, currentUser.getId(), isAdmin(currentUser)));
     }
 
     @PutMapping("/{id}")
@@ -51,14 +43,7 @@ public class JobController {
     public ResponseEntity<?> updateJob(@PathVariable String id,
                                        @Valid @RequestBody JobRequest request,
                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            return ResponseEntity.ok(jobService.updateJob(id, request, currentUser.getId(), isAdmin(currentUser)));
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new MessageResponse("Error al actualizar oferta: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(jobService.updateJob(id, request, currentUser.getId(), isAdmin(currentUser)));
     }
 
     @PatchMapping("/{id}/status")
@@ -66,39 +51,20 @@ public class JobController {
     public ResponseEntity<?> changeStatus(@PathVariable String id,
                                           @RequestParam String status,
                                           @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            return ResponseEntity.ok(jobService.changeStatus(id, status, currentUser.getId(), isAdmin(currentUser)));
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new MessageResponse("Error al cambiar estado: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(jobService.changeStatus(id, status, currentUser.getId(), isAdmin(currentUser)));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
     public ResponseEntity<?> deleteJob(@PathVariable String id,
                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        try {
-            jobService.deleteJob(id, currentUser.getId(), isAdmin(currentUser));
-            return ResponseEntity.ok(new MessageResponse("Oferta eliminada exitosamente"));
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new MessageResponse("Error al eliminar oferta: " + e.getMessage()));
-        }
+        jobService.deleteJob(id, currentUser.getId(), isAdmin(currentUser));
+        return ResponseEntity.ok(new MessageResponse("Oferta eliminada exitosamente"));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getJobById(@PathVariable String id) {
-        try {
-            return ResponseEntity.ok(jobService.getJobById(id));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new MessageResponse("Oferta no encontrada: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(jobService.getJobById(id));
     }
 
     @Operation(summary = "Listar ofertas activas", description = "Devuelve página de ofertas activas, ordenadas por fecha (público)")
@@ -161,6 +127,7 @@ public class JobController {
         // Solo campos conocidos: un nombre cualquiera daba un error interno con detalles
         String campo = JobService.campoDeOrden(sortBy);
         Sort sort = "asc".equalsIgnoreCase(direction) ? Sort.by(campo).ascending() : Sort.by(campo).descending();
-        return PageRequest.of(page, size, sort);
+        // Página negativa o tamaño 0 daban un error en inglés de Spring: se ajustan (1 a 50 por página)
+        return PageRequest.of(Math.max(page, 0), Math.max(1, Math.min(size, 50)), sort);
     }
 }

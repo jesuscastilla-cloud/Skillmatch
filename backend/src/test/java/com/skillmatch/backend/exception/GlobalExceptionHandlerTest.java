@@ -50,6 +50,19 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void accesoDenegado_enEspanol() {
+        // El de Spring (falla un @PreAuthorize) viene en inglés; el nuestro ya dice por qué
+        ResponseEntity<?> spring = handler.handleAccessDenied(
+                new org.springframework.security.access.AccessDeniedException("Access Denied"), null);
+        ResponseEntity<?> nuestro = handler.handleAccessDenied(
+                new org.springframework.security.access.AccessDeniedException("No puedes publicar vacantes a nombre de otra empresa"), null);
+
+        assertThat(spring.getStatusCode().value()).isEqualTo(403);
+        assertThat(((MessageResponse) spring.getBody()).getMessage()).isEqualTo("No tienes permiso para hacer esto.");
+        assertThat(((MessageResponse) nuestro.getBody()).getMessage()).isEqualTo("No puedes publicar vacantes a nombre de otra empresa");
+    }
+
+    @Test
     void mensajeDeNegocio_siLlega() {
         ResponseEntity<?> r = handler.handleRuntime(
                 new RuntimeException("El salario mínimo no puede ser mayor al salario máximo"), null);
