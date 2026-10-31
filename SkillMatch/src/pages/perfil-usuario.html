@@ -85,6 +85,7 @@
                                 <button type="button" class="btn-edit-profile" id="perfilMasBtn" data-menu="perfilMasMenu" aria-haspopup="menu" aria-expanded="false" aria-controls="perfilMasMenu"><i data-ico="more"></i> Más</button>
                                 <div class="menu-acciones" id="perfilMasMenu" role="menu" aria-label="Más opciones del perfil" hidden>
                                     <button type="button" role="menuitem" id="changePasswordBtn"><i data-ico="lock"></i><span>Cambiar contraseña</span></button>
+                                    <button type="button" role="menuitem" id="cambiarCorreoBtn"><i data-ico="mail"></i><span>Cambiar correo</span></button>
                                     <!-- Llenar el perfil leyendo la hoja de vida en PDF (leer-hoja-de-vida.js) -->
                                     <button type="button" role="menuitem" id="importarCvBtn"><i data-ico="upload"></i><span>Llenar con mi hoja de vida</span></button>
                                     <!-- Derechos sobre los datos (Ley 1581): las ventanas son de ui.js (F7 y F8) -->
@@ -238,8 +239,10 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="editEmail">Correo electrónico *</label>
-                    <input type="email" id="editEmail" required>
+                    <label for="editEmail">Correo electrónico</label>
+                    <!-- No se edita aquí: el correo nuevo se confirma con un código (ui.js, cambiarCorreo) -->
+                    <input type="email" id="editEmail" readonly aria-describedby="editEmailAyuda">
+                    <small class="input-help" id="editEmailAyuda">Para cambiarlo, <button type="button" class="btn-enlace" id="editCambiarCorreoBtn">cambia tu correo con un código</button>.</small>
                 </div>
                 <div class="form-group">
                     <label for="editPhone">Teléfono</label>

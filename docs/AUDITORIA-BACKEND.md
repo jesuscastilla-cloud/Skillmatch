@@ -421,7 +421,7 @@ Las rutas son relativas a `backend/src/main/java/com/skillmatch/backend/`.
 
 ### Bajos
 
-- **B1. El JWT también va en el cuerpo de la respuesta** del login y el registro (`AuthResponse.token`). El frontend
+- **B1 (resuelto: el token va solo en la cookie, F18). El JWT también va en el cuerpo de la respuesta** del login y el registro (`AuthResponse.token`). El frontend
   no lo usa (usa la cookie `httpOnly`); en el cuerpo solo sirve para que un script malicioso lo robe. Quitarlo.
 - **B2. Logs ruidosos:** cada pase vencido o inválido imprime la traza completa a nivel ERROR (`JwtTokenProvider.validateToken`).
   `JwtAuthenticationEntryPoint` usa `sendError`, así que el 401 no trae el JSON `{"message": ...}` del resto de la API.
