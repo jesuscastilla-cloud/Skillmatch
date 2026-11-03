@@ -58,16 +58,16 @@ test('un clic afuera cierra el menú, y en el perfil de otra persona no aparece 
 });
 
 test.describe('panel del perfil', () => {
-    test('las cifras de arriba resumen el perfil: progreso, postulaciones, guardadas y habilidades', async ({ page, context, api }) => {
+    test('arriba va la guía del progreso; postulaciones y guardadas se cuentan una sola vez, en su tarjeta', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('perfil-usuario.html');
-        await expect(page.locator('#cifraHabilidades')).toHaveText('3');
-        await expect(page.locator('#cifraGuardadas')).toHaveText('1');
-        // Las postulaciones se cuentan igual que en la tarjeta "Tus postulaciones"
+        await expect(page.locator('#userSkills .skill-tag')).toHaveCount(3);
+        await expect(page.locator('#savedJobsCount')).toHaveText('(1)');
+        // Las postulaciones se cuentan igual que en el resumen de la tarjeta
         const enviadas = page.locator('#interestedCompanies .apps-summary strong').first();
         await expect(enviadas).toBeVisible();
-        await expect(page.locator('#cifraPostulaciones')).toHaveText(await enviadas.textContent());
-        await expect(page.locator('#cifraPostulacionesNota')).toContainText('en proceso');
+        await expect(page.locator('#applicationsCount')).toHaveText('(' + (await enviadas.textContent()) + ')');
+        await expect(page.locator('#cifraHabilidades, #cifraGuardadas, #cifraPostulaciones')).toHaveCount(0);
         // Sin experiencia ni estudios: 60 %, y lo que falta como acciones
         await expect(page.locator('#progressPercentage')).toHaveText('60');
         await expect(page.locator('#profileProgress')).toHaveAttribute('stroke-dasharray', '60 100');
@@ -76,7 +76,7 @@ test.describe('panel del perfil', () => {
         await expect(page.locator('#addEducationModal')).toBeVisible();
         await page.locator('#addEducationModal .btn-close-modal').click();
         await expect(page.locator('#addEducationModal')).toBeHidden();
-        await page.locator('#cifraAgregarHabilidad').click();
+        await page.locator('#addSkillBtn').click();
         await expect(page.locator('#addSkillModal')).toBeVisible();
     });
 
@@ -134,7 +134,7 @@ test.describe('panel del perfil', () => {
 test.describe('vidrio', () => {
     const visibles = '[...document.querySelectorAll(".fondo-vivo > span")].filter(m => getComputedStyle(m).display !== "none")';
 
-    test('el fondo vivo: manchas de la marca que se mueven solo con transform y arrancan donde las deja la hora', async ({ page, context, api }, info) => {
+    test('el fondo: manchas de la marca quietas (nada se mueve sin que la persona lo pida)', async ({ page, context, api }, info) => {
         await entrarComo(context, 'persona');
         await page.goto('perfil-usuario.html');
         await expect(page.locator('body')).toHaveClass(/pagina-vidrio/);
@@ -152,13 +152,14 @@ test.describe('vidrio', () => {
                 conLaHora: reloj > 0 && manchas.every(m => Math.abs(parseFloat(getComputedStyle(m).animationDelay) * 1000 + reloj) < 100)
             };
         }, visibles);
-        expect(fondo).toEqual({ fijo: 'fixed', detras: '-1', manchas: info.project.name === 'celular' ? 3 : 5, andando: true, soloTransform: true, conLaHora: true });
+        expect(fondo).toMatchObject({ fijo: 'fixed', detras: '-1', manchas: info.project.name === 'celular' ? 3 : 5 });
+        expect(await page.evaluate(visibles => eval(visibles).every(m => !m.getAnimations().length), visibles), 'quietas').toBe(true);
     });
 
     test('tarjetas de vidrio de tinte (sin desenfoque, sobre las manchas no se nota) y vidrio real en la barra y el menú "Más"', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('perfil-usuario.html');
-        await expect(page.locator('#cifraHabilidades')).toHaveText('3');
+        await expect(page.locator('#userSkills .skill-tag')).toHaveCount(3);
         const filtro = s => page.locator(s).first().evaluate(el => getComputedStyle(el).backdropFilter);
         for (const s of ['.profile-header-card', '.perfil-cifra', '.profile-section', '#applicationsCard']) expect(await filtro(s), s).toBe('none');
         expect(await filtro('body > header')).toContain('blur');
@@ -168,14 +169,11 @@ test.describe('vidrio', () => {
     });
 
     // Sin pausa con una ventana abierta: la regla :has() que lo hacia frenaba Inicio en celulares lentos
-    test('el fondo queda quieto con movimiento reducido y se va con alto contraste o menos transparencia', async ({ page, context, api }) => {
+    test('el fondo se va con alto contraste o menos transparencia', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('perfil-usuario.html');
-        const estados = () => page.evaluate(visibles => [...new Set(eval(visibles).map(m => (m.getAnimations()[0] || {}).playState || 'quieta'))], visibles);
-        await expect.poll(estados).toEqual(['running']);
-        await page.emulateMedia({ reducedMotion: 'reduce' });
-        await expect.poll(estados).toEqual(['quieta']);
-        await page.emulateMedia({ reducedMotion: null, forcedColors: 'active' });
+        await expect(page.locator('.fondo-vivo')).toBeVisible();
+        await page.emulateMedia({ forcedColors: 'active' });
         await expect(page.locator('.fondo-vivo')).toBeHidden();
         await page.emulateMedia({ forcedColors: null });
         const cdp = await context.newCDPSession(page);

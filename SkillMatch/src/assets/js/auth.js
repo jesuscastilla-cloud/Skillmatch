@@ -69,6 +69,7 @@ async function prepararBotonGoogle() {
         if (enlace.getAttribute('data-tipo')) params.set('tipo', enlace.getAttribute('data-tipo'));
         const consulta = params.toString();
         enlace.href = `${base}/oauth2/authorization/google${consulta ? '?' + consulta : ''}`;
+        enlace.dataset.listo = '1';
         bloque.hidden = false;
     });
 }
@@ -119,7 +120,58 @@ async function volverDeGoogle() {
     }
 }
 
+/* ---------- Selector "Busco trabajo / Soy empresa" (login.html) ---------- */
+
+// Los personajes de oficina se eligen al dibujarse (login-personajes.js se carga
+// despues de este archivo): con ?tipo=empresa ya salen de oficina
+(function () {
+    const personajes = document.querySelector('.login-personajes');
+    if (personajes && new URLSearchParams(window.location.search).get('tipo') === 'empresa') personajes.dataset.variante = 'empresa';
+})();
+
+// La misma pantalla para los dos: el selector cambia los textos (data-texto-*),
+// el enlace para crear cuenta (data-href-*), las listas del lado y el tipo de
+// cuenta que se crea si entra con Google por primera vez. ?tipo=empresa lo abre elegido.
+function selectorDeCuenta() {
+    const grupo = document.querySelector('.auth-selector');
+    if (!grupo) return;
+    const opciones = Array.from(grupo.querySelectorAll('[role="radio"]'));
+    function elegir(tipo, enfocar) {
+        opciones.forEach(o => {
+            const si = o.dataset.tipo === tipo;
+            o.setAttribute('aria-checked', String(si));
+            o.tabIndex = si ? 0 : -1;
+            if (si && enfocar) o.focus();
+        });
+        document.querySelectorAll('[data-texto-' + tipo + ']').forEach(el => { el.textContent = el.getAttribute('data-texto-' + tipo); });
+        document.querySelectorAll('[data-href-' + tipo + ']').forEach(el => { el.setAttribute('href', el.getAttribute('data-href-' + tipo)); });
+        document.querySelectorAll('[data-lista-persona]').forEach(el => { el.hidden = tipo !== 'persona'; });
+        document.querySelectorAll('[data-lista-empresa]').forEach(el => { el.hidden = tipo !== 'empresa'; });
+        const google = document.querySelector('.btn-google');
+        if (google) {
+            if (tipo === 'empresa') google.setAttribute('data-tipo', 'EMPRESA'); else google.removeAttribute('data-tipo');
+            if (google.dataset.listo) prepararBotonGoogle();
+        }
+        grupo.dataset.elegido = tipo;
+        // La direccion recuerda la eleccion (al recargar o compartir el enlace)
+        const url = new URL(window.location.href);
+        if (tipo === 'empresa') url.searchParams.set('tipo', 'empresa'); else url.searchParams.delete('tipo');
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
+    opciones.forEach((o, i) => {
+        o.addEventListener('click', () => elegir(o.dataset.tipo, false));
+        o.addEventListener('keydown', e => {
+            const paso = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+            if (!paso) return;
+            e.preventDefault();
+            elegir(opciones[(i + paso + opciones.length) % opciones.length].dataset.tipo, true);
+        });
+    });
+    elegir(new URLSearchParams(window.location.search).get('tipo') === 'empresa' ? 'empresa' : 'persona', false);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+    selectorDeCuenta();
     prepararBotonGoogle();
     volverDeGoogle();
 

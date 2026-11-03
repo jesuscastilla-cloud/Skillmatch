@@ -37,7 +37,7 @@ test('una empresa ve Mensajes y Mi empresa, sin Conexiones', async ({ page, cont
 
 test('en los logins no sale "Iniciar sesión" y en los registros no sale "Unirse ahora"', async ({ page, context, api }) => {
     await entrarComo(context, 'visitante');
-    for (const pagina of ['login.html', 'login-usuario.html', 'login-empresa.html']) {
+    for (const pagina of ['login.html', 'login.html?tipo=empresa']) {
         await page.goto(pagina);
         await expect(page.locator('header .nav-links a.btn-login').locator('xpath=..'), pagina).toBeHidden();
     }
@@ -50,8 +50,8 @@ test('en los logins no sale "Iniciar sesión" y en los registros no sale "Unirse
 test('los registros tienen cómo entrar o cambiar de tipo de cuenta', async ({ page, context, api }) => {
     await entrarComo(context, 'visitante');
     const esperado = {
-        'registro-usuario.html': ['login-usuario.html', 'registro-empresa.html'],
-        'registro-empresa.html': ['login-empresa.html', 'registro-usuario.html'],
+        'registro-usuario.html': ['login.html', 'registro-empresa.html'],
+        'registro-empresa.html': ['login.html?tipo=empresa', 'registro-usuario.html'],
         'seleccionar-registro.html': ['login.html']
     };
     for (const [pagina, enlaces] of Object.entries(esperado)) {

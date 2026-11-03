@@ -1,5 +1,6 @@
 package com.skillmatch.backend.controller;
 
+import com.skillmatch.backend.model.JobStatus;
 import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.JobRepository;
@@ -33,7 +34,9 @@ public class PublicController {
         return ResponseEntity.ok(Map.of(
             "users", userRepository.countByRolesContaining("USER"),
             "companies", companyRepository.countByActiveTrue(),
-            "jobs", jobRepository.countByActiveTrue(),
+            // Las mismas que muestra el listado (activas y abiertas). Antes contaba tambien
+            // las cerradas: la portada decia 97 y el listado mostraba 95
+            "jobs", jobRepository.countByActiveTrueAndStatus(JobStatus.ABIERTA),
             "applications", applicationRepository.count()
         ));
     }

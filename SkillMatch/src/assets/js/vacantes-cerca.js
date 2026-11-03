@@ -108,6 +108,12 @@
         return origen.porUbicacion ? `tu ubicación (cerca de ${origen.ciudad.corto})` : origen.ciudad.corto;
     }
 
+    // Datos de muestra (empresas "(ejemplo)"): la tarjeta lo dice y el nombre va sin el parentesis
+    const UI = () => window.SkillMatchUI;
+    const esEjemplo = v => !!(UI() && UI().esEjemplo(v.companyName));
+
+    // Jerarquia de cada tarjeta: cargo, empresa, luego lugar, salario y modalidad, y al
+    // final las acciones (Ver vacante y Guardar). Postularse pide sesion: se dice antes.
     function tarjeta({ vacante, ciudad }, origen) {
         const aqui = ciudad.clave === origen.ciudad.clave;
         const km = Math.max(1, Math.round(C.distanciaKm(origen.lat, origen.lon, ciudad.lat, ciudad.lon)));
@@ -115,15 +121,82 @@
         const modalidades = typeof MODALIDADES_VACANTE !== 'undefined' ? MODALIDADES_VACANTE : {};
         const modalidad = modalidades[C.normalizar(vacante.modality)] || '';
         const salario = typeof formatSalaryRange === 'function' ? formatSalaryRange(vacante.salaryMin, vacante.salaryMax) : '';
+        const empresa = vacante.companyName ? (UI() ? UI().sinEjemplo(vacante.companyName) : vacante.companyName) : '';
+        const guardada = typeof savedOpportunityIds !== 'undefined' && savedOpportunityIds.has(vacante.id);
+        const ver = `oportunidades.html?jobId=${encodeURIComponent(vacante.id)}`;
         return `<li class="cerca-tarjeta">
-                <span class="cerca-distancia${aqui ? ' es-aqui' : ''}"${aqui ? '' : ' title="Distancia en línea recta"'}><i data-ico="pin"></i> ${distancia}</span>
-                <h3 class="cerca-cargo"><a class="cerca-enlace" href="oportunidades.html?jobId=${encodeURIComponent(vacante.id)}">${escaparHtml(vacante.title || 'Vacante')}</a></h3>
-                ${vacante.companyName ? `<p class="cerca-empresa">${escaparHtml(vacante.companyName)}</p>` : ''}
+                ${esEjemplo(vacante) ? UI().etiquetaEjemplo() : ''}
+                <h3 class="cerca-cargo"><a class="cerca-enlace" href="${ver}">${escaparHtml(vacante.title || 'Vacante')}</a></h3>
+                ${empresa ? `<p class="cerca-empresa">${escaparHtml(empresa)}</p>` : ''}
                 <p class="cerca-datos">
-                    ${modalidad ? `<span><i data-ico="desktop"></i> ${modalidad}</span>` : ''}
+                    <span class="cerca-distancia${aqui ? ' es-aqui' : ''}"${aqui ? '' : ' title="Distancia en línea recta"'}><i data-ico="pin"></i> ${distancia}</span>
                     ${salario ? `<span><i data-ico="money"></i> ${escaparHtml(salario)}</span>` : ''}
+                    ${modalidad ? `<span><i data-ico="desktop"></i> ${modalidad}</span>` : ''}
                 </p>
+                <div class="cerca-acciones">
+                    <a class="btn btn-primary btn-small" href="${ver}">Ver vacante</a>
+                    <button type="button" class="btn btn-secondary btn-small cerca-guardar${guardada ? ' saved' : ''}" data-id="${escaparHtml(vacante.id)}" aria-pressed="${guardada}">
+                        <i data-ico="${guardada ? 'heart' : 'bookmark'}"></i> <span>${guardada ? 'Guardada' : 'Guardar'}</span>
+                    </button>
+                </div>
+                ${conSesion ? '' : '<p class="cerca-nota">Para postularte, inicia sesión.</p>'}
             </li>`;
+    }
+
+    // Guardar desde la portada: lo mismo que en Vacantes (search-handler.js tiene la lista)
+    async function guardar(boton) {
+        if (!conSesion) {
+            if (UI()) UI().aviso('Inicia sesión para guardar vacantes.', 'info', 0, { texto: 'Iniciar sesión', alHacer: () => { window.location.href = 'login.html'; } });
+            return;
+        }
+        const id = boton.dataset.id;
+        const ya = savedOpportunityIds.has(id);
+        boton.disabled = true;
+        try {
+            const r = ya
+                ? await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job/${encodeURIComponent(id)}`, { method: 'DELETE' })
+                : await fetchWithAuth(`${API_BASE_URL}/saved-jobs`, { method: 'POST', body: JSON.stringify({ jobId: id }) });
+            if (!r.ok) throw new Error(String(r.status));
+            if (ya) savedOpportunityIds.delete(id); else savedOpportunityIds.add(id);
+            boton.classList.toggle('saved', !ya);
+            boton.setAttribute('aria-pressed', String(!ya));
+            boton.innerHTML = `<i data-ico="${ya ? 'bookmark' : 'heart'}"></i> <span>${ya ? 'Guardar' : 'Guardada'}</span>`;
+            if (UI()) UI().guardado(ya ? 'Vacante quitada de guardadas' : 'Vacante guardada');
+        } catch (e) {
+            if (UI()) UI().noSeGuardo('No pudimos guardar la vacante. Revisa tu conexión e intenta de nuevo.', () => guardar(boton));
+        } finally {
+            boton.disabled = false;
+        }
+    }
+    lista.addEventListener('click', e => {
+        const boton = e.target.closest('.cerca-guardar');
+        if (boton) guardar(boton);
+    });
+
+    // Dos vacantes reales junto a la tarjeta del match, en el hero
+    function enElHero(encontradas) {
+        const hero = document.getElementById('heroVacantes');
+        if (!hero) return;
+        const dos = encontradas.slice(0, 2);
+        hero.innerHTML = dos.map(({ vacante }) => {
+            const empresa = vacante.companyName ? (UI() ? UI().sinEjemplo(vacante.companyName) : vacante.companyName) : '';
+            return `<li class="hero-vacante">
+                    <a href="oportunidades.html?jobId=${encodeURIComponent(vacante.id)}">
+                        <span class="hero-vacante-cargo">${escaparHtml(vacante.title || 'Vacante')}</span>
+                        <span class="hero-vacante-empresa">${escaparHtml(empresa)}${esEjemplo(vacante) ? ' ' + UI().etiquetaEjemplo() : ''}</span>
+                    </a>
+                </li>`;
+        }).join('');
+        hero.hidden = !dos.length;
+    }
+
+    // "Vista de ejemplo": si alguna vacante es de muestra, la seccion lo dice arriba
+    function avisoDeEjemplo(encontradas) {
+        const aviso = document.getElementById('cercaEjemplo');
+        if (!aviso) return;
+        const hay = encontradas.some(e => esEjemplo(e.vacante));
+        aviso.innerHTML = hay ? '<i data-ico="bulb"></i> <span><strong>Vista de ejemplo.</strong> Las vacantes marcadas como «Ejemplo» son datos de muestra para ver cómo funciona SkillMatch: no son ofertas reales.</span>' : '';
+        aviso.hidden = !hay;
     }
 
     function mostrarCargando(origen) {
@@ -158,6 +231,8 @@
         lista.innerHTML = encontradas.map(e => tarjeta(e, origen)).join('');
         lista.hidden = false;
         vacio.hidden = true;
+        enElHero(encontradas);
+        avisoDeEjemplo(encontradas);
     }
 
     function mostrarError(origen) {
@@ -172,7 +247,7 @@
                 <div>
                     <p class="estado-vacio-titulo">No pudimos cargar las vacantes cercanas</p>
                     <p class="estado-vacio-texto">Revisa tu conexión e inténtalo de nuevo.</p>
-                    <button type="button" class="btn btn-secondary btn-small" data-cerca-reintentar>Intentar de nuevo</button>
+                    <button type="button" class="btn btn-secondary btn-small" data-cerca-reintentar>Reintentar</button>
                 </div>
             </div>`;
         vacio.hidden = false;
@@ -236,6 +311,10 @@
     }
 
     async function iniciar() {
+        // Las guardadas de la persona, para que "Guardar" diga "Guardada" donde ya lo esta
+        if (conSesion && typeof loadSavedOpportunities === 'function') {
+            try { await loadSavedOpportunities(); } catch (e) { /* sin guardadas igual se ven las vacantes */ }
+        }
         if (puedeUbicar) {
             boton.hidden = false;
             boton.addEventListener('click', () => ubicar(avisarFallo));

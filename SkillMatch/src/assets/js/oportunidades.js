@@ -315,7 +315,7 @@ function sortList(jobs) {
 function matchHint() {
     const datos = sesion();
     if (!datos) {
-        return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="login-usuario.html">Inicia sesión</a> para ver qué tanto encajas con cada vacante.</span></p>';
+        return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="login.html">Inicia sesión</a> para ver qué tanto encajas con cada vacante.</span></p>';
     }
     if (datos.userType !== 'empresa' && userSkills && userSkills.size === 0) {
         return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="perfil-usuario.html">Agrega tus habilidades</a> y te mostramos qué tanto encajas con cada vacante.</span></p>';
@@ -355,6 +355,9 @@ function bloqueCargarMas() {
 // Mostrar trabajos en el DOM
 function displayJobs(jobs) {
     const container = document.querySelector('.opportunities-list');
+    // "Vista de ejemplo": si hay vacantes de muestra en la lista, la pagina lo dice arriba
+    const aviso = document.getElementById('vacantesEjemplo');
+    if (aviso && window.SkillMatchUI) aviso.hidden = !(jobs || []).some(j => SkillMatchUI.esEjemplo(j.companyName));
 
     if (!jobs || jobs.length === 0) {
         shownJobs = [];
@@ -460,10 +463,14 @@ function vacanteCerrada(job) {
 // Nombre de la empresa como enlace a su perfil publico (empresa.html). Antes
 // era solo texto y no habia donde conocer a la empresa antes de postularse
 function enlaceEmpresa(job) {
-    const nombre = escaparHtml(job.companyName || 'Empresa confidencial');
+    // Empresa de muestra: el nombre sin "(ejemplo)" y la etiqueta "Ejemplo" al lado
+    const ui = window.SkillMatchUI;
+    const ejemplo = !!(ui && ui.esEjemplo(job.companyName));
+    const nombre = escaparHtml((ui ? ui.sinEjemplo(job.companyName) : job.companyName) || 'Empresa confidencial');
+    const etiqueta = ejemplo ? ' ' + ui.etiquetaEjemplo() : '';
     return job.companyId && job.companyName
-        ? `<a class="enlace-empresa" href="empresa.html?id=${encodeURIComponent(job.companyId)}">${nombre}</a>`
-        : nombre;
+        ? `<a class="enlace-empresa" href="empresa.html?id=${encodeURIComponent(job.companyId)}">${nombre}</a>${etiqueta}`
+        : nombre + etiqueta;
 }
 
 // "Nueva" (publicada en los ultimos 3 dias) y "Cierra en N dias" (cierra en una
@@ -639,7 +646,7 @@ function postularme(jobId) {
     const datos = sesion();
     if (!datos) {
         avisar('Inicia sesión para postularte a esta vacante.', 'info');
-        setTimeout(() => { window.location.href = 'login-usuario.html'; }, 1200);
+        setTimeout(() => { window.location.href = 'login.html'; }, 1200);
         return;
     }
     if (datos.userType === 'empresa') {
@@ -735,6 +742,7 @@ function setupEventListeners() {
     if (clearFilterBtn) {
         clearFilterBtn.addEventListener('click', clearFilters);
     }
+    prepararFiltrosMovil();
 
     // Filtros: se aplican al instante
     document.querySelectorAll('.filter-card input[type="checkbox"]').forEach(cb => {
@@ -977,6 +985,69 @@ function updateFilterBadges() {
             badge.classList.remove('active');
         }
     });
+    pintarFiltrosMovil();
+}
+
+// ---- Filtros en el celular ----
+// El panel grande de filtros empujaba las vacantes muy abajo. En el celular se
+// cambia por un boton "Filtros (n)" que abre el mismo panel desde abajo, y los
+// filtros elegidos quedan a la vista como etiquetas que se quitan con un toque.
+// (En pantallas grandes el panel sigue al lado, como siempre.)
+function filtrosEnEtiquetas() {
+    const elegidos = Array.from(document.querySelectorAll('.filter-card input[type="checkbox"]:checked')).map(c => ({
+        texto: c.closest('label').textContent.trim(),
+        quitar: () => { c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }
+    }));
+    const salario = document.getElementById('salaryRange');
+    if (salario && Number(salario.value) < Number(salario.max)) {
+        elegidos.push({
+            texto: 'Hasta ' + formatCurrency(Number(salario.value)),
+            quitar: () => { salario.value = salario.max; salario.dispatchEvent(new Event('input', { bubbles: true })); }
+        });
+    }
+    return elegidos;
+}
+
+function pintarFiltrosMovil() {
+    const cuenta = document.getElementById('filtrosCuenta');
+    const chips = document.getElementById('filtrosChips');
+    if (!cuenta || !chips) return;
+    const elegidos = filtrosEnEtiquetas();
+    cuenta.textContent = elegidos.length ? `(${elegidos.length})` : '';
+    chips.innerHTML = elegidos.map((f, i) =>
+        `<li><button type="button" class="filtro-chip" data-quitar-filtro="${i}" aria-label="Quitar el filtro ${escaparHtml(f.texto)}">${escaparHtml(f.texto)} <i data-ico="close"></i></button></li>`).join('');
+    chips.hidden = !elegidos.length;
+    chips.quitar = i => { const f = filtrosEnEtiquetas()[i]; if (f) f.quitar(); };
+}
+
+function prepararFiltrosMovil() {
+    const abrir = document.getElementById('abrirFiltros');
+    const panel = document.querySelector('.opportunities-sidebar');
+    const fondo = document.getElementById('filtrosFondo');
+    const chips = document.getElementById('filtrosChips');
+    if (!abrir || !panel) return;
+    const listo = document.getElementById('cerrarFiltros');
+    const abierto = si => {
+        document.body.classList.toggle('filtros-abiertos', si);
+        abrir.setAttribute('aria-expanded', String(si));
+        if (fondo) fondo.hidden = !si;
+        if (si) { const primero = panel.querySelector('input, button'); if (primero) primero.focus(); }
+        else abrir.focus();
+    };
+    abrir.addEventListener('click', () => abierto(true));
+    if (listo) listo.addEventListener('click', () => abierto(false));
+    if (fondo) fondo.addEventListener('click', () => abierto(false));
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.body.classList.contains('filtros-abiertos')) abierto(false);
+    });
+    if (chips) chips.addEventListener('click', e => {
+        const boton = e.target.closest('[data-quitar-filtro]');
+        if (boton) chips.quitar(Number(boton.dataset.quitarFiltro));
+    });
+    // El salario tambien cuenta como filtro elegido
+    const salario = document.getElementById('salaryRange');
+    if (salario) salario.addEventListener('input', debounce(pintarFiltrosMovil, 150));
+    pintarFiltrosMovil();
 }
 
 // Utilidades
@@ -1050,7 +1121,7 @@ async function loadSavedJobs() {
 async function toggleSaveJob(jobId, buttonElement) {
     if (!sesion()) {
         avisar('Inicia sesión para guardar vacantes.', 'info');
-        setTimeout(() => { window.location.href = 'login-usuario.html'; }, 1200);
+        setTimeout(() => { window.location.href = 'login.html'; }, 1200);
         return;
     }
 

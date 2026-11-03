@@ -22,4 +22,7 @@ public interface JobRepository extends MongoRepository<Job, String> {
     List<Job> findByActiveTrueAndExpirationDateBefore(LocalDateTime date);
 
     long countByActiveTrue();
+
+    /** Las que salen en el listado (activas y abiertas): la cifra de la portada usa esta. */
+    long countByActiveTrueAndStatus(JobStatus status);
 }
