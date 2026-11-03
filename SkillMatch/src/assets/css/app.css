@@ -7091,7 +7091,7 @@ footer.pie { padding-bottom: var(--s5); }
 .hero h1.hero-titular { font-size: clamp(2.1rem, 1.2rem + 3.2vw, 3.5rem); max-width: 15ch; line-height: 1.05; }
 .hero-buscar { margin-top: var(--s6); max-width: 640px; }
 .hero-buscar .search-box { position: relative; max-width: none; margin: 0; align-items: center; }
-.hero-buscar-ico { width: 20px; height: 20px; margin-left: var(--s4); color: var(--ink-muted); flex: 0 0 auto; }
+.hero-buscar-lupa { width: 20px; height: 20px; margin-left: var(--s4); color: var(--ink-muted); flex: 0 0 auto; }
 .hero-buscar .search-input { min-width: 0; padding-left: var(--s2) !important; color: var(--ink); }
 .hero-buscar-lugar { width: 210px; flex: 0 0 auto; border-left: 1px solid var(--hairline); }
 .hero-buscar-lugar .filter-select, .hero-buscar-lugar .lista-control { border: 0; background: transparent; box-shadow: none; }
@@ -7371,3 +7371,12 @@ footer.pie { padding-bottom: var(--s5); }
 .pagina-vidrio .hero-ola { background: #E4F2F4; }
 [data-theme="dark"] .pagina-vidrio .hero-ola { background: #0E2738; }
 .hero-titular > .hero-rotador { color: var(--sea-luz); }
+/* Hasta 760 px la regla general apila el buscador en columna: el del hero va en dos
+   filas (lo que se busca arriba; la ciudad y el boton abajo) y sin la lupa suelta */
+@media (max-width: 760px) {
+    .hero-buscar .search-box { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px; border-radius: var(--r-lg); }
+    .hero-buscar-lupa { display: none; }
+    .hero-buscar .search-input { flex: 1 1 100%; min-height: 46px; padding-left: var(--s4) !important; }
+    .hero-buscar-lugar { flex: 1 1 auto; width: auto; border-left: 0; }
+    .hero-buscar .search-btn { flex: 0 0 auto; width: auto; margin: 0; padding: 11px var(--s5); }
+}
