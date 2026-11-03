@@ -57,7 +57,7 @@
             <p>Empleos, prácticas y trabajos independientes de empresas de todos los sectores.</p>
             
             <div class="search-bar-main">
-                <input type="text" id="searchInput" placeholder="Busca por cargo, empresa o habilidad. Ej.: mesero, contador, bodega..." class="search-input-main" aria-label="Buscar vacantes por cargo, empresa o habilidad">
+                <input type="text" id="searchInput" placeholder="Cargo, empresa o habilidad" class="search-input-main" aria-label="Buscar vacantes por cargo, empresa o habilidad">
                 <button class="btn-search-main">Buscar</button>
             </div>
         </div>
@@ -74,9 +74,16 @@
                 <button type="button" class="tab-btn" data-vista="guardadas" aria-pressed="false"><i data-ico="heart"></i> Guardadas <span class="vista-cuenta" id="savedCount"></span></button>
                 <button type="button" class="tab-btn" data-vista="mias" aria-pressed="false" hidden><i data-ico="building"></i> Mis vacantes <span class="vista-cuenta" id="misVacantesCount"></span></button>
             </div>
+            <p class="aviso-ejemplo" id="vacantesEjemplo" hidden><i data-ico="bulb"></i> <span><strong>Vista de ejemplo.</strong> Las vacantes marcadas como «Ejemplo» son datos de muestra para ver cómo funciona SkillMatch: no son ofertas reales.</span></p>
+            <!-- En el celular: "Filtros (n)" abre el panel desde abajo y los elegidos quedan como etiquetas -->
+            <div class="filtros-movil">
+                <button type="button" class="btn btn-secondary btn-small" id="abrirFiltros" aria-controls="panelFiltros" aria-expanded="false"><i data-ico="filter"></i> Filtros <span id="filtrosCuenta"></span></button>
+                <ul class="filtros-chips" id="filtrosChips" aria-label="Filtros elegidos" hidden></ul>
+            </div>
+            <div class="filtros-fondo" id="filtrosFondo" hidden></div>
             <div class="opportunities-layout">
                 <!-- Sidebar de Filtros -->
-                <aside class="opportunities-sidebar">
+                <aside class="opportunities-sidebar" id="panelFiltros" aria-label="Filtros">
                     <div class="filter-card">
                         <div class="filter-header">
                             <h2><i data-ico="target"></i> Filtros</h2>
@@ -162,7 +169,9 @@
                                 </div>
                             </div>
                         </details>
-                        <!-- Sin boton "Aplicar filtros": cada cambio filtra al instante (oportunidades.js) -->
+                        <!-- Sin boton "Aplicar filtros": cada cambio filtra al instante (oportunidades.js).
+                             En el celular, este boton cierra el panel y deja ver las vacantes -->
+                        <button type="button" class="btn btn-primary btn-full filtros-listo" id="cerrarFiltros">Ver vacantes</button>
                     </div>
                 </aside>
 

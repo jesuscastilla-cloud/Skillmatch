@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     if (!isAuthenticated()) {
-        window.location.href = 'login-usuario.html';
+        window.location.href = 'login.html';
         return;
     }
 

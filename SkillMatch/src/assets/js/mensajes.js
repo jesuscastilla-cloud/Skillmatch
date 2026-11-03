@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Verificar autenticación
     if (!isAuthenticated()) {
-        window.location.href = 'login-usuario.html';
+        window.location.href = 'login.html';
         return;
     }
 

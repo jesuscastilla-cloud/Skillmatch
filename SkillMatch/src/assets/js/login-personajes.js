@@ -33,7 +33,7 @@
     const clave = document.getElementById('password');
     if (!contenedor || !email || !clave) return;
 
-    // Modo demo: con ?animar en la direccion (login-usuario.html?animar) se ve
+    // Modo demo: con ?animar en la direccion (login.html?animar) se ve
     // todo el movimiento aunque el equipo pida movimiento reducido, y queda
     // recordado en este navegador (igual que ?api= en api-config.js).
     // ?animar=0 lo apaga. Sin modo demo se respeta el ajuste de cada visitante.

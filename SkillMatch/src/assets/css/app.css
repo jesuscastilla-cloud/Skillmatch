@@ -6960,3 +6960,423 @@ body > header, [data-theme="dark"] body > header {
 }
 @media (forced-colors: active) { .pagina-vidrio .fondo-vivo { display: none; } }
 @media print { .fondo-vivo { display: none !important; } .pagina-vidrio { background: #fff; } }
+
+
+/* =====================================================================
+   35. Portada, cuenta y formularios (revision de noviembre de 2026)
+   Va al final para ganarle a lo anterior sin !important.
+   ===================================================================== */
+
+/* (Las manchas del fondo, los resplandores y las olas siguen moviendose: a Jesus
+   le gustan. Con "reducir movimiento" se quedan quietas, como siempre.) */
+
+/* ---- Botones ocupados: "Guardando…" con un indicador (SkillMatchUI.guardando) ---- */
+.girando {
+    display: inline-block; flex: 0 0 auto;
+    width: 1em; height: 1em; margin-right: .5em; vertical-align: -.15em;
+    border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+}
+[aria-busy="true"] { cursor: progress; }
+@media (prefers-reduced-motion: reduce) { .girando { animation-duration: 1.6s; } }
+
+/* ---- Error de un formulario, encima de sus botones (SkillMatchUI.errorEnFormulario) ---- */
+.form-error {
+    display: flex; gap: var(--s2); align-items: flex-start;
+    margin: var(--s3) 0 0; padding: var(--s3) var(--s4);
+    border-radius: var(--r-sm);
+    background: var(--rojo-soft); color: var(--rojo);
+    font-size: var(--t-sm); font-weight: 600;
+}
+.form-error[hidden] { display: none; }
+[data-theme="dark"] .form-error { color: #FF9AA8; }
+
+/* ---- Aviso con accion ("Reintentar") ---- */
+.toast .toast-accion {
+    margin-left: auto; padding: 4px 12px;
+    border: 1px solid rgba(255,255,255,.35); border-radius: var(--r-pill);
+    color: #fff; font-size: var(--t-sm); font-weight: 600; white-space: nowrap;
+}
+.toast .toast-accion:hover { background: rgba(255,255,255,.12); }
+.toast .toast-accion + button { margin-left: var(--s2); }
+
+/* ---- Datos de muestra: etiqueta "Ejemplo" y aviso "Vista de ejemplo" ---- */
+.etiqueta-ejemplo {
+    display: inline-flex; align-items: center; align-self: flex-start;
+    padding: 2px 8px; border-radius: var(--r-pill);
+    background: var(--sol-soft); color: var(--sol-deep);
+    font-size: var(--t-xs); font-weight: 700; letter-spacing: .02em; vertical-align: 1px;
+    white-space: nowrap;
+}
+[data-theme="dark"] .etiqueta-ejemplo { background: rgba(224,144,15,.18); color: #F5C46B; }
+.aviso-ejemplo {
+    display: flex; gap: var(--s2); align-items: flex-start;
+    max-width: none; margin: 0 0 var(--s5); padding: var(--s3) var(--s4);
+    border: 1px solid rgba(224,144,15,.35); border-radius: var(--r-md);
+    background: var(--sol-soft); color: var(--sol-deep); font-size: var(--t-sm);
+}
+.aviso-ejemplo[hidden] { display: none; }
+.aviso-ejemplo .ico { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 1px; }
+[data-theme="dark"] .aviso-ejemplo { background: rgba(224,144,15,.12); color: #F5C46B; }
+/* Lo que la empresa no lleno: se ve como pendiente, no como dato */
+.dato-pendiente { color: var(--ink-muted); font-style: italic; }
+
+/* ---- Menu de la cuenta (iniciales en la barra) ---- */
+.menu-cuenta { position: relative; display: flex; align-items: center; }
+.cuenta-boton {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 40px; padding: 3px 8px 3px 3px;
+    border: 1px solid var(--hairline); border-radius: var(--r-pill);
+    background: var(--surface); color: var(--ink-2);
+    transition: border-color var(--dur-1, .15s) var(--ease), box-shadow var(--dur-1, .15s) var(--ease);
+}
+.cuenta-boton:hover, .cuenta-boton[aria-expanded="true"] { border-color: var(--sea); box-shadow: 0 0 0 3px var(--sea-light); }
+.cuenta-boton.es-actual { border-color: var(--sea); }
+.cuenta-iniciales {
+    display: grid; place-items: center;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--surface-inverse); color: #fff;
+    font-family: var(--font-display); font-size: var(--t-sm); font-weight: 700;
+}
+[data-theme="dark"] .cuenta-iniciales { background: var(--sea); color: #06202A; }
+.cuenta-flecha { width: 16px; height: 16px; transition: transform .2s var(--ease-out); }
+.cuenta-boton[aria-expanded="true"] .cuenta-flecha { transform: rotate(180deg); }
+.menu-cuenta .menu-acciones { position: absolute; top: calc(100% + 8px); right: 0; min-width: 240px; }
+.menu-acciones a {
+    display: flex; align-items: center; gap: var(--s2);
+    width: 100%; min-height: 42px; padding: var(--s2) var(--s3);
+    border-radius: var(--r-sm); color: var(--ink-2); font-size: var(--t-sm); font-weight: 500; text-decoration: none;
+}
+.menu-acciones a:hover, .menu-acciones a:focus-visible { background: var(--surface-sunk); color: var(--ink); }
+.menu-acciones a.es-peligro { color: var(--rojo); }
+.menu-acciones a.es-peligro:hover, .menu-acciones a.es-peligro:focus-visible { background: var(--rojo-soft); color: var(--rojo); }
+.menu-acciones hr { margin: 6px 0; border: 0; border-top: 1px solid var(--hairline); }
+.menu-cuenta-nombre {
+    max-width: 30ch; margin: 0; padding: var(--s2) var(--s3) var(--s3);
+    border-bottom: 1px solid var(--hairline); margin-bottom: 6px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--ink); font-weight: 700; font-size: var(--t-sm);
+}
+
+/* ---- Pie: una sola firma, columnas que en el celular son acordeones ---- */
+.pie-col > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; cursor: default; }
+.pie-col > summary::-webkit-details-marker { display: none; }
+.pie-col > summary .pie-flecha { display: none; width: 18px; height: 18px; color: rgba(255,255,255,.6); transition: transform .2s var(--ease-out); }
+footer.pie { padding-bottom: var(--s5); }
+@media (max-width: 640px) {
+    .pie-columnas { grid-template-columns: 1fr; gap: 0; }
+    .pie-col { border-bottom: 1px solid rgba(255,255,255,.1); }
+    .pie-col > summary { min-height: 52px; cursor: pointer; }
+    .pie-col > summary .pie-flecha { display: block; }
+    .pie-col[open] > summary .pie-flecha { transform: rotate(180deg); }
+    .pie-col > summary .pie-titulo { margin: 0; }
+    .pie-col ul { padding-bottom: var(--s3); }
+    .pie-grid { gap: var(--s5); }
+    footer.pie { padding-top: var(--s8); }
+}
+
+/* ---- Revelado al bajar (ui.js marca [data-revelar] y los hijos de [data-revelar-hijos]) ---- */
+@media (scripting: none) { [data-revelar], [data-revelar-hijos] > * { opacity: 1; transform: none; } }
+
+/* ---- Match: pulso breve al cambiar el porcentaje (index.js) ---- */
+.match-ring.cambia { animation: anillo-pulso .42s var(--ease-out); }
+@keyframes anillo-pulso { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .match-ring.cambia { animation: none; } }
+
+/* =========================== Portada =========================== */
+
+/* 01. Hero: titular corto, busqueda dentro y la tarjeta del match al centro */
+.hero { padding: var(--s8) 0 var(--s8); }
+.hero h1.hero-titular { font-size: clamp(2.1rem, 1.2rem + 3.2vw, 3.5rem); max-width: 15ch; line-height: 1.05; }
+.hero-buscar { margin-top: var(--s6); max-width: 640px; }
+.hero-buscar .search-box { position: relative; max-width: none; margin: 0; align-items: center; }
+.hero-buscar-lupa { width: 20px; height: 20px; margin-left: var(--s4); color: var(--ink-muted); flex: 0 0 auto; }
+.hero-buscar .search-input { min-width: 0; padding-left: var(--s2) !important; color: var(--ink); }
+.hero-buscar-lugar { width: 210px; flex: 0 0 auto; border-left: 1px solid var(--hairline); }
+.hero-buscar-lugar .filter-select, .hero-buscar-lugar .lista-control { border: 0; background: transparent; box-shadow: none; }
+.hero-buscar .search-btn { background: var(--naranja); color: var(--ink); }
+.hero-buscar .search-btn:hover { background: var(--naranja-hover); }
+.hero-actions { align-items: center; margin-top: var(--s5); gap: var(--s4); }
+.hero-enlace { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,.86); font-weight: 600; text-decoration: none; }
+.hero-enlace:hover { color: #fff; }
+.hero-enlace .ico { transition: transform .2s var(--ease-out); }
+.hero-enlace:hover .ico { transform: translateX(3px); }
+/* Las cifras: tres columnas siempre (en el celular el ultimo numero quedaba solo) */
+.hero-proof { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); margin: var(--s6) 0 0; max-width: 560px; }
+.hero-proof > div { display: flex; flex-direction: column-reverse; gap: 2px; min-width: 0; }
+.hero-proof dd { margin: 0; font-family: var(--font-display); font-weight: 800; line-height: 1.1; }
+.hero-proof dt { line-height: 1.3; }
+
+/* La escena: la tarjeta del match y dos vacantes reales alrededor, apenas giradas */
+.hero-escena { position: relative; padding: var(--s6) var(--s5); }
+.hero-escena .hero-card { position: relative; z-index: 1; }
+.demo-etiqueta {
+    display: inline-block; margin-bottom: var(--s3); padding: 2px 10px;
+    border-radius: var(--r-pill); background: var(--sea-light); color: var(--sea-deep);
+    font-size: var(--t-xs); font-weight: 700;
+}
+.hero-vacantes { list-style: none; margin: 0; padding: 0; }
+.hero-vacante a {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: var(--s3) var(--s4); border-radius: var(--r-md);
+    background: var(--surface); color: var(--ink); text-decoration: none;
+    border: 1px solid var(--hairline);
+    box-shadow: 0 18px 40px -18px rgba(6, 26, 49, .55);
+    transition: transform .25s var(--ease-out), box-shadow .25s var(--ease-out);
+}
+.hero-vacante-cargo { font-weight: 700; font-size: var(--t-sm); line-height: 1.3; }
+.hero-vacante-empresa { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; color: var(--ink-3); font-size: var(--t-xs); }
+@media (min-width: 1081px) {
+    .hero-vacante { position: absolute; z-index: 2; width: 230px; }
+    .hero-vacante:nth-child(1) { top: -6px; right: -18px; transform: rotate(3deg); }
+    .hero-vacante:nth-child(2) { bottom: -10px; left: -26px; transform: rotate(-3deg); }
+    .hero-vacantes { position: absolute; inset: 0; pointer-events: none; }
+    .hero-vacante a { pointer-events: auto; }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .hero-vacante a:hover { transform: translateY(-3px); box-shadow: 0 24px 46px -18px rgba(6, 26, 49, .6); }
+}
+@media (max-width: 1080px) {
+    .hero-grid { grid-template-columns: 1fr; gap: var(--s6); }
+    .hero-escena { padding: 0; }
+    .hero-vacantes { display: grid; gap: var(--s3); margin-top: var(--s3); }
+}
+@media (max-width: 640px) {
+    .hero { padding: var(--s7) 0 var(--s7); }
+    .hero-buscar .search-box { flex-wrap: wrap; border-radius: var(--r-lg); padding: 6px; }
+    .hero-buscar .search-input { flex: 1 1 calc(100% - 52px); min-height: 46px; }
+    .hero-buscar-lugar { flex: 1 1 auto; width: auto; border-left: 0; border-top: 1px solid var(--hairline); padding-top: 6px; }
+    .hero-buscar .search-btn { flex: 0 0 auto; margin-top: 6px; justify-content: center; }
+    .hero-proof { gap: var(--s3); }
+    .hero-proof dd { font-size: var(--t-lg); }
+    .hero-proof dt { font-size: var(--t-xs); }
+}
+
+/* Tonos que alternan: cada bloque se separa del siguiente sin rayas */
+.pagina-vidrio .destacadas { background: linear-gradient(180deg, rgba(226, 242, 243, .92), rgba(226, 242, 243, .7)); }
+[data-theme="dark"] .pagina-vidrio .destacadas { background: rgba(43, 182, 198, .08); }
+.pagina-vidrio .publicos-section { background: var(--vidrio-tinte); padding: var(--s9) 0; }
+.pagina-vidrio .como-funciona { background: rgba(255, 255, 255, .82); }
+[data-theme="dark"] .pagina-vidrio .como-funciona { background: rgba(17, 34, 56, .9); }
+
+/* 02. Oportunidades destacadas (fondo azul muy palido, solo aqui) */
+.destacadas { padding: var(--s8) 0; }
+.destacadas-cabeza { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--s4); margin-bottom: var(--s5); }
+.destacadas-cabeza h2 { font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.2rem); }
+.destacadas-cabeza p { margin-top: var(--s2); color: var(--ink-3); }
+.destacadas .cerca-controles { margin: 0; justify-content: flex-end; }
+.destacadas .cerca-ubicacion { min-height: 44px; }
+.cerca-tarjeta { gap: 6px; }
+.cerca-tarjeta .cerca-cargo { font-size: var(--t-md); }
+.cerca-tarjeta .cerca-empresa { font-weight: 600; color: var(--ink-2); }
+.cerca-tarjeta .cerca-datos { margin-top: var(--s1); padding-top: 0; }
+.cerca-tarjeta .cerca-distancia { padding: 0; background: none; color: var(--ink-3); font-weight: 500; }
+.cerca-tarjeta .cerca-distancia.es-aqui { background: none; color: var(--naranja-texto); font-weight: 600; }
+.cerca-acciones { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: auto; padding-top: var(--s3); }
+.cerca-guardar.saved { border-color: var(--naranja); color: var(--naranja-texto); }
+.cerca-nota { margin: 0; color: var(--ink-muted); font-size: var(--t-xs); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .cerca-tarjeta { transition: transform .24s var(--ease-out), box-shadow .24s var(--ease-out); }
+    .cerca-tarjeta:hover { transform: translateY(-3px); box-shadow: var(--sh-3); }
+}
+@media (max-width: 640px) {
+    .destacadas .cerca-controles { width: 100%; justify-content: flex-start; }
+}
+
+/* 03. Busco trabajo | Soy empresa */
+.publicos { max-width: 880px; margin: 0 auto; }
+.publicos-selector {
+    display: flex; width: fit-content; margin: 0 auto var(--s6); padding: 4px;
+    border: 1px solid var(--hairline); border-radius: var(--r-pill); background: var(--surface);
+    box-shadow: var(--sh-1);
+}
+.publicos-selector [role="tab"] {
+    position: relative; min-height: 44px; padding: 0 var(--s5);
+    border-radius: var(--r-pill); color: var(--ink-3); font-weight: 600;
+    transition: background-color .25s var(--ease-out), color .25s var(--ease-out);
+}
+.publicos-selector [role="tab"][aria-selected="true"] { background: var(--surface-inverse); color: #fff; }
+[data-theme="dark"] .publicos-selector [role="tab"][aria-selected="true"] { background: var(--sea); color: #06202A; }
+.publico-panel {
+    padding: var(--s6); border-radius: var(--r-lg);
+    background: var(--surface); border: 1px solid var(--hairline); box-shadow: var(--sh-2);
+}
+.publico-panel:not([hidden]) { animation: publico-entra .35s var(--ease-out) both; }
+@keyframes publico-entra { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .publico-panel:not([hidden]) { animation: none; } }
+.publico-texto h3 { font-size: var(--t-xl); margin-bottom: var(--s4); }
+.publico-puntos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s5); list-style: none; margin: 0; padding: 0; }
+.publico-puntos li { display: flex; gap: var(--s3); align-items: flex-start; color: var(--ink-2); }
+.publico-puntos .ico { flex: 0 0 auto; width: 22px; height: 22px; padding: 7px; box-sizing: content-box; border-radius: 10px; background: var(--sea-light); color: var(--sea-deep); }
+.publicos[data-publico="empresa"] .publico-puntos .ico { background: var(--naranja-soft); color: var(--naranja-texto); }
+.publico-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s4); margin-top: var(--s6); }
+.btn-enlace-fuerte { color: var(--sea-deep); font-weight: 600; }
+@media (max-width: 640px) {
+    .publico-panel { padding: var(--s5); }
+    .publico-puntos { grid-template-columns: 1fr; }
+    .publicos-selector { width: 100%; }
+    .publicos-selector [role="tab"] { flex: 1; padding: 0 var(--s3); }
+}
+
+/* 04. Como funciona: pestanas con su escena en una pantalla; en el celular, lista corta */
+.como-funciona { padding: var(--s8) 0; }
+.como-funciona .cf-layout { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: var(--s7); align-items: center; }
+.como-funciona .cf-visual { position: static; }
+
+.como-funciona .cf-pasos { gap: var(--s2); }
+.como-funciona .cf-paso {
+    min-height: 0; padding: var(--s4) var(--s5);
+    border: 1px solid transparent; border-radius: var(--r-md);
+    background: none; text-align: left; color: inherit;
+    opacity: 1;
+    transition: background-color .25s var(--ease-out), border-color .25s var(--ease-out);
+}
+.como-funciona .cf-paso:hover { background: var(--surface-sunk); }
+.como-funciona .cf-paso[aria-selected="true"] { background: var(--surface); border-color: var(--hairline); box-shadow: var(--sh-2); }
+.cf-paso-titulo { display: block; margin: 4px 0 4px; font-family: var(--font-display); font-size: var(--t-lg); font-weight: 700; color: var(--ink); }
+.cf-paso-texto { display: block; color: var(--ink-3); font-size: var(--t-base); }
+.cf-layout[data-escena="3"] .cf-aviso { animation: aviso-entra .6s var(--ease-out) .1s both; }
+@media (max-width: 760px) {
+    .como-funciona .cf-layout { grid-template-columns: 1fr; gap: 0; }
+    .como-funciona .cf-visual { display: none; }
+    /* Lista vertical: todos los pasos se leen, sin pestanas que tocar */
+    .como-funciona .cf-paso,
+    .como-funciona .cf-paso[aria-selected="true"] { pointer-events: none; padding: var(--s3) 0; background: none; border: 0; box-shadow: none; }
+    .como-funciona .cf-paso { display: grid; grid-template-columns: auto 1fr; column-gap: var(--s3); }
+    .como-funciona .cf-num { grid-row: span 2; padding-top: 6px; }
+}
+
+/* 06. Llamado final */
+.cta-final-entrar { margin-top: var(--s4) !important; font-size: var(--t-sm) !important; }
+.cta-final-entrar a { color: #fff; font-weight: 600; }
+
+/* ========================= Inicio de sesion ========================= */
+.auth-selector {
+    display: flex; margin-bottom: var(--s5); padding: 4px;
+    border: 1px solid var(--hairline); border-radius: var(--r-pill); background: var(--surface-sunk);
+}
+.auth-selector [role="radio"] {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+    min-height: 44px; border-radius: var(--r-pill);
+    color: var(--ink-3); font-weight: 600;
+    transition: background-color .25s var(--ease-out), color .25s var(--ease-out), box-shadow .25s var(--ease-out);
+}
+.auth-selector [role="radio"] .ico { width: 18px; height: 18px; }
+.auth-selector [role="radio"][aria-checked="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--sh-2); }
+
+/* ============================ Perfil ============================ */
+
+/* Editar perfil en dos grupos: datos personales y perfil profesional */
+.form-grupo { margin: 0 0 var(--s5); padding: 0; border: 0; min-width: 0; }
+.form-grupo legend {
+    margin-bottom: var(--s3); padding: 0;
+    font-family: var(--font-display); font-size: var(--t-md); font-weight: 700; color: var(--ink);
+}
+.form-grupo + .form-grupo { padding-top: var(--s5); border-top: 1px solid var(--hairline); }
+/* El correo no se escribe aqui: se ve bloqueado, con candado */
+.campo-bloqueado { position: relative; }
+.campo-bloqueado input[readonly] {
+    padding-right: 40px;
+    background: var(--surface-sunk) !important; color: var(--ink-3);
+    border-style: dashed; cursor: not-allowed;
+}
+.campo-bloqueado .ico { position: absolute; right: 12px; top: 50%; width: 18px; height: 18px; margin-top: -9px; color: var(--ink-muted); pointer-events: none; }
+/* Contador de caracteres */
+.contador { display: block; text-align: right; font-variant-numeric: tabular-nums; }
+.contador.casi-lleno { color: var(--naranja-texto); font-weight: 600; }
+/* Mes y año en lugar del calendario completo */
+.mes-anio { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--s2); }
+.mes-anio select:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Editar y quitar: siempre en la misma esquina, con el mismo lapiz */
+.item-acciones { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.btn-edit-item {
+    display: inline-grid; place-items: center;
+    width: 34px; height: 34px; border-radius: var(--r-sm);
+    border: 1px solid var(--hairline); background: var(--surface); color: var(--ink-3);
+    transition: border-color .15s var(--ease), color .15s var(--ease), background-color .15s var(--ease);
+}
+.btn-edit-item:hover, .btn-edit-item:focus-visible { border-color: var(--sea); color: var(--sea-deep); background: var(--sea-light); }
+.btn-edit-item .ico { width: 16px; height: 16px; }
+.experience-header .btn-delete-item, .education-header .btn-delete-item { width: 34px; height: 34px; padding: 0; display: inline-grid; place-items: center; }
+/* En las habilidades, los dos botones son pequenos y van dentro de la etiqueta */
+.skill-tag .item-acciones { margin-left: 6px; gap: 0; }
+.skill-tag .btn-edit-item { width: 26px; height: 26px; border: 0; background: none; }
+.skill-tag .btn-edit-item .ico { width: 14px; height: 14px; }
+.skill-tag .btn-remove-skill { min-height: 26px; margin-left: 0; padding: 0 4px; }
+@media (pointer: coarse) {
+    .skill-tag .btn-edit-item, .skill-tag .btn-remove-skill { min-width: 36px; min-height: 36px; }
+}
+/* "+ Agrega tu título profesional" y "+ Agrega tu ciudad" */
+.agregar-dato { font-size: inherit; }
+.profile-hero-new .agregar-dato { color: var(--sea-deep); }
+/* Arriba queda solo la guia del progreso (las cifras repetidas se quitaron): ocupa
+   todo el ancho y lo que falta va en una fila */
+.perfil-cifras { grid-template-columns: 1fr; }
+.perfil-cifras .cifra-progreso { min-height: 0; }
+.perfil-cifras .progress-checklist { display: flex; flex-wrap: wrap; gap: var(--s2); }
+
+/* ======================== Vacantes en el celular ========================
+   "Filtros (n)" abre el panel desde abajo; los elegidos quedan como etiquetas
+   y las vacantes se ven de inmediato. En pantallas grandes no cambia nada. */
+.filtros-movil, .filtros-fondo, .filtros-listo { display: none; }
+.filtro-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 34px; padding: 0 10px 0 12px;
+    border: 1px solid var(--sea); border-radius: var(--r-pill);
+    background: var(--sea-light); color: var(--sea-deep); font-size: var(--t-sm); font-weight: 600;
+    transition: background-color .2s var(--ease-out), transform .16s var(--ease-out);
+}
+.filtro-chip:active { transform: scale(.96); }
+.filtro-chip .ico { width: 14px; height: 14px; }
+/* Las casillas de los filtros cambian con una transicion suave */
+.checkbox-label { transition: background-color .2s var(--ease-out), color .2s var(--ease-out); }
+@media (max-width: 760px) {
+    .filtros-movil { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); margin-bottom: var(--s4); }
+    .filtros-chips { display: flex; flex-wrap: wrap; gap: var(--s2); list-style: none; margin: 0; padding: 0; }
+    .filtros-chips[hidden] { display: none; }
+    .opportunities-sidebar {
+        position: fixed; inset: auto 0 0 0; z-index: 230;
+        max-height: 82vh; overflow-y: auto;
+        border-radius: 22px 22px 0 0;
+        background: var(--surface); box-shadow: var(--sh-4);
+        transform: translateY(105%); visibility: hidden;
+        transition: transform .32s var(--ease-out), visibility 0s linear .32s;
+    }
+    body.filtros-abiertos .opportunities-sidebar { transform: none; visibility: visible; transition: transform .32s var(--ease-out); }
+    .opportunities-sidebar .filter-card { border: 0; box-shadow: none; background: none; padding-bottom: calc(var(--s5) + env(safe-area-inset-bottom)); }
+    .filtros-fondo:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 229; background: rgba(6, 26, 49, .5); }
+    .filtros-listo { display: flex; justify-content: center; margin-top: var(--s4); position: sticky; bottom: 0; }
+    body.filtros-abiertos { overflow: hidden; }
+}
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+    .opportunities-sidebar, body.filtros-abiertos .opportunities-sidebar { transition: none; }
+}
+/* En el celular el encabezado de Vacantes se compacta: la busqueda en una sola
+   linea, sin la frase de abajo, y orden y cifra junto a "Filtros" */
+@media (max-width: 760px) {
+    .opportunities-header { padding-top: var(--s5); padding-bottom: var(--s4); }
+    .opportunities-header h1 { font-size: 1.6rem; }
+    .opportunities-header p { display: none; }
+    .opportunities-header .search-bar-main { flex-wrap: nowrap; margin-top: var(--s3); padding: 4px; border-radius: var(--r-pill); }
+    .opportunities-header .search-input-main { min-width: 0; padding-left: var(--s4) !important; }
+    .opportunities-header .btn-search-main { flex: 0 0 auto; width: auto; padding: 10px 16px; }
+    .opportunities-container { padding-top: var(--s4); }
+    .opportunities-toolbar { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2); margin-bottom: var(--s3); }
+    .opportunities-toolbar .sort-controls label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+}
+/* La ola del hero baja del color del bloque de vacantes destacadas, que va debajo */
+.hero { padding-bottom: calc(var(--s8) + 32px); }
+.pagina-vidrio .hero-ola { background: #E4F2F4; }
+[data-theme="dark"] .pagina-vidrio .hero-ola { background: #0E2738; }
+.hero-titular > .hero-rotador { color: var(--sea-luz); }
+/* Hasta 760 px la regla general apila el buscador en columna: el del hero va en dos
+   filas (lo que se busca arriba; la ciudad y el boton abajo) y sin la lupa suelta */
+@media (max-width: 760px) {
+    .hero-buscar .search-box { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px; border-radius: var(--r-lg); }
+    .hero-buscar-lupa { display: none; }
+    .hero-buscar .search-input { flex: 1 1 100%; min-height: 46px; padding-left: var(--s4) !important; }
+    .hero-buscar-lugar { flex: 1 1 auto; width: auto; border-left: 0; }
+    .hero-buscar .search-btn { flex: 0 0 auto; width: auto; margin: 0; padding: 11px var(--s5); }
+}

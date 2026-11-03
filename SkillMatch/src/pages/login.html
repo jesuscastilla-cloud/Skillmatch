@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión - SkillMatch Cartagena</title>
-    <meta name="description" content="Inicia sesión en SkillMatch, la bolsa de empleo de Cartagena para personas y empresas.">
+    <meta name="description" content="Entra a SkillMatch para buscar trabajo en Cartagena o para publicar las vacantes de tu empresa.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
@@ -41,13 +41,22 @@
         </nav>
     </header>
 
+    <!-- Un solo inicio de sesion para personas y empresas (antes habia tres paginas).
+         El selector solo cambia los textos y los enlaces: la cuenta dice si es empresa.
+         ?tipo=empresa abre con "Soy empresa" elegido (auth.js). -->
     <main class="auth-shell" id="main">
         <div class="auth-panel">
             <div class="login-container">
-                <div class="welcome-text" style="text-align:left; margin-bottom:32px">
-                    <h1 style="font-size:2.25rem">Vuelve a tu búsqueda</h1>
-                    <p>Entra para ver las vacantes que coinciden con tu perfil.</p>
+                <div class="auth-selector" role="radiogroup" aria-label="¿Cómo vas a entrar?">
+                    <button type="button" role="radio" aria-checked="true" data-tipo="persona"><i data-ico="user"></i> Busco trabajo</button>
+                    <button type="button" role="radio" aria-checked="false" data-tipo="empresa" tabindex="-1"><i data-ico="building"></i> Soy empresa</button>
                 </div>
+
+                <div class="welcome-text">
+                    <h1 data-texto-persona="Vuelve a tu búsqueda" data-texto-empresa="Encuentra a quién contratar">Vuelve a tu búsqueda</h1>
+                    <p data-texto-persona="Entra para ver las vacantes y seguir tus postulaciones." data-texto-empresa="Entra para publicar vacantes y revisar a tus candidatos.">Entra para ver las vacantes y seguir tus postulaciones.</p>
+                </div>
+
                 <div class="login-form registro-form active" id="loginForm">
                     <h2>Iniciar sesión</h2>
 
@@ -55,9 +64,9 @@
                     <div id="error-message" role="alert"></div>
                     <div id="success-message" role="status"></div>
 
-                    <form method="post">
+                    <form id="login-form" method="post" novalidate>
                         <div class="form-group">
-                            <label for="email">Correo electrónico</label>
+                            <label for="email" data-texto-persona="Correo electrónico" data-texto-empresa="Correo electrónico de la empresa">Correo electrónico</label>
                             <input type="email" id="email" name="email" autocomplete="email" required>
                         </div>
                         <div class="form-group">
@@ -65,35 +74,34 @@
                             <input type="password" id="password" name="password" autocomplete="current-password" required>
                             <a class="olvide-clave" href="recuperar.html">¿Olvidaste tu contraseña?</a>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-full">Iniciar sesión</button>
+                        <button type="submit" class="btn btn-primary btn-full" id="login-btn">Iniciar sesión</button>
                     </form>
                     <!-- Entrar con Google (F13): auth.js lo muestra si el servidor tiene Google configurado -->
                     <div class="google-entrar" hidden>
                         <div class="divider">o</div>
                         <a class="btn btn-secondary btn-full btn-google" href="#"><i data-ico="google"></i> Continuar con Google</a>
                     </div>
-                    <p class="auth-switch">¿Aún no tienes cuenta? <a href="seleccionar-registro.html">Crear una cuenta</a></p>
+                    <p class="auth-switch">¿Aún no tienes cuenta?
+                        <a href="registro-usuario.html" id="loginCrear" data-href-persona="registro-usuario.html" data-href-empresa="registro-empresa.html"
+                           data-texto-persona="Crear mi perfil" data-texto-empresa="Crear cuenta de empresa">Crear mi perfil</a></p>
                 </div>
-
             </div>
         </div>
 
         <aside class="auth-aside">
             <!-- Personajes que miran (login-personajes.js los dibuja y los anima) -->
             <div class="login-personajes" aria-hidden="true"></div>
-            <h2>Sabes qué tanto encajas antes de postularte</h2>
-            <p style="margin-top:16px">SkillMatch compara las vacantes de Cartagena con tus habilidades
-               y te muestra qué tan cerca estás de cada una.</p>
-            <div class="hero-proof" style="margin-top:40px">
-                <div>
-                    <span class="stat-number">3</span>
-                    <span class="stat-label">minutos para completar tu perfil</span>
-                </div>
-                <div>
-                    <span class="stat-number">0</span>
-                    <span class="stat-label">costo para postularte</span>
-                </div>
-            </div>
+            <h2 data-texto-persona="Sabes qué tanto encajas antes de postularte" data-texto-empresa="Las personas de Cartagena, ordenadas por compatibilidad">Sabes qué tanto encajas antes de postularte</h2>
+            <ul class="auth-points" data-lista-persona>
+                <li><i data-ico="check"></i> Perfil con tus habilidades y experiencia</li>
+                <li><i data-ico="check"></i> Vacantes ordenadas según tus habilidades</li>
+                <li><i data-ico="check"></i> Seguimiento de tus postulaciones y mensajes con las empresas</li>
+            </ul>
+            <ul class="auth-points" data-lista-empresa hidden>
+                <li><i data-ico="check"></i> Personas de Cartagena y la región, de todos los oficios</li>
+                <li><i data-ico="check"></i> Compatibilidad según las habilidades que pides</li>
+                <li><i data-ico="check"></i> Gestión simple de ofertas y candidatos</li>
+            </ul>
         </aside>
     </main>
 

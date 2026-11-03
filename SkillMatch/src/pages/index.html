@@ -58,345 +58,189 @@
          empresa reemplaza al heroe, que es la presentacion para visitantes -->
     <section class="panel-inicio" id="panelInicio" hidden aria-labelledby="panelSaludo"></section>
 
+    <!-- Portada en 6 bloques (noviembre de 2026): hero con busqueda, vacantes
+         destacadas, los dos publicos, como funciona, llamado final y pie. Las
+         cifras salen de una sola fuente (/public/stats) y van una sola vez, aqui. -->
     <section class="hero" id="main">
         <div class="container">
             <div class="hero-grid">
                 <div class="hero-copy">
-                    <!-- Titular palabra por palabra; la palabra clave rota (index.js).
-                         El lector de pantalla lee la frase completa del aria-label. -->
-                    <h1 class="hero-titular" aria-label="El trabajo, la práctica o el proyecto que buscas ya está en Cartagena">
-                        <span class="hero-rotador" aria-hidden="true"><span class="hero-clave is-activa">El trabajo</span><span class="hero-clave">La práctica</span><span class="hero-clave">El proyecto</span></span>
+                    <!-- Titular palabra por palabra; la palabra clave rota (index.js) y la que
+                         sale se deshace en esporas. El lector de pantalla lee el aria-label. -->
+                    <h1 class="hero-titular" aria-label="Encuentra el trabajo, la práctica o el proyecto que encaja con lo que sabes hacer">
+                        <span aria-hidden="true">Encuentra</span>
+                        <span class="hero-rotador" aria-hidden="true"><span class="hero-clave is-activa">el trabajo</span><span class="hero-clave">la práctica</span><span class="hero-clave">el proyecto</span></span>
                         <span aria-hidden="true">que</span>
-                        <span aria-hidden="true">buscas</span>
-                        <span aria-hidden="true">ya</span>
-                        <span aria-hidden="true">está</span>
-                        <span aria-hidden="true">en</span>
-                        <span aria-hidden="true">Cartagena</span>
+                        <span aria-hidden="true">encaja</span>
+                        <span aria-hidden="true">con lo que</span>
+                        <span aria-hidden="true">sabes hacer</span>
                     </h1>
-                    <p>SkillMatch compara tus habilidades con cada vacante de la ciudad y te muestra
-                       qué tan cerca estás de conseguirla, antes de que te postules.</p>
+                    <p>SkillMatch compara tus habilidades con cada vacante de Cartagena y te dice qué tan cerca estás, antes de que te postules.</p>
+
+                    <!-- Busqueda compacta dentro del hero. Sin JavaScript igual lleva a Vacantes
+                         con lo escrito (?q=); con JavaScript, index.js muestra los resultados aqui -->
+                    <form class="hero-buscar" action="oportunidades.html" method="get" role="search" aria-label="Buscar vacantes">
+                        <div class="search-box">
+                            <i data-ico="search" class="hero-buscar-lupa"></i>
+                            <input type="text" name="q" placeholder="Cargo, habilidad o empresa" class="search-input" aria-label="Buscar vacantes por cargo, habilidad o empresa">
+                            <div class="hero-buscar-lugar">
+                                <label for="location-select" class="sr-only">Lugar</label>
+                                <select id="location-select" class="filter-select" data-lista="buscable" data-icono="pin"
+                                        data-placeholder="Ciudad" data-todas="Todas las ciudades"
+                                        data-destacar="Con vacantes ahora" data-vacio="Revisa cómo se escribe o prueba con otra ciudad.">
+                                    <option value="">Todas las ciudades</option>
+                                    <optgroup label="Bolívar">
+                                        <option value="cartagena">Cartagena de Indias (Bolívar)</option>
+                                        <option value="turbaco">Turbaco (Bolívar)</option>
+                                        <option value="arjona">Arjona (Bolívar)</option>
+                                        <option value="turbana">Turbaná (Bolívar)</option>
+                                        <option value="clemencia">Clemencia (Bolívar)</option>
+                                        <option value="santa_rosa">Santa Rosa (Bolívar)</option>
+                                        <option value="el_carmen_de_bolivar">El Carmen de Bolívar</option>
+                                        <option value="magangue">Magangué (Bolívar)</option>
+                                        <option value="mompox">Mompox (Bolívar)</option>
+                                    </optgroup>
+                                    <optgroup label="Otras ciudades">
+                                        <option value="armenia">Armenia (Quindío)</option>
+                                        <option value="barichara">Barichara (Santander)</option>
+                                        <option value="barranquilla">Barranquilla (Atlántico)</option>
+                                        <option value="bello">Bello (Antioquia)</option>
+                                        <option value="bogota">Bogotá D.C.</option>
+                                        <option value="bucaramanga">Bucaramanga (Santander)</option>
+                                        <option value="cali">Cali (Valle del Cauca)</option>
+                                        <option value="chia">Chía (Cundinamarca)</option>
+                                        <option value="cucuta">Cúcuta (Norte de Santander)</option>
+                                        <option value="dosquebradas">Dosquebradas (Risaralda)</option>
+                                        <option value="envigado">Envigado (Antioquia)</option>
+                                        <option value="facatativa">Facatativá (Cundinamarca)</option>
+                                        <option value="florencia">Florencia (Caquetá)</option>
+                                        <option value="funza">Funza (Cundinamarca)</option>
+                                        <option value="ibague">Ibagué (Tolima)</option>
+                                        <option value="itagui">Itagüí (Antioquia)</option>
+                                        <option value="jamundi">Jamundí (Valle del Cauca)</option>
+                                        <option value="manizales">Manizales (Caldas)</option>
+                                        <option value="medellin">Medellín (Antioquia)</option>
+                                        <option value="mocoa">Mocoa (Putumayo)</option>
+                                        <option value="monteria">Montería (Córdoba)</option>
+                                        <option value="mosquera">Mosquera (Cundinamarca)</option>
+                                        <option value="neiva">Neiva (Huila)</option>
+                                        <option value="palmira">Palmira (Valle del Cauca)</option>
+                                        <option value="pasto">Pasto (Nariño)</option>
+                                        <option value="pereira">Pereira (Risaralda)</option>
+                                        <option value="popayan">Popayán (Cauca)</option>
+                                        <option value="quibdo">Quibdó (Chocó)</option>
+                                        <option value="riohacha">Riohacha (La Guajira)</option>
+                                        <option value="sabaneta">Sabaneta (Antioquia)</option>
+                                        <option value="santa_marta">Santa Marta (Magdalena)</option>
+                                        <option value="sincelejo">Sincelejo (Sucre)</option>
+                                        <option value="soledad">Soledad (Atlántico)</option>
+                                        <option value="tunja">Tunja (Boyacá)</option>
+                                        <option value="valledupar">Valledupar (Cesar)</option>
+                                        <option value="villavicencio">Villavicencio (Meta)</option>
+                                        <option value="yopal">Yopal (Casanare)</option>
+                                        <option value="zipaquira">Zipaquirá (Cundinamarca)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <button type="submit" class="search-btn">Buscar</button>
+                        </div>
+                    </form>
 
                     <div class="hero-actions">
-                        <a href="seleccionar-registro.html" class="btn btn-accent">Crear mi perfil</a>
-                        <a href="oportunidades.html" class="btn btn-secondary">Ver vacantes abiertas</a>
+                        <a href="registro-usuario.html" class="btn btn-accent">Crear mi perfil</a>
+                        <a href="registro-empresa.html" class="hero-enlace">Soy empresa: publicar vacantes <i data-ico="arrow" class="ico-sm"></i></a>
                     </div>
 
-                    <div class="hero-proof">
+                    <!-- Las unicas cifras de la portada (index.js las cuenta al llegar) -->
+                    <dl class="hero-proof">
                         <div>
-                            <span class="stat-number" data-stat="jobs">—</span>
-                            <span class="stat-label">vacantes abiertas</span>
+                            <dt class="stat-label">vacantes abiertas</dt>
+                            <dd class="stat-number" data-stat="jobs">—</dd>
                         </div>
                         <div>
-                            <span class="stat-number" data-stat="companies">—</span>
-                            <span class="stat-label">empresas registradas</span>
+                            <dt class="stat-label">empresas</dt>
+                            <dd class="stat-number" data-stat="companies">—</dd>
                         </div>
                         <div>
-                            <span class="stat-number" data-stat="users">—</span>
-                            <span class="stat-label">perfiles registrados</span>
+                            <dt class="stat-label">postulaciones enviadas</dt>
+                            <dd class="stat-number" data-stat="applications">—</dd>
                         </div>
-                    </div>
+                    </dl>
                 </div>
 
-                <!-- Demo de la compatibilidad (Fase 2 del plan): vacante de ejemplo de un
-                     sector cualquiera; el visitante marca sus habilidades y el anillo se
-                     recalcula (index.js) -->
-                <div class="hero-card match-demo" role="group" aria-labelledby="demo-titulo">
-                    <div class="result-header">
-                        <div class="hero-card-empresa">
-                            <div class="result-logo">HB</div>
-                            <div class="hero-card-texto">
-                                <p class="job-title" id="demo-titulo">Recepcionista bilingüe</p>
-                                <p class="company-name">Hotel en Bocagrande · Cartagena</p>
+                <!-- La protagonista: la demo de la compatibilidad. El visitante marca sus
+                     habilidades y el anillo se recalcula (index.js). Alrededor, dos vacantes
+                     reales recientes (vacantes-cerca.js las pone al llegar de la API) -->
+                <div class="hero-escena">
+                    <div class="hero-card match-demo" role="group" aria-labelledby="demo-titulo">
+                        <p class="demo-etiqueta">Ejemplo interactivo</p>
+                        <div class="result-header">
+                            <div class="hero-card-empresa">
+                                <div class="result-logo">HB</div>
+                                <div class="hero-card-texto">
+                                    <p class="job-title" id="demo-titulo">Recepcionista bilingüe</p>
+                                    <p class="company-name">Hotel en Bocagrande · Cartagena</p>
+                                </div>
                             </div>
+                            <div class="match-ring" data-pct="80" role="img" aria-label="80 por ciento de coincidencia con esta vacante"></div>
                         </div>
-                        <div class="match-ring" data-pct="80" role="img" aria-label="80 por ciento de coincidencia con esta vacante"></div>
+                        <div class="card-meta">
+                            <span class="meta-item"><i data-ico="pin" class="ico-sm"></i> Presencial</span>
+                            <span class="meta-item"><i data-ico="briefcase" class="ico-sm"></i> Tiempo completo</span>
+                            <span class="meta-item result-salary"><i data-ico="money" class="ico-sm"></i> $1.8M – $2.4M</span>
+                        </div>
+                        <p class="demo-instruccion"><i data-ico="sparkle" class="ico-sm"></i> Pruébalo: marca las habilidades que tienes</p>
+                        <div class="demo-habilidades" role="group" aria-label="Habilidades que pide la vacante">
+                            <button type="button" class="demo-skill" aria-pressed="true" data-peso="25"><i data-ico="check" class="ico-sm"></i>Atención al cliente</button>
+                            <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Manejo de caja</button>
+                            <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Reservas</button>
+                            <button type="button" class="demo-skill" aria-pressed="true" data-peso="15"><i data-ico="check" class="ico-sm"></i>Excel</button>
+                            <button type="button" class="demo-skill" aria-pressed="false" data-peso="20"><i data-ico="check" class="ico-sm"></i>Inglés</button>
+                        </div>
+                        <p class="suggestion-reason demo-razon" aria-live="polite">
+                            Coincides en 4 de 5 requisitos. Te falta Inglés.
+                        </p>
                     </div>
-                    <div class="card-meta">
-                        <span class="meta-item"><i data-ico="pin" class="ico-sm"></i> Presencial</span>
-                        <span class="meta-item"><i data-ico="briefcase" class="ico-sm"></i> Tiempo completo</span>
-                        <span class="meta-item result-salary"><i data-ico="money" class="ico-sm"></i> $1.8M – $2.4M</span>
-                    </div>
-                    <p class="demo-instruccion"><i data-ico="sparkle" class="ico-sm"></i> Pruébalo: marca las habilidades que tienes</p>
-                    <div class="demo-habilidades" role="group" aria-label="Habilidades que pide la vacante">
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="25"><i data-ico="check" class="ico-sm"></i>Atención al cliente</button>
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Manejo de caja</button>
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Reservas</button>
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="15"><i data-ico="check" class="ico-sm"></i>Excel</button>
-                        <button type="button" class="demo-skill" aria-pressed="false" data-peso="20"><i data-ico="check" class="ico-sm"></i>Inglés</button>
-                    </div>
-                    <p class="suggestion-reason demo-razon" aria-live="polite">
-                        Coincides en 4 de 5 requisitos. Te falta Inglés.
-                    </p>
+                    <ul class="hero-vacantes" id="heroVacantes" aria-label="Vacantes recientes" hidden></ul>
                 </div>
             </div>
         </div>
-        <!-- Separador en forma de ola que se desplaza lento (Fase 2) -->
+        <!-- Separador en forma de ola que se desplaza lento -->
         <div class="hero-ola" aria-hidden="true"></div>
     </section>
 
-    
-    <section class="search-section">
-        <div class="container">
-            <div class="search-box">
-                <input type="text" placeholder="Busca por cargo, habilidad o empresa..." class="search-input" aria-label="Buscar vacantes por cargo, habilidad o empresa">
-                <button class="search-btn"><i data-ico="search"></i> Buscar</button>
-            </div>
-            <div class="quick-filters">
-                <div class="filter-group">
-                    <label for="location-select" class="sr-only">Lugar</label>
-                    <select id="location-select" class="filter-select" data-lista="buscable" data-icono="pin"
-                            data-placeholder="Ciudad o municipio" data-todas="Todas las ciudades"
-                            data-destacar="Con vacantes ahora" data-vacio="Revisa cómo se escribe o prueba con otra ciudad.">
-                        <option value="">Lugar (todas)</option>
-                        <optgroup label="Bolívar">
-                            <option value="cartagena">Cartagena de Indias (Bolívar)</option>
-                            <option value="turbaco">Turbaco (Bolívar)</option>
-                            <option value="arjona">Arjona (Bolívar)</option>
-                            <option value="turbana">Turbaná (Bolívar)</option>
-                            <option value="clemencia">Clemencia (Bolívar)</option>
-                            <option value="santa_rosa">Santa Rosa (Bolívar)</option>
-                            <option value="el_carmen_de_bolivar">El Carmen de Bolívar</option>
-                            <option value="magangue">Magangué (Bolívar)</option>
-                            <option value="mompox">Mompox (Bolívar)</option>
-                        </optgroup>
-                        <optgroup label="Otras ciudades">
-                            <option value="armenia">Armenia (Quindío)</option>
-                            <option value="barichara">Barichara (Santander)</option>
-                            <option value="barranquilla">Barranquilla (Atlántico)</option>
-                            <option value="bello">Bello (Antioquia)</option>
-                            <option value="bogota">Bogotá D.C.</option>
-                            <option value="bucaramanga">Bucaramanga (Santander)</option>
-                            <option value="cali">Cali (Valle del Cauca)</option>
-                            <option value="chia">Chía (Cundinamarca)</option>
-                            <option value="cucuta">Cúcuta (Norte de Santander)</option>
-                            <option value="dosquebradas">Dosquebradas (Risaralda)</option>
-                            <option value="envigado">Envigado (Antioquia)</option>
-                            <option value="facatativa">Facatativá (Cundinamarca)</option>
-                            <option value="florencia">Florencia (Caquetá)</option>
-                            <option value="funza">Funza (Cundinamarca)</option>
-                            <option value="ibague">Ibagué (Tolima)</option>
-                            <option value="itagui">Itagüí (Antioquia)</option>
-                            <option value="jamundi">Jamundí (Valle del Cauca)</option>
-                            <option value="manizales">Manizales (Caldas)</option>
-                            <option value="medellin">Medellín (Antioquia)</option>
-                            <option value="mocoa">Mocoa (Putumayo)</option>
-                            <option value="monteria">Montería (Córdoba)</option>
-                            <option value="mosquera">Mosquera (Cundinamarca)</option>
-                            <option value="neiva">Neiva (Huila)</option>
-                            <option value="palmira">Palmira (Valle del Cauca)</option>
-                            <option value="pasto">Pasto (Nariño)</option>
-                            <option value="pereira">Pereira (Risaralda)</option>
-                            <option value="popayan">Popayán (Cauca)</option>
-                            <option value="quibdo">Quibdó (Chocó)</option>
-                            <option value="riohacha">Riohacha (La Guajira)</option>
-                            <option value="sabaneta">Sabaneta (Antioquia)</option>
-                            <option value="santa_marta">Santa Marta (Magdalena)</option>
-                            <option value="sincelejo">Sincelejo (Sucre)</option>
-                            <option value="soledad">Soledad (Atlántico)</option>
-                            <option value="tunja">Tunja (Boyacá)</option>
-                            <option value="valledupar">Valledupar (Cesar)</option>
-                            <option value="villavicencio">Villavicencio (Meta)</option>
-                            <option value="yopal">Yopal (Casanare)</option>
-                            <option value="zipaquira">Zipaquirá (Cundinamarca)</option>
-                        </optgroup>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="modality-select" class="sr-only">Modalidad</label>
-                    <select id="modality-select" class="filter-select" data-lista data-icono="desktop" data-todas="Cualquier modalidad">
-                        <option value="">Modalidad</option>
-                        <option value="presencial" data-icono="building">Presencial</option>
-                        <option value="virtual" data-icono="home">Remoto (desde casa)</option>
-                        <option value="hibrida" data-icono="refresh">Híbrida</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="experience-select" class="sr-only">Experiencia</label>
-                    <select id="experience-select" class="filter-select" data-lista data-icono="trending" data-todas="Cualquier experiencia">
-                        <option value="">Experiencia</option>
-                        <option value="junior" data-icono="sprout">Hasta 1 año</option>
-                        <option value="mid" data-icono="trending">De 1 a 3 años</option>
-                        <option value="senior" data-icono="star">Más de 3 años</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="salary-select" class="sr-only">Salario</label>
-                    <select id="salary-select" class="filter-select" data-lista data-icono="money" data-todas="Cualquier salario">
-                        <option value="">Salario</option>
-                        <option value="0-1000">Hasta $1 millón</option>
-                        <option value="1000-2000">De $1 a $2 millones</option>
-                        <option value="2000-3000">De $2 a $3 millones</option>
-                        <option value="3000-5000">De $3 a $5 millones</option>
-                        <option value="5000+">Más de $5 millones</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CONTENEDOR DE RESULTADOS DE BÚSQUEDA -->
+    <!-- Resultados de la busqueda del hero -->
     <section id="results-container" class="results-section hidden">
         <div class="container">
             <!-- Los resultados se renderizarán aquí dinámicamente -->
         </div>
     </section>
 
-    <!-- ESTADÍSTICAS IMPACTANTES -->
-    <section class="impact-stats">
+    <!-- 02. Oportunidades destacadas: las vacantes abiertas mas cercanas (vacantes-cerca.js).
+         La ubicacion se pide solo al tocar "Usar mi ubicacion" y no sale del navegador; sin
+         ella se usa la ciudad elegida, la del perfil o Cartagena. Las empresas no la ven -->
+    <section class="cerca-section destacadas" id="cerca" aria-labelledby="cerca-titulo">
         <div class="container">
-            <div class="stat-box">
-                <div class="stat-value" id="stat-users">—</div>
-                <div class="stat-label">Personas registradas</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value" id="stat-companies">—</div>
-                <div class="stat-label">Empresas registradas</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value" id="stat-jobs">—</div>
-                <div class="stat-label">Vacantes publicadas</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value" id="stat-applications">—</div>
-                <div class="stat-label">Postulaciones enviadas</div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Fase 2 del plan: scroll-telling. Al bajar, cada paso enciende su escena
-         en la columna fija (index.js). Sin JavaScript se leen los 4 pasos. -->
-    <section class="features como-funciona" id="como-funciona" aria-labelledby="cf-titulo">
-        <div class="container">
-            <div class="section-header-center">
-                <h2 class="section-title-large" id="cf-titulo">¿Cómo funciona?</h2>
-                <p>Cuatro pasos entre tu perfil y tu próximo trabajo en Cartagena.</p>
-            </div>
-
-            <div class="cf-layout" data-escena="1">
-                <div class="cf-visual" aria-hidden="true">
-                    <div class="cf-escenario">
-                        <!-- 1. Creas tu perfil -->
-                        <div class="cf-escena" data-escena="1">
-                            <div class="cf-perfil">
-                                <div class="cf-avatar">TÚ</div>
-                                <div class="cf-lineas"><span></span><span></span></div>
-                            </div>
-                            <div class="cf-chips"><span>Atención al cliente</span><span>Inglés B1</span><span>Excel</span><span>Trabajo en equipo</span></div>
-                        </div>
-                        <!-- 2. Te comparamos -->
-                        <div class="cf-escena" data-escena="2">
-                            <div class="cf-comparacion"><span class="cf-etiqueta">Recepcionista bilingüe</span><span class="cf-barra" style="--v:.92"></span></div>
-                            <div class="cf-comparacion"><span class="cf-etiqueta">Práctica en contabilidad</span><span class="cf-barra" style="--v:.74"></span></div>
-                            <div class="cf-comparacion"><span class="cf-etiqueta">Auxiliar de bodega</span><span class="cf-barra" style="--v:.51"></span></div>
-                        </div>
-                        <!-- 3. Ves tu compatibilidad -->
-                        <div class="cf-escena" data-escena="3">
-                            <div class="cf-match">
-                                <div class="match-ring cf-anillo" data-pct="80"></div>
-                                <div>
-                                    <strong>Recepcionista bilingüe</strong>
-                                    <p>Coincides en 4 de 5 requisitos. Te falta Inglés.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- 4. Te contactan -->
-                        <div class="cf-escena" data-escena="4">
-                            <div class="cf-aviso">
-                                <div class="cf-aviso-icono"><i data-ico="calendar"></i></div>
-                                <div>
-                                    <strong>El hotel quiere entrevistarte</strong>
-                                    <p>Jueves, 10:00 a. m. · Cartagena</p>
-                                </div>
-                            </div>
-                        </div>
+            <div class="destacadas-cabeza" data-revelar>
+                <div>
+                    <h2 id="cerca-titulo">Oportunidades destacadas cerca de ti</h2>
+                    <p id="cercaFrase" aria-live="polite">Las vacantes abiertas más cercanas, de la más cerca a la más lejos.</p>
+                </div>
+                <div class="cerca-controles">
+                    <button type="button" class="btn btn-secondary btn-small cerca-ubicacion" id="cercaUbicacion" hidden>
+                        <i data-ico="pin"></i> <span>Usar mi ubicación</span>
+                    </button>
+                    <div class="cerca-ciudad">
+                        <label for="cercaCiudad" class="sr-only">Tu ciudad</label>
+                        <select id="cercaCiudad" class="filter-select" data-lista="buscable" data-icono="pin"
+                                data-placeholder="Tu ciudad" data-vacio="Revisa cómo se escribe o prueba con otra ciudad."></select>
                     </div>
                 </div>
-
-                <ol class="cf-pasos">
-                    <li class="cf-paso" data-paso="1">
-                        <span class="cf-num">01</span>
-                        <h3>Creas tu perfil</h3>
-                        <p>Registra tu experiencia, tus estudios y lo que sabes hacer: atender clientes, manejar caja, cocinar, llevar la contabilidad, conducir o programar.</p>
-                    </li>
-                    <li class="cf-paso" data-paso="2">
-                        <span class="cf-num">02</span>
-                        <h3>Te comparamos</h3>
-                        <p>Empresas de Cartagena publican empleos, prácticas y trabajos independientes en turismo, comercio, logística, salud, construcción, tecnología y más. Cada vacante se compara con tu perfil.</p>
-                    </li>
-                    <li class="cf-paso" data-paso="3">
-                        <span class="cf-num">03</span>
-                        <h3>Ves tu compatibilidad</h3>
-                        <p>Cada vacante te dice qué parte de lo que pide ya tienes y qué te falta para llegar.</p>
-                    </li>
-                    <li class="cf-paso" data-paso="4">
-                        <span class="cf-num">04</span>
-                        <h3>Te contactan</h3>
-                        <p>Te postulas a las que más te convienen, con un mensaje para la empresa. Ella ve tu perfil completo y, si le interesas, te escribe por SkillMatch.</p>
-                    </li>
-                </ol>
             </div>
-        </div>
-    </section>
-
-    <section class="benefits-section" id="beneficios">
-        <div class="container">
-            <div class="why-header">
-                <h2>¿Por qué SkillMatch?</h2>
-                <p>Una bolsa de empleo hecha para la ciudad: vacantes reales, personas de aquí y procesos simples.</p>
-            </div>
-            <div class="why-grid">
-                <div class="benefit-item">
-                    <div class="benefit-badge"><i data-ico="target"></i></div>
-                    <h3>Compatibilidad clara</h3>
-                    <ul>
-                        <li>Ves qué tanto encajas en cada vacante</li>
-                        <li>Sabes qué habilidades te faltan</li>
-                        <li>Vacantes ordenadas para ti</li>
-                    </ul>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-badge"><i data-ico="globe"></i></div>
-                    <h3>Hecho para Cartagena</h3>
-                    <ul>
-                        <li>Empresas de tu ciudad y la región</li>
-                        <li>Todos los sectores y oficios</li>
-                        <li>Más visibilidad para tu perfil</li>
-                    </ul>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-badge"><i data-ico="settings"></i></div>
-                    <h3>Proceso simple</h3>
-                    <ul>
-                        <li>Postularte toma un minuto</li>
-                        <li>Sigues el estado de cada postulación</li>
-                        <li>Hablas con las empresas por mensajes</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Vacantes cerca de ti (vacantes-cerca.js): las vacantes abiertas mas cercanas a la persona, en lugar
-         de las fotos y el mapa de Cartagena. La ubicacion se pide solo al tocar "Usar mi ubicacion" y no sale
-         del navegador; sin ella se usa la ciudad elegida, la del perfil o Cartagena. Las empresas no la ven -->
-    <section class="cerca-section" id="cerca" aria-labelledby="cerca-titulo">
-        <div class="container">
-            <div class="section-header-center">
-                <h2 id="cerca-titulo">Vacantes cerca de ti</h2>
-                <p id="cercaFrase" aria-live="polite">Las vacantes abiertas más cercanas, de la más cerca a la más lejos.</p>
-            </div>
-            <div class="cerca-controles">
-                <button type="button" class="btn btn-primary cerca-ubicacion" id="cercaUbicacion" hidden>
-                    <i data-ico="pin"></i> <span>Usar mi ubicación</span>
-                </button>
-                <div class="cerca-ciudad">
-                    <label for="cercaCiudad" class="sr-only">Tu ciudad</label>
-                    <select id="cercaCiudad" class="filter-select" data-lista="buscable" data-icono="pin"
-                            data-placeholder="Tu ciudad" data-vacio="Revisa cómo se escribe o prueba con otra ciudad."></select>
-                </div>
-            </div>
+            <!-- "Vista de ejemplo": vacantes-cerca.js lo muestra si llegan datos de muestra -->
+            <p class="aviso-ejemplo" id="cercaEjemplo" hidden></p>
             <div class="cerca-lista" id="cercaCargando"></div>
-            <ul class="cerca-lista" id="cercaLista" hidden></ul>
+            <ul class="cerca-lista" id="cercaLista" data-revelar-hijos hidden></ul>
             <div class="cerca-vacio" id="cercaVacio" hidden></div>
             <p class="cerca-pie">
                 <a href="oportunidades.html" class="link-view-all">Ver todas las vacantes <i data-ico="arrow" class="ico-sm"></i></a>
@@ -404,133 +248,120 @@
         </div>
     </section>
 
-    <section class="usuarios-empresas" id="usuarios-empresas">
+    <!-- 03. Los dos publicos (antes "¿Por qué SkillMatch?" y dos tarjetas planas):
+         un selector cambia el contenido con una transicion (index.js) -->
+    <section class="publicos-section" id="publicos" aria-labelledby="publicos-titulo">
         <div class="container">
             <div class="section-header-center">
-                <h2>Elige cómo quieres usar SkillMatch</h2>
-                <p>Si buscas trabajo, armas tu perfil y te postulas. Si eres empresa, publicas vacantes y encuentras a quién contratar.</p>
+                <h2 id="publicos-titulo">Hecho para quien busca y para quien contrata</h2>
             </div>
-
-            <div class="pathways">
-                <div class="pathway-card usuario">
-                    <div class="pathway-header">
-                        <div class="pathway-icon"><i data-ico="user"></i></div>
-                        <div>
-                            <h3>Si buscas trabajo</h3>
-                            <p>Arma tu perfil con lo que sabes hacer y postúlate a vacantes reales.</p>
-                        </div>
-                    </div>
-                    <ul class="pathway-features">
-                        <li><i data-ico="check"></i> Perfil con tus habilidades y experiencia</li>
-                        <li><i data-ico="check"></i> Vacantes ordenadas según tus habilidades</li>
-                        <li><i data-ico="check"></i> Seguimiento de tus postulaciones</li>
-                    </ul>
-                    <a href="registro-usuario.html" class="btn btn-primary">Crear mi perfil <i data-ico="arrow"></i></a>
+            <div class="publicos" data-revelar>
+                <div class="publicos-selector" role="tablist" aria-label="¿Quién eres?">
+                    <button type="button" role="tab" id="tabPersona" aria-selected="true" aria-controls="panelPersona">Busco trabajo</button>
+                    <button type="button" role="tab" id="tabEmpresa" aria-selected="false" aria-controls="panelEmpresa" tabindex="-1">Soy empresa</button>
                 </div>
-
-                <div class="pathway-card empresa">
-                    <div class="pathway-header">
-                        <div class="pathway-icon"><i data-ico="building"></i></div>
-                        <div>
-                            <h3>Si eres empresa</h3>
-                            <p>Publica tus vacantes y recibe postulaciones de personas de la región.</p>
+                <div class="publico-panel" role="tabpanel" id="panelPersona" aria-labelledby="tabPersona">
+                    <div class="publico-texto">
+                        <h3>Sabes qué tanto encajas antes de postularte</h3>
+                        <ul class="publico-puntos">
+                            <li><i data-ico="target"></i> <span>Cada vacante te dice qué parte de lo que pide ya tienes y qué te falta.</span></li>
+                            <li><i data-ico="pin"></i> <span>Empleos, prácticas y trabajos independientes de Cartagena y la región, en todos los sectores.</span></li>
+                            <li><i data-ico="send"></i> <span>Te postulas en un minuto y sigues el estado de cada postulación.</span></li>
+                            <li><i data-ico="chat"></i> <span>Hablas con las empresas por mensajes, sin dar tu número.</span></li>
+                        </ul>
+                        <div class="publico-acciones">
+                            <a href="registro-usuario.html" class="btn btn-primary">Crear mi perfil <i data-ico="arrow"></i></a>
+                            <a href="login.html" class="btn-enlace-fuerte">Ya tengo cuenta</a>
                         </div>
                     </div>
-                    <ul class="pathway-features">
-                        <li><i data-ico="check"></i> Personas de Cartagena y la región</li>
-                        <li><i data-ico="check"></i> Postulaciones con el perfil de cada candidato</li>
-                        <li><i data-ico="check"></i> Gestión simple de ofertas y candidatos</li>
-                    </ul>
-                    <a href="login-empresa.html" class="btn btn-primary">Publicar mis vacantes <i data-ico="arrow"></i></a>
+                </div>
+                <div class="publico-panel" role="tabpanel" id="panelEmpresa" aria-labelledby="tabEmpresa" hidden>
+                    <div class="publico-texto">
+                        <h3>Encuentra a quién contratar en la región</h3>
+                        <ul class="publico-puntos">
+                            <li><i data-ico="briefcase"></i> <span>Publicas tus vacantes gratis y las cierras cuando quieras.</span></li>
+                            <li><i data-ico="users"></i> <span>Ves a cada candidato con su perfil y su compatibilidad con lo que pides.</span></li>
+                            <li><i data-ico="list"></i> <span>Revisas, aceptas o descartas postulaciones desde un solo lugar.</span></li>
+                            <li><i data-ico="chat"></i> <span>Escribes a las personas que te interesan por SkillMatch.</span></li>
+                        </ul>
+                        <div class="publico-acciones">
+                            <a href="registro-empresa.html" class="btn btn-primary">Crear cuenta de empresa <i data-ico="arrow"></i></a>
+                            <a href="login.html?tipo=empresa" class="btn-enlace-fuerte">Ya tengo cuenta</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="innovation-section" id="innovacion">
+    <!-- 04. Como funciona: 3 pasos, una frase cada uno. En escritorio son pestanas
+         con su escena al lado; en el celular, una lista corta. Nada avanza solo. -->
+    <section class="como-funciona" id="como-funciona" aria-labelledby="cf-titulo">
         <div class="container">
-            <div class="innovation-header">
-                <h2>Lo que viene</h2>
-                <p>Ideas en las que estamos trabajando para ayudarte más.</p>
+            <div class="section-header-center">
+                <h2 id="cf-titulo">Cómo funciona</h2>
+                <p>Tres pasos entre tu perfil y tu próximo trabajo.</p>
             </div>
-
-            <div class="roadmap-grid">
-                <article class="roadmap-card">
-                    <div class="roadmap-header">
-                        <div class="roadmap-icon"><i data-ico="chat"></i></div>
-                        <div class="roadmap-title">
-                            <h3>Práctica de entrevistas</h3>
-                            <span class="status-badge status-building">En desarrollo</span>
+            <div class="cf-layout" data-escena="1" data-revelar>
+                <div class="cf-pasos" role="tablist" aria-label="Pasos">
+                    <button type="button" class="cf-paso is-activo" role="tab" id="cfPaso1" aria-selected="true" aria-controls="cfEscena1" data-paso="1">
+                        <span class="cf-num">01</span>
+                        <span class="cf-paso-titulo">Completa tu perfil</span>
+                        <span class="cf-paso-texto">Agrega lo que sabes hacer, tu experiencia y tus estudios.</span>
+                    </button>
+                    <button type="button" class="cf-paso" role="tab" id="cfPaso2" aria-selected="false" aria-controls="cfEscena2" data-paso="2" tabindex="-1">
+                        <span class="cf-num">02</span>
+                        <span class="cf-paso-titulo">Compara vacantes</span>
+                        <span class="cf-paso-texto">Cada vacante te muestra qué tanto encajas y qué te falta.</span>
+                    </button>
+                    <button type="button" class="cf-paso" role="tab" id="cfPaso3" aria-selected="false" aria-controls="cfEscena3" data-paso="3" tabindex="-1">
+                        <span class="cf-num">03</span>
+                        <span class="cf-paso-titulo">Postúlate y sigue el proceso</span>
+                        <span class="cf-paso-texto">Envía tu postulación y mira cuándo la revisan y qué responden.</span>
+                    </button>
+                </div>
+                <div class="cf-visual">
+                    <div class="cf-escenario">
+                        <div class="cf-escena" data-escena="1" role="tabpanel" id="cfEscena1" aria-labelledby="cfPaso1">
+                            <div class="cf-perfil" aria-hidden="true">
+                                <div class="cf-avatar">TÚ</div>
+                                <div class="cf-lineas"><span></span><span></span></div>
+                            </div>
+                            <div class="cf-chips"><span>Atención al cliente</span><span>Inglés B1</span><span>Excel</span><span>Trabajo en equipo</span></div>
+                        </div>
+                        <div class="cf-escena" data-escena="2" role="tabpanel" id="cfEscena2" aria-labelledby="cfPaso2" hidden>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Recepcionista bilingüe · 92 %</span><span class="cf-barra" style="--v:.92"></span></div>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Práctica en contabilidad · 74 %</span><span class="cf-barra" style="--v:.74"></span></div>
+                            <div class="cf-comparacion"><span class="cf-etiqueta">Auxiliar de bodega · 51 %</span><span class="cf-barra" style="--v:.51"></span></div>
+                        </div>
+                        <div class="cf-escena" data-escena="3" role="tabpanel" id="cfEscena3" aria-labelledby="cfPaso3" hidden>
+                            <div class="cf-aviso">
+                                <div class="cf-aviso-icono"><i data-ico="check"></i></div>
+                                <div>
+                                    <strong>Tu postulación fue revisada</strong>
+                                    <p>Enviada · Revisada · Respuesta</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <p>Ensaya entrevistas y recibe recomendaciones para mejorar.</p>
-                    <ul class="roadmap-points">
-                        <li>Preguntas según el cargo y tu experiencia</li>
-                        <li>Seguimiento de tu progreso</li>
-                        <li>Informe para descargar</li>
-                    </ul>
-                </article>
-
-                <article class="roadmap-card">
-                    <div class="roadmap-header">
-                        <div class="roadmap-icon"><i data-ico="chart"></i></div>
-                        <div class="roadmap-title">
-                            <h3>Lo que pide la ciudad</h3>
-                            <span class="status-badge status-planned">Próximo</span>
-                        </div>
-                    </div>
-                    <p>Te dice qué habilidades buscan más las empresas de Cartagena.</p>
-                    <ul class="roadmap-points">
-                        <li>Oficios y cargos más pedidos</li>
-                        <li>Cursos sugeridos para aprenderlas</li>
-                        <li>Avisos cuando algo cambie</li>
-                    </ul>
-                </article>
-
-                <article class="roadmap-card">
-                    <div class="roadmap-header">
-                        <div class="roadmap-icon"><i data-ico="trophy"></i></div>
-                        <div class="roadmap-title">
-                            <h3>Referencias verificadas</h3>
-                            <span class="status-badge status-idea">Idea</span>
-                        </div>
-                    </div>
-                    <p>Recomendaciones de jefes y clientes anteriores en tu perfil.</p>
-                    <ul class="roadmap-points">
-                        <li>Insignias por trabajos bien hechos</li>
-                        <li>Calificaciones claras y justas</li>
-                        <li>Logros comprobados</li>
-                    </ul>
-                </article>
-
-                <article class="roadmap-card">
-                    <div class="roadmap-header">
-                        <div class="roadmap-icon"><i data-ico="handshake"></i></div>
-                        <div class="roadmap-title">
-                            <h3>Acompañamiento</h3>
-                            <span class="status-badge status-planned">Próximo</span>
-                        </div>
-                    </div>
-                    <p>Personas con experiencia en tu oficio te orientan.</p>
-                    <ul class="roadmap-points">
-                        <li>Te unimos con alguien de tu área</li>
-                        <li>Encuentros con temas y materiales</li>
-                        <li>Seguimiento de tus avances</li>
-                    </ul>
-                </article>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Llamada final (Fase 2): franja oscura que continua en el pie de pagina -->
+    <!-- 05. Testimonios: solo con comentarios reales (por ejemplo, de quienes lo prueben
+         en la Expoferia). Todavia no hay, asi que la seccion no se pone. -->
+
+    <!-- 06. Llamado final -->
     <section class="cta-final" aria-labelledby="cta-final-titulo">
         <div class="container">
-            <h2 id="cta-final-titulo">Tu próximo paso en Cartagena empieza hoy</h2>
-            <p>Crea tu perfil, descubre qué tan cerca estás de cada vacante y postúlate a las que más te convienen.</p>
+            <h2 id="cta-final-titulo">Tu próximo trabajo en Cartagena empieza con tu perfil</h2>
+            <p>Crearlo es gratis y toma unos minutos.</p>
             <div class="cta-final-acciones">
-                <a href="seleccionar-registro.html" class="btn btn-accent">Crear mi perfil</a>
-                <a href="login-empresa.html" class="btn btn-secondary">Soy empresa</a>
+                <a href="registro-usuario.html" class="btn btn-accent">Crear mi perfil</a>
+                <a href="registro-empresa.html" class="btn btn-secondary">Crear cuenta de empresa</a>
             </div>
+            <p class="cta-final-entrar">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
         </div>
     </section>
 

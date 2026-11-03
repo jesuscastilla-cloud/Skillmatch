@@ -11,7 +11,7 @@ function sanitize(text) {
 
 document.addEventListener('DOMContentLoaded', function() {
     if (!isAuthenticated()) {
-        window.location.href = 'login-empresa.html';
+        window.location.href = 'login.html?tipo=empresa';
         return;
     }
     loadCompanyData();
@@ -41,7 +41,7 @@ function loadCompanyData() {
 
     if (!localStorage.getItem('userData')) {
         alert('Debes iniciar sesión para ver esta página');
-        window.location.href = 'login-empresa.html';
+        window.location.href = 'login.html?tipo=empresa';
         return;
     }
 
@@ -852,8 +852,7 @@ async function guardarDatosEmpresa() {
     problema('');
 
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    const boton = document.getElementById('modalSaveBtn');
-    boton.disabled = true;
+    const listo = SkillMatchUI.guardando(document.getElementById('modalSaveBtn'));
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/companies/${encodeURIComponent(userData.companyId)}`, {
             method: 'PATCH',
@@ -861,17 +860,17 @@ async function guardarDatosEmpresa() {
         });
         const cuerpo = await response.json().catch(() => ({}));
         if (!response.ok) {
-            boton.disabled = false;
-            return problema(cuerpo.message || 'No se pudieron guardar los datos. Intenta de nuevo.');
+            listo();
+            return problema(cuerpo.message || 'No pudimos guardar los datos. Intenta de nuevo.');
         }
         // El nombre de la cuenta (barra de arriba, mensajes) es el de la empresa
         saveUserData({ ...userData, firstName: cuerpo.name });
         closeModal(true);
-        showNotification('Listo: los datos de la empresa quedaron guardados.');
+        SkillMatchUI.guardado('Datos de la empresa guardados');
         loadCompanyData();
     } catch (e) {
-        boton.disabled = false;
-        problema('No pudimos conectar con SkillMatch. Revisa tu conexión e intenta de nuevo.');
+        listo();
+        problema('No pudimos guardar. Revisa tu conexión e intenta de nuevo.');
     }
 }
 
@@ -887,17 +886,13 @@ function openEditAboutModal() {
         </div>
     `, () => {
         const newText = document.getElementById('editAboutText').value.trim();
-        if (!newText) {
-            alert('La descripción no puede estar vacía');
-            return;
-        }
-        
+        const ventana = document.getElementById('editAboutText').closest('.modal');
+        if (!newText) return SkillMatchUI.errorEnFormulario(ventana, 'Escribe la descripción de tu empresa.', 'editAboutText');
+
         const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
-        if (!userData.companyId) {
-            alert('Error: No se encontró información de sesión');
-            return;
-        }
+        if (!userData.companyId) return SkillMatchUI.errorEnFormulario(ventana, 'Tu sesión se cerró. Vuelve a iniciar sesión.');
+        const listo = SkillMatchUI.guardando(document.getElementById('modalSaveBtn'));
         
         // Actualizar en el backend con PATCH para actualización parcial
         fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}/description`, {
@@ -928,11 +923,13 @@ function openEditAboutModal() {
             currentCompanyData.description = newText;
             actualizarPaso('descripcion', !!newText);
             
-            showNotification('Descripción actualizada correctamente');
+            listo();
+            SkillMatchUI.guardado('Descripción guardada');
             closeModal(true);
         })
         .catch(error => {
-            alert(`Error al guardar la descripción: ${error.message}`);
+            listo();
+            SkillMatchUI.errorEnFormulario(ventana, error instanceof TypeError ? 'No pudimos guardar. Revisa tu conexión e intenta de nuevo.' : error.message);
         });
     });
 }
@@ -1047,7 +1044,7 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
             if (!respuesta.ok) throw new Error();
             oferta = await respuesta.json();
         } catch (error) {
-            alert('No pudimos cargar la oferta para editarla. Intenta de nuevo.');
+            SkillMatchUI.noSeGuardo('No pudimos abrir la vacante para editarla. Revisa tu conexión e intenta de nuevo.', () => openNewOfferModal(existingOffer, offerId));
             return;
         }
     }
@@ -1294,8 +1291,7 @@ async function guardarOferta(isEdit, offerId) {
         expirationDate: fecha + 'T23:59:59'
     };
 
-    const boton = document.getElementById('modalSaveBtn');
-    boton.disabled = true;
+    const listo = SkillMatchUI.guardando(document.getElementById('modalSaveBtn'), isEdit ? 'Guardando…' : 'Publicando…');
     try {
         const respuesta = await fetchWithAuth(isEdit ? `${API_BASE_URL}/jobs/${offerId}` : `${API_BASE_URL}/jobs`, {
             method: isEdit ? 'PUT' : 'POST',
@@ -1305,15 +1301,16 @@ async function guardarOferta(isEdit, offerId) {
             const cuerpo = await respuesta.json().catch(() => ({}));
             throw new Error(cuerpo.message || 'El servidor no aceptó la oferta.');
         }
+        listo();
         closeModal(true);
-        showNotification(isEdit ? 'Oferta actualizada' : 'Oferta publicada');
+        SkillMatchUI.guardado(isEdit ? 'Vacante guardada' : 'Vacante publicada');
         // La lista y las cifras se recargan del servidor (antes se armaba a mano
         // y salían fechas "1969" y el tipo en minúscula)
         loadOffers();
         loadActivityStats();
     } catch (e) {
-        error('No se pudo guardar la oferta: ' + e.message);
-        boton.disabled = false;
+        error(e instanceof TypeError ? 'No pudimos guardar. Revisa tu conexión e intenta de nuevo.' : 'No pudimos guardar la vacante: ' + e.message);
+        listo();
     }
 }
 
@@ -1416,7 +1413,7 @@ async function updateCandidateStatus(applicationId, newStatus, offerId) {
         );
 
         if (response.ok) {
-            showNotification(`Candidato ${newStatus === 'aceptada' ? 'aceptado' : 'rechazado'} exitosamente`);
+            SkillMatchUI.guardado(`Candidato ${newStatus === 'aceptada' ? 'aceptado' : 'rechazado'}`);
             const offer = currentOffers.find(o => o.id === offerId);
             if (offer) {
                 setTimeout(() => showCandidatesModal(offer), 500);
@@ -1426,7 +1423,7 @@ async function updateCandidateStatus(applicationId, newStatus, offerId) {
             throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        alert('Error al actualizar el estado del candidato: ' + error.message);
+        SkillMatchUI.noSeGuardo('No pudimos guardar tu respuesta al candidato. ' + (error instanceof TypeError ? 'Revisa tu conexión e intenta de nuevo.' : error.message), () => updateCandidateStatus(applicationId, newStatus, offerId));
     }
 }
 
@@ -1852,7 +1849,7 @@ async function updateApplicationStatus(applicationId, newStatus) {
             throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        alert('Error al actualizar el estado de la postulación: ' + error.message);
+        SkillMatchUI.noSeGuardo('No pudimos guardar el estado de la postulación. ' + (error instanceof TypeError ? 'Revisa tu conexión e intenta de nuevo.' : error.message), () => updateApplicationStatus(applicationId, newStatus));
     }
 }
 
