@@ -134,7 +134,7 @@ test.describe('panel del perfil', () => {
 test.describe('vidrio', () => {
     const visibles = '[...document.querySelectorAll(".fondo-vivo > span")].filter(m => getComputedStyle(m).display !== "none")';
 
-    test('el fondo: manchas de la marca quietas (nada se mueve sin que la persona lo pida)', async ({ page, context, api }, info) => {
+    test('el fondo vivo: manchas de la marca que se mueven solo con transform y arrancan donde las deja la hora', async ({ page, context, api }, info) => {
         await entrarComo(context, 'persona');
         await page.goto('perfil-usuario.html');
         await expect(page.locator('body')).toHaveClass(/pagina-vidrio/);
@@ -152,8 +152,7 @@ test.describe('vidrio', () => {
                 conLaHora: reloj > 0 && manchas.every(m => Math.abs(parseFloat(getComputedStyle(m).animationDelay) * 1000 + reloj) < 100)
             };
         }, visibles);
-        expect(fondo).toMatchObject({ fijo: 'fixed', detras: '-1', manchas: info.project.name === 'celular' ? 3 : 5 });
-        expect(await page.evaluate(visibles => eval(visibles).every(m => !m.getAnimations().length), visibles), 'quietas').toBe(true);
+        expect(fondo).toEqual({ fijo: 'fixed', detras: '-1', manchas: info.project.name === 'celular' ? 3 : 5, andando: true, soloTransform: true, conLaHora: true });
     });
 
     test('tarjetas de vidrio de tinte (sin desenfoque, sobre las manchas no se nota) y vidrio real en la barra y el menú "Más"', async ({ page, context, api }) => {
@@ -169,11 +168,14 @@ test.describe('vidrio', () => {
     });
 
     // Sin pausa con una ventana abierta: la regla :has() que lo hacia frenaba Inicio en celulares lentos
-    test('el fondo se va con alto contraste o menos transparencia', async ({ page, context, api }) => {
+    test('el fondo queda quieto con movimiento reducido y se va con alto contraste o menos transparencia', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('perfil-usuario.html');
-        await expect(page.locator('.fondo-vivo')).toBeVisible();
-        await page.emulateMedia({ forcedColors: 'active' });
+        const estados = () => page.evaluate(visibles => [...new Set(eval(visibles).map(m => (m.getAnimations()[0] || {}).playState || 'quieta'))], visibles);
+        await expect.poll(estados).toEqual(['running']);
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await expect.poll(estados).toEqual(['quieta']);
+        await page.emulateMedia({ reducedMotion: null, forcedColors: 'active' });
         await expect(page.locator('.fondo-vivo')).toBeHidden();
         await page.emulateMedia({ forcedColors: null });
         const cdp = await context.newCDPSession(page);

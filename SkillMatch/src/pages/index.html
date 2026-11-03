@@ -65,7 +65,16 @@
         <div class="container">
             <div class="hero-grid">
                 <div class="hero-copy">
-                    <h1 class="hero-titular">Encuentra oportunidades que encajan con lo que sabes hacer</h1>
+                    <!-- Titular palabra por palabra; la palabra clave rota (index.js) y la que
+                         sale se deshace en esporas. El lector de pantalla lee el aria-label. -->
+                    <h1 class="hero-titular" aria-label="Encuentra el trabajo, la práctica o el proyecto que encaja con lo que sabes hacer">
+                        <span aria-hidden="true">Encuentra</span>
+                        <span class="hero-rotador" aria-hidden="true"><span class="hero-clave is-activa">el trabajo</span><span class="hero-clave">la práctica</span><span class="hero-clave">el proyecto</span></span>
+                        <span aria-hidden="true">que</span>
+                        <span aria-hidden="true">encaja</span>
+                        <span aria-hidden="true">con lo que</span>
+                        <span aria-hidden="true">sabes hacer</span>
+                    </h1>
                     <p>SkillMatch compara tus habilidades con cada vacante de Cartagena y te dice qué tan cerca estás, antes de que te postules.</p>
 
                     <!-- Busqueda compacta dentro del hero. Sin JavaScript igual lleva a Vacantes
@@ -196,6 +205,8 @@
                 </div>
             </div>
         </div>
+        <!-- Separador en forma de ola que se desplaza lento -->
+        <div class="hero-ola" aria-hidden="true"></div>
     </section>
 
     <!-- Resultados de la busqueda del hero -->

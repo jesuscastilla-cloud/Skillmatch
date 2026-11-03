@@ -9,9 +9,9 @@ test.describe('portada', () => {
         await expect(page.locator('[data-stat]')).toHaveCount(3);
         await expect(page.locator('.impact-stats, .innovation-section, .benefits-section')).toHaveCount(0);
         await expect(page.locator('[data-stat="jobs"]')).toHaveText('9');
-        await expect(page.locator('h1.hero-titular')).toHaveText('Encuentra oportunidades que encajan con lo que sabes hacer');
-        // La palabra que cambiaba sola ya no esta: nada se mueve sin que la persona lo pida
-        await expect(page.locator('.hero-rotador')).toHaveCount(0);
+        // El titular rota: el trabajo, la práctica o el proyecto (el lector de pantalla lee la frase entera)
+        await expect(page.locator('h1.hero-titular')).toHaveAttribute('aria-label', 'Encuentra el trabajo, la práctica o el proyecto que encaja con lo que sabes hacer');
+        await expect(page.locator('.hero-rotador .hero-clave')).toHaveCount(3);
     });
 
     test('las destacadas: cargo, empresa, datos y acciones; postularse pide sesión', async ({ page, context, api }) => {

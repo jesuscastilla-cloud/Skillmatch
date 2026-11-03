@@ -6967,15 +6967,8 @@ body > header, [data-theme="dark"] body > header {
    Va al final para ganarle a lo anterior sin !important.
    ===================================================================== */
 
-/* ---- Sin movimiento automatico: todo lo que se mueve lo pide la persona ----
-   Las manchas del fondo, los resplandores del hero, de la llamada final y
-   del pie, y la ola del pie quedan quietos. Las entradas al aparecer y las
-   respuestas al pasar el mouse o tocar siguen igual. */
-.fondo-vivo > span,
-.hero::before, .hero::after,
-.cta-final::before, .cta-final::after,
-footer.pie::before,
-.pie-ola { animation: none; }
+/* (Las manchas del fondo, los resplandores y las olas siguen moviendose: a Jesus
+   le gustan. Con "reducir movimiento" se quedan quietas, como siempre.) */
 
 /* ---- Botones ocupados: "Guardando…" con un indicador (SkillMatchUI.guardando) ---- */
 .girando {
@@ -7096,7 +7089,6 @@ footer.pie { padding-bottom: var(--s5); }
 /* 01. Hero: titular corto, busqueda dentro y la tarjeta del match al centro */
 .hero { padding: var(--s8) 0 var(--s8); }
 .hero h1.hero-titular { font-size: clamp(2.1rem, 1.2rem + 3.2vw, 3.5rem); max-width: 15ch; line-height: 1.05; }
-.hero-titular > * { animation: none; }
 .hero-buscar { margin-top: var(--s6); max-width: 640px; }
 .hero-buscar .search-box { position: relative; max-width: none; margin: 0; align-items: center; }
 .hero-buscar-ico { width: 20px; height: 20px; margin-left: var(--s4); color: var(--ink-muted); flex: 0 0 auto; }
@@ -7374,3 +7366,8 @@ footer.pie { padding-bottom: var(--s5); }
     .opportunities-toolbar { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2); margin-bottom: var(--s3); }
     .opportunities-toolbar .sort-controls label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 }
+/* La ola del hero baja del color del bloque de vacantes destacadas, que va debajo */
+.hero { padding-bottom: calc(var(--s8) + 32px); }
+.pagina-vidrio .hero-ola { background: #E4F2F4; }
+[data-theme="dark"] .pagina-vidrio .hero-ola { background: #0E2738; }
+.hero-titular > .hero-rotador { color: var(--sea-luz); }
