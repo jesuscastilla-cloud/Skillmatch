@@ -1,0 +1,33 @@
+Reglas de un arbol de decision de profundidad 4 (entrenamiento, 933 vacantes)
+Exactitud en prueba de este arbol: 0.5470
+Como leerlas: "habilidad <= 0.50" significa que la vacante NO pide esa habilidad;
+"habilidad >  0.50" significa que SI la pide. "class" es la categoria que predice esa rama.
+
+|--- employee relations <= 0.50
+|   |--- business development <= 0.50
+|   |   |--- financial analysis <= 0.50
+|   |   |   |--- sales <= 0.50
+|   |   |   |   |--- class: INFORMATION-TECHNOLOGY
+|   |   |   |--- sales >  0.50
+|   |   |   |   |--- class: SALES
+|   |   |--- financial analysis >  0.50
+|   |   |   |--- sales <= 0.50
+|   |   |   |   |--- class: FINANCE
+|   |   |   |--- sales >  0.50
+|   |   |   |   |--- class: BUSINESS-DEVELOPMENT
+|   |--- business development >  0.50
+|   |   |--- sales management <= 0.50
+|   |   |   |--- work ethic <= 0.50
+|   |   |   |   |--- class: BUSINESS-DEVELOPMENT
+|   |   |   |--- work ethic >  0.50
+|   |   |   |   |--- class: SALES
+|   |   |--- sales management >  0.50
+|   |   |   |--- customer relationship management <= 0.50
+|   |   |   |   |--- class: SALES
+|   |   |   |--- customer relationship management >  0.50
+|   |   |   |   |--- class: BUSINESS-DEVELOPMENT
+|--- employee relations >  0.50
+|   |--- internal controls <= 0.50
+|   |   |--- class: HR
+|   |--- internal controls >  0.50
+|   |   |--- class: FINANCE
