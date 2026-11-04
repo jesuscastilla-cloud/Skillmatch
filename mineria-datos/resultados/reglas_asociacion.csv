@@ -1,0 +1,52 @@
+antecedente,consecuente,soporte,confianza,lift,categoria_dominante,pct_categoria_dominante
+communication + employee relations,performance management,0.048,0.566,7.953,HR,1.0
+performance management,communication + employee relations,0.048,0.675,7.953,HR,1.0
+employee relations,communication + performance management,0.048,0.544,7.931,HR,1.0
+communication + performance management,employee relations,0.048,0.7,7.931,HR,1.0
+employee relations,performance management,0.05,0.563,7.917,HR,1.0
+performance management,employee relations,0.05,0.699,7.917,HR,1.0
+communication + financial reporting,budgeting,0.041,0.533,7.59,FINANCE,0.958
+budgeting,communication + financial reporting,0.041,0.585,7.59,FINANCE,0.958
+financial reporting,budgeting + communication,0.041,0.505,7.28,FINANCE,0.958
+budgeting + communication,financial reporting,0.041,0.593,7.28,FINANCE,0.958
+budgeting,financial reporting,0.041,0.585,7.191,FINANCE,0.958
+financial reporting,budgeting,0.041,0.505,7.191,FINANCE,0.958
+budgeting,communication + financial analysis,0.042,0.598,5.624,FINANCE,0.939
+budgeting + communication,financial analysis,0.042,0.605,5.389,FINANCE,0.939
+budgeting,financial analysis,0.042,0.598,5.323,FINANCE,0.939
+financial reporting,financial analysis,0.046,0.568,5.064,FINANCE,0.981
+financial reporting,communication + financial analysis,0.044,0.537,5.052,FINANCE,0.98
+communication + financial reporting,financial analysis,0.044,0.567,5.048,FINANCE,0.98
+budgeting + problem solving,leadership,0.041,0.706,2.535,FINANCE,0.917
+budgeting,leadership + problem solving,0.041,0.585,2.484,FINANCE,0.917
+financial analysis + problem solving,leadership,0.062,0.667,2.394,FINANCE,0.819
+budgeting,communication + leadership,0.045,0.634,2.38,FINANCE,0.923
+financial reporting + problem solving,leadership,0.045,0.662,2.379,FINANCE,0.981
+financial reporting,leadership + problem solving,0.045,0.558,2.368,FINANCE,0.981
+financial analysis,leadership + problem solving,0.062,0.55,2.332,FINANCE,0.819
+budgeting,leadership,0.045,0.646,2.321,FINANCE,0.906
+budgeting + communication,leadership,0.045,0.642,2.305,FINANCE,0.923
+business development + problem solving,relationship building,0.045,0.52,2.271,BUSINESS-DEVELOPMENT,0.83
+adaptability + strategic thinking,leadership,0.041,0.608,2.182,FINANCE,0.333
+communication + financial reporting,leadership,0.046,0.6,2.154,FINANCE,0.981
+communication + financial analysis,leadership,0.063,0.597,2.143,FINANCE,0.824
+financial analysis,leadership,0.067,0.595,2.138,FINANCE,0.821
+communication + strategic thinking,leadership,0.062,0.595,2.137,FINANCE,0.403
+problem solving + strategic thinking,leadership,0.054,0.594,2.134,FINANCE,0.444
+financial reporting,communication + leadership,0.046,0.568,2.133,FINANCE,0.981
+strategic thinking,communication + leadership,0.062,0.567,2.127,FINANCE,0.403
+financial analysis,communication + leadership,0.063,0.565,2.12,FINANCE,0.824
+financial reporting,leadership,0.048,0.589,2.117,FINANCE,0.982
+strategic thinking,leadership,0.063,0.583,2.092,FINANCE,0.419
+employee relations,interpersonal skills,0.045,0.515,2.085,HR,0.981
+problem solving + strategic thinking,collaboration,0.053,0.585,2.002,FINANCE,0.29
+adaptability + project management,leadership,0.06,0.547,1.964,INFORMATION-TECHNOLOGY,0.329
+collaboration + project management,leadership,0.044,0.543,1.948,INFORMATION-TECHNOLOGY,0.412
+problem solving + project management,leadership,0.085,0.538,1.932,INFORMATION-TECHNOLOGY,0.333
+communication + project management,leadership,0.094,0.5,1.795,INFORMATION-TECHNOLOGY,0.345
+communication + strategic thinking,collaboration,0.054,0.521,1.782,FINANCE,0.286
+strategic thinking,collaboration,0.057,0.52,1.779,FINANCE,0.303
+adaptability + customer service,teamwork,0.101,0.792,1.624,SALES,0.542
+customer service + relationship building,teamwork,0.041,0.75,1.538,SALES,0.667
+customer service + problem solving,teamwork,0.133,0.745,1.528,SALES,0.465
+customer relationship management + problem solving,adaptability,0.048,0.757,1.502,BUSINESS-DEVELOPMENT,0.482
