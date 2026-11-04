@@ -1,0 +1,6 @@
+grupo,n_vacantes,BUSINESS-DEVELOPMENT,FINANCE,HR,INFORMATION-TECHNOLOGY,SALES,categoria_dominante,pct_categoria_dominante,habilidades_clave
+1,123,0.0,0.0,0.992,0.008,0.0,HR,0.992,"employee relations, performance management, interpersonal skills, benefits administration, recruitment, conflict resolution"
+2,119,0.0,0.95,0.0,0.034,0.017,FINANCE,0.95,"financial analysis, financial reporting, budgeting, leadership, forecasting, accounting"
+4,197,0.665,0.01,0.0,0.01,0.315,BUSINESS-DEVELOPMENT,0.665,"business development, sales, negotiation, relationship building, market analysis, presentation skills"
+3,331,0.175,0.187,0.133,0.411,0.094,INFORMATION-TECHNOLOGY,0.411,"collaboration, project management, leadership, team leadership, team management, documentation"
+0,397,0.126,0.149,0.136,0.244,0.345,SALES,0.345,"teamwork, customer service, attention to detail, inventory management, time management, product knowledge"
