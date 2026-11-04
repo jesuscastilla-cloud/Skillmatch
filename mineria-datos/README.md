@@ -177,7 +177,64 @@ Notas de reproducibilidad: las cifras se obtuvieron con scikit-learn 1.9.1. Rand
 200 árboles, como el cuaderno; con 100 árboles da 0,7835. KNN puede variar unas décimas con otra
 versión de scikit-learn, porque con la distancia de Jaccard hay muchos empates entre vecinos.
 
+## Prototipo: ¿será aceptada una postulación?
+`prototipo_modelo_postulaciones.py` es el modelo predictivo que va a tener la app, hecho primero
+en Python. Aprende de las postulaciones que las empresas ya aceptaron o rechazaron y le dice a cada
+persona si sus posibilidades son buenas, regulares o bajas, y qué la ayudaría.
+
+**Hoy usa datos de demostración**, inventados y marcados así en cada archivo y cada gráfica. Las
+empresas todavía no han respondido suficientes postulaciones. Cuando SkillMatch exporte su CSV
+anónimo, el mismo script lo lee:
+```
+python prototipo_modelo_postulaciones.py                          (demostración)
+python prototipo_modelo_postulaciones.py postulaciones_anonimas.csv
+```
+
+Cómo funciona:
+- **12 variables** de cada postulación, tomadas en el momento de postularse: % de habilidades
+  pedidas, nivel, años de experiencia y si alcanzan, estudios, perfil completo, carta y su largo,
+  ciudad, tipo de vacante, días hasta postularse y cuántos se habían postulado antes.
+- **Tres modelos compiten**: árbol de decisión (con límites que crecen con los datos y pesos por
+  clase), regresión logística y el modelo flojo (siempre «rechazada»).
+- **El examen**: 5 partes (`StratifiedGroupKFold`, cada vacante entera en una sola parte),
+  repetido 10 veces = 50 exámenes. La nota es el F1 macro promedio ± su desviación.
+- **Reglas**: gana el árbol salvo que la regresión le saque más de 0,05. El modelo solo da
+  posibilidades si le gana al modelo flojo por 0,05 o más (estado «Activo»).
+
+Resultados con los datos de demostración
+([`resultados/prototipo/resumen_por_tamano.csv`](resultados/prototipo/resumen_por_tamano.csv)):
+
+| Postulaciones | Árbol (F1 macro) | Regresión logística | Modelo flojo | Estado | Gana |
+|---|---|---|---|---|---|
+| 30 | 0,20 ± 0,17 | 0,38 ± 0,20 | 0,36 ± 0,07 | Aprendiendo | — |
+| 72 | 0,59 ± 0,15 | 0,58 ± 0,12 | 0,41 ± 0,02 | Activo | Árbol |
+| 150 | 0,54 ± 0,07 | 0,58 ± 0,07 | 0,36 ± 0,02 | Activo | Árbol (la regresión gana por menos de 0,05) |
+| 500 | 0,60 ± 0,04 | 0,65 ± 0,05 | 0,39 ± 0,00 | Activo | Regresión logística |
+
+![F1 macro según cuántas postulaciones hay](resultados/figuras/prototipo_f1_por_tamano.png)
+
+Lo que enseña el prototipo:
+1. **Con 30 postulaciones de 5 vacantes no se puede.** El árbol saca menos que el modelo flojo y
+   el sistema lo detecta solo: queda en «Aprendiendo» y no muestra posibilidades.
+2. **El margen se achica con más datos**: ± 0,15 con 72 y ± 0,04 con 500. Por eso la nota se
+   muestra siempre con su margen.
+3. **Con pocos datos el árbol se confunde.** Con 72 usa «días hasta postularse», que en la regla
+   escondida no influye. Con 500 encuentra justo las tres que sí pesan: habilidades (0,73),
+   carta (0,14) y perfil completo (0,14)
+   ([`importancia_variables.csv`](resultados/prototipo/importancia_variables.csv)).
+4. **Mezclar vacantes en el examen engaña más cuando hay pocas.** Con 30 postulaciones el examen
+   mezclado le sube 0,20 la nota al árbol; con 500, casi nada
+   ([`examen_por_vacante_vs_mezclado.csv`](resultados/prototipo/examen_por_vacante_vs_mezclado.csv)).
+5. **El recuadro de Valentina** (67 % de habilidades, carta de 40 palabras) dice «buenas» desde
+   72 postulaciones
+   ([`posibilidades_ejemplos.csv`](resultados/prototipo/posibilidades_ejemplos.csv)).
+
+En `prototipo_arbol_150.png`, `value` es la proporción ya con los pesos por clase; el % real de
+aceptadas de cada hoja está en `posibilidades_ejemplos.csv`.
+
 ## Contenido de esta carpeta
+- `prototipo_modelo_postulaciones.py`: prototipo del modelo de postulaciones (datos de
+  demostración o el CSV anónimo de SkillMatch). Resultados en `resultados/prototipo/`.
 - `comparar_modelos.py`: comparación de 6 algoritmos y reglas del árbol.
 - `patrones_asociacion_agrupamiento.py`: reglas de asociación (Apriori) y agrupamiento (K-Means).
 - `SkillMatch_Clasificacion_Vacantes_por_Habilidades.ipynb`: cuaderno de Google Colab con el
