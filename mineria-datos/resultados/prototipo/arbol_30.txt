@@ -1,0 +1,13 @@
+Árbol con 30 postulaciones (12 aceptadas). Estado: Aprendiendo.
+Límites: {'criterion': 'gini', 'max_depth': 3, 'min_samples_leaf': 5, 'min_impurity_decrease': 0.01, 'class_weight': 'balanced', 'random_state': 42}
+
+|--- perfil_completo <= 0.87
+|   |--- perfil_completo <= 0.72
+|   |   |--- anios_experiencia <= 1.75
+|   |   |   |--- class: 1
+|   |   |--- anios_experiencia >  1.75
+|   |   |   |--- class: 0
+|   |--- perfil_completo >  0.72
+|   |   |--- class: 0
+|--- perfil_completo >  0.87
+|   |--- class: 1

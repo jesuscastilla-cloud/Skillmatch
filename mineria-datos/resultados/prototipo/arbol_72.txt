@@ -1,0 +1,16 @@
+Árbol con 72 postulaciones (23 aceptadas). Estado: Activo.
+Límites: {'criterion': 'gini', 'max_depth': 3, 'min_samples_leaf': 7, 'min_impurity_decrease': 0.01, 'class_weight': 'balanced', 'random_state': 42}
+
+|--- pct_habilidades <= 0.29
+|   |--- class: 0
+|--- pct_habilidades >  0.29
+|   |--- palabras_carta <= 85.50
+|   |   |--- dias_hasta_postularse <= 13.50
+|   |   |   |--- class: 1
+|   |   |--- dias_hasta_postularse >  13.50
+|   |   |   |--- class: 0
+|   |--- palabras_carta >  85.50
+|   |   |--- dias_hasta_postularse <= 10.00
+|   |   |   |--- class: 0
+|   |   |--- dias_hasta_postularse >  10.00
+|   |   |   |--- class: 1

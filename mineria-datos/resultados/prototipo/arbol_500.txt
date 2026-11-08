@@ -1,0 +1,13 @@
+Árbol con 500 postulaciones (185 aceptadas). Estado: Activo.
+Límites: {'criterion': 'gini', 'max_depth': 4, 'min_samples_leaf': 50, 'min_impurity_decrease': 0.01, 'class_weight': 'balanced', 'random_state': 42}
+
+|--- pct_habilidades <= 0.55
+|   |--- palabras_carta <= 120.00
+|   |   |--- class: 0
+|   |--- palabras_carta >  120.00
+|   |   |--- class: 1
+|--- pct_habilidades >  0.55
+|   |--- perfil_completo <= 0.62
+|   |   |--- class: 1
+|   |--- perfil_completo >  0.62
+|   |   |--- class: 1
