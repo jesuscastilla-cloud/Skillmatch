@@ -1,0 +1,625 @@
+{
+ "version": 1,
+ "fecha": "2026-11-11T06:14",
+ "fuente": "semilla",
+ "motor": "python",
+ "demostracion": true,
+ "datos": {
+  "respondidas": 151,
+  "aceptadas": 77,
+  "rechazadas": 74,
+  "de_ejemplo": 0,
+  "minimo": {
+   "total": 30,
+   "por_clase": 8
+  },
+  "faltan": 0
+ },
+ "variables": [
+  {
+   "id": "pct_habilidades",
+   "nombre": "Habilidades que tiene de las pedidas",
+   "icono": "target",
+   "tipo": "entero",
+   "explicacion": "Cuántas de las habilidades que pide la vacante tiene la persona, en porcentaje."
+  },
+  {
+   "id": "nivel_dominio",
+   "nombre": "Qué tan bien las domina",
+   "icono": "star",
+   "tipo": "decimal",
+   "explicacion": "Promedio del nivel de esas habilidades: 1 básico, 2 intermedio, 3 avanzado, 4 experto."
+  },
+  {
+   "id": "anos_experiencia",
+   "nombre": "Años de experiencia",
+   "icono": "briefcase",
+   "tipo": "decimal",
+   "explicacion": "La suma de las experiencias que registró en su perfil."
+  },
+  {
+   "id": "alcanza_experiencia",
+   "nombre": "Su experiencia alcanza lo que pide",
+   "icono": "check",
+   "tipo": "si_no",
+   "explicacion": "Si los años que tiene alcanzan el nivel que pide la vacante."
+  },
+  {
+   "id": "num_estudios",
+   "nombre": "Estudios registrados",
+   "icono": "cap",
+   "tipo": "entero",
+   "explicacion": "Cuántos estudios agregó a su perfil."
+  },
+  {
+   "id": "perfil_completo",
+   "nombre": "Qué tan completo está su perfil",
+   "icono": "user",
+   "tipo": "entero",
+   "explicacion": "Los mismos 5 puntos del anillo de progreso del perfil, en porcentaje."
+  },
+  {
+   "id": "tiene_carta",
+   "nombre": "Escribió carta",
+   "icono": "mail",
+   "tipo": "si_no",
+   "explicacion": "Si la postulación lleva carta de presentación."
+  },
+  {
+   "id": "palabras_carta",
+   "nombre": "Largo de la carta",
+   "icono": "pencil",
+   "tipo": "entero",
+   "explicacion": "Cuántas palabras tiene la carta."
+  },
+  {
+   "id": "misma_ciudad",
+   "nombre": "Vive en la ciudad de la vacante",
+   "icono": "pin",
+   "tipo": "si_no",
+   "explicacion": "Si vive en la misma ciudad de la vacante, o si la vacante es remota."
+  },
+  {
+   "id": "tipo_empleo",
+   "nombre": "Vacante de empleo",
+   "icono": "building",
+   "tipo": "si_no",
+   "explicacion": "Tipo de vacante: empleo."
+  },
+  {
+   "id": "tipo_practica",
+   "nombre": "Vacante de práctica",
+   "icono": "book",
+   "tipo": "si_no",
+   "explicacion": "Tipo de vacante: práctica."
+  },
+  {
+   "id": "tipo_freelance",
+   "nombre": "Vacante independiente",
+   "icono": "rocket",
+   "tipo": "si_no",
+   "explicacion": "Tipo de vacante: independiente (freelance)."
+  },
+  {
+   "id": "dias_para_postularse",
+   "nombre": "Qué tan rápido se postuló",
+   "icono": "clock",
+   "tipo": "entero",
+   "explicacion": "Días entre la publicación de la vacante y la postulación."
+  },
+  {
+   "id": "postulantes_vacante",
+   "nombre": "Cuánta gente se postuló",
+   "icono": "users",
+   "tipo": "entero",
+   "explicacion": "Cuántas personas se postularon a esa vacante."
+  }
+ ],
+ "parametros": {
+  "algoritmo": "CART (scikit-learn DecisionTreeClassifier, gini)",
+  "profundidad_maxima": 4,
+  "casos_por_hoja": 5,
+  "pliegues": 5,
+  "semilla": 42
+ },
+ "niveles": {
+  "buenas": 0.6,
+  "regulares": 0.4
+ },
+ "habilidades_juntas": [
+  {
+   "si": "Spring Boot",
+   "entonces": "Design Patterns",
+   "vacantes": 5,
+   "confianza": 0.4545,
+   "lift": 3.6364
+  },
+  {
+   "si": "Design Patterns",
+   "entonces": "Spring Boot",
+   "vacantes": 5,
+   "confianza": 0.3333,
+   "lift": 3.6364
+  },
+  {
+   "si": "C#",
+   "entonces": "CI/CD",
+   "vacantes": 3,
+   "confianza": 0.4286,
+   "lift": 3.4286
+  },
+  {
+   "si": "Java",
+   "entonces": "Docker",
+   "vacantes": 3,
+   "confianza": 0.3333,
+   "lift": 3.0769
+  },
+  {
+   "si": "Angular",
+   "entonces": "JavaScript",
+   "vacantes": 4,
+   "confianza": 0.3333,
+   "lift": 2.8571
+  },
+  {
+   "si": "Rails",
+   "entonces": "React",
+   "vacantes": 6,
+   "confianza": 0.4,
+   "lift": 2.8235
+  },
+  {
+   "si": "React",
+   "entonces": "Rails",
+   "vacantes": 6,
+   "confianza": 0.3529,
+   "lift": 2.8235
+  },
+  {
+   "si": "TDD",
+   "entonces": "Kubernetes",
+   "vacantes": 3,
+   "confianza": 0.375,
+   "lift": 2.8125
+  },
+  {
+   "si": "Flask",
+   "entonces": "Azure",
+   "vacantes": 4,
+   "confianza": 0.4444,
+   "lift": 2.807
+  },
+  {
+   "si": "Git",
+   "entonces": "REST API",
+   "vacantes": 8,
+   "confianza": 0.4706,
+   "lift": 2.6891
+  }
+ ],
+ "estado": "listo",
+ "dar_consejos": false,
+ "examen": {
+  "pliegues": 5,
+  "modelos": {
+   "arbol": {
+    "exactitud": 0.5099,
+    "precision": 0.5161,
+    "sensibilidad": 0.6234,
+    "f1": 0.5647,
+    "roc_auc": 0.4918
+   },
+   "logistica": {
+    "exactitud": 0.4768,
+    "precision": 0.4886,
+    "sensibilidad": 0.5584,
+    "f1": 0.5212,
+    "roc_auc": 0.476
+   },
+   "flojo": {
+    "exactitud": 0.5099,
+    "precision": 0.5099,
+    "sensibilidad": 1.0,
+    "f1": 0.6754,
+    "roc_auc": 0.5
+   }
+  },
+  "ganador": "arbol",
+  "le_gana_al_flojo": false,
+  "margen": 0.02,
+  "clase_mas_comun": "aceptada",
+  "matriz": {
+   "vp": 48,
+   "vn": 29,
+   "fp": 45,
+   "fn": 29
+  }
+ },
+ "importancia": [
+  {
+   "id": "dias_para_postularse",
+   "nombre": "Qué tan rápido se postuló",
+   "valor": 0.5169
+  },
+  {
+   "id": "postulantes_vacante",
+   "nombre": "Cuánta gente se postuló",
+   "valor": 0.2261
+  },
+  {
+   "id": "palabras_carta",
+   "nombre": "Largo de la carta",
+   "valor": 0.0625
+  },
+  {
+   "id": "tipo_empleo",
+   "nombre": "Vacante de empleo",
+   "valor": 0.0518
+  },
+  {
+   "id": "tipo_practica",
+   "nombre": "Vacante de práctica",
+   "valor": 0.0485
+  },
+  {
+   "id": "tipo_freelance",
+   "nombre": "Vacante independiente",
+   "valor": 0.0482
+  },
+  {
+   "id": "nivel_dominio",
+   "nombre": "Qué tan bien las domina",
+   "valor": 0.0459
+  }
+ ],
+ "arbol": [
+  {
+   "id": 0,
+   "n": 151,
+   "aceptadas": 77,
+   "prob": 0.5099,
+   "posibilidad": "regulares",
+   "variable": "postulantes_vacante",
+   "umbral": 3.5,
+   "pregunta": "¿La vacante tiene 4 postulantes o más?",
+   "frase_si": "son a vacantes con 4 postulantes o más",
+   "frase_no": "son a vacantes con menos de 4 postulantes",
+   "si": 12,
+   "no": 1
+  },
+  {
+   "id": 1,
+   "n": 78,
+   "aceptadas": 47,
+   "prob": 0.6026,
+   "posibilidad": "buenas",
+   "variable": "postulantes_vacante",
+   "umbral": 1.5,
+   "pregunta": "¿La vacante tiene 2 postulantes o más?",
+   "frase_si": "son a vacantes con 2 postulantes o más",
+   "frase_no": "son a vacantes con menos de 2 postulantes",
+   "si": 5,
+   "no": 2
+  },
+  {
+   "id": 2,
+   "n": 12,
+   "aceptadas": 5,
+   "prob": 0.4167,
+   "posibilidad": "regulares",
+   "variable": "tipo_practica",
+   "umbral": 0.5,
+   "pregunta": "¿Es una vacante de práctica?",
+   "frase_si": "son a vacantes de práctica",
+   "frase_no": "son a vacantes que no son de práctica",
+   "si": 4,
+   "no": 3
+  },
+  {
+   "id": 3,
+   "n": 7,
+   "aceptadas": 4,
+   "prob": 0.5714,
+   "posibilidad": "regulares",
+   "hoja": true
+  },
+  {
+   "id": 4,
+   "n": 5,
+   "aceptadas": 1,
+   "prob": 0.2,
+   "posibilidad": "bajas",
+   "hoja": true
+  },
+  {
+   "id": 5,
+   "n": 66,
+   "aceptadas": 42,
+   "prob": 0.6364,
+   "posibilidad": "buenas",
+   "variable": "dias_para_postularse",
+   "umbral": 43.5,
+   "pregunta": "¿Se postuló 44 días o más después de publicada?",
+   "frase_si": "llegan 44 días o más después de publicada la vacante",
+   "frase_no": "llegan en los primeros 44 días de publicada la vacante",
+   "si": 9,
+   "no": 6
+  },
+  {
+   "id": 6,
+   "n": 52,
+   "aceptadas": 35,
+   "prob": 0.6731,
+   "posibilidad": "buenas",
+   "variable": "dias_para_postularse",
+   "umbral": 39.0,
+   "pregunta": "¿Se postuló 40 días o más después de publicada?",
+   "frase_si": "llegan 40 días o más después de publicada la vacante",
+   "frase_no": "llegan en los primeros 40 días de publicada la vacante",
+   "si": 8,
+   "no": 7
+  },
+  {
+   "id": 7,
+   "n": 46,
+   "aceptadas": 29,
+   "prob": 0.6304,
+   "posibilidad": "buenas",
+   "hoja": true
+  },
+  {
+   "id": 8,
+   "n": 6,
+   "aceptadas": 6,
+   "prob": 1.0,
+   "posibilidad": "buenas",
+   "hoja": true
+  },
+  {
+   "id": 9,
+   "n": 14,
+   "aceptadas": 7,
+   "prob": 0.5,
+   "posibilidad": "regulares",
+   "variable": "dias_para_postularse",
+   "umbral": 52.5,
+   "pregunta": "¿Se postuló 53 días o más después de publicada?",
+   "frase_si": "llegan 53 días o más después de publicada la vacante",
+   "frase_no": "llegan en los primeros 53 días de publicada la vacante",
+   "si": 11,
+   "no": 10
+  },
+  {
+   "id": 10,
+   "n": 5,
+   "aceptadas": 1,
+   "prob": 0.2,
+   "posibilidad": "bajas",
+   "hoja": true
+  },
+  {
+   "id": 11,
+   "n": 9,
+   "aceptadas": 6,
+   "prob": 0.6667,
+   "posibilidad": "buenas",
+   "hoja": true
+  },
+  {
+   "id": 12,
+   "n": 73,
+   "aceptadas": 30,
+   "prob": 0.411,
+   "posibilidad": "regulares",
+   "variable": "dias_para_postularse",
+   "umbral": 0.5,
+   "pregunta": "¿Se postuló 1 días o más después de publicada?",
+   "frase_si": "llegan 1 días o más después de publicada la vacante",
+   "frase_no": "llegan en los primeros 1 días de publicada la vacante",
+   "si": 18,
+   "no": 13
+  },
+  {
+   "id": 13,
+   "n": 27,
+   "aceptadas": 16,
+   "prob": 0.5926,
+   "posibilidad": "regulares",
+   "variable": "palabras_carta",
+   "umbral": 19.5,
+   "pregunta": "¿La carta tiene 20 palabras o más?",
+   "frase_si": "llevan una carta de 20 palabras o más",
+   "frase_no": "llevan una carta de menos de 20 palabras (o ninguna)",
+   "si": 17,
+   "no": 14
+  },
+  {
+   "id": 14,
+   "n": 21,
+   "aceptadas": 14,
+   "prob": 0.6667,
+   "posibilidad": "buenas",
+   "variable": "nivel_dominio",
+   "umbral": 1.5,
+   "pregunta": "¿Su nivel en esas habilidades pasa de 1,5 (de 4)?",
+   "frase_si": "dominan esas habilidades por encima de 1,5 (de 4)",
+   "frase_no": "las dominan en 1,5 o menos (de 4)",
+   "si": 16,
+   "no": 15
+  },
+  {
+   "id": 15,
+   "n": 14,
+   "aceptadas": 8,
+   "prob": 0.5714,
+   "posibilidad": "regulares",
+   "hoja": true
+  },
+  {
+   "id": 16,
+   "n": 7,
+   "aceptadas": 6,
+   "prob": 0.8571,
+   "posibilidad": "buenas",
+   "hoja": true
+  },
+  {
+   "id": 17,
+   "n": 6,
+   "aceptadas": 2,
+   "prob": 0.3333,
+   "posibilidad": "bajas",
+   "hoja": true
+  },
+  {
+   "id": 18,
+   "n": 46,
+   "aceptadas": 14,
+   "prob": 0.3043,
+   "posibilidad": "bajas",
+   "variable": "dias_para_postularse",
+   "umbral": 43.5,
+   "pregunta": "¿Se postuló 44 días o más después de publicada?",
+   "frase_si": "llegan 44 días o más después de publicada la vacante",
+   "frase_no": "llegan en los primeros 44 días de publicada la vacante",
+   "si": 22,
+   "no": 19
+  },
+  {
+   "id": 19,
+   "n": 36,
+   "aceptadas": 8,
+   "prob": 0.2222,
+   "posibilidad": "bajas",
+   "variable": "tipo_empleo",
+   "umbral": 0.5,
+   "pregunta": "¿Es una vacante de empleo?",
+   "frase_si": "son a vacantes de empleo",
+   "frase_no": "son a vacantes que no son de empleo",
+   "si": 21,
+   "no": 20
+  },
+  {
+   "id": 20,
+   "n": 23,
+   "aceptadas": 7,
+   "prob": 0.3043,
+   "posibilidad": "bajas",
+   "hoja": true
+  },
+  {
+   "id": 21,
+   "n": 13,
+   "aceptadas": 1,
+   "prob": 0.0769,
+   "posibilidad": "bajas",
+   "hoja": true
+  },
+  {
+   "id": 22,
+   "n": 10,
+   "aceptadas": 6,
+   "prob": 0.6,
+   "posibilidad": "buenas",
+   "variable": "tipo_freelance",
+   "umbral": 0.5,
+   "pregunta": "¿Es una vacante independiente?",
+   "frase_si": "son a vacantes independientes",
+   "frase_no": "son a vacantes que no son independientes",
+   "si": 24,
+   "no": 23
+  },
+  {
+   "id": 23,
+   "n": 5,
+   "aceptadas": 4,
+   "prob": 0.8,
+   "posibilidad": "buenas",
+   "hoja": true
+  },
+  {
+   "id": 24,
+   "n": 5,
+   "aceptadas": 2,
+   "prob": 0.4,
+   "posibilidad": "regulares",
+   "hoja": true
+  }
+ ],
+ "logistica": {
+  "variables": [
+   "pct_habilidades",
+   "nivel_dominio",
+   "anos_experiencia",
+   "alcanza_experiencia",
+   "num_estudios",
+   "perfil_completo",
+   "tiene_carta",
+   "palabras_carta",
+   "misma_ciudad",
+   "tipo_empleo",
+   "tipo_practica",
+   "tipo_freelance",
+   "dias_para_postularse",
+   "postulantes_vacante"
+  ],
+  "media": [
+   8.701987,
+   0.864238,
+   0.0,
+   0.483444,
+   0.0,
+   60.0,
+   1.0,
+   19.225166,
+   0.377483,
+   0.264901,
+   0.384106,
+   0.350993,
+   22.218543,
+   3.503311
+  ],
+  "escala": [
+   12.646385,
+   1.293045,
+   1.0,
+   0.499726,
+   1.0,
+   1.0,
+   1.0,
+   0.417691,
+   0.484757,
+   0.44128,
+   0.486383,
+   0.477281,
+   22.111066,
+   1.390003
+  ],
+  "coef": [
+   -0.49063,
+   0.212284,
+   0.0,
+   0.092643,
+   0.0,
+   0.0,
+   0.0,
+   -0.044465,
+   -0.104115,
+   -0.051127,
+   0.093607,
+   -0.048122,
+   -0.116306,
+   -0.261568
+  ],
+  "intercepto": 0.0365
+ },
+ "historial": [
+  {
+   "fecha": "2026-11-11",
+   "respondidas": 151,
+   "exactitud_arbol": 0.5099,
+   "exactitud_flojo": 0.5099
+  }
+ ]
+}
