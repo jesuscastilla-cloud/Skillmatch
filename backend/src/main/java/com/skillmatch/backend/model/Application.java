@@ -33,6 +33,9 @@ public class Application {
 
     private String notes;
 
+    /** true: postulacion de demostracion (DemostracionModelo). null o false: una de verdad. */
+    private Boolean ejemplo;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

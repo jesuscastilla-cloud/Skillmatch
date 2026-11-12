@@ -179,7 +179,8 @@ public class UserService {
             return List.of();
         }
         Query q = new Query(
-                Criteria.where("_id").ne(userId).and("location").is(user.getLocation())
+                // Las personas de demostracion (rol DEMO) nunca se le sugieren a nadie
+                Criteria.where("_id").ne(userId).and("location").is(user.getLocation()).and("roles").ne("DEMO")
         ).limit(10);
         return mongoTemplate.find(q, User.class);
     }

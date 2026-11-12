@@ -201,7 +201,7 @@ public class TablaEjemplosService {
         long dias = publicada != null && postulo != null ? Math.max(0, Duration.between(publicada, postulo).toDays()) : 0;
 
         String tipo = norm(v.getType());
-        boolean ejemplo = empresa.toLowerCase(Locale.ROOT).contains("(ejemplo)")
+        boolean ejemplo = Boolean.TRUE.equals(a.getEjemplo()) || empresa.toLowerCase(Locale.ROOT).contains("(ejemplo)")
                 || norm(u.getEmail()).endsWith("@skillmatch.test");
 
         int completo = (int) Math.floor(100.0 * (

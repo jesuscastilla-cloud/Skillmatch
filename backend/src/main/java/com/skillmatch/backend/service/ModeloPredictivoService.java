@@ -31,6 +31,9 @@ import lombok.extern.slf4j.Slf4j;
  *   version en GET /api/public/modelo (solo cifras de todos juntos, nunca de una persona).
  * - Si todavia no hay ninguna version (primer arranque) o la ultima tiene mas de 26 horas (el servidor
  *   estaba dormido a la hora de aprender), aprende en ese momento.
+ * - Mientras esta "esperando" datos (menos de 30 respuestas), vuelve a intentarlo cada 30 minutos: asi el
+ *   "faltan N" baja durante el dia en vez de quedarse en lo que habia a las 3:30. Esas versiones "esperando"
+ *   se reemplazan, no se acumulan.
  */
 @Slf4j
 @Service
@@ -46,7 +49,7 @@ public class ModeloPredictivoService {
 
     private volatile Map<String, Object> enMemoria;
 
-    @Scheduled(cron = "0 30 3 * * *", zone = "America/Bogota")
+    @Scheduled(cron = "${skillmatch.modelo.cron:0 30 3 * * *}", zone = "America/Bogota")
     public void aprenderCadaNoche() {
         try {
             Map<String, Object> m = aprender();
@@ -71,6 +74,9 @@ public class ModeloPredictivoService {
             v.setExactitudFlojo((Double) ((Map<?, ?>) modelos.get("flojo")).get("exactitud"));
         }
         v.setModelo(m);
+        // Una version "esperando" no tiene nada que conservar: la nueva la reemplaza
+        versionRepository.findTopByOrderByFechaDesc().filter(x -> "esperando".equals(x.getEstado()))
+                .ifPresent(versionRepository::delete);
         versionRepository.save(v);
         enMemoria = null;
         return actual();
@@ -85,8 +91,11 @@ public class ModeloPredictivoService {
             ModeloVersion ultima = versionRepository.findTopByOrderByFechaDesc().orElse(null);
             // Primer arranque, o el servidor estaba dormido a las 3:30 (Render Free se duerme sin visitas):
             // aprende ahora para que no se pierda la noche. Con cientos de postulaciones tarda menos de un segundo.
-            if (ultima == null || ultima.getFecha() == null
-                    || ultima.getFecha().isBefore(LocalDateTime.now(ZoneId.of("America/Bogota")).minusHours(26))) {
+            LocalDateTime ahora = LocalDateTime.now(ZoneId.of("America/Bogota"));
+            boolean sinVersionOVieja = ultima == null || ultima.getFecha() == null || ultima.getFecha().isBefore(ahora.minusHours(26));
+            boolean esperandoYaPaso = ultima != null && "esperando".equals(ultima.getEstado())
+                    && ultima.getFecha() != null && ultima.getFecha().isBefore(ahora.minusMinutes(30));
+            if (sinVersionOVieja || esperandoYaPaso) {
                 return aprender();
             }
             Map<String, Object> copia = new LinkedHashMap<>(ultima.getModelo());
@@ -126,7 +135,9 @@ public class ModeloPredictivoService {
     @SuppressWarnings("unchecked")
     public String consejoPara(Application a) {
         Map<String, Object> m = actual();
-        if (!"listo".equals(m.get("estado")) || !Boolean.TRUE.equals(m.get("dar_consejos"))) return "";
+        // Con datos de demostracion no se aconseja por correo: el consejo saldria de respuestas inventadas
+        if (!"listo".equals(m.get("estado")) || !Boolean.TRUE.equals(m.get("dar_consejos"))
+                || Boolean.TRUE.equals(m.get("demostracion"))) return "";
         Map<String, Object> p = tablaEjemplosService.unaPostulacion(a, null);
         if (p == null) return "";
         Map<String, Number> x = (Map<String, Number>) p.get("caracteristicas");

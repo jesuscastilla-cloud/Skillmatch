@@ -36,10 +36,12 @@ rápido se postuló y **cuántas personas se habían postulado antes**.
    que ya vio y sacaría una nota mejor de la que merece. Python (`pliegues_por_vacante`) y Java
    (`Pliegues.porVacante`) reparten con la misma regla, sin azar, y una prueba comprueba que dan lo mismo.
 
-## Resultado con los datos de prueba del `DataSeeder.java`
+## Resultado con respuestas sorteadas al azar (control negativo)
 
-En los datos de prueba que genera la plataforma, **la respuesta de la empresa se sortea al azar**
-(`DataSeeder.java`, líneas 339 a 342). Hay 151 postulaciones respondidas (77 aceptadas y 74 rechazadas):
+`generar_datos_semilla.py` reproduce la **primera versión** del `DataSeeder.java`, donde la respuesta de la
+empresa se sorteaba al azar. Hoy el `DataSeeder` ya no sortea: sus respuestas de ejemplo salen de una regla
+escrita en `DemostracionModelo.java` (marcadas `ejemplo = true`, «Demostración» en la página), y el modelo
+sí le gana al flojo. Con las respuestas sorteadas, hay 151 postulaciones respondidas (77 aceptadas y 74 rechazadas):
 
 | Modelo | Exactitud | F1 | ROC-AUC |
 |---|---|---|---|
