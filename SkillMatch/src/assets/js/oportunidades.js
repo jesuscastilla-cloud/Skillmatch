@@ -315,7 +315,7 @@ function sortList(jobs) {
 function matchHint() {
     const datos = sesion();
     if (!datos) {
-        return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="login-usuario.html">Inicia sesión</a> para ver qué tanto encajas con cada vacante.</span></p>';
+        return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="login.html">Inicia sesión</a> para ver qué tanto encajas con cada vacante.</span></p>';
     }
     if (datos.userType !== 'empresa' && userSkills && userSkills.size === 0) {
         return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="perfil-usuario.html">Agrega tus habilidades</a> y te mostramos qué tanto encajas con cada vacante.</span></p>';
@@ -639,7 +639,7 @@ function postularme(jobId) {
     const datos = sesion();
     if (!datos) {
         avisar('Inicia sesión para postularte a esta vacante.', 'info');
-        setTimeout(() => { window.location.href = 'login-usuario.html'; }, 1200);
+        setTimeout(() => { window.location.href = 'login.html'; }, 1200);
         return;
     }
     if (datos.userType === 'empresa') {
@@ -1050,7 +1050,7 @@ async function loadSavedJobs() {
 async function toggleSaveJob(jobId, buttonElement) {
     if (!sesion()) {
         avisar('Inicia sesión para guardar vacantes.', 'info');
-        setTimeout(() => { window.location.href = 'login-usuario.html'; }, 1200);
+        setTimeout(() => { window.location.href = 'login.html'; }, 1200);
         return;
     }
 

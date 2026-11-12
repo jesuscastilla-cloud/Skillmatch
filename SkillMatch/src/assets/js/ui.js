@@ -405,8 +405,10 @@
     /** "Skill" va en azul oscuro en el logo y no se lee sobre fondo oscuro:
      *  en modo oscuro se cambia por logo-oscuro.png (mismo logo, azul claro). */
     function logoSegunTema(tema) {
-        const archivo = tema === 'dark' ? 'logo-oscuro.png' : 'logo.png';
         document.querySelectorAll('.logo img').forEach(function (img) {
+            // La barra es una isla azul noche en los dos temas: alli siempre va el logo claro
+            const enBarra = !!img.closest('body > header');
+            const archivo = tema === 'dark' || enBarra ? 'logo-oscuro.png' : 'logo.png';
             const src = img.getAttribute('src');
             if (src) img.setAttribute('src', src.replace(/logo(-oscuro)?\.png$/, archivo));
         });
@@ -471,11 +473,18 @@
     function barraAlHacerScroll() {
         const header = document.querySelector('header');
         if (!header) return;
+        // La barra es una isla que no cambia al bajar (app.css, seccion 48). Las dos clases quedan
+        // como marcas del estado (bajo / sigue sobre la portada), pero ya no le cambian el aspecto
+        const hero = document.querySelector('body > .hero');
         const actualizar = function () {
             header.classList.toggle('is-scrolled', window.scrollY > 4);
+            const sobreHero = !!hero && !hero.hidden && hero.getBoundingClientRect().bottom > header.offsetHeight;
+            if (header.classList.contains('sobre-hero') !== sobreHero) header.classList.toggle('sobre-hero', sobreHero);
         };
         actualizar();
         window.addEventListener('scroll', actualizar, { passive: true });
+        // El hero se esconde cuando hay sesion (panel-inicio.js): se revisa de nuevo al cambiar
+        if (hero && 'MutationObserver' in window) new MutationObserver(actualizar).observe(hero, { attributes: true, attributeFilter: ['hidden'] });
     }
 
     /** Barra de progreso al salir hacia otra pagina: quita la sensacion de cuelgue. */
@@ -515,8 +524,8 @@
 
     /** Encabezados y tarjetas que aparecen al hacer scroll. Se marcan solos
      *  (tambien las vacantes que llegan despues desde la API), sin tocar el HTML. */
-    const REVELAR = '.reveal, .section-header-center, .innovation-header, .why-header, ' +
-                    '.feature-card, .benefit-item, .pathway-card, .roadmap-card, ' +
+    const REVELAR = '.reveal, .section-header-center, .why-header, ' +
+                    '.feature-card, .benefit-item, .pathway-card, ' +
                     '.opportunity-card, .connection-card, .suggestion-card, ' +
                     '.offer-card, .candidate-mini-card, .application-card';
     // Las vacantes no suben desde abajo: salen de debajo de la tarjeta de
@@ -1212,17 +1221,16 @@
             ['seleccionar-registro.html', 'Crear mi perfil'],
             ['oportunidades.html', 'Ver vacantes'],
             ['empresas.html', 'Conocer las empresas'],
-            ['login-usuario.html', 'Iniciar sesión']
+            ['login.html', 'Iniciar sesión']
         ] },
         { titulo: 'Empresas', enlaces: [
             ['registro-empresa.html', 'Registrar mi empresa'],
-            ['login-empresa.html', 'Acceso empresas']
+            ['login.html?tipo=empresa', 'Acceso empresas']
         ] },
         { titulo: 'SkillMatch', enlaces: [
             ['index.html#como-funciona', 'Cómo funciona'],
             ['index.html#cerca', 'Vacantes cerca de ti'],
             ['dashboard.html', 'Indicadores del mercado'],
-            ['index.html#innovacion', 'Lo que viene'],
             // La Ley 1581 pide que la politica de datos este siempre a la mano
             ['politica-datos.html', 'Política de datos']
         ] }
@@ -3003,18 +3011,21 @@
         enlaces.forEach(function (a) { observador.observe(document.getElementById(a.getAttribute('href').slice(1))); });
     }
 
-    // Una sola linea bajo el menu que se desliza (transform) hasta el enlace
-    // activo, o hasta el que tiene el mouse encima. Sigue al mouse: solo con
-    // mouse y sin "reducir movimiento"; si no, queda la linea fija de cada enlace.
+    // Una sola pastilla blanca (como la del selector "Busco trabajo / Soy empresa")
+    // que se desliza hasta el enlace activo, o hasta el que tiene el mouse encima.
+    // Sigue al mouse: solo con mouse y sin "reducir movimiento"; si no, el enlace
+    // activo lleva su propia pastilla fija (CSS, seccion 38).
     function lineaDelMenu() {
         const lista = document.querySelector('header .nav-left .nav-links');
         const marco = lista && lista.closest('.nav-left');
         if (!marco || reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        // Va en el contenedor del menu y no en la lista: un <ul> solo lleva <li>
-        const linea = document.createElement('span');
-        linea.className = 'nav-linea';
+        // Va dentro de la capsula (un <li>, lo unico que lleva un <ul>): la capsula de vidrio
+        // forma su propia capa y, fuera de ella, la pastilla quedaba encima del texto
+        const linea = document.createElement('li');
+        linea.className = 'nav-pastilla';
         linea.setAttribute('aria-hidden', 'true');
-        marco.appendChild(linea);
+        linea.setAttribute('role', 'presentation');
+        lista.appendChild(linea);
         lista.classList.add('con-linea');
         let sobre = null;
         // La pagina a la que se va tras un clic: manda mientras carga la siguiente
@@ -3024,17 +3035,44 @@
         const ubicar = function () {
             const destino = elegido || sobre || lista.querySelector('a.active-nav, a.active');
             if (!destino || !destino.offsetWidth) { linea.style.opacity = '0'; return; }
-            const caja = marco.getBoundingClientRect();
+            // Las medidas son respecto a la caja de la que cuelga la pastilla (la barra)
+            const caja = (linea.offsetParent || marco).getBoundingClientRect();
             const r = destino.getBoundingClientRect();
-            const margen = parseFloat(getComputedStyle(destino).paddingLeft) || 0;
-            // Igual que la linea fija: debajo del enlace, sin su relleno a los lados
-            const x = r.left - caja.left + margen;
-            const y = r.bottom - caja.top + 18 - 2.5;
-            const ancho = Math.max(r.width - margen * 2, 0);
-            if (primera) linea.style.transition = 'none';
-            linea.style.transform = 'translate(' + x + 'px, ' + y + 'px) scaleX(' + (ancho / 100) + ')';
-            linea.style.opacity = '1';
-            if (primera) { linea.getBoundingClientRect(); linea.style.transition = ''; primera = false; }
+            const x = r.left - caja.left, y = r.top - caja.top, ancho = r.width;
+            linea.style.height = r.height + 'px';
+            if (primera || linea.style.opacity !== '1') {
+                linea.style.transition = 'none';
+                linea.style.width = ancho + 'px';
+                linea.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+                linea.style.opacity = '1';
+                linea.getBoundingClientRect();
+                linea.style.transition = '';
+                primera = false;
+                return;
+            }
+            // FLIP elastico: el ancho cambia de golpe al del destino y una escala lo disimula
+            // (arranca con el tamano y el lugar que se ven ahora). A mitad de camino la pastilla
+            // se estira hacia donde va y se aplasta un poco, como goma; solo se anima transform.
+            const antes = linea.getBoundingClientRect();
+            const x0 = antes.left - caja.left, w0 = antes.width;
+            linea.getAnimations().forEach(function (a) { a.cancel(); });
+            linea.style.transition = 'none';
+            linea.style.width = ancho + 'px';
+            linea.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+            linea.getBoundingClientRect();
+            // La transicion del CSS queda puesta: irCuandoLlegue lee de ahi cuanto dura el viaje
+            linea.style.transition = '';
+            const distancia = Math.abs(x - x0);
+            const anchoMedio = (w0 + ancho) / 2 + distancia * 0.35;
+            const xMedio = (x0 + w0 / 2 + x + ancho / 2) / 2 - anchoMedio / 2;
+            const cuadro = function (px, escalaX, escalaY) {
+                return { transform: 'translate(' + px + 'px, ' + y + 'px) scale(' + escalaX + ', ' + escalaY + ')' };
+            };
+            linea.animate([
+                cuadro(x0, w0 / ancho, 1),
+                Object.assign(cuadro(xMedio, anchoMedio / ancho, 0.9), { offset: 0.45 }),
+                cuadro(x, 1, 1)
+            ], { duration: 450, easing: 'cubic-bezier(.3, .7, .25, 1)' });
         };
         lista.addEventListener('mouseover', function (e) {
             const a = e.target instanceof Element && e.target.closest('a');

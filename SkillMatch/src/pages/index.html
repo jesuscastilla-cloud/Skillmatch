@@ -38,7 +38,7 @@
         <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo-oscuro.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
                 <ul class="nav-links nav-principales">
                     <li><a href="#main" class="active-nav" aria-current="page">Inicio</a></li>
@@ -59,6 +59,8 @@
     <section class="panel-inicio" id="panelInicio" hidden aria-labelledby="panelSaludo"></section>
 
     <section class="hero" id="main">
+        <!-- Profundidad de la portada (decorativo): estrellas en dos planos -->
+        <div class="hero-estrellas" aria-hidden="true"></div>
         <div class="container">
             <div class="hero-grid">
                 <div class="hero-copy">
@@ -97,36 +99,13 @@
                     </div>
                 </div>
 
-                <!-- Demo de la compatibilidad (Fase 2 del plan): vacante de ejemplo de un
-                     sector cualquiera; el visitante marca sus habilidades y el anillo se
-                     recalcula (index.js) -->
-                <div class="hero-card match-demo" role="group" aria-labelledby="demo-titulo">
-                    <div class="result-header">
-                        <div class="hero-card-empresa">
-                            <div class="result-logo">HB</div>
-                            <div class="hero-card-texto">
-                                <p class="job-title" id="demo-titulo">Recepcionista bilingüe</p>
-                                <p class="company-name">Hotel en Bocagrande · Cartagena</p>
-                            </div>
-                        </div>
-                        <div class="match-ring" data-pct="80" role="img" aria-label="80 por ciento de coincidencia con esta vacante"></div>
+                <!-- Escena isometrica animada (escenas.js la dibuja y la mueve), sin marco: una isla
+                     que flota. Tus habilidades viajan de tu casa al hotel de una vacante de ejemplo
+                     y encienden sus pisos; Ingles se queda a mitad de camino y sale 80 %. -->
+                <div class="hero-demo">
+                    <div class="escenario" data-escena="tarjeta">
+                        <svg viewBox="0 0 480 360" role="img" aria-label="Tus habilidades salen de tu casa como cubos turquesa, saltan por el camino y encienden los pisos del hotel de la vacante. El cubo naranja de Inglés se queda a mitad de camino. Al final aparece 80 por ciento de coincidencia."><g class="escena-raiz"></g></svg>
                     </div>
-                    <div class="card-meta">
-                        <span class="meta-item"><i data-ico="pin" class="ico-sm"></i> Presencial</span>
-                        <span class="meta-item"><i data-ico="briefcase" class="ico-sm"></i> Tiempo completo</span>
-                        <span class="meta-item result-salary"><i data-ico="money" class="ico-sm"></i> $1.8M – $2.4M</span>
-                    </div>
-                    <p class="demo-instruccion"><i data-ico="sparkle" class="ico-sm"></i> Pruébalo: marca las habilidades que tienes</p>
-                    <div class="demo-habilidades" role="group" aria-label="Habilidades que pide la vacante">
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="25"><i data-ico="check" class="ico-sm"></i>Atención al cliente</button>
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Manejo de caja</button>
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="20"><i data-ico="check" class="ico-sm"></i>Reservas</button>
-                        <button type="button" class="demo-skill" aria-pressed="true" data-peso="15"><i data-ico="check" class="ico-sm"></i>Excel</button>
-                        <button type="button" class="demo-skill" aria-pressed="false" data-peso="20"><i data-ico="check" class="ico-sm"></i>Inglés</button>
-                    </div>
-                    <p class="suggestion-reason demo-razon" aria-live="polite">
-                        Coincides en 4 de 5 requisitos. Te falta Inglés.
-                    </p>
                 </div>
             </div>
         </div>
@@ -263,8 +242,8 @@
         </div>
     </section>
 
-    <!-- Fase 2 del plan: scroll-telling. Al bajar, cada paso enciende su escena
-         en la columna fija (index.js). Sin JavaScript se leen los 4 pasos. -->
+    <!-- Como funciona: la rueda de 4 pasos. rueda-pasos.js arma el aro dentro de #cfRueda;
+         al elegir una pieza la rueda gira y se muestra ese paso. Sin JavaScript se leen los 4 pasos. -->
     <section class="features como-funciona" id="como-funciona" aria-labelledby="cf-titulo">
         <div class="container">
             <div class="section-header-center">
@@ -273,67 +252,80 @@
             </div>
 
             <div class="cf-layout" data-escena="1">
-                <div class="cf-visual" aria-hidden="true">
-                    <div class="cf-escenario">
-                        <!-- 1. Creas tu perfil -->
-                        <div class="cf-escena" data-escena="1">
-                            <div class="cf-perfil">
-                                <div class="cf-avatar">TÚ</div>
-                                <div class="cf-lineas"><span></span><span></span></div>
-                            </div>
-                            <div class="cf-chips"><span>Atención al cliente</span><span>Inglés B1</span><span>Excel</span><span>Trabajo en equipo</span></div>
-                        </div>
-                        <!-- 2. Te comparamos -->
-                        <div class="cf-escena" data-escena="2">
-                            <div class="cf-comparacion"><span class="cf-etiqueta">Recepcionista bilingüe</span><span class="cf-barra" style="--v:.92"></span></div>
-                            <div class="cf-comparacion"><span class="cf-etiqueta">Práctica en contabilidad</span><span class="cf-barra" style="--v:.74"></span></div>
-                            <div class="cf-comparacion"><span class="cf-etiqueta">Auxiliar de bodega</span><span class="cf-barra" style="--v:.51"></span></div>
-                        </div>
-                        <!-- 3. Ves tu compatibilidad -->
-                        <div class="cf-escena" data-escena="3">
-                            <div class="cf-match">
-                                <div class="match-ring cf-anillo" data-pct="80"></div>
-                                <div>
-                                    <strong>Recepcionista bilingüe</strong>
-                                    <p>Coincides en 4 de 5 requisitos. Te falta Inglés.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- 4. Te contactan -->
-                        <div class="cf-escena" data-escena="4">
-                            <div class="cf-aviso">
-                                <div class="cf-aviso-icono"><i data-ico="calendar"></i></div>
-                                <div>
-                                    <strong>El hotel quiere entrevistarte</strong>
-                                    <p>Jueves, 10:00 a. m. · Cartagena</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="cf-rueda-zona">
+                    <div class="cf-rueda" id="cfRueda"></div>
                 </div>
 
-                <ol class="cf-pasos">
-                    <li class="cf-paso" data-paso="1">
-                        <span class="cf-num">01</span>
-                        <h3>Creas tu perfil</h3>
-                        <p>Registra tu experiencia, tus estudios y lo que sabes hacer: atender clientes, manejar caja, cocinar, llevar la contabilidad, conducir o programar.</p>
-                    </li>
-                    <li class="cf-paso" data-paso="2">
-                        <span class="cf-num">02</span>
-                        <h3>Te comparamos</h3>
-                        <p>Empresas de Cartagena publican empleos, prácticas y trabajos independientes en turismo, comercio, logística, salud, construcción, tecnología y más. Cada vacante se compara con tu perfil.</p>
-                    </li>
-                    <li class="cf-paso" data-paso="3">
-                        <span class="cf-num">03</span>
-                        <h3>Ves tu compatibilidad</h3>
-                        <p>Cada vacante te dice qué parte de lo que pide ya tienes y qué te falta para llegar.</p>
-                    </li>
-                    <li class="cf-paso" data-paso="4">
-                        <span class="cf-num">04</span>
-                        <h3>Te contactan</h3>
-                        <p>Te postulas a las que más te convienen, con un mensaje para la empresa. Ella ve tu perfil completo y, si le interesas, te escribe por SkillMatch.</p>
-                    </li>
-                </ol>
+                <div class="cf-lado">
+                    <ol class="cf-pasos">
+                        <li class="cf-paso" id="cf-paso-1" data-paso="1" data-rueda-ico="user">
+                            <div class="cf-texto">
+                                <span class="cf-num">01</span>
+                                <h3>Creas tu perfil</h3>
+                                <p>Registra tu experiencia, tus estudios y lo que sabes hacer: atender clientes, manejar caja, cocinar, llevar la contabilidad, conducir o programar.</p>
+                            </div>
+                            <div class="cf-escenario" aria-hidden="true">
+                                <div class="cf-escena">
+                                    <div class="cf-perfil">
+                                        <div class="cf-avatar">TÚ</div>
+                                        <div class="cf-lineas"><span></span><span></span></div>
+                                    </div>
+                                    <div class="cf-chips"><span>Atención al cliente</span><span>Inglés B1</span><span>Excel</span><span>Trabajo en equipo</span></div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="cf-paso" id="cf-paso-2" data-paso="2" data-rueda-ico="briefcase">
+                            <div class="cf-texto">
+                                <span class="cf-num">02</span>
+                                <h3>Te comparamos</h3>
+                                <p>Empresas de Cartagena publican empleos, prácticas y trabajos independientes en turismo, comercio, logística, salud, construcción, tecnología y más. Cada vacante se compara con tu perfil.</p>
+                            </div>
+                            <div class="cf-escenario" aria-hidden="true">
+                                <div class="cf-escena">
+                                    <div class="cf-comparacion"><span class="cf-etiqueta">Recepcionista bilingüe</span><span class="cf-barra" style="--v:.92"></span></div>
+                                    <div class="cf-comparacion"><span class="cf-etiqueta">Práctica en contabilidad</span><span class="cf-barra" style="--v:.74"></span></div>
+                                    <div class="cf-comparacion"><span class="cf-etiqueta">Auxiliar de bodega</span><span class="cf-barra" style="--v:.51"></span></div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="cf-paso" id="cf-paso-3" data-paso="3" data-rueda-ico="target">
+                            <div class="cf-texto">
+                                <span class="cf-num">03</span>
+                                <h3>Ves tu compatibilidad</h3>
+                                <p>Cada vacante te dice qué parte de lo que pide ya tienes y qué te falta para llegar.</p>
+                            </div>
+                            <div class="cf-escenario" aria-hidden="true">
+                                <div class="cf-escena">
+                                    <div class="cf-match">
+                                        <div class="match-ring cf-anillo" data-pct="80"></div>
+                                        <div>
+                                            <strong>Recepcionista bilingüe</strong>
+                                            <p>Coincides en 4 de 5 requisitos. Te falta Inglés.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="cf-paso" id="cf-paso-4" data-paso="4" data-rueda-ico="chat">
+                            <div class="cf-texto">
+                                <span class="cf-num">04</span>
+                                <h3>Te contactan</h3>
+                                <p>Te postulas a las que más te convienen, con un mensaje para la empresa. Ella ve tu perfil completo y, si le interesas, te escribe por SkillMatch.</p>
+                            </div>
+                            <div class="cf-escenario" aria-hidden="true">
+                                <div class="cf-escena">
+                                    <div class="cf-aviso">
+                                        <div class="cf-aviso-icono"><i data-ico="calendar"></i></div>
+                                        <div>
+                                            <strong>El hotel quiere entrevistarte</strong>
+                                            <p>Jueves, 10:00 a. m. · Cartagena</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
             </div>
         </div>
     </section>
@@ -395,9 +387,28 @@
                             data-placeholder="Tu ciudad" data-vacio="Revisa cómo se escribe o prueba con otra ciudad."></select>
                 </div>
             </div>
-            <div class="cerca-lista" id="cercaCargando"></div>
-            <ul class="cerca-lista" id="cercaLista" hidden></ul>
-            <div class="cerca-vacio" id="cercaVacio" hidden></div>
+            <div class="cerca-cuerpo">
+                <!-- El planeta en 3D (mapa-cerca.js): tu punto, las ciudades con vacantes y las rutas entre
+                     ellas. El dibujo es decorativo (lo mismo ya lo dicen la frase y las tarjetas); sus botones no -->
+                <div class="cerca-mapa" id="cercaMapa">
+                    <div class="cerca-mapa-cabeza" aria-hidden="true">
+                        <div>
+                            <p class="cerca-mapa-titulo">Tu zona</p>
+                            <p class="cerca-mapa-sub">Buscando vacantes cerca…</p>
+                        </div>
+                        <div class="cerca-mapa-guia">
+                            <p class="cerca-mapa-leyenda"><span class="cm-ley cm-ley-tu"></span> Tú <span class="cm-ley cm-ley-vacante"></span> Vacantes</p>
+                            <p class="cm-pista"><span class="cm-pista-mouse">Arrastra el planeta para girarlo</span><span class="cm-pista-dedo">Desliza de lado para girarlo</span></p>
+                        </div>
+                    </div>
+                    <div class="cerca-mapa-lienzo"></div>
+                </div>
+                <div class="cerca-resultados">
+                    <div class="cerca-lista" id="cercaCargando"></div>
+                    <ul class="cerca-lista" id="cercaLista" hidden></ul>
+                    <div class="cerca-vacio" id="cercaVacio" hidden></div>
+                </div>
+            </div>
             <p class="cerca-pie">
                 <a href="oportunidades.html" class="link-view-all">Ver todas las vacantes <i data-ico="arrow" class="ico-sm"></i></a>
             </p>
@@ -441,83 +452,8 @@
                         <li><i data-ico="check"></i> Postulaciones con el perfil de cada candidato</li>
                         <li><i data-ico="check"></i> Gestión simple de ofertas y candidatos</li>
                     </ul>
-                    <a href="login-empresa.html" class="btn btn-primary">Publicar mis vacantes <i data-ico="arrow"></i></a>
+                    <a href="login.html?tipo=empresa" class="btn btn-primary">Publicar mis vacantes <i data-ico="arrow"></i></a>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="innovation-section" id="innovacion">
-        <div class="container">
-            <div class="innovation-header">
-                <h2>Lo que viene</h2>
-                <p>Ideas en las que estamos trabajando para ayudarte más.</p>
-            </div>
-
-            <div class="roadmap-grid">
-                <article class="roadmap-card">
-                    <div class="roadmap-header">
-                        <div class="roadmap-icon"><i data-ico="chat"></i></div>
-                        <div class="roadmap-title">
-                            <h3>Práctica de entrevistas</h3>
-                            <span class="status-badge status-building">En desarrollo</span>
-                        </div>
-                    </div>
-                    <p>Ensaya entrevistas y recibe recomendaciones para mejorar.</p>
-                    <ul class="roadmap-points">
-                        <li>Preguntas según el cargo y tu experiencia</li>
-                        <li>Seguimiento de tu progreso</li>
-                        <li>Informe para descargar</li>
-                    </ul>
-                </article>
-
-                <article class="roadmap-card">
-                    <div class="roadmap-header">
-                        <div class="roadmap-icon"><i data-ico="chart"></i></div>
-                        <div class="roadmap-title">
-                            <h3>Lo que pide la ciudad</h3>
-                            <span class="status-badge status-planned">Próximo</span>
-                        </div>
-                    </div>
-                    <p>Te dice qué habilidades buscan más las empresas de Cartagena.</p>
-                    <ul class="roadmap-points">
-                        <li>Oficios y cargos más pedidos</li>
-                        <li>Cursos sugeridos para aprenderlas</li>
-                        <li>Avisos cuando algo cambie</li>
-                    </ul>
-                </article>
-
-                <article class="roadmap-card">
-                    <div class="roadmap-header">
-                        <div class="roadmap-icon"><i data-ico="trophy"></i></div>
-                        <div class="roadmap-title">
-                            <h3>Referencias verificadas</h3>
-                            <span class="status-badge status-idea">Idea</span>
-                        </div>
-                    </div>
-                    <p>Recomendaciones de jefes y clientes anteriores en tu perfil.</p>
-                    <ul class="roadmap-points">
-                        <li>Insignias por trabajos bien hechos</li>
-                        <li>Calificaciones claras y justas</li>
-                        <li>Logros comprobados</li>
-                    </ul>
-                </article>
-
-                <article class="roadmap-card">
-                    <div class="roadmap-header">
-                        <div class="roadmap-icon"><i data-ico="handshake"></i></div>
-                        <div class="roadmap-title">
-                            <h3>Acompañamiento</h3>
-                            <span class="status-badge status-planned">Próximo</span>
-                        </div>
-                    </div>
-                    <p>Personas con experiencia en tu oficio te orientan.</p>
-                    <ul class="roadmap-points">
-                        <li>Te unimos con alguien de tu área</li>
-                        <li>Encuentros con temas y materiales</li>
-                        <li>Seguimiento de tus avances</li>
-                    </ul>
-                </article>
             </div>
         </div>
     </section>
@@ -529,7 +465,7 @@
             <p>Crea tu perfil, descubre qué tan cerca estás de cada vacante y postúlate a las que más te convienen.</p>
             <div class="cta-final-acciones">
                 <a href="seleccionar-registro.html" class="btn btn-accent">Crear mi perfil</a>
-                <a href="login-empresa.html" class="btn btn-secondary">Soy empresa</a>
+                <a href="login.html?tipo=empresa" class="btn btn-secondary">Soy empresa</a>
             </div>
         </div>
     </section>
@@ -546,8 +482,11 @@
     <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/search-handler.js"></script>
     <script src="../assets/js/panel-inicio.js"></script>
+    <script src="../assets/js/escenas.js"></script>
     <script src="../assets/js/index.js"></script>
+    <script src="../assets/js/rueda-pasos.js"></script>
     <script src="../assets/js/ciudades.js"></script>
+    <script src="../assets/js/mapa-cerca.js"></script>
     <script src="../assets/js/vacantes-cerca.js"></script>
 
     <script src="../assets/js/ui.js"></script>

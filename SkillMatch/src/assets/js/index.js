@@ -192,7 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const caja = rotador.getBoundingClientRect();
         const r = palabra.getBoundingClientRect();
         const barrido = palabra.children.length * 32; // lo que tardan las letras en irse
-        puntosDeTinta(palabra, 110).forEach(function (p) {
+        // 36 esporas (eran 110): cada una es un elemento animado mas que el navegador atiende en cada cuadro
+        puntosDeTinta(palabra, 36).forEach(function (p) {
             const espora = document.createElement('span');
             espora.className = 'espora';
             const tam = 2 + Math.random() * 3;
@@ -221,9 +222,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (claves.length > 1 && !reducido) {
         claves.forEach(partirEnLetras);
         let actual = 0;
+        // La palabra solo cambia mientras el titular esta en pantalla: antes seguia soltando esporas
+        // aunque la persona ya estuviera leyendo otra seccion, y eso le quitaba fluidez a toda la pagina
+        let aLaVista = true;
+        if ('IntersectionObserver' in window) {
+            new IntersectionObserver(function (e) { aLaVista = e[0].isIntersecting; }).observe(rotador);
+        }
         setInterval(function () {
             // Con sesion el heroe queda escondido detras del panel de inicio
-            if (document.hidden || rotador.closest('[hidden]')) return;
+            if (document.hidden || !aLaVista || rotador.closest('[hidden]')) return;
             const saliente = claves[actual];
             actual = (actual + 1) % claves.length;
             soltarEsporas(saliente);
@@ -239,7 +246,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const hero = document.querySelector('.hero');
     if (hero && !reducido && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
         let pendiente = 0, x = 0, y = 0;
+        // --hx y --hy solo los leen las dos manchas de color del fondo (.hero::before y ::after; en app.css
+        // estan registradas para que NO las hereden los hijos: cambiar una variable heredada obliga a
+        // recalcular toda la portada). No hay nada mas que siga al cursor: la luz que lo perseguia se quito
         hero.addEventListener('pointermove', function (e) {
+            if (e.pointerType !== 'mouse') return;
             const r = hero.getBoundingClientRect();
             x = ((e.clientX - r.left) / r.width - 0.5) * 2;
             y = ((e.clientY - r.top) / r.height - 0.5) * 2;
@@ -255,6 +266,45 @@ document.addEventListener('DOMContentLoaded', () => {
             hero.style.setProperty('--hy', 0);
         });
     }
+
+    // 2b. Profundidad al bajar. Mientras la portada sale de la pantalla, cada plano se mueve a su
+    //     velocidad: el texto baja y se apaga, la escena sube y crece un poco, las estrellas se quedan
+    //     atras. En el borde de la barra, una linea dice cuanto de la pagina se ha recorrido.
+    //     Se escribe solo en esos 4 elementos (transform y opacity) y las medidas se guardan: leerlas
+    //     en cada cuadro obligaba al navegador a rehacer el diseno una y otra vez.
+    (function () {
+        const raiz = document.documentElement;
+        const barra = document.querySelector('body > header');     // la linea va en el borde de la isla (app.css, 48)
+        const mover = hero && !reducido;
+        const copia = mover ? hero.querySelector('.hero-copy') : null;
+        const demo = mover ? hero.querySelector('.hero-demo') : null;
+        const fondo = mover ? hero.querySelector('.hero-estrellas') : null;
+        let alto = 1, total = 1, pedido = 0, ultimo = -1;
+        const medir = function () {
+            alto = (hero && hero.offsetHeight) || 1;
+            total = Math.max(1, raiz.scrollHeight - window.innerHeight);
+        };
+        const aplicar = function () {
+            pedido = 0;
+            const y = window.scrollY;
+            if (barra) barra.style.setProperty('--avance', Math.min(1, Math.max(0, y / total)).toFixed(4));
+            if (!copia || hero.hidden) return;
+            const sy = Math.min(1, Math.max(0, y / alto));
+            if (sy === ultimo) return;                 // la portada ya salio: nada que mover
+            ultimo = sy;
+            copia.style.translate = '0px ' + (sy * 90).toFixed(1) + 'px';
+            copia.style.opacity = Math.min(1, Math.max(0, 1.7 - sy * 2.4)).toFixed(3);
+            if (demo) { demo.style.translate = '0px ' + (-sy * 60).toFixed(1) + 'px'; demo.style.scale = (1 + sy * 0.1).toFixed(4); }
+            if (fondo) fondo.style.transform = 'translateY(' + (sy * 140).toFixed(1) + 'px)';
+        };
+        const pedir = function () { if (!pedido) pedido = requestAnimationFrame(aplicar); };
+        window.addEventListener('scroll', pedir, { passive: true });
+        window.addEventListener('resize', function () { medir(); pedir(); });
+        // El alto de la pagina cambia cuando llegan las vacantes: se vuelve a medir sin esperar al scroll
+        if ('ResizeObserver' in window) new ResizeObserver(function () { medir(); pedir(); }).observe(document.body);
+        medir();
+        aplicar();
+    })();
 
     // 3. Demo del match: cada habilidad pesa en el %, el anillo se recalcula
     const demo = document.querySelector('.match-demo');
@@ -314,29 +364,12 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 
 /* ---------------------------------------------------------------
- * Fase 2 — scroll-telling "Como funciona" y cifras de impacto
- *  4. El paso que cruza el centro de la pantalla enciende su escena
+ * Fase 2 — cifras de impacto
+ *  4. "Como funciona" ya no es scroll-telling: es la rueda de rueda-pasos.js
  *  5. Las cifras de impacto cuentan cuando la seccion entra en pantalla
  * --------------------------------------------------------------- */
 (function () {
     const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // 4. Scroll-telling
-    const layout = document.querySelector('.cf-layout');
-    const pasos = layout ? Array.from(layout.querySelectorAll('.cf-paso')) : [];
-    if (layout && pasos.length && 'IntersectionObserver' in window) {
-        layout.classList.add('js-scroll');
-        const activar = function (paso) {
-            pasos.forEach(function (p) { p.classList.toggle('is-activo', p === paso); });
-            layout.dataset.escena = paso.dataset.paso;
-        };
-        activar(pasos[0]);
-        // Una franja en el centro de la pantalla: el paso que la cruza es el activo
-        const observador = new IntersectionObserver(function (entradas) {
-            entradas.forEach(function (e) { if (e.isIntersecting) activar(e.target); });
-        }, { rootMargin: '-45% 0px -45% 0px' });
-        pasos.forEach(function (p) { observador.observe(p); });
-    }
 
     // 5. Cifras de impacto: search-handler.js las escribe ("3,0K+"); aqui
     //    solo se animan desde 0 cuando la seccion se ve, conservando el formato.

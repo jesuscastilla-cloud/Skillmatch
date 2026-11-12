@@ -25,7 +25,7 @@
     const C = window.SkillMatchCiudades;
     if (!seccion || !C) return;
 
-    const MOSTRAR = 6;      // tarjetas
+    const MOSTRAR = 4;      // tarjetas (en 2x2; cada una con su ruta en el mapa)
     const POR_RONDA = 8;    // ciudades que se consultan a la vez
     const RONDAS = 3;       // hasta 24 ciudades: mas lejos ya no es "cerca"
     const RECUERDO = 'skillmatch_cerca';
@@ -108,14 +108,17 @@
         return origen.porUbicacion ? `tu ubicación (cerca de ${origen.ciudad.corto})` : origen.ciudad.corto;
     }
 
-    function tarjeta({ vacante, ciudad }, origen) {
+    // i: su numero en la lista; el mapa (mapa-cerca.js) lo usa para iluminar su punto
+    function tarjeta({ vacante, ciudad }, origen, i) {
         const aqui = ciudad.clave === origen.ciudad.clave;
         const km = Math.max(1, Math.round(C.distanciaKm(origen.lat, origen.lon, ciudad.lat, ciudad.lon)));
         const distancia = aqui ? `En ${escaparHtml(ciudad.corto)}` : `${escaparHtml(ciudad.corto)} · a ${km} km`;
         const modalidades = typeof MODALIDADES_VACANTE !== 'undefined' ? MODALIDADES_VACANTE : {};
         const modalidad = modalidades[C.normalizar(vacante.modality)] || '';
         const salario = typeof formatSalaryRange === 'function' ? formatSalaryRange(vacante.salaryMin, vacante.salaryMax) : '';
-        return `<li class="cerca-tarjeta">
+        // El numero es el mismo del punto de esta vacante en el mapa (el mapa es decorativo: aria-hidden)
+        return `<li class="cerca-tarjeta" data-i="${i}">
+                <span class="cerca-numero" aria-hidden="true">${i + 1}</span>
                 <span class="cerca-distancia${aqui ? ' es-aqui' : ''}"${aqui ? '' : ' title="Distancia en línea recta"'}><i data-ico="pin"></i> ${distancia}</span>
                 <h3 class="cerca-cargo"><a class="cerca-enlace" href="oportunidades.html?jobId=${encodeURIComponent(vacante.id)}">${escaparHtml(vacante.title || 'Vacante')}</a></h3>
                 ${vacante.companyName ? `<p class="cerca-empresa">${escaparHtml(vacante.companyName)}</p>` : ''}
@@ -126,7 +129,11 @@
             </li>`;
     }
 
+    // El mapa de la seccion (mapa-cerca.js); si no esta, las tarjetas funcionan igual
+    const mapa = () => window.SkillMatchMapaCerca || null;
+
     function mostrarCargando(origen) {
+        if (mapa()) mapa().cargando(origen);
         frase.textContent = `Buscando las vacantes más cercanas a ${nombreLugar(origen)}…`;
         lista.hidden = true;
         vacio.hidden = true;
@@ -140,6 +147,7 @@
         cargando.removeAttribute('aria-busy');
         const lugar = nombreLugar(origen);
         if (!encontradas.length) {
+            if (mapa()) mapa().vacio(origen);
             frase.textContent = `Todavía no hay vacantes abiertas cerca de ${lugar}.`;
             lista.hidden = true;
             lista.innerHTML = '';
@@ -155,12 +163,14 @@
         }
         const n = encontradas.length;
         frase.textContent = `${n === 1 ? 'La vacante abierta más cercana' : `Las ${n} vacantes abiertas más cercanas`} a ${lugar}, de la más cerca a la más lejos.`;
-        lista.innerHTML = encontradas.map(e => tarjeta(e, origen)).join('');
+        lista.innerHTML = encontradas.map((e, i) => tarjeta(e, origen, i)).join('');
         lista.hidden = false;
         vacio.hidden = true;
+        if (mapa()) mapa().mostrar(origen, encontradas);
     }
 
     function mostrarError(origen) {
+        if (mapa()) mapa().error(origen);
         cargando.hidden = true;
         cargando.innerHTML = '';
         cargando.removeAttribute('aria-busy');

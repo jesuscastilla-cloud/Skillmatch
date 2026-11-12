@@ -12,7 +12,7 @@ function getUserData() {
 
     if (!userData) {
         alert('Debes iniciar sesión para ver esta página');
-        window.location.href = 'login-usuario.html';
+        window.location.href = 'login.html';
         return null;
     }
     
@@ -26,7 +26,7 @@ function getUserData() {
     // Si no hay ID en URL, usar el usuario actual
     if (!userData) {
         alert('Error al cargar datos de usuario');
-        window.location.href = 'login-usuario.html';
+        window.location.href = 'login.html';
         return null;
     }
     
@@ -1417,7 +1417,7 @@ async function quitarGuardada(boton) {
 document.addEventListener('DOMContentLoaded', function() {
 
     if (!isAuthenticated()) {
-        window.location.href = 'login-usuario.html';
+        window.location.href = 'login.html';
         return;
     }
 

@@ -11,7 +11,7 @@ function sanitize(text) {
 
 document.addEventListener('DOMContentLoaded', function() {
     if (!isAuthenticated()) {
-        window.location.href = 'login-empresa.html';
+        window.location.href = 'login.html?tipo=empresa';
         return;
     }
     loadCompanyData();
@@ -41,7 +41,7 @@ function loadCompanyData() {
 
     if (!localStorage.getItem('userData')) {
         alert('Debes iniciar sesión para ver esta página');
-        window.location.href = 'login-empresa.html';
+        window.location.href = 'login.html?tipo=empresa';
         return;
     }
 

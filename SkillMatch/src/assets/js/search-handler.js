@@ -478,7 +478,7 @@ function renderResults(oportunidades, criteria) {
 
             if (!localStorage.getItem('userData')) {
                 if (window.SkillMatchUI) SkillMatchUI.aviso('Inicia sesión para guardar vacantes.', 'info');
-                setTimeout(() => { window.location.href = 'login-usuario.html'; }, 1200);
+                setTimeout(() => { window.location.href = 'login.html'; }, 1200);
                 return;
             }
 

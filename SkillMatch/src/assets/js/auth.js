@@ -137,6 +137,7 @@ function selectorDeCuenta() {
     if (!grupo) return;
     const opciones = Array.from(grupo.querySelectorAll('[role="radio"]'));
     function elegir(tipo, enfocar) {
+        const cambia = !!grupo.dataset.elegido && grupo.dataset.elegido !== tipo;
         opciones.forEach(o => {
             const si = o.dataset.tipo === tipo;
             o.setAttribute('aria-checked', String(si));
@@ -153,6 +154,14 @@ function selectorDeCuenta() {
             if (google.dataset.listo) prepararBotonGoogle();
         }
         grupo.dataset.elegido = tipo;
+        // Al cambiar (no al abrir la pagina), lo que cambio de texto aparece con un
+        // fundido que sube un poco, uno tras otro (solo opacity y transform)
+        if (cambia && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.querySelectorAll('[data-texto-' + tipo + '], [data-lista-' + tipo + ']').forEach((el, i) => {
+                el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+                    { duration: 380, delay: i * 45, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'backwards' });
+            });
+        }
         // La direccion recuerda la eleccion (al recargar o compartir el enlace)
         const url = new URL(window.location.href);
         if (tipo === 'empresa') url.searchParams.set('tipo', 'empresa'); else url.searchParams.delete('tipo');

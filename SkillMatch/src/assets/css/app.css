@@ -344,21 +344,22 @@ header .logo img { translate: 0 -15%; }
     to   { transform: scaleX(1); opacity: 1; }
 }
 
-/* Linea que se desliza bajo el menu (ui.js, seccion 27). Solo con mouse y sin
-   "reducir movimiento"; entonces la linea fija de cada enlace no se dibuja.
-   Mide 100 px y el JS la estira con scaleX hasta el ancho del enlace. */
+/* Pastilla que se desliza por el menu (ui.js, seccion 27). Solo con mouse y sin
+   "reducir movimiento"; entonces el enlace activo no lleva su pastilla fija.
+   El JS le da el ancho y el alto del enlace y la mueve con transform. */
 .nav-left:has(.con-linea) { position: relative; }
 .nav-links.con-linea a.active-nav::after,
 .nav-links.con-linea a.active::after { display: none; }
-.nav-linea {
+.nav-pastilla {
     position: absolute; left: 0; top: 0;
-    width: 100px; height: 2.5px;
+    width: 100px; height: 38px;
     border-radius: var(--r-pill);
-    background: var(--sea);
+    background: var(--surface);
+    box-shadow: var(--sh-2);
     transform-origin: left center;
     opacity: 0;
     pointer-events: none;
-    transition: transform .35s var(--ease-out), opacity .2s var(--ease);
+    transition: transform .45s cubic-bezier(.34, 1.3, .64, 1), opacity .2s var(--ease);
 }
 
 /* Interruptor de tema — lo inyecta ui.js dentro de la barra */
@@ -933,8 +934,7 @@ input[type="range"] { accent-color: var(--sea); cursor: pointer; min-height: 24p
 .result-card,
 .connection-card,
 .suggestion-card,
-.application-card,
-.roadmap-card {
+.application-card {
     background: var(--surface);
     border: 1px solid var(--hairline);
     border-radius: var(--r-lg);
@@ -1345,7 +1345,7 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     box-shadow: var(--sh-1);
 }
 
-.stat-icon, .section-icon, .roadmap-icon, .notification-icon {
+.stat-icon, .section-icon, .notification-icon {
     display: grid;
     place-items: center;
     width: 44px; height: 44px;
@@ -2174,54 +2174,198 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     gap: var(--s4);
 }
 
-/* ---- Fase 2: scroll-telling "Como funciona" ----
-   Columna izquierda fija con 4 escenas; al bajar, index.js pone
-   data-escena en .cf-layout segun el paso que cruza el centro. */
-.cf-layout {
+/* ---- "Como funciona": la rueda de 4 pasos (rueda-pasos.js) ----
+   Un aro de 4 piezas, una por paso. Al elegir una pieza la rueda gira (transform) hasta dejarla
+   junto al texto, la pieza se pinta de turquesa (opacity) y se separa un poco del aro, y al lado
+   aparecen el texto y la mini escena de ese paso. El centro dice el numero y pasa al siguiente.
+   Sin JavaScript no hay rueda: los 4 pasos se leen en lista. */
+.cf-rueda-zona { display: none; }
+.cf-pasos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s6) var(--s7); }
+.cf-paso { display: flex; flex-direction: column; gap: var(--s5); }
+.cf-paso .cf-escenario { display: none; }
+.cf-num { font-family: var(--font-display); font-size: var(--t-sm); font-weight: 800; letter-spacing: .08em; color: var(--naranja-texto); }
+.cf-paso h3 { font-size: var(--t-xl); margin: var(--s2) 0 var(--s3); }
+.cf-texto p { font-size: var(--t-md); color: var(--ink-3); max-width: 46ch; }
+@media (max-width: 760px) { .cf-pasos { grid-template-columns: minmax(0, 1fr); } }
+
+/* Con JavaScript: la rueda a un lado y el paso elegido al otro */
+.cf-layout.con-rueda {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: var(--s8);
-    align-items: start;
+    grid-template-columns: minmax(0, 440px) minmax(0, 500px);
+    justify-content: center;
+    align-items: center;
+    gap: var(--s9);
 }
-.cf-visual { position: sticky; top: calc(var(--app-bar-h) + 12vh); }
-.cf-escenario {
+.con-rueda .cf-rueda-zona { display: block; }
+.cf-rueda {
+    --rueda-base: #0A2543;                 /* piezas en reposo: azul marino de la marca */
+    --rueda-giro: .95s cubic-bezier(.34, 1.3, .64, 1); /* se pasa un poquito y vuelve, como un dial */
     position: relative;
-    aspect-ratio: 5 / 4;
+    width: 100%;
+    aspect-ratio: 1;
+    container-type: inline-size;           /* las medidas de adentro van en cqw: todo crece con la rueda */
+}
+[data-theme="dark"] .cf-rueda { --rueda-base: #1C3554; }
+/* Sombra quieta bajo el aro (si fuera del aro, giraria con el) */
+.cf-rueda::before {
+    content: "";
+    position: absolute; inset: 7%;
+    border-radius: 50%;
+    box-shadow: 0 34px 60px -6px rgba(8, 32, 60, .34);
+}
+[data-theme="dark"] .cf-rueda::before { box-shadow: 0 34px 60px -6px rgba(0, 0, 0, .6); }
+
+/* La orbita punteada de afuera da vueltas muy despacio, solo mientras se ve */
+.cf-rueda-orbita { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.cf-rueda-orbita circle { fill: none; stroke: var(--ink-muted); stroke-opacity: .45; stroke-width: 1.5; stroke-dasharray: 2 10; stroke-linecap: round; }
+.cf-rueda.en-vista .cf-rueda-orbita { animation: cf-orbita 90s linear infinite; }
+@keyframes cf-orbita { to { transform: rotate(360deg); } }
+
+/* El aro que gira */
+.cf-rueda-giro { position: absolute; inset: 0; transition: transform var(--rueda-giro); }
+.cf-rueda-giro svg { width: 100%; height: 100%; overflow: visible; }
+.cf-seg { cursor: pointer; transform-origin: 220px 220px; transition: transform .6s var(--ease-out); }
+.cf-seg path { stroke-width: 8; stroke-linejoin: round; }  /* el trazo redondea las esquinas */
+.cf-seg-base { fill: var(--rueda-base); stroke: var(--rueda-base); }
+.cf-seg-luz {
+    fill: url(#cfRuedaLuz); stroke: url(#cfRuedaLuz);
+    opacity: 0;
+    transition: opacity .5s var(--ease-out);
+    filter: drop-shadow(0 0 12px rgba(19, 165, 182, .5));
+}
+.cf-seg.is-activo { transform: translate(var(--dx), var(--dy)); }
+.cf-seg.is-activo .cf-seg-luz { opacity: 1; }
+@media (hover: hover) { .cf-seg:not(.is-activo):hover .cf-seg-luz { opacity: .38; } }
+
+/* Primer dibujo y cambios de tamano: sin transiciones. Antes de su entrada, oculta (sin parpadeo) */
+.cf-rueda.quieta :is(.cf-rueda-giro, .cf-marca, .cf-seg, .cf-seg-luz, .cf-centro-numeros b) { transition: none; }
+.cf-rueda.por-entrar :is(.cf-rueda-giro, .cf-rueda-centro) { opacity: 0; }
+
+/* El boton de cada pieza: su icono. Gira al reves que la rueda (rueda-pasos.js), asi queda derecho */
+.cf-marca {
+    position: absolute; left: var(--x); top: var(--y);
+    display: grid; place-items: center;
+    width: 56px; width: max(44px, 13.6cqw); aspect-ratio: 1;
+    border-radius: 50%;
+    color: #fff;
+    opacity: .72;
+    transform: translate(-50%, -50%);
+    transition: transform var(--rueda-giro), opacity .4s var(--ease-out);
+}
+.cf-marca .ico { width: max(20px, 5.9cqw); height: max(20px, 5.9cqw); pointer-events: none; }
+.cf-marca.is-activo { opacity: 1; }
+.cf-marca:focus-visible { outline: 2px solid #fff; outline-offset: 0; }
+
+/* El centro: el numero del paso; al tocarlo pasa al siguiente */
+.cf-rueda-centro {
+    position: absolute; left: 50%; top: 50%;
+    display: grid; place-items: center; align-content: center; gap: 1cqw;
+    width: 43.6%; aspect-ratio: 1;
+    border: 1px solid var(--hairline);
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: var(--sh-3);
+    color: var(--ink);
+    transform: translate(-50%, -50%);
+    transition: transform .3s var(--ease-out);
+}
+@media (hover: hover) { .cf-rueda-centro:hover { transform: translate(-50%, -50%) scale(1.04); } }
+.cf-rueda-centro:active { transform: translate(-50%, -50%) scale(.97); }
+.cf-centro-rotulo { font-size: max(12px, 2.7cqw); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
+.cf-centro-numeros { position: relative; display: block; width: 100%; height: 52px; height: 14cqw; overflow: hidden; }
+.cf-centro-numeros b {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-family: var(--font-display); font-size: 48px; font-size: 13cqw; font-weight: 800; line-height: 1; letter-spacing: -.04em;
+    opacity: 0;
+    transform: translateY(70%);            /* los que vienen esperan abajo */
+    transition: opacity .35s var(--ease-out), transform .6s var(--ease-out);
+}
+.cf-centro-numeros b.es-pasado { transform: translateY(-70%); }  /* los que ya pasaron salen por arriba */
+.cf-centro-numeros b.is-activo { opacity: 1; transform: none; }
+.cf-centro-sigue {
+    display: grid; place-items: center;
+    width: max(24px, 6.4cqw); aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--naranja-soft); color: var(--naranja-texto);
+}
+.cf-centro-sigue .ico { width: 62%; height: 62%; }
+
+/* La chispa naranja: marca el lugar al que llega la pieza elegida y apunta al texto */
+.cf-rueda-chispa {
+    position: absolute; left: 98.6%; top: 50%;
+    width: 10px; height: 10px; margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--naranja);
+    pointer-events: none;
+}
+.cf-rueda-chispa::before {
+    content: "";
+    position: absolute; left: 100%; top: 50%;
+    width: calc(var(--s9) - 30px); height: 1px;
+    background: linear-gradient(90deg, var(--naranja), transparent);
+    opacity: .7;
+}
+.cf-rueda-chispa::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--naranja);
+    opacity: 0;
+}
+.cf-rueda.en-vista .cf-rueda-chispa::after { animation: cf-chispa 2.6s var(--ease-out) infinite; }
+@keyframes cf-chispa { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(3); } }
+
+/* Los pasos, uno encima del otro en la misma celda: se ve solo el elegido (la altura no salta) */
+.con-rueda .cf-pasos { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.con-rueda .cf-paso {
+    grid-area: 1 / 1;
+    opacity: 0; visibility: hidden;
+    transition: opacity .25s var(--ease-out), visibility 0s .25s;
+}
+.con-rueda .cf-paso.is-activo {
+    opacity: 1; visibility: visible;
+    transition: opacity .45s var(--ease-out) .12s, visibility 0s;
+}
+.con-rueda .cf-paso.is-activo :is(.cf-texto > *, .cf-escenario) { animation: cf-sube .65s var(--ease-out) .12s both; }
+.con-rueda .cf-paso.is-activo .cf-texto > h3 { animation-delay: .18s; }
+.con-rueda .cf-paso.is-activo .cf-texto > p { animation-delay: .24s; }
+.con-rueda .cf-paso.is-activo .cf-escenario { animation-delay: .32s; }
+@keyframes cf-sube { from { opacity: 0; transform: translateY(14px); } }
+
+/* La mini escena de cada paso: un pedazo de la app sobre azul noche */
+.con-rueda .cf-paso .cf-escenario {
+    position: relative;
+    display: grid; align-items: center;
+    min-height: 200px;
     overflow: hidden;
     border-radius: var(--r-lg);
     background: var(--grain), var(--bg-deep);
     background-blend-mode: overlay;
     background-size: 220px 220px, auto;
-    box-shadow: var(--sh-4);
+    box-shadow: var(--sh-3);
 }
 .cf-escenario::before {
     content: "";
     position: absolute;
-    inset: -30% -30% auto auto;
-    width: 70%; aspect-ratio: 1;
+    inset: -40% -20% auto auto;
+    width: 60%; aspect-ratio: 1;
     background: radial-gradient(circle, rgba(11,126,140,.55), transparent 65%);
     filter: blur(14px);
 }
 .cf-escena {
-    position: absolute; inset: 0;
+    position: relative;
     display: flex; flex-direction: column; justify-content: center;
     gap: var(--s4);
-    padding: var(--s7);
+    padding: var(--s5);
     color: #fff;
-    opacity: 0;
-    transform: translateY(18px) scale(.98);
-    transition: opacity .5s var(--ease-out), transform .7s var(--ease-out);
 }
-.cf-layout[data-escena="1"] .cf-escena[data-escena="1"],
-.cf-layout[data-escena="2"] .cf-escena[data-escena="2"],
-.cf-layout[data-escena="3"] .cf-escena[data-escena="3"],
-.cf-layout[data-escena="4"] .cf-escena[data-escena="4"] { opacity: 1; transform: none; }
 
 /* Escena 1: el perfil se arma */
 .cf-perfil { display: flex; align-items: center; gap: var(--s4); }
 .cf-avatar {
     display: grid; place-items: center; flex: 0 0 auto;
-    width: 64px; height: 64px; border-radius: 50%;
+    width: 56px; height: 56px; border-radius: 50%;
     background: var(--sea-luz); color: var(--surface-inverse);
     font-family: var(--font-display); font-weight: 800;
 }
@@ -2236,10 +2380,10 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     background: rgba(255,255,255,.08);
     font-size: var(--t-sm); font-weight: 600;
 }
-.cf-layout[data-escena="1"] .cf-chips span { animation: chip-entra .5s var(--ease-out) both; }
-.cf-chips span:nth-child(2) { animation-delay: 90ms; }
-.cf-chips span:nth-child(3) { animation-delay: 180ms; }
-.cf-chips span:nth-child(4) { animation-delay: 270ms; }
+.cf-paso.is-activo .cf-chips span { animation: chip-entra .5s var(--ease-out) .45s both; }
+.cf-paso.is-activo .cf-chips span:nth-child(2) { animation-delay: .54s; }
+.cf-paso.is-activo .cf-chips span:nth-child(3) { animation-delay: .63s; }
+.cf-paso.is-activo .cf-chips span:nth-child(4) { animation-delay: .72s; }
 @keyframes chip-entra { from { opacity: 0; transform: translateY(8px) scale(.9); } }
 
 /* Escena 2: cada vacante se compara con el perfil (barras con scaleX) */
@@ -2253,12 +2397,11 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     background: linear-gradient(90deg, var(--sea), var(--sea-luz));
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform .9s var(--ease-out);
 }
 .cf-comparacion:first-child .cf-barra::after { background: linear-gradient(90deg, var(--naranja), var(--naranja-hover)); }
-.cf-layout[data-escena="2"] .cf-barra::after { transform: scaleX(var(--v)); }
-.cf-comparacion:nth-child(2) .cf-barra::after { transition-delay: 120ms; }
-.cf-comparacion:nth-child(3) .cf-barra::after { transition-delay: 240ms; }
+.cf-paso.is-activo .cf-barra::after { transform: scaleX(var(--v)); transition: transform .9s var(--ease-out) .4s; }
+.cf-paso.is-activo .cf-comparacion:nth-child(2) .cf-barra::after { transition-delay: .52s; }
+.cf-paso.is-activo .cf-comparacion:nth-child(3) .cf-barra::after { transition-delay: .64s; }
 
 /* Escenas 3 y 4: tarjetas de la app sobre el escenario */
 .cf-match, .cf-aviso {
@@ -2272,38 +2415,53 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
 .cf-match strong, .cf-aviso strong { display: block; color: var(--ink); font-family: var(--font-display); }
 .cf-match p, .cf-aviso p { margin-top: 4px; font-size: var(--t-sm); color: var(--ink-3); }
 .cf-anillo { width: 72px; height: 72px; }
-.cf-layout[data-escena="3"] .cf-anillo { animation: ring-draw .7s var(--ease-out) .15s both; }
+.cf-paso.is-activo .cf-anillo { animation: ring-draw .7s var(--ease-out) .45s both; }
 .cf-aviso-icono {
     display: grid; place-items: center; flex: 0 0 auto;
     width: 52px; height: 52px; border-radius: var(--r-md);
     background: var(--naranja-soft); color: var(--naranja-texto);
 }
-.cf-layout[data-escena="4"] .cf-aviso { animation: aviso-entra .6s var(--ease-out) .1s both; }
+.cf-paso.is-activo .cf-aviso { animation: aviso-entra .6s var(--ease-out) .45s both; }
 @keyframes aviso-entra { from { opacity: 0; transform: translateX(28px); } }
 
-/* Columna de pasos: el activo se lee, los demas se atenuan (solo con JS) */
-.cf-pasos { display: flex; flex-direction: column; }
-.cf-paso {
-    display: flex; flex-direction: column; justify-content: center;
-    min-height: 62vh;
-    padding: var(--s5) 0;
-    transition: opacity .4s var(--ease-out);
+/* Anterior / siguiente y "Paso 1 de 4" */
+.cf-controles { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s5); }
+.cf-flecha {
+    display: grid; place-items: center;
+    width: 44px; height: 44px;
+    border: 1px solid var(--hairline);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--ink);
+    transition: transform .2s var(--ease-out);
 }
-.cf-num { font-family: var(--font-display); font-size: var(--t-sm); font-weight: 800; letter-spacing: .08em; color: var(--naranja-texto); }
-.cf-paso h3 { font-size: var(--t-xl); margin: var(--s2) 0 var(--s3); }
-.cf-paso p { font-size: var(--t-md); color: var(--ink-3); max-width: 46ch; }
-.cf-layout.js-scroll .cf-paso:not(.is-activo) { opacity: .35; }
-/* Atenuados quedan por debajo de 4.5:1 (a propósito: se leen al llegar a ellos).
-   Quien pidió más contraste en su sistema los ve todos completos. */
-@media (prefers-contrast: more) { .cf-layout.js-scroll .cf-paso:not(.is-activo) { opacity: 1; } }
+.cf-flecha:hover { border-color: var(--sea); color: var(--sea-deep); }
+.cf-flecha:active { transform: scale(.92); }
+.cf-flecha[data-ir="-1"] .ico { transform: scaleX(-1); }
+.cf-cuenta { min-width: 10ch; text-align: center; font-size: var(--t-sm); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
-@media (max-width: 1080px) {
-    .cf-layout { grid-template-columns: 1fr; gap: 0; }
-    /* En pantallas angostas el escenario queda fijo arriba y los pasos pasan debajo */
-    .cf-visual { top: calc(var(--app-bar-h) + var(--s2)); z-index: 2; }
-    .cf-escenario { aspect-ratio: 16 / 10; }
-    .cf-escena { padding: var(--s5); gap: var(--s3); }
-    .cf-paso { min-height: 55vh; }
+/* Pantallas angostas: la rueda arriba, la pieza elegida abajo (apunta al texto) y el texto centrado */
+@media (max-width: 900px) {
+    .cf-layout.con-rueda { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: var(--s7); }
+    .con-rueda .cf-rueda-zona { width: min(80vw, 320px); }
+    .con-rueda .cf-lado { width: 100%; max-width: 520px; }
+    .con-rueda .cf-texto { text-align: center; }
+    .con-rueda .cf-texto p { margin-inline: auto; }
+    .cf-controles { justify-content: center; }
+    .cf-rueda-chispa { left: 50%; top: 98.6%; }
+    .cf-rueda-chispa::before {
+        left: 50%; top: 100%;
+        width: 1px; height: calc(var(--s7) - 22px);
+        background: linear-gradient(180deg, var(--naranja), transparent);
+    }
+}
+
+/* Con "reducir movimiento": la rueda cambia de golpe y nada da vueltas solo */
+@media (prefers-reduced-motion: reduce) {
+    .cf-rueda-giro, .cf-marca, .cf-seg, .cf-seg-luz, .cf-centro-numeros b, .cf-rueda-centro,
+    .con-rueda .cf-paso, .con-rueda .cf-paso.is-activo, .cf-paso.is-activo .cf-barra::after { transition: none; }
+    .con-rueda .cf-paso.is-activo :is(.cf-texto > *, .cf-escenario, .cf-chips span, .cf-anillo, .cf-aviso) { animation: none; }
+    .cf-rueda.en-vista .cf-rueda-orbita, .cf-rueda.en-vista .cf-rueda-chispa::after { animation: none; }
 }
 
 .section { padding: var(--s9) 0; }
@@ -2316,19 +2474,6 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: var(--s5);
 }
-
-.roadmap-card { padding: var(--s6); }
-.roadmap-header { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); }
-.roadmap-title { font-family: var(--font-display); font-size: var(--t-md); color: var(--ink); font-weight: 700; }
-.roadmap-points { display: flex; flex-direction: column; gap: 9px; margin-top: var(--s4); }
-.roadmap-points li {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--s2);
-    font-size: var(--t-base);
-    color: var(--ink-3);
-}
-.roadmap-points li .ico { color: var(--sea); margin-top: 3px; }
 
 footer {
     padding: var(--s8) 0 var(--s6);
@@ -2656,7 +2801,7 @@ footer.pie > .container { position: relative; z-index: 1; }
 .lp-linea { opacity: 0; }
 .lp-boca-o, .lp-boca-risa { transform: scale(0); }
 
-/* Ropa de oficina (solo en el login de empresas): azul marino con detalles
+/* Ropa de oficina (se ve con "Soy empresa"): azul marino con detalles
    naranja del logo. Corbata y carnet se mecen como pendulos desde el JS. */
 .lp-traje { fill: var(--surface-inverse); }
 .lp-cuello, .lp-carnet { fill: #fff; }
@@ -2665,6 +2810,21 @@ footer.pie > .container { position: relative; z-index: 1; }
 .lp-carnet-texto { fill: none; stroke: var(--surface-inverse); stroke-width: 1.6; }
 .lp-cinta { stroke: var(--surface-inverse); stroke-width: 2.4; }
 .lp-lentes { fill: none; stroke: var(--surface-inverse); stroke-width: 2.6; }
+/* Al elegir "Soy empresa" la ropa les cae encima con un rebote (uno tras otro);
+   al volver a "Busco trabajo" se va rapido hacia arriba. Solo transform y opacity. */
+.lp-ropa {
+    transform-box: fill-box;
+    transform-origin: 50% 0;
+    transition: opacity .3s var(--ease-out), transform .55s cubic-bezier(.34, 1.56, .64, 1);
+}
+.lp-pj[data-pj="turquesa"] .lp-ropa { transition-delay: .09s; }
+.lp-pj[data-pj="naranja"] .lp-ropa { transition-delay: .18s; }
+.login-personajes:not([data-variante="empresa"]) .lp-ropa {
+    opacity: 0;
+    transform: translateY(-16px) scale(.6);
+    transition-duration: .2s, .25s;
+}
+@media (prefers-reduced-motion: reduce) { .lp-ropa { transition: none; } }
 
 /* Cada parte se transforma desde su propio punto (los pies, el centro del
    ojo o de la boca): el JS pone ese punto en px del lienzo */
@@ -4222,24 +4382,12 @@ a.meta-tag { position: relative; }
 .indicadores-hora { margin-top: var(--s5); font-size: var(--t-xs); color: var(--ink-muted); }
 .indicadores-hora:empty { display: none; }
 
-/* El informe de Power BI queda como enlace para el equipo */
-.indicadores-powerbi {
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s4);
-    margin-top: var(--s7);
-    padding: var(--s5) var(--s6);
-    border: 1px dashed var(--hairline);
-    border-radius: var(--r-lg);
-}
-.indicadores-powerbi h2 { font-size: var(--t-md); }
-.indicadores-powerbi p { margin-top: 4px; max-width: 62ch; font-size: var(--t-sm); color: var(--ink-3); }
-
 @media (max-width: 900px) {
     .indicadores-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 700px) {
     .indicadores-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
     .indicador { padding: var(--s4) var(--s4) var(--s5); }
-    .indicadores-powerbi { padding: var(--s4); }
 }
 
 /* ---------- 24b. Sin conexion (la muestra sw.js) ---------- */
@@ -5485,7 +5633,7 @@ kbd {
 [data-theme="dark"] .company-logo-opp, [data-theme="dark"] .result-logo,
 [data-theme="dark"] .company-logo-compact, [data-theme="dark"] .connection-avatar-circle,
 [data-theme="dark"] .conversation-avatar, [data-theme="dark"] .candidate-mini-avatar,
-[data-theme="dark"] .empresa-avatar, [data-theme="dark"] .status-planned { color: var(--sea); }
+[data-theme="dark"] .empresa-avatar { color: var(--sea); }
 
 [data-theme="dark"] input::placeholder,
 [data-theme="dark"] textarea::placeholder { color: #5B7086; }
@@ -5602,10 +5750,6 @@ kbd {
 .employment { background: var(--sea-light);       color: var(--sea-deep); }
 .practice   { background: var(--sol-soft);        color: var(--sol-deep); }
 .freelance  { background: var(--naranja-soft); color: var(--naranja-deep); }
-
-.status-building { background: var(--sol-soft);   color: var(--sol-deep); }
-.status-idea     { background: var(--hairline-soft); color: var(--ink-muted); }
-.status-planned  { background: var(--sea-light);  color: var(--sea-deep); }
 
 /* ---- Portada: buscador y filtros rapidos ---- */
 .search-section { padding: var(--s7) 0 var(--s6); background: var(--surface); border-bottom: 1px solid var(--hairline); }
@@ -5781,15 +5925,15 @@ kbd {
 .results-count strong { color: var(--ink); }
 
 /* ---- Portada: secciones de contenido ---- */
-.innovation-section, .benefits-section, .features, .usuarios-empresas { padding: var(--s9) 0; }
+.benefits-section, .features, .usuarios-empresas { padding: var(--s9) 0; }
 .benefits-section { background: var(--surface); }
-.innovation-header, .why-header, .section-header-center {
+.why-header, .section-header-center {
     max-width: 62ch; margin: 0 auto var(--s7); text-align: center;
 }
-.section-header-center p, .innovation-header p, .why-header p { margin-inline: auto; color: var(--ink-3); font-size: var(--t-md); }
+.section-header-center p, .why-header p { margin-inline: auto; color: var(--ink-3); font-size: var(--t-md); }
 .section-title-large { font-size: clamp(1.8rem, 1.2rem + 2.4vw, 2.75rem); }
 
-.features-grid, .why-grid, .roadmap-grid, .stats-grid, .certifications-grid, .projects-grid, .candidates-grid {
+.features-grid, .why-grid, .stats-grid, .certifications-grid, .projects-grid, .candidates-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--s5);
 }
 
@@ -5885,7 +6029,6 @@ kbd {
 .pathway-card { display: flex; flex-direction: column; }
 .pathway-card .pathway-features { margin-bottom: var(--s5); }
 .pathway-card .btn { margin-top: auto; align-self: flex-start; }
-.roadmap-cta { margin-top: var(--s7); text-align: center; }
 .impact-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s5); }
 .stat-content { min-width: 0; }
 
@@ -6569,7 +6712,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
     .profile-avatar { width: 112px; height: 112px; }
     .profile-avatar-section { margin-top: -56px; }
     .profile-avatar-initials { font-size: 2.3rem; }
-    .features-grid, .why-grid, .roadmap-grid, .choice-split { grid-template-columns: 1fr; }
+    .features-grid, .why-grid, .choice-split { grid-template-columns: 1fr; }
     .conversations-sidebar.chat-active { display: none; }
     /* Mensajes: con un chat abierto se ve solo el chat (con boton para volver);
        sin chat abierto, solo la lista (si hay conversaciones) */
@@ -6736,7 +6879,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 .pagina-vidrio :is(.perfil-cifra, .profile-section, .profile-card, .sidebar-card, .profile-header-card,
     .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
     .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
-    .stat-box, .roadmap-card, .benefit-item, .pathway-card, .panel-bloque, .choice-card, .cerca-tarjeta, .cerca-vacio,
+    .stat-box, .benefit-item, .pathway-card, .panel-bloque, .choice-card, .cerca-tarjeta, .cerca-vacio,
     :where(.indicadores-cifras) > li, .indicador) {
     isolation: isolate;
     background: linear-gradient(160deg, var(--vidrio-reflejo), transparent 42%), var(--vidrio-tinte);
@@ -6791,7 +6934,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    tarjetas iban directo sobre las manchas). Para visitantes, bajo la ola de la portada el vidrio nace del
    mismo color de la ola (--surface) y se funde en 140 px: sin eso, bajo la ola quedaba una linea recta */
 .pagina-vidrio :is(.panel-inicio, .search-section, .results-section, .impact-stats, .como-funciona, .benefits-section,
-    .cerca-section, .usuarios-empresas, .innovation-section) {
+    .cerca-section, .usuarios-empresas) {
     background: var(--vidrio-tinte); border-block-width: 0;
 }
 .pagina-vidrio .hero:not([hidden]) + .search-section { background: linear-gradient(180deg, var(--surface), transparent 140px), var(--vidrio-tinte); }
@@ -6799,7 +6942,38 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    siguen azul oscuro (superficies de la marca, como el pie). El carrusel 3D sigue solido: en 3D las
    tarjetas translucidas se verian unas a traves de otras. Los recuadros punteados, con el tinte de las
    tarjetas (con el vidrio fino, casi transparente en oscuro, su texto quedaba en 4.45) */
-.pagina-vidrio :is(.indicadores-powerbi, .indicadores-vacio) { background: var(--vidrio-tinte); }
+.pagina-vidrio .indicadores-vacio { background: var(--vidrio-tinte); }
+/* El pie en las paginas de vidrio. La ola (.pie-ola) pinta el color liso de la pagina (--bg) sobre el
+   borde de arriba del pie: sobre el fondo vivo eso dejaba una franja clara de borde recto entre el vidrio
+   y la ola. Aqui el pie mismo termina en curva (una mascara con la misma ola, al reves) y encima de la
+   curva se ve el fondo vivo, como en el resto de la pagina. La curva queda quieta: deslizarla obligaria a
+   animar la mascara, y solo se animan transform y opacity. En la portada (pie pegado a la llamada final)
+   y en el login de computador (columna oscura hasta el pie) el pie sigue recto, sin ola. */
+.pagina-vidrio footer.pie:not(.cta-final + footer) {
+    -webkit-mask:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C180 48 540 48 720 24S1260 0 1440 24V48H0Z'/%3E%3C/svg%3E") left top / 100% 48px no-repeat,
+        linear-gradient(#000 0 0) left 47px / 100% calc(100% - 47px) no-repeat;
+            mask:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C180 48 540 48 720 24S1260 0 1440 24V48H0Z'/%3E%3C/svg%3E") left top / 100% 48px no-repeat,
+        linear-gradient(#000 0 0) left 47px / 100% calc(100% - 47px) no-repeat;
+}
+.pagina-vidrio footer.pie:not(.cta-final + footer) .pie-ola { display: none; }
+@media (min-width: 1081px) {
+    .pagina-vidrio:has(.auth-shell) footer.pie:not(.cta-final + footer) { -webkit-mask: none; mask: none; }
+}
+/* Donde lo ultimo antes del pie es una repisa de vidrio (los registros y, hasta 1080 px, el formulario de
+   entrar y el de recuperar la clave), la repisa sigue por debajo de la ola: el pie sube 48 px y la repisa
+   crece 48 px. El texto queda a la misma distancia de la ola y sobre la curva se ve la repisa, sin la raya
+   recta donde terminaba. */
+.pagina-vidrio .registro-section:has(+ footer.pie) { padding-bottom: calc(var(--s9) + 48px); }
+.pagina-vidrio .registro-section + footer.pie { margin-top: -48px; }
+@media (max-width: 1080px) {
+    .pagina-vidrio .auth-shell:has(+ footer.pie) .auth-panel { padding-bottom: calc(var(--s8) + 48px); }
+    .pagina-vidrio .auth-shell + footer.pie { margin-top: -48px; }
+}
+@media (max-width: 760px) {
+    .pagina-vidrio .auth-shell:has(+ footer.pie) .auth-panel { padding-bottom: calc(var(--s6) + 48px); }
+}
 /* Fase 6: entrar y registrarse. La columna del formulario es de vidrio (la de los personajes sigue azul
    oscuro); las paginas de registro son una repisa de vidrio y su tarjeta de formulario va encima en vidrio
    grueso. Esa tarjeta se pinta con ".registro-section > .container > .registro-form": hace falta la misma
@@ -6812,7 +6986,7 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
 }
 /* "Como funciona" en el celular: la tarjeta oscura se queda pegada arriba y su sombra pasa sobre el texto
    de los pasos al bajar (con --ink-3 quedaba en 4.3 ese instante): un tono mas oscuro */
-.pagina-vidrio .cf-paso p { color: var(--ink-2); }
+.pagina-vidrio .cf-texto p { color: var(--ink-2); }
 .pagina-vidrio .directorio-cta { background: var(--vidrio-tinte-fino); }
 /* Mensajes: el fondo del chat deja ver el vidrio; las burbujas siguen solidas (las tuyas turquesa, las
    recibidas blancas) para leerse perfecto. La barra para escribir es de vidrio fino y su campo, solido */
@@ -6923,7 +7097,7 @@ body > header, [data-theme="dark"] body > header {
 [data-theme="dark"] .pagina-vidrio :is(.match-badge-small:not(.match-excellent, .match-fair), .company-logo-compact,
     .company-logo-opp, .empresa-cuenta, .primeros-pasos-cuenta,
     .connection-avatar-circle, .conversation-avatar, .empresa-avatar, .chat-avatar, .candidate-mini-avatar,
-    .etiqueta-vacante.es-nueva, .card-skills .skill.is-common, .status-planned, .auth-eyebrow) { color: #A3ECF3; } /* fase 4: "Nueva" y "ya tienes" en 3.6 a 4.2; fase 5: "Proximo" en 4.3 */
+    .etiqueta-vacante.es-nueva, .card-skills .skill.is-common, .auth-eyebrow) { color: #A3ECF3; } /* fase 4: "Nueva" y "ya tienes" en 3.6 a 4.2 */
 /* La pestana activa del celular, en oscuro: el turquesa luminoso (con #2BB6C6 sobre su fondo turquesa, 4.4) */
 [data-theme="dark"] .tabbar a.is-active { color: var(--sea-luz); } /* fase 3: "4", "2 de 5" y "H" quedaban en 3.8 a 4.4 */
 [data-theme="dark"] .pagina-vidrio .meta-tag.es-verificada { color: #7FE3B8; } /* "Empresa verificada": con #3FCB93 quedaba en 4.36 */
@@ -6945,8 +7119,8 @@ body > header, [data-theme="dark"] body > header {
         .content-section-card, .sidebar-widget, .opportunity-card, .empresa-bloque, .company-header-card, .empresa-cabeza,
         .filter-card, .empresa-tarjeta, .connection-card, .suggestion-card, .conversations-sidebar, .chat-area,
         .opportunities-header, .directorio-cabecera, .connections-header,
-        .stat-box, .roadmap-card, .benefit-item, .pathway-card, .panel-bloque, .choice-card, .cerca-tarjeta, .cerca-vacio,
-        :where(.indicadores-cifras) > li, .indicador, .panel-inicio, .search-section, .impact-stats, .benefits-section, .innovation-section,
+        .stat-box, .benefit-item, .pathway-card, .panel-bloque, .choice-card, .cerca-tarjeta, .cerca-vacio,
+        :where(.indicadores-cifras) > li, .indicador, .panel-inicio, .search-section, .impact-stats, .benefits-section,
         .cerca-section,
         .indicadores-cabecera, .como-funciona, .usuarios-empresas, .results-section,
         .registro-section, .auth-panel),
@@ -6960,3 +7134,902 @@ body > header, [data-theme="dark"] body > header {
 }
 @media (forced-colors: active) { .pagina-vidrio .fondo-vivo { display: none; } }
 @media print { .fondo-vivo { display: none !important; } .pagina-vidrio { background: #fff; } }
+
+
+/* =====================================================================
+   35. Inicio de sesion unico (de la revision de noviembre de 2026)
+   Selector "Busco trabajo / Soy empresa" de login.html (auth.js lo maneja).
+   Va al final para ganarle a lo anterior sin !important.
+   ===================================================================== */
+.auth-selector {
+    position: relative; isolation: isolate;
+    display: flex; margin-bottom: var(--s5); padding: 4px;
+    border: 1px solid var(--hairline); border-radius: var(--r-pill); background: var(--surface-sunk);
+}
+/* La pastilla blanca es UNA sola pieza que se desliza hasta la opcion elegida
+   (auth.js marca la eleccion en data-elegido). Solo se mueve con transform y
+   llega con un pequeno rebote. Mide la mitad del selector menos el borde interno. */
+.auth-selector::before {
+    content: "";
+    position: absolute; z-index: -1;
+    top: 4px; bottom: 4px; left: 4px;
+    width: calc(50% - 4px);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    box-shadow: var(--sh-2);
+    transition: transform .5s cubic-bezier(.34, 1.36, .64, 1);
+}
+.auth-selector[data-elegido="empresa"]::before { transform: translateX(100%); }
+.auth-selector [role="radio"] {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+    min-height: 44px; border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--ink-3); font-weight: 600;
+}
+.auth-selector [role="radio"] .ico { width: 18px; height: 18px; }
+.auth-selector [role="radio"][aria-checked="true"] { color: var(--ink); }
+/* El icono de la opcion elegida da un saltito cuando la pastilla llega */
+/* .ico.ico: gana a la animacion de los iconos al pasar el mouse (ui.js); si no, al salir el mouse se repetia el saltito */
+.auth-selector [role="radio"][aria-checked="true"] .ico.ico { animation: selector-icono .5s cubic-bezier(.34, 1.56, .64, 1) .08s both; }
+@keyframes selector-icono {
+    from { transform: scale(.55) rotate(-14deg); opacity: .4; }
+    to   { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .auth-selector::before { transition: none; }
+    .auth-selector [role="radio"][aria-checked="true"] .ico.ico { animation: none; }
+}
+
+/* ---------- 36. Escenas isometricas animadas (escenas.js) ----------
+   Ilustraciones SVG en estilo isometrico que cuentan una historia en bucle.
+   escenas.js las dibuja y las mueve con Web Animations; aqui va el marco, el
+   punto de giro de cada efecto y la "vida de fondo" (animaciones
+   CSS que se repiten sin fin). Todo mueve solo transform y opacity. */
+.escenario {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: 20px;
+    overflow: hidden;
+    background: radial-gradient(120% 90% at 30% 20%, #0D3155 0%, #071C35 55%, #051427 100%);
+    box-shadow: 0 0 0 1px rgba(95, 208, 220, .16), var(--sh-4);
+}
+.escenario > svg { display: block; width: 100%; height: 100%; }
+/* Brillo que sigue al mouse mientras la escena se inclina (escenas.js lo mueve) */
+.escena-reflejo {
+    position: absolute;
+    left: 15%; top: 15%;
+    width: 70%; aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, .12), rgba(255, 255, 255, 0) 65%);
+    opacity: 0;
+    pointer-events: none;
+}
+/* Letras dentro de la escena, con las fuentes de la marca */
+.escenario .e-letra { font-family: var(--font-text); font-weight: 500; }
+.escenario .e-letra-titulo { font-family: var(--font-display); font-weight: 800; }
+/* Punto de giro: lo que crece lo hace desde su centro */
+.escenario :is(.e-crece, .e-onda) { transform-box: fill-box; transform-origin: 50% 50%; }
+
+/* Vida de fondo: autos que pasan, arboles que se mecen, particulas que suben.
+   Se detiene cuando la escena no se ve. */
+.escenario.escena-quieta * { animation-play-state: paused !important; }
+.e-flota { animation: e-flota 3.2s ease-in-out infinite; }
+@keyframes e-flota { 50% { transform: translateY(-5px); } }
+.e-mece { animation: e-mece 4.2s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes e-mece { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.e-transita { animation: e-transita 12s linear infinite; }
+@keyframes e-transita {
+    0%      { transform: translate(0, 0); opacity: 0; }
+    7%, 93% { opacity: 1; }
+    100%    { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+.e-mota { opacity: 0; animation: e-mota 9s ease-in-out infinite; }
+@keyframes e-mota {
+    0%   { transform: translate(0, 0); opacity: 0; }
+    30%  { opacity: .55; }
+    100% { transform: translate(8px, -64px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .escenario * { animation: none !important; transition: none !important; }
+}
+
+/* En el inicio la escena reemplaza la tarjeta blanca y entra igual que ella */
+.hero-demo { min-width: 0; animation: hero-card-in 1s var(--ease-out) .25s both; }
+
+/* ---------- 37. Mapa de "Vacantes cerca de ti" (mapa-cerca.js) ----------
+   El mapa "Global team" de Glassy Dashboard (WorldMap + LocationsView) en
+   SkillMatch: panel de vidrio ahumado, tierra hecha de puntos, pines blancos
+   con brillo y onda, el tuyo en turquesa con su nombre en una etiqueta oscura,
+   y rutas finas que se dibujan desde tu ciudad. Va a la izquierda de las
+   tarjetas; en pantallas angostas, arriba. Solo se anima transform y opacity. */
+.cerca-cuerpo { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s5); align-items: start; }
+.cerca-resultados { min-width: 0; }
+.cerca-cuerpo .cerca-lista { grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+.cerca-cuerpo .cerca-vacio { max-width: none; margin-inline: 0; }
+.cerca-mapa {
+    position: sticky;
+    top: calc(var(--app-bar-h) + var(--s4));
+    display: flex; flex-direction: column; gap: var(--s3);
+    padding: var(--s4) var(--s4) var(--s3);
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    background: linear-gradient(180deg, rgba(40, 46, 56, .9), rgba(24, 28, 36, .94));
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+            backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 30px 60px -24px rgba(8, 20, 40, .5);
+    color: #fff;
+}
+.cerca-mapa-cabeza { padding: 2px 4px 0; }
+.cerca-mapa-titulo { font-family: var(--font-display); font-weight: 700; font-size: var(--t-md); color: #fff; }
+.cerca-mapa-sub { margin-top: 2px; font-size: var(--t-sm); color: rgba(255, 255, 255, .7); }
+/* El lienzo, con los dos brillos de color de Glassy (azul y ambar) */
+.cerca-mapa-lienzo {
+    position: relative;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    background:
+        radial-gradient(60% 70% at 30% 40%, rgba(118, 180, 255, .12), transparent 70%),
+        radial-gradient(50% 60% at 80% 70%, rgba(255, 196, 77, .1), transparent 70%),
+        rgba(0, 0, 0, .14);
+    overflow: hidden;
+}
+.cerca-mapa-leyenda { display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: var(--t-xs); color: rgba(255, 255, 255, .7); }
+.cm-ley { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+.cm-ley-tu { background: var(--sea-luz); }
+.cm-ley-vacante { margin-left: var(--s3); background: #fff; box-shadow: 0 0 6px rgba(255, 255, 255, .7); }
+
+/* Rutas: trazo fino y blanco; al entrar, el recorte se estira desde tu ciudad (se "dibujan") */
+.cm-ruta { fill: none; stroke: rgba(255, 255, 255, .55); stroke-width: .24; stroke-linecap: round; transition: opacity .3s var(--ease-out); }
+.cm-luz { fill: #fff; opacity: 0; }
+
+/* Pines (como .lc-pin de Glassy): punto blanco con anillo, brillo y una onda */
+.cm-pines { position: absolute; inset: 0; }
+.cm-pin {
+    position: absolute;
+    display: grid; place-items: center;
+    width: 30px; height: 30px;
+    margin: -15px 0 0 -15px;
+    border-radius: 50%;
+}
+.cm-pin i {
+    position: relative;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, .22), 0 0 16px rgba(255, 255, 255, .7);
+    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1);
+}
+.cm-pin i::after {
+    content: "";
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, .6);
+    animation: cm-onda 2.4s var(--ease-out) infinite;
+}
+@keyframes cm-onda {
+    from { transform: scale(.6); opacity: 1; }
+    to   { transform: scale(2.2); opacity: 0; }
+}
+/* Tu pin: turquesa, un poco mas grande */
+.cm-pin-tu i { background: var(--sea-luz); box-shadow: 0 0 0 4px rgba(95, 208, 220, .25), 0 0 18px rgba(95, 208, 220, .8); transform: scale(1.2); }
+.cm-pin-tu i::after { border-color: rgba(95, 208, 220, .7); }
+/* Cuantas vacantes tiene el pin */
+.cm-cuenta {
+    position: absolute; top: -3px; left: 19px;
+    min-width: 17px; height: 17px; padding: 0 4px;
+    border-radius: 9px;
+    background: var(--naranja); color: #fff;
+    font: 700 10.5px/17px var(--font-text); font-style: normal; text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+    pointer-events: none;
+}
+/* Nombre: etiqueta oscura encima del pin; la tuya siempre, las demas al pasar el mouse */
+.cm-pin b {
+    position: absolute;
+    bottom: calc(100% + 4px); left: 50%;
+    padding: 5px 10px;
+    border-radius: 10px;
+    background: rgba(14, 14, 16, .82);
+    color: #fff;
+    font: 600 11.5px var(--font-text);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 4px);
+    transition: opacity .2s, transform .3s var(--ease-out);
+}
+.cm-pin.es-activo b, .cm-pin.es-resaltado b, .cm-pin:hover b { opacity: 1; transform: translate(-50%, 0); }
+.cm-pin.es-resaltado { z-index: 2; }
+.cm-pin.es-resaltado i { background: var(--naranja); box-shadow: 0 0 0 4px rgba(255, 118, 24, .28), 0 0 18px rgba(255, 140, 60, .85); transform: scale(1.35); }
+/* Si hay una tarjeta o un pin señalado, la etiqueta propia se aparta para no tapar */
+.cm-hay-resaltado .cm-pin-tu:not(.es-resaltado) b { opacity: .35; }
+.cm-hay-resaltado .cm-ruta:not(.es-resaltada) { opacity: .35; }
+.cerca-tarjeta.es-resaltada { transform: translateY(-4px); }
+/* Al entrar, los pines caen con resorte uno tras otro (lc-drop de Glassy) */
+.cm-entra .cm-pin { animation: cm-cae .7s cubic-bezier(.34, 1.56, .64, 1) backwards; animation-delay: calc(.25s + var(--k, 0) * 90ms); }
+@keyframes cm-cae { from { opacity: 0; transform: translateY(-16px) scale(.4); } }
+.cm-quieto .cm-pin i::after { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+    .cm-pin i::after { display: none; }
+    .cerca-mapa *, .cerca-tarjeta.es-resaltada { animation: none !important; transition: none !important; }
+}
+@media (max-width: 1080px) {
+    .cerca-cuerpo { grid-template-columns: minmax(0, 1fr); }
+    .cerca-mapa { position: static; }
+}
+
+/* ---------- 38. Barra de navegacion centrada, limpia (estilo Stripe / Vercel) ----------
+   Flexbox en tres partes: el logo y los botones ocupan cada uno un lado con el mismo
+   ancho (flex: 1 1 0) y los enlaces van en el centro exacto, libres sobre el fondo de
+   la barra, sin capsula. Al pasar el mouse, un fondo gris suave se desliza al enlace
+   (ui.js, seccion 27: .nav-pastilla); la pagina activa va en negrita y oscura.
+   Si la pantalla no alcanza, cada lado mide al menos su contenido (nada se monta).
+   En celular el menu va abajo (tabbar). */
+@media (width > 760px) {
+    header > nav {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: var(--s5);
+    }
+    header > nav > .nav-left { display: contents; }
+    header > nav > .nav-left > .logo { flex: 1 1 0; min-width: max-content; }
+    header > nav > .nav-left > .nav-links { flex: 0 0 auto; }
+    header > nav > .nav-links { flex: 1 1 0; min-width: max-content; justify-content: flex-end; }
+}
+/* Desde 1280 px los dos lados miden exactamente lo mismo: los botones de la derecha (unos 8 px
+   mas anchos que su lado) entran en el espacio de 24 px que los separa del menu, sin tocarlo */
+@media (width >= 1280px) {
+    header > nav > .nav-links { min-width: 0; }
+}
+.nav-left > .nav-links { gap: var(--s1); }
+.nav-left > .nav-links a {
+    z-index: 1;
+    min-height: 38px;
+    padding: var(--s2) var(--s4);
+    border-radius: var(--r-pill);
+    translate: none;
+}
+.nav-left > .nav-links a:hover { background: transparent; color: var(--ink); }
+.nav-left > .nav-links a.active-nav, .nav-left > .nav-links a.active { color: var(--ink); font-weight: 600; }
+/* Sin la linea de antes */
+.nav-left > .nav-links a.active-nav::after,
+.nav-left > .nav-links a.active::after { display: none; }
+/* La pastilla que se desliza: gris suave, sin sombra ni fondo blanco */
+.nav-pastilla { background: var(--hairline-soft); box-shadow: none; }
+/* Sin mouse o con "reducir movimiento" no hay pastilla que se deslice: el activo lleva su fondo suave */
+.nav-left > .nav-links:not(.con-linea) a.active-nav,
+.nav-left > .nav-links:not(.con-linea) a.active { background: var(--hairline-soft); }
+@media (width > 760px) and (width <= 1100px) {
+    .nav-left > .nav-links a { padding: var(--s2) var(--s3); }
+}
+@media (width > 760px) and (width <= 900px) {
+    .nav-left > .nav-links a { padding: var(--s2) 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .nav-pastilla { transition: none; } }
+
+/* ---------- 39. Ajustes de la auditoria (skill ui-ux-pro-max: contraste 4.5:1, texto de 12 px, toque de 44 px) ---------- */
+/* El numero de vacantes de cada pin: texto azul marino sobre el naranja (7:1; en blanco daba 2.7:1) */
+.cm-cuenta { color: #04192F; font-size: 12px; line-height: 17px; }
+.cm-pin b { font-size: 12px; }
+/* En celular la escena del inicio se achica: la frase de abajo crece para seguir leyendose a 13 px o mas */
+@media (max-width: 560px) {
+    .escenario .e-leyenda { font-size: 19px; }
+}
+/* En pantallas tactiles cada opcion del menu mide 44 px de alto para tocarla con el dedo */
+@media (pointer: coarse) {
+    .nav-left > .nav-links a { min-height: 44px; }
+}
+
+/* ---------- 40. "Vacantes cerca de ti": camara del mapa, 4 rutas numeradas y tarjetas 2x2 ----------
+   (Va despues de la seccion 37 y la ajusta.) La tierra va dentro de .cm-camara, que mapa-cerca.js
+   mueve con transform para "volar" desde Colombia entera hasta tu ubicacion. Las rutas y los pines
+   van encima, en pixeles de pantalla, asi no crecen con el acercamiento. */
+.cerca-mapa-lienzo { aspect-ratio: 11 / 10; }
+.cm-rutas-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.cm-ruta { stroke-width: 1.6; stroke: rgba(255, 255, 255, .6); filter: drop-shadow(0 0 3px rgba(255, 255, 255, .35)); }
+.cm-ruta.es-resaltada { stroke: #FFA05C; stroke-width: 2.2; filter: drop-shadow(0 0 4px rgba(255, 140, 60, .6)); }
+.cm-luz { r: 2.6px; }
+/* Tu pin se mueve con transform junto con la camara: no lleva la animacion de caida */
+.cm-pin-tu { left: 0; top: 0; z-index: 3; }
+.cm-entra .cm-pin-tu { animation: none; }
+/* Pines de vacantes: circulo blanco con el numero de su tarjeta */
+.cm-pin-vacante i {
+    display: grid; place-items: center;
+    width: 24px; height: 24px;
+    color: #04192F;
+    font: 700 12px/1 var(--font-text); font-style: normal;
+}
+.cm-pin-vacante b { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+
+/* Las 4 tarjetas en 2x2, mas anchas; cada una lleva el numero de su punto en el mapa */
+.cerca-cuerpo .cerca-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); }
+.cerca-cuerpo .cerca-tarjeta { min-height: 100%; padding: var(--s5) var(--s5) var(--s5) var(--s5); }
+.cerca-numero {
+    position: absolute; top: var(--s4); right: var(--s4);
+    display: grid; place-items: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--ink); color: var(--surface);
+    font: 700 13px/1 var(--font-text);
+    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1);
+}
+.cerca-tarjeta.es-resaltada .cerca-numero { background: var(--naranja); color: #04192F; transform: scale(1.12); }
+@media (max-width: 760px) {
+    .cerca-cuerpo .cerca-lista { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1080px) {
+    .cerca-mapa-lienzo { aspect-ratio: 4 / 3; }
+}
+/* (seccion 40) Tu nombre va mas arriba, libre de los puntos de alrededor; el mapa, mas ancho que alto */
+.cm-pin-tu b { bottom: calc(100% + 18px); }
+@media (width > 1080px) { .cerca-mapa-lienzo { aspect-ratio: 11 / 8; } }
+
+/* ---------- 41. Menu en capsula de vidrio con brillo turquesa (referencias: "Glassy Navigation Tabs" V5 y V7) ----------
+   Va despues de la seccion 38 y la ajusta: los enlaces (con su icono, ui.js iconosDelMenu)
+   van en una capsula de vidrio translucido; la pastilla activa es vidrio blanco que se estira
+   como goma al viajar (ui.js, lineaDelMenu) y lleva debajo una linea turquesa que brilla.
+   En celular, la pestana activa de la barra de abajo lleva el mismo brillo. */
+.nav-left > .nav-links {
+    gap: 2px;
+    padding: 5px;
+    border-radius: var(--r-pill);
+    border: 1px solid rgba(255, 255, 255, .75);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .66), rgba(255, 255, 255, .34));
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+            backdrop-filter: blur(14px) saturate(160%);
+    box-shadow: 0 10px 28px -14px rgba(8, 32, 60, .3), inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(8, 32, 60, .06);
+}
+[data-theme="dark"] .nav-left > .nav-links {
+    border-color: rgba(255, 255, 255, .12);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03));
+    box-shadow: 0 10px 28px -14px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+.nav-left > .nav-links a { gap: 7px; min-height: 38px; padding: var(--s2) var(--s4) var(--s2) var(--s3); }
+.nav-left > .nav-links a .ico { width: 17px; height: 17px; flex: none; }
+.nav-left > .nav-links a.active-nav .ico, .nav-left > .nav-links a.active .ico { color: var(--sea); }
+/* La pastilla: vidrio blanco con su filo de luz y la linea turquesa que brilla debajo */
+.nav-pastilla {
+    background: linear-gradient(180deg, #FFFFFF, rgba(255, 255, 255, .82));
+    box-shadow: 0 6px 16px -8px rgba(8, 32, 60, .4), inset 0 1px 0 #FFFFFF;
+}
+.nav-pastilla::after {
+    content: "";
+    position: absolute;
+    left: 24%; right: 24%; bottom: 1px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--sea-luz);
+    box-shadow: 0 0 10px 2px rgba(95, 208, 220, .75);
+}
+[data-theme="dark"] .nav-pastilla {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .08));
+    box-shadow: 0 6px 18px -8px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .22);
+}
+/* Sin mouse o con "reducir movimiento": el activo lleva su propia pastilla fija */
+.nav-left > .nav-links:not(.con-linea) a.active-nav,
+.nav-left > .nav-links:not(.con-linea) a.active { background: rgba(255, 255, 255, .92); box-shadow: 0 6px 16px -8px rgba(8, 32, 60, .4); }
+[data-theme="dark"] .nav-left > .nav-links:not(.con-linea) a.active-nav,
+[data-theme="dark"] .nav-left > .nav-links:not(.con-linea) a.active { background: rgba(255, 255, 255, .14); }
+@media (width > 760px) and (width <= 1100px) {
+    .nav-left > .nav-links a { padding: var(--s2) 10px; }
+    .nav-left > .nav-links a .ico { display: none; }   /* en tableta no caben: solo texto */
+}
+/* Celular: la pestana activa de la barra de abajo brilla igual */
+.tabbar-marca::after {
+    content: "";
+    position: absolute;
+    left: 30%; right: 30%; bottom: 3px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--sea-luz);
+    box-shadow: 0 0 10px 2px rgba(95, 208, 220, .7);
+}
+/* (seccion 41) La pastilla vive dentro de la capsula, detras de los enlaces */
+.nav-left > .nav-links { position: relative; }
+.nav-left > .nav-links > .nav-pastilla { display: block; z-index: 0; }
+/* La barra puede ser algo mas ancha que el contenido de la pagina (como Vercel) y los enlaces son
+   mas compactos: asi el menu con iconos cabe centrado. Cada lado mide al menos lo suyo, nunca se montan */
+header > nav.container { max-width: max(var(--shell), 1400px); }
+@media (width > 760px) {
+    header > nav { gap: var(--s4); }
+    header > nav > .nav-links { min-width: max-content; }
+}
+.nav-left > .nav-links a { padding: var(--s2) var(--s3) var(--s2) 10px; gap: 6px; }
+.nav-left > .nav-links a .ico { width: 16px; height: 16px; }
+
+/* ---------- 42. Portada: el azul del hero sube hasta arriba, detras de la barra ----------
+   El hero se mete debajo de la barra (que es pegajosa) y le suma su alto al relleno de arriba.
+   Mientras la barra esta sobre el hero (ui.js le pone .sobre-hero), va transparente: el logo
+   pasa a su version clara y la barra toma el estilo oscuro de la seccion 43. Al bajar y salir
+   del hero, vuelve a ser la barra de siempre. */
+body:has(> .hero:not([hidden])) > .hero {
+    margin-top: calc(-1 * var(--app-bar-h));
+    padding-top: calc(var(--s9) + var(--app-bar-h));
+}
+@media (max-width: 760px) {
+    body:has(> .hero:not([hidden])) > .hero { padding-top: calc(var(--s7) + var(--app-bar-h)); }
+}
+
+/* ---------- 43. Barra sobre fondo oscuro: limpia y sin ruido (tema oscuro y sobre el azul de la portada) ----------
+   Tres bloques con Flexbox (space-between): logo, enlaces y acciones; el logo y las acciones
+   miden lo mismo (seccion 38), asi los enlaces quedan en el centro. Los enlaces flotan sobre el
+   fondo, sin capsula: inactivos en blanco al 70 %, el activo en cian (texto e icono) con un
+   subrayado cian sutil que se desliza al cambiar (ui.js, .nav-pastilla). Lupa y tema sin borde,
+   con un circulo tenue al pasar el mouse; "Iniciar sesion" fantasma y "Unirse ahora" en cian. */
+:root body > header {
+    --nav-texto: rgba(255, 255, 255, .7);
+    --nav-texto-fuerte: #FFFFFF;
+    --nav-acento: var(--sea-luz);
+    --nav-acento-texto: #04192F;
+    --nav-tenue: rgba(255, 255, 255, .1);
+    --nav-borde: rgba(255, 255, 255, .2);
+    --nav-paso: 8px;
+}
+@media (width > 760px) {
+    body > header > nav { justify-content: space-between; }
+    :root body > header > nav > .nav-links { gap: var(--nav-paso); }
+}
+/* Enlaces: sin capsula ni fondo */
+:root body > header .nav-left > .nav-links {
+    padding: 0;
+    gap: calc(var(--nav-paso) / 2);
+    border: 0;
+    background: none;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+}
+:root body > header .nav-left > .nav-links a { color: var(--nav-texto); }
+:root body > header .nav-left > .nav-links a:hover { color: var(--nav-texto-fuerte); background: none; }
+:root body > header .nav-left > .nav-links :is(a.active-nav, a.active),
+:root body > header .nav-left > .nav-links :is(a.active-nav, a.active) .ico { color: var(--nav-acento); }
+/* El indicador que se desliza: solo su subrayado cian (sin pastilla ni sombra) */
+:root body > header .nav-pastilla { background: none; box-shadow: none; }
+:root body > header .nav-pastilla::after {
+    left: 14px; right: 14px; bottom: 0;
+    height: 2px;
+    background: var(--nav-acento);
+    box-shadow: 0 0 8px rgba(95, 208, 220, .5);
+}
+/* Sin mouse o con "reducir movimiento": el activo lleva su subrayado fijo */
+:root body > header .nav-left > .nav-links:not(.con-linea) :is(a.active-nav, a.active) {
+    background: none;
+    box-shadow: inset 0 -2px 0 var(--nav-acento);
+}
+/* Lupa y tema: iconos limpios, sin borde; circulo tenue al pasar el mouse */
+:root body > header :is(.theme-toggle, .cmdk-boton) {
+    border-color: transparent;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--nav-texto-fuerte);
+}
+:root body > header :is(.theme-toggle, .cmdk-boton):hover { background: var(--nav-tenue); border-color: transparent; color: var(--nav-texto-fuerte); }
+/* "Iniciar sesion": fantasma (las reglas de la barra lo traen con !important) */
+:root body > header a.btn-login {
+    border: 1px solid var(--nav-borde) !important;
+    background: transparent !important;
+    color: var(--nav-texto-fuerte) !important;
+}
+:root body > header a.btn-login:hover { background: var(--nav-tenue) !important; }
+/* "Unirse ahora": la accion principal, cian relleno con texto oscuro */
+:root body > header a.btn-register,
+:root body > header a.btn-register:hover {
+    border-color: transparent;
+    background: var(--nav-acento);
+    color: var(--nav-acento-texto) !important;
+}
+
+/* ---------- 44. Barra del celular ---------- */
+/* El brillo de la pestana activa del celular va arriba: abajo quedaba detras de la etiqueta */
+.tabbar-marca::after { top: 3px; bottom: auto; }
+
+/* ---------- 45. "Vacantes cerca de ti": el mapa es un globo terraqueo en 3D (mapa-cerca.js) ----------
+   (Va despues de las secciones 37 y 40 y las ajusta.) El planeta se dibuja en un <canvas>: primero
+   entero, y la camara vuela hasta tu zona. Encima, en pixeles: una ruta turquesa por ciudad, los
+   kilometros, el nombre de la ciudad y un pin numerado por vacante. El panel pasa de gris ahumado
+   a azul noche, el color de la marca. Aqui solo se animan transform y opacity. */
+.cerca-mapa {
+    border-color: rgba(125, 175, 225, .2);
+    background: linear-gradient(180deg, rgba(14, 30, 52, .95), rgba(7, 18, 35, .97));
+}
+.cerca-mapa-lienzo {
+    border-color: rgba(125, 175, 225, .16);
+    background: radial-gradient(70% 80% at 50% 45%, rgba(40, 110, 170, .18), transparent 70%), #040B18;
+}
+.cm-globo { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+
+/* Rutas: una por ciudad, turquesa, con un halo ancho debajo */
+.cm-ruta { stroke: var(--sea-luz); stroke-width: 1.8; filter: drop-shadow(0 0 4px rgba(95, 208, 220, .65)); }
+.cm-ruta-halo { fill: none; stroke: var(--sea-luz); stroke-width: 8; stroke-linecap: round; opacity: .13; transition: opacity .3s var(--ease-out); }
+.cm-ruta-halo.es-resaltada { stroke: #FFA05C; opacity: .22; }
+.cm-hay-resaltado .cm-ruta-halo:not(.es-resaltada) { opacity: .05; }
+.cm-revela { transform-box: view-box; transform-origin: 0 0; }
+.cm-luz { filter: drop-shadow(0 0 4px #fff); }
+/* Solo tu punto late: con una onda en cada pin numerado el mapa se veia recargado */
+.cm-pin-vacante i::after { display: none; }
+/* Del centro de la ciudad (o de ti) a cada pin: una linea punteada fina */
+.cm-rayo { stroke: rgba(255, 255, 255, .42); stroke-width: 1; stroke-dasharray: 2 3; transition: opacity .3s var(--ease-out); }
+.cm-rayo.es-resaltado { stroke: #FFA05C; stroke-dasharray: none; }
+.cm-hay-resaltado .cm-rayo:not(.es-resaltado) { opacity: .4; }
+
+/* La ciudad de destino: un punto turquesa, su nombre y los kilometros sobre la ruta */
+.cm-nodo {
+    position: absolute;
+    width: 10px; height: 10px; margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--sea-luz);
+    box-shadow: 0 0 0 3px rgba(95, 208, 220, .25), 0 0 12px rgba(95, 208, 220, .8);
+    pointer-events: none;
+}
+.cm-ciudad, .cm-km {
+    position: absolute;
+    font: 600 12px/1.5 var(--font-text);
+    white-space: nowrap;
+    pointer-events: none;
+}
+.cm-ciudad { padding: 1px 8px; border-radius: 8px; background: rgba(4, 11, 24, .62); color: #fff; transform: translate(-50%, 0); }
+.cm-ciudad.va-arriba { transform: translate(-50%, -100%); }
+.cm-km {
+    padding: 0 8px;
+    border: 1px solid rgba(95, 208, 220, .4);
+    border-radius: var(--r-pill);
+    background: rgba(4, 11, 24, .82);
+    color: var(--sea-luz);
+    transform: translate(-50%, -50%);
+}
+.cm-km.es-resaltado { border-color: #FFA05C; color: #FFA05C; }
+/* Con una tarjeta señalada sale el nombre de su vacante: los nombres de ciudad se apartan */
+.cm-ciudad { transition: opacity .2s var(--ease-out); }
+.cm-hay-resaltado .cm-ciudad { opacity: .2; }
+/* Los pines de una ciudad lejana caen despues de que su ruta llega */
+
+.cm-entra :is(.cm-nodo, .cm-ciudad, .cm-km) { animation: cm-aparece .5s var(--ease-out) backwards; animation-delay: calc(.8s + var(--k, 0) * .16s); }
+.cm-entra .cm-rayo { animation: cm-aparece .5s var(--ease-out) backwards; animation-delay: calc(.3s + var(--k, 0) * 90ms + var(--r, 0) * .7s); }
+@keyframes cm-aparece { from { opacity: 0; } }
+
+/* El recuadro redondo de la esquina: tu pais completo con tu punto */
+.cm-mini {
+    position: absolute; right: 10px; bottom: 10px;
+    width: 84px; height: 84px;
+    border: 1px solid rgba(255, 255, 255, .24);
+    border-radius: 50%;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .5);
+    opacity: 0;
+    transform: scale(.7);
+    transition: opacity .5s var(--ease-out) .9s, transform .7s cubic-bezier(.34, 1.56, .64, 1) .9s;
+    pointer-events: none;
+}
+.cm-mini.se-ve { opacity: 1; transform: none; }
+@media (max-width: 560px) { .cm-mini { width: 64px; height: 64px; right: 8px; bottom: 8px; } }
+
+/* ---------- 46. El planeta flota sobre la pagina, sin recuadro, y se puede mover (mapa-cerca.js) ----------
+   (Va despues de las secciones 37, 40 y 45 y las ajusta.) Se quita el panel azul: quedan el titulo,
+   el planeta redondo con su resplandor y la leyenda, directamente sobre la pagina. El lienzo es
+   cuadrado; se arrastra para girar (en el celular, de lado: hacia arriba y abajo la pagina sigue
+   bajando) y lleva tres botones: acercar, alejar y volver a tu zona. */
+.cerca-mapa {
+    gap: var(--s2);
+    padding: 0;
+    border: 0; border-radius: 0;
+    background: none;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+    color: var(--ink);
+}
+.cerca-mapa-cabeza { padding: 0 var(--s2); }
+.cerca-mapa-titulo { color: var(--ink); }
+.cerca-mapa-sub { color: var(--ink-3); }
+/* El mapa mide de alto lo mismo que el bloque de tarjetas: "Tu zona" arranca a la altura de la primera
+   tarjeta y la leyenda termina a la altura de la ultima. El lienzo ocupa el alto que sobra y el planeta
+   lo llena casi entero (el canvas sobresale 48 px por lado para que el resplandor no se corte) */
+@media (width > 1080px) {
+    .cerca-cuerpo { align-items: stretch; }
+    .cerca-mapa { position: static; }
+}
+.cerca-mapa-cabeza { position: relative; z-index: 1; }
+/* El planeta son tres capas redondas y centradas (--cm-r es su radio; lo pone mapa-cerca.js):
+   el resplandor, el canvas con los paises sobre el mar, y encima la sombra del borde con un brillo.
+   Mar, resplandor y sombra son degradados de CSS: no cuestan nada mientras la camara se mueve */
+.cm-halo, .cm-globo, .cm-brillo {
+    position: absolute; left: 50%; top: 50%; inset-block-end: auto; inset-inline-end: auto;
+    width: calc(var(--cm-r, 150px) * 2); height: calc(var(--cm-r, 150px) * 2);
+    margin: calc(var(--cm-r, 150px) * -1) 0 0 calc(var(--cm-r, 150px) * -1);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.cm-halo {
+    width: calc(var(--cm-r, 150px) * 2.44); height: calc(var(--cm-r, 150px) * 2.44);
+    margin: calc(var(--cm-r, 150px) * -1.22) 0 0 calc(var(--cm-r, 150px) * -1.22);
+    background: radial-gradient(closest-side, rgba(95, 208, 220, 0) 78%, rgba(95, 208, 220, .42) 79%, rgba(95, 208, 220, 0) 100%);
+}
+.cm-globo { background: radial-gradient(circle at 33% 30%, #173B60 0%, #0A1C33 78%); }
+.cm-brillo {
+    background:
+        radial-gradient(circle at 27% 25%, rgba(190, 230, 255, .13), rgba(190, 230, 255, 0) 42%),
+        radial-gradient(closest-side, rgba(2, 8, 20, 0) 70%, rgba(2, 8, 20, .55) 100%);
+}
+.cerca-mapa .cerca-mapa-lienzo {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 300px;
+    aspect-ratio: auto;
+    border: 0; border-radius: 0;
+    background: none;
+    overflow: visible;
+    cursor: grab;
+    touch-action: pan-y;                    /* el dedo hacia arriba o abajo sigue moviendo la pagina */
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.cerca-mapa-lienzo.cm-agarrado { cursor: grabbing; }
+/* La leyenda y la pista van arriba a la derecha, junto al titulo: asi el planeta se queda con todo el alto */
+.cerca-mapa-cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s3); }
+.cerca-mapa-guia { flex: 0 1 auto; text-align: right; }
+.cerca-mapa-leyenda { justify-content: flex-end; padding: 0; color: var(--ink-3); }
+.cm-ley-vacante { box-shadow: 0 0 0 1.5px var(--ink-3); }
+.cm-pista { margin-top: 2px; font-size: var(--t-xs); color: var(--ink-3); }
+@media (hover: none) { .cm-pista-mouse { display: none; } }
+@media (hover: hover) { .cm-pista-dedo { display: none; } }
+
+/* Los pines se ubican con transform (siguen al planeta cuadro a cuadro): al entrar cae el circulo de adentro */
+.cm-pin-vacante { left: 0; top: 0; cursor: pointer; }
+.cm-entra .cm-pin-vacante { animation: none; }
+.cm-entra .cm-pin-vacante i { animation: cm-cae .7s cubic-bezier(.34, 1.56, .64, 1) backwards; animation-delay: calc(.25s + var(--k, 0) * 90ms + var(--r, 0) * .7s); }
+.cm-nodo, .cm-ciudad, .cm-km { left: 0; top: 0; }
+.cm-ciudad, .cm-ciudad.va-arriba, .cm-km { transform: none; }   /* el lugar lo pone mapa-cerca.js */
+/* Lo que queda del otro lado del planeta o fuera del disco no se ve */
+.cm-fuera { visibility: hidden; }
+/* Mientras se mueve: sin las luces de las rutas (se vuelven a encender al quedar quieto) y sin onda en tu punto */
+.cm-moviendo .cm-luz { visibility: hidden; }
+.cm-moviendo .cm-pin-tu i::after { animation-play-state: paused; }
+.cm-agarrado .cm-pin { pointer-events: none; }
+
+/* Botones del mapa: abajo a la izquierda, en la esquina libre del cuadrado */
+.cm-controles { position: absolute; left: 0; bottom: 0; z-index: 4; display: flex; flex-direction: column; gap: 6px; }
+.cm-control {
+    display: grid; place-items: center;
+    width: 40px; height: 40px;
+    border: 1px solid var(--hairline);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--sh-2);
+    transition: transform .2s var(--ease-out);
+}
+.cm-control:hover:not(:disabled) { border-color: var(--sea); color: var(--sea-deep); }
+.cm-control:active:not(:disabled) { transform: scale(.92); }
+.cm-control:disabled { opacity: .45; cursor: default; }
+@media (pointer: coarse) { .cm-control { width: 44px; height: 44px; } }
+/* El recuadro del pais, sobre la pagina: borde del color de la superficie */
+.cm-mini { right: 0; bottom: 0; border: 2px solid var(--surface); box-shadow: var(--sh-3); }
+@media (max-width: 560px) { .cm-mini { right: 0; bottom: 0; } }
+/* Una sola columna (tableta y celular): el lienzo vuelve a ser cuadrado, centrado */
+@media (max-width: 1080px) {
+    .cerca-mapa .cerca-mapa-lienzo { flex: none; max-width: 420px; min-height: 0; margin-inline: auto; aspect-ratio: 1 / 1; }
+}
+
+/* ---------- 47. Portada inmersiva: la escena sin marco y la pagina con profundidad ----------
+   (Va despues de las secciones 19 y 36 y las ajusta.)
+   - La escena del inicio ya no va en un recuadro azul: es una isla que flota sobre la portada,
+     con su luz turquesa detras y su sombra debajo, y mas grande.
+   - Profundidad: estrellas en dos planos; al bajar, el texto, la escena y las estrellas se
+     mueven cada uno a su velocidad (index.js les escribe su lugar). Nada sigue al cursor.
+   - Arriba, una linea fina dice cuanto de la pagina se ha recorrido.
+   Rendimiento (medido con el navegador): lo que flota o titila va en cajas HTML, que el navegador
+   mueve sin repintar; dentro del SVG solo se mueve la historia. Con "reducir movimiento" nada se mueve. */
+.hero .escenario {
+    border-radius: 0;
+    overflow: visible;
+    background: none;
+    box-shadow: none;
+    scale: 1.14;
+}
+.hero .escenario > svg { position: relative; overflow: visible; }
+@media (max-width: 1080px) { .hero .escenario { scale: 1; } }
+/* La luz de atras y la sombra de abajo: dos cajas, no parte del dibujo */
+.hero .escenario::before {
+    content: "";
+    position: absolute; left: -2%; top: 16%;
+    width: 104%; height: 84%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(95, 208, 220, .3), rgba(95, 208, 220, 0));
+    pointer-events: none;
+}
+.hero .escenario::after {
+    content: "";
+    position: absolute; left: 20%; top: 84.7%;
+    width: 62.5%; height: 7.2%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(1, 6, 15, .6), rgba(1, 6, 15, 0));
+    pointer-events: none;
+    animation: e-isla-sombra 7s ease-in-out infinite;
+}
+/* El vaiven de la isla mueve el dibujo completo (una sola capa), no sus piezas */
+.hero .escenario > svg { animation: e-isla 7s ease-in-out infinite; }
+@keyframes e-isla { 50% { transform: translateY(-8px); } }
+@keyframes e-isla-sombra { 50% { transform: scale(.88); opacity: .7; } }
+.hero .escenario.escena-quieta::after { animation-play-state: paused; }
+
+/* Piezas nuevas de la escena */
+.escenario .e-brota { transform-box: fill-box; transform-origin: 50% 100%; }
+.escenario .e-chispa { transform-box: fill-box; transform-origin: 50% 50%; }
+
+/* Estrellas de la portada: dos planos de puntos (el de atras, mas chico) */
+.hero-estrellas, .hero-estrellas::after {
+    position: absolute; inset: -60px;
+    pointer-events: none;
+    background-image:
+        radial-gradient(1.2px 1.2px at 30px 40px, rgba(255, 255, 255, .75), transparent 100%),
+        radial-gradient(1px 1px at 150px 120px, rgba(95, 208, 220, .8), transparent 100%),
+        radial-gradient(1.4px 1.4px at 90px 210px, rgba(255, 255, 255, .5), transparent 100%),
+        radial-gradient(1px 1px at 230px 60px, rgba(255, 255, 255, .6), transparent 100%);
+    background-size: 290px 250px, 370px 310px, 230px 330px, 410px 270px;
+    opacity: .55;
+}
+.hero-estrellas::after {
+    content: "";
+    inset: 0;
+    background-size: 430px 390px, 520px 450px, 350px 480px, 600px 410px;
+    background-position: 80px 30px, 20px 140px, 200px 60px, 120px 220px;
+    opacity: .9;
+    animation: hero-titila 7s ease-in-out infinite;
+}
+@keyframes hero-titila { 50% { opacity: .45; } }
+/* --hx y --hy (la posicion del mouse, de -1 a 1) solo las usan las dos manchas de color del fondo.
+   Registradas sin herencia, cambiarlas ya no obliga a recalcular los 300 elementos de la portada:
+   solo las manchas, que las piden a proposito con "inherit" */
+@property --hx { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --hy { syntax: '<number>'; inherits: false; initial-value: 0; }
+.hero::before, .hero::after { --hx: inherit; --hy: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+    .hero .escenario > svg, .hero .escenario::after, .hero-estrellas::after { animation: none; }
+}
+
+/* ---------- 48. La barra es una isla flotante: una sola, igual en toda la pagina y en todas las paginas ----------
+   (Va despues de las secciones 6, 38, 41, 42 y 43 y las ajusta.)
+   Antes la barra del inicio pasaba por tres aspectos al bajar (transparente, azul, blanca con capsula)
+   y cambiaba de forma. Ahora es una capsula de vidrio ahumado separada de los bordes de la ventana, con
+   el logo, las opciones (sin iconos) y los botones adentro, que no cambia nunca: ni al bajar ni de una pagina a otra,
+   ni entre el tema claro y el oscuro. Lo unico que se mueve es la linea fina de su borde de abajo,
+   que dice cuanto de la pagina se ha recorrido (index.js escribe --avance).
+   Por dentro usa el estilo limpio de la seccion 43 (opciones sin capsula, la activa en turquesa). */
+
+/* Dentro de la isla rigen los colores del tema oscuro, sea cual sea el tema de la pagina: asi la
+   campana, "Mi perfil", "Cerrar sesion" y los menus que se abren desde ella se leen sobre el azul */
+:root body > header {
+    --ink:            #EEF3FA;
+    --ink-2:          #C7D5E5;
+    --ink-3:          #93A8BF;
+    --ink-muted:      #7D93AB;
+    --hairline:       #24384F;
+    --hairline-soft:  #1A2A3E;
+    --ring-pista:     rgba(255, 255, 255, .1);
+
+    --bg:             #0B1B2C;
+    --surface:        #112238;
+    --surface-sunk:   #0D1D30;
+
+    --sea:            #2BB6C6;
+    --sea-deep:       #2BB6C6; /* texto turquesa: 4.9:1 o mas sobre cualquier fondo oscuro, incluido --sea-light */
+    --sea-light:      rgba(43, 182, 198, .16);
+    --sea-glow:       rgba(43, 182, 198, .35);
+
+    --naranja-deep:   #FFA05C;
+    --naranja-soft:   rgba(255, 118, 24, .16);
+    --naranja-hover:  #FFA05C;
+    --naranja-texto:  #FFA05C;
+
+    --sol:            #F0A233;
+    --sol-soft:       rgba(224, 144, 15, .16);
+    --sol-deep:       #F2B84B;
+    --verde:          #3FCB93;
+    --verde-soft:     rgba(63, 203, 147, .16);
+    --verde-texto:    var(--verde);
+    --rojo:           #FF6B7A;
+    --rojo-soft:      rgba(255, 107, 122, .16);
+
+    --sh-1: 0 1px 2px rgba(0, 0, 0, .35);
+    --sh-2: 0 2px 8px rgba(0, 0, 0, .4), 0 1px 2px rgba(0, 0, 0, .3);
+    --sh-3: 0 12px 28px -8px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .3);
+    --sh-4: 0 28px 60px -20px rgba(0, 0, 0, .65);
+    --vidrio-base: #0A1522;
+    --vidrio-tinte: rgba(18, 36, 60, .62);
+    --vidrio-tinte-grueso: rgba(20, 40, 66, .68);
+    --vidrio-tinte-fino: rgba(255, 255, 255, .05);
+    --vidrio-borde-fino: rgba(255, 255, 255, .09);
+    --vidrio-luz-1: rgba(255, 255, 255, .24);
+    --vidrio-luz-2: rgba(255, 255, 255, .05);
+    --vidrio-grosor: inset 0 1px 0 rgba(255, 255, 255, .09), inset 0 -1px 0 rgba(0, 0, 0, .3);
+    --vidrio-brillo-fino: inset 0 1px 0 rgba(255, 255, 255, .05);
+    --vidrio-reflejo: rgba(255, 255, 255, .06);
+    --vidrio-sombra: 0 18px 40px -18px rgba(0, 0, 0, .6);
+    --vidrio-sombra-grueso: 0 30px 70px -24px rgba(0, 0, 0, .72);
+    --vidrio-barra: rgba(10, 21, 34, .84);       /* con .60, sobre el papel blanco de la hoja de vida los enlaces quedaban en 2.0 */
+    --vidrio-pestanas: rgba(10, 21, 34, .82);
+    --vidrio-menu: rgba(20, 40, 66, .8);
+    --vidrio-hoja: rgba(17, 34, 56, .88);
+    --vidrio-pie: rgba(13, 29, 48, .8);
+    --vidrio-aviso: rgba(8, 32, 60, .86);
+    --vidrio-esqueleto: rgba(255, 255, 255, .07);
+    --vidrio-grano: .05;
+    --vidrio-gris: #B2C3D6;
+    --vidrio-hover: rgba(255, 255, 255, .07);
+}
+:root body > header,
+:root body > header.is-scrolled {
+    top: 8px;
+    width: min(calc(100% - 24px), 1280px);
+    height: 56px;
+    margin: 8px auto 4px;                   /* 8 + 56 + 4 = 68 px: el mismo alto que ocupaba la barra (--app-bar-h) */
+    /* Vidrio como el de iPhone (Liquid Glass), ahumado: deja ver lo que pasa por detras, desenfocado y
+       con el color avivado; un filo de luz arriba y otro mas tenue abajo le dan el grosor del cristal.
+       El tinte azul noche al 78 % es lo minimo para que las letras blancas se lean (4,5:1 o mas)
+       tambien cuando por detras pasa una seccion blanca */
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: var(--r-pill);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 46%, rgba(255, 255, 255, .04)),
+        rgba(9, 24, 44, .78);
+    background-color: rgba(9, 24, 44, .78);
+    -webkit-backdrop-filter: blur(22px) saturate(190%);
+            backdrop-filter: blur(22px) saturate(190%);
+    box-shadow:
+        0 14px 34px -16px rgba(2, 10, 24, .6),
+        inset 0 1px 0 rgba(255, 255, 255, .3),
+        inset 0 -1px 0 rgba(255, 255, 255, .07);
+    color: var(--ink);
+}
+/* Las opciones, sin icono: solo la palabra (el texto ya dice a donde llevan). Rellenos parejos */
+:root body > header .nav-left > .nav-links a { padding: var(--s2) 14px; gap: 0; }
+:root body > header .nav-left > .nav-links a { color: rgba(255, 255, 255, .8); }
+/* La activa: palabra en blanco y, debajo, la linea turquesa separada unos pixeles del texto.
+   (El turquesa como color de letra no alcanzaba el contraste cuando por detras pasa una seccion blanca) */
+:root body > header .nav-left > .nav-links :is(a.active-nav, a.active) { color: #FFFFFF; }
+:root body > header .nav-pastilla::after { left: 14px; right: 14px; bottom: 1px; }
+/* "Iniciar sesion": un enlace de texto, sin borde ni fondo; asi "Unirse ahora" (turquesa) es la unica
+   accion que resalta. Al pasar el mouse, un fondo tenue */
+:root body > header a.btn-login:not([data-cerrar-sesion]) { border-color: transparent !important; padding: 0 12px !important; box-shadow: none; }
+/* "Cerrar sesion" (con sesion iniciada) conserva su borde fino, pero sin la sombra que lo hacia ver como una pastilla oscura */
+:root body > header a.btn-login { box-shadow: none; }
+/* Un poco de aire entre los dos iconos (lupa y tema) y los botones de la sesion */
+:root body > header > nav > .nav-links > li:has(> :is(a.btn-login, a.btn-register)):not(:has(~ li > .theme-toggle)) { margin-left: 2px; }
+:root body > header > nav {
+    height: 100%;
+    max-width: none;
+    padding: 0 8px 0 22px;                  /* a la derecha, los botones quedan a 8 px del borde: curvas parejas */
+}
+@media (max-width: 760px) {
+    :root body > header, :root body > header.is-scrolled { width: calc(100% - 16px); }
+    :root body > header > nav { padding: 0 6px 0 16px; }
+}
+/* Tableta angosta (761 a 860 px): con sesion iniciada, "Cerrar sesion" se salia de la isla. Todo se
+   aprieta un poco (lo encontro la auditoria de la skill ui-ux-pro-max midiendo cada control) */
+@media (width > 760px) and (width <= 860px) {
+    :root body > header > nav { padding: 0 6px 0 12px; gap: 4px; }
+    :root body > header > nav > .nav-links { gap: 2px; }
+    :root body > header .logo img { height: 30px; }
+    :root body > header .nav-links a:not(.btn-login):not(.btn-register) { padding-inline: 6px; }
+    :root body > header a.btn-login { padding: 0 10px !important; }
+}
+/* La linea de avance: en el borde de abajo de la isla, del turquesa al naranja.
+   --avance (de 0 a 1) esta registrada sin herencia: al cambiar solo se recalcula esta linea */
+@property --avance { syntax: '<number>'; inherits: false; initial-value: 0; }
+:root body > header::after {
+    content: "";
+    position: absolute; left: 28px; right: 28px; bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--sea-luz), var(--naranja));
+    --avance: inherit;
+    transform: scaleX(var(--avance));
+    transform-origin: 0 50%;
+    pointer-events: none;
+}
+/* Quien pide menos transparencia en su sistema: la isla, solida */
+@media (prefers-reduced-transparency: reduce) {
+    :root body > header, :root body > header.is-scrolled { background: #081A30; background-color: #081A30; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
