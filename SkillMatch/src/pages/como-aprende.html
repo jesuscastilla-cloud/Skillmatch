@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cómo aprende SkillMatch - SkillMatch Cartagena</title>
+    <meta name="description" content="Cómo SkillMatch aprende de las postulaciones que las empresas ya respondieron para estimar tus posibilidades en una vacante y darte un consejo.">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');document.documentElement.style.setProperty('--reloj',Date.now()%864e5+'ms');})();</script>
+</head>
+<body class="pagina-vidrio">
+    <div class="fondo-vivo" aria-hidden="true"><span class="mancha-1"></span><span class="mancha-2"></span><span class="mancha-3"></span><span class="mancha-4"></span><span class="mancha-5"></span></div>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <header>
+        <nav class="container" aria-label="Principal">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
+                </div>
+                <ul class="nav-links nav-principales">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="index.html#como-funciona">Cómo funciona</a></li>
+                    <li><a href="empresas.html">Empresas</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="login.html" class="btn-login">Iniciar sesión</a></li>
+                <li><a href="seleccionar-registro.html" class="btn-register">Unirse ahora</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="main">
+        <section class="indicadores-cabecera">
+            <div class="container">
+                <h1>Cómo aprende SkillMatch</h1>
+                <p>SkillMatch mira las postulaciones que las empresas ya respondieron y aprende qué tienen en común
+                   las que fueron aceptadas. Con eso te dice qué tan buenas son tus posibilidades en una vacante y
+                   qué te ayudaría a mejorar. Aquí te contamos cómo, paso a paso.</p>
+                <p class="mp-demo" id="mpDemo" hidden><i data-ico="alert"></i> <span><strong>Demostración.</strong>
+                   Estos resultados salen de los datos de ejemplo de la plataforma, no de empresas reales.</span></p>
+            </div>
+        </section>
+
+        <div class="container mp-historia" id="mpHistoria" aria-busy="true">
+            <div class="indicadores-error" id="mpError" role="alert" hidden>
+                <p>No pudimos cargar el modelo. Revisa tu conexión e intenta de nuevo.</p>
+            </div>
+
+            <!-- 1. La pregunta y el estado -->
+            <section class="indicador mp-parte" aria-labelledby="mp1">
+                <p class="mp-numero">1</p>
+                <svg class="mp-dibujo" viewBox="0 0 80 56" aria-hidden="true" focusable="false"><path class="d-mar" d="M10 8h50a8 8 0 0 1 8 8v18a8 8 0 0 1-8 8H30l-12 9v-9h-8a8 8 0 0 1-8-8V16a8 8 0 0 1 8-8z"/><path class="d-linea" d="M30 20a6 6 0 1 1 8 5.6c-1.4.6-2 1.6-2 3V31"/><circle class="d-tinta" cx="36" cy="36" r="1.8"/><path class="d-chispa" d="M70 4l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>
+                <h2 id="mp1">La pregunta</h2>
+                <p class="mp-pregunta">«Si me postulo a esta vacante, ¿qué tan probable es que la empresa me acepte?»</p>
+                <p class="mp-estado" id="mpEstado"></p>
+                <div class="mp-faltan" id="mpFaltan" hidden>
+                    <div class="ib-barra"><span id="mpFaltanBarra"></span></div>
+                    <p id="mpFaltanTexto"></p>
+                </div>
+            </section>
+
+            <!-- 2. Los datos -->
+            <section class="indicador mp-parte" aria-labelledby="mp2">
+                <p class="mp-numero">2</p>
+                <svg class="mp-dibujo" viewBox="0 0 80 56" aria-hidden="true" focusable="false"><rect class="d-hoja" x="22" y="6" width="34" height="42" rx="5" transform="rotate(-8 39 27)"/><rect class="d-hoja" x="30" y="8" width="34" height="42" rx="5"/><path class="d-linea" d="M37 20h20M37 27h14"/><circle class="d-mar" cx="42" cy="39" r="5"/><path class="d-linea" d="M39.6 39l1.8 1.8 3.2-3.4"/><circle class="d-rojo" cx="56" cy="39" r="5"/><path class="d-linea" d="M54 37l4 4M58 37l-4 4"/></svg>
+                <h2 id="mp2">Con qué aprende</h2>
+                <p class="indicador-nota">Cada postulación que una empresa aceptó o rechazó es un ejemplo. Las que siguen
+                   en proceso todavía no cuentan.</p>
+                <ul class="ib-lista" id="mpDatos"></ul>
+            </section>
+
+            <!-- 3. Lo que mira -->
+            <section class="indicador mp-parte mp-ancha" aria-labelledby="mp3">
+                <p class="mp-numero">3</p>
+                <svg class="mp-dibujo" viewBox="0 0 80 56" aria-hidden="true" focusable="false"><rect class="d-hoja" x="6" y="10" width="44" height="36" rx="6"/><circle class="d-mar" cx="18" cy="24" r="5"/><path class="d-linea" d="M28 21h14M28 28h10M12 37h30"/><circle class="d-lupa" cx="54" cy="30" r="11"/><path class="d-linea gruesa" d="M62 38l9 9"/></svg>
+                <h2 id="mp3">Lo que mira</h2>
+                <p class="indicador-nota">Solo lo que SkillMatch ya guarda cuando armas tu perfil y te postulas.</p>
+                <ul class="mp-variables" id="mpVariables"></ul>
+                <p class="mp-nunca"><i data-ico="lock"></i> <span><strong>Lo que nunca mira:</strong> nombre, correo, teléfono,
+                   foto, edad, sexo, ni qué empresa es. Así no aprende a discriminar (la Ley 931 no deja pedir edad, sexo ni foto).</span></p>
+            </section>
+
+            <!-- 4. El arbol -->
+            <section class="indicador mp-parte mp-ancha" aria-labelledby="mp4">
+                <p class="mp-numero">4</p>
+                <svg class="mp-dibujo" viewBox="0 0 80 56" aria-hidden="true" focusable="false"><path class="d-linea" d="M18 28h10M28 28l12-12M28 28l12 12M50 16h10M50 40h10"/><rect class="d-mar" x="6" y="21" width="16" height="14" rx="4"/><rect class="d-mar" x="38" y="9" width="14" height="14" rx="4"/><rect class="d-mar" x="38" y="33" width="14" height="14" rx="4"/><circle class="d-chispa" cx="66" cy="16" r="6"/><circle class="d-sol" cx="66" cy="40" r="6"/></svg>
+                <h2 id="mp4">El árbol de preguntas</h2>
+                <p class="indicador-nota">Es un <button type="button" class="mp-termino" data-termino="arbol">árbol de decisión</button>:
+                   se empieza a la izquierda y se responde cada pregunta hasta llegar a un color. Las preguntas y los
+                   cortes no los escribimos nosotros: el modelo los descubre en los datos. Toca una caja para leerla en una frase.</p>
+                <ul class="mp-leyenda" aria-label="Colores">
+                    <li><span class="mp-punto buenas"></span>Posibilidades buenas</li>
+                    <li><span class="mp-punto regulares"></span>Regulares</li>
+                    <li><span class="mp-punto bajas"></span>Bajas</li>
+                </ul>
+                <div class="mp-arbol-marco" id="mpArbolMarco" tabindex="0" aria-label="Árbol de decisión; se puede desplazar">
+                    <div class="mp-arbol" id="mpArbol"></div>
+                </div>
+                <p class="mp-frase" id="mpFrase" aria-live="polite">Toca una pregunta o un color.</p>
+            </section>
+
+            <!-- 5. La nota del examen -->
+            <section class="indicador mp-parte" aria-labelledby="mp5">
+                <p class="mp-numero">5</p>
+                <svg class="mp-dibujo" viewBox="0 0 80 56" aria-hidden="true" focusable="false"><rect class="d-hoja" x="16" y="4" width="40" height="48" rx="5"/><path class="d-linea" d="M24 16l3 3 6-6M38 16h10M24 29l3 3 6-6M38 29h10M25 40l6 6M31 40l-6 6M38 43h10"/><circle class="d-chispa" cx="62" cy="12" r="9"/><path class="d-blanco" d="M58 12l3 3 5-6"/></svg>
+                <h2 id="mp5">La nota del examen</h2>
+                <p class="indicador-nota">Como un examen: estudia con una parte de las postulaciones y lo examinamos con otra
+                   que nunca vio. Lo repetimos 5 veces (<button type="button" class="mp-termino" data-termino="cv">validación cruzada</button>)
+                   y sumamos los resultados. Los cuatro cuadros son la <button type="button" class="mp-termino" data-termino="matriz">matriz de confusión</button>.</p>
+                <div class="mp-matriz" id="mpMatriz" aria-label="Matriz de confusión"></div>
+                <h3 class="mp-subtitulo">¿Le gana al <button type="button" class="mp-termino" data-termino="flojo">modelo flojo</button>?</h3>
+                <ul class="ib-lista" id="mpComparacion"></ul>
+                <p class="mp-veredicto" id="mpVeredicto"></p>
+            </section>
+
+            <!-- 6. Que pesa mas -->
+            <section class="indicador mp-parte" aria-labelledby="mp6">
+                <p class="mp-numero">6</p>
+                <svg class="mp-dibujo" viewBox="0 0 80 56" aria-hidden="true" focusable="false"><path class="d-linea" d="M40 8v38M28 48h24M14 16h52"/><path class="d-mar" d="M6 30l8-14 8 14a8 6 0 0 1-16 0z"/><path class="d-chispa" d="M58 26l8-10 8 10a8 6 0 0 1-16 0z"/><circle class="d-tinta" cx="40" cy="8" r="3"/></svg>
+                <h2 id="mp6">Qué pesa más</h2>
+                <p class="indicador-nota">Cuánto ayudó cada dato a separar las aceptadas de las rechazadas
+                   (<button type="button" class="mp-termino" data-termino="importancia">importancia de variables</button>).
+                   Que algo pese no quiere decir que sea la causa.</p>
+                <ul class="ib-lista" id="mpImportancia"></ul>
+            </section>
+
+            <!-- 7. Pruebalo -->
+            <section class="indicador mp-parte mp-ancha" aria-labelledby="mp7">
+                <p class="mp-numero">7</p>
+                <svg class="mp-dibujo" viewBox="0 0 80 56" aria-hidden="true" focusable="false"><path class="d-linea gruesa" d="M8 14h64M8 28h64M8 42h64"/><circle class="d-chispa" cx="52" cy="14" r="6"/><circle class="d-mar" cx="24" cy="28" r="6"/><circle class="d-mar" cx="62" cy="42" r="6"/></svg>
+                <h2 id="mp7">Pruébalo</h2>
+                <p class="indicador-nota">Mueve los controles y mira cómo cambian las posibilidades. El camino que recorre se marca en el árbol.</p>
+                <div class="mp-prueba">
+                    <form class="mp-controles" id="mpControles">
+                        <label>Habilidades que tienes de las pedidas <output id="oHab">67 %</output>
+                            <input type="range" name="pct_habilidades" min="0" max="100" step="1" value="67"></label>
+                        <label>Qué tan bien las dominas
+                            <select name="nivel_dominio">
+                                <option value="1">Básico</option><option value="2" selected>Intermedio</option>
+                                <option value="3">Avanzado</option><option value="4">Experto</option>
+                            </select></label>
+                        <label>Años de experiencia <output id="oAnos">1</output>
+                            <input type="range" name="anos_experiencia" min="0" max="10" step="0.5" value="1"></label>
+                        <label>Experiencia que pide la vacante
+                            <select name="experiencia_pedida">
+                                <option value="0">Sin experiencia o hasta 1 año</option>
+                                <option value="1">De 1 a 3 años</option><option value="3">Más de 3 años</option>
+                            </select></label>
+                        <label>Estudios registrados <output id="oEst">1</output>
+                            <input type="range" name="num_estudios" min="0" max="5" step="1" value="1"></label>
+                        <label>Perfil completo <output id="oPerfil">80 %</output>
+                            <input type="range" name="perfil_completo" min="0" max="100" step="20" value="80"></label>
+                        <label>Palabras de la carta (0 = sin carta) <output id="oCarta">40</output>
+                            <input type="range" name="palabras_carta" min="0" max="200" step="5" value="40"></label>
+                        <label class="mp-check"><input type="checkbox" name="misma_ciudad" checked> Vivo en la ciudad de la vacante (o es remota)</label>
+                        <label>Tipo de vacante
+                            <select name="tipo">
+                                <option value="empleo">Empleo</option><option value="practica">Práctica</option>
+                                <option value="freelance">Independiente</option>
+                            </select></label>
+                        <label>Días después de publicada <output id="oDias">2</output>
+                            <input type="range" name="dias_para_postularse" min="0" max="90" step="1" value="2"></label>
+                        <label>Personas que se postularon antes <output id="oPost">5</output>
+                            <input type="range" name="postulantes_previos" min="0" max="30" step="1" value="5"></label>
+                    </form>
+                    <div class="mp-resultado">
+                        <p class="mp-ejemplo-titulo">Así se vería en tu postulación</p>
+                        <div id="mpResultado" aria-live="polite"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. Como ha ido aprendiendo -->
+            <section class="indicador mp-parte mp-ancha" aria-labelledby="mp8">
+                <p class="mp-numero">8</p>
+                <svg class="mp-dibujo" viewBox="0 0 80 56" aria-hidden="true" focusable="false"><path class="d-linea" d="M8 48h66M8 6v42"/><path class="d-linea gruesa sea" d="M12 42l14-8 12 4 14-14 18-12"/><circle class="d-mar" cx="26" cy="34" r="3.5"/><circle class="d-mar" cx="38" cy="38" r="3.5"/><circle class="d-mar" cx="52" cy="24" r="3.5"/><circle class="d-chispa" cx="70" cy="12" r="4.5"/></svg>
+                <h2 id="mp8">Cómo ha ido aprendiendo</h2>
+                <p class="indicador-nota">La nota de cada vez que volvió a aprender. Mientras más respondan las empresas, mejor aprende.</p>
+                <div class="mp-linea" id="mpLinea"></div>
+            </section>
+
+            <!-- 9. Extra del PDF: habilidades que suelen ir juntas (reglas de asociacion) -->
+            <section class="indicador mp-parte mp-ancha" aria-labelledby="mp9">
+                <p class="mp-numero">9</p>
+                <svg class="mp-dibujo" viewBox="0 0 80 56" aria-hidden="true" focusable="false"><circle class="d-mar transparente" cx="30" cy="28" r="18"/><circle class="d-sol transparente" cx="50" cy="28" r="18"/><path class="d-chispa" d="M40 18l2.4 6 6 2.4-6 2.4L40 35l-2.4-6.2-6-2.4 6-2.4z"/></svg>
+                <h2 id="mp9">Habilidades que suelen ir juntas</h2>
+                <p class="indicador-nota">Mirando todas las vacantes, cuando una pide la primera habilidad, muchas veces pide
+                   también la segunda (<button type="button" class="mp-termino" data-termino="asociacion">reglas de asociación</button>).
+                   Sirve para saber qué aprender después.</p>
+                <ul class="mp-juntas" id="mpJuntas"></ul>
+                <p class="indicador-nota mp-ojo">Con pocas vacantes esto puede ser casualidad: mientras más vacantes, más confiable.</p>
+            </section>
+
+            <!-- Para el profesor -->
+            <details class="mp-detalles" id="mpDetalles">
+                <summary>Ver los detalles</summary>
+                <div id="mpDetallesCuerpo"></div>
+            </details>
+
+            <section class="mp-cuidados" aria-labelledby="mpCuidados">
+                <h2 id="mpCuidados">Cuidados</h2>
+                <ul>
+                    <li><strong>La empresa no ve el modelo.</strong> Decide ella, como siempre.</li>
+                    <li><strong>No es una promesa.</strong> Te decimos «buenas, regulares o bajas», nunca un porcentaje.</li>
+                    <li><strong>Lo que va junto no siempre es la causa.</strong> Decimos «las postulaciones con carta suelen ser
+                        aceptadas más», no «la carta hace que te acepten».</li>
+                    <li><strong>Privacidad.</strong> Esta página solo muestra cifras de todos juntos, nunca de una persona.</li>
+                </ul>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/modelo-predictivo.js"></script>
+    <script src="../assets/js/como-aprende.js"></script>
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>

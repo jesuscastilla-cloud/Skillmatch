@@ -1007,6 +1007,7 @@
         });
         lista.push({ grupo: 'Ir a', ico: 'building', titulo: 'Empresas', claves: 'empresas directorio companias negocios', href: 'empresas.html' });
         lista.push({ grupo: 'Ir a', ico: 'chart', titulo: 'Indicadores del mercado', claves: 'indicadores estadisticas cifras salarios', href: 'dashboard.html' });
+        lista.push({ grupo: 'Ir a', ico: 'sprout', titulo: 'Cómo aprende SkillMatch', claves: 'modelo predictivo arbol aprende posibilidades', href: 'como-aprende.html' });
         if (!sesionActiva()) {
             lista.push({ grupo: 'Cuenta', ico: 'user', titulo: 'Iniciar sesión', claves: 'entrar login acceder', href: 'login.html' });
             lista.push({ grupo: 'Cuenta', ico: 'sparkle', titulo: 'Crear mi perfil', claves: 'registro registrarme cuenta nueva', href: 'seleccionar-registro.html' });
@@ -1344,6 +1345,7 @@
         ['empresas.html', 'Empresas'],
         ['index.html#como-funciona', 'Cómo funciona'],
         ['dashboard.html', 'Indicadores del mercado'],
+        ['como-aprende.html', 'Cómo aprende SkillMatch'],
         // La Ley 1581 pide que la politica de datos este siempre a la mano
         ['politica-datos.html', 'Política de datos']
     ] };
