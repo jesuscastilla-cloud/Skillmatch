@@ -3,19 +3,6 @@
 const { test, expect, entrarComo } = require('../apoyo/prueba');
 
 const detalle = page => page.locator('#jobDetailModal');
-// En el celular los filtros van en un panel que abre "Filtros (n)"; se marca y se cierra
-const abrirFiltros = async page => {
-    const boton = page.locator('#abrirFiltros');
-    if (await boton.isVisible() && !(await page.locator('body.filtros-abiertos').count())) await boton.click();
-};
-const cerrarFiltros = async page => {
-    if (await page.locator('body.filtros-abiertos').count()) await page.locator('#cerrarFiltros').click();
-};
-const marcar = async (page, selector) => {
-    await abrirFiltros(page);
-    await page.locator(selector).first().check();
-    await cerrarFiltros(page);
-};
 const postular = page => page.locator('#applyModal');
 // "Ver detalle" de la tarjeta (.opportunity-card) que tiene ese titulo
 const abrirDetalleDe = async (page, titulo) => {
@@ -79,7 +66,7 @@ test.describe('el detalle en el historial', () => {
         await entrarComo(context, 'persona');
         await page.goto('empresas.html');
         await page.goto('oportunidades.html');
-        await marcar(page, 'input[name="type"][value="empleo"]');
+        await page.locator('input[name="type"][value="empleo"]').check();
         await abrirDetalleDe(page, 'Mesero o mesera');
         await expect(page).toHaveURL(/jobId=j-mesero/);
 
@@ -123,8 +110,8 @@ test.describe('filtros en la dirección', () => {
         await entrarComo(context, 'persona');
         await page.goto('oportunidades.html');
         await page.locator('.btn-ver-detalle').first().waitFor();
-        await marcar(page, 'input[name="type"][value="empleo"]');
-        await marcar(page, 'input[name="modality"][value="presencial"]');
+        await page.locator('input[name="type"][value="empleo"]').check();
+        await page.locator('input[name="modality"][value="presencial"]').check();
         await page.locator('#sortSelect').selectOption('salary');
         await expect(page).toHaveURL(/tipo=empleo/);
         await expect(page).toHaveURL(/modalidad=presencial/);
@@ -138,9 +125,7 @@ test.describe('filtros en la dirección', () => {
         await expect(page.locator('#sortSelect')).toHaveValue('salary');
         await expect(page.locator('.btn-ver-detalle')).toHaveCount(cuantas);
 
-        await abrirFiltros(page);
         await page.locator('.btn-clear-filters').click();
-        await cerrarFiltros(page);
         await expect(page).not.toHaveURL(/tipo=/);
         await expect(page).not.toHaveURL(/modalidad=/);
     });
@@ -227,7 +212,7 @@ test.describe('el trabajo del match', () => {
     test('con un filtro, las cifras siguen a lo que se ve', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('oportunidades.html');
-        await marcar(page, 'input[name="type"][value="práctica"], input[name="type"][value="practica"]');
+        await page.locator('input[name="type"][value="práctica"], input[name="type"][value="practica"]').first().check();
         await expect(page.locator('.match-resumen')).toContainText('De las 2 que ves, 1 pide alguna.');
     });
 
@@ -258,7 +243,7 @@ test.describe('etiquetas y conteos', () => {
         await expect(cuenta(page, 'type', 'practica')).toHaveText('2');
         await expect(cuenta(page, 'type', 'freelance')).toHaveText('1');
         // Con "Empleo" marcado, las modalidades cuentan solo entre los empleos
-        await marcar(page, 'input[name="type"][value="empleo"]');
+        await page.locator('input[name="type"][value="empleo"]').check();
         await expect(cuenta(page, 'modality', 'presencial')).toHaveText('3');
         await expect(cuenta(page, 'modality', 'remoto')).toHaveText('2');
         await expect(cuenta(page, 'modality', 'hibrido')).toHaveText('1');
@@ -267,7 +252,7 @@ test.describe('etiquetas y conteos', () => {
     test('las opciones que darían 0 se ven atenuadas', async ({ page, context, api }) => {
         await entrarComo(context, 'visitante');
         await page.goto('oportunidades.html');
-        await marcar(page, 'input[name="type"][value="freelance"]');
+        await page.locator('input[name="type"][value="freelance"]').check();
         // El unico independiente es presencial: remoto e hibrido quedan en 0
         await expect(cuenta(page, 'modality', 'remoto')).toHaveText('0');
         await expect(page.locator('input[name="modality"][value="remoto"]').locator('xpath=ancestor::label')).toHaveClass(/sin-resultados/);

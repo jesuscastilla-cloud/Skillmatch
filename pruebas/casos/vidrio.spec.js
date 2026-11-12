@@ -27,7 +27,7 @@ test('en todas las páginas la barra de arriba es de vidrio (y en el celular tam
 test('las ventanas nuevas y viejas y la paleta son de vidrio; los campos siguen sólidos y la franja de botones desenfoca', async ({ page, context, api }) => {
     await entrarComo(context, 'persona');
     await page.goto('perfil-usuario.html');
-    await expect(page.locator('#userSkills .skill-tag')).toHaveCount(3);
+    await expect(page.locator('#cifraHabilidades')).toHaveText('3');
     // Nueva (UI.ventana)
     await page.evaluate(() => SkillMatchUI.cambiarContrasena());
     const nueva = page.locator('#ventanaContrasena .modal-content');
@@ -37,8 +37,8 @@ test('las ventanas nuevas y viejas y la paleta son de vidrio; los campos siguen 
     expect(await deVidrio(page.locator('#ventanaContrasena .modal-actions'))).toEqual({ translucido: true, desenfoca: true });
     await page.keyboard.press('Escape');
     await expect(nueva).toBeHidden();
-    // Vieja (las ventanas del perfil, que estan en el HTML)
-    await page.locator('#addSkillBtn').click();
+    // Vieja (las del perfil se abren con style.display)
+    await page.locator('#cifraAgregarHabilidad').click();
     const vieja = page.locator('#addSkillModal .modal-content-small');
     await expect(vieja).toBeVisible();
     expect(await deVidrio(vieja)).toEqual({ translucido: true, desenfoca: true });
@@ -80,8 +80,7 @@ test('los menús, la campana, los avisos y el recorrido son de vidrio', async ({
 test('las listas desplegables de la marca son de vidrio', async ({ page, context, api }) => {
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
-    // En la portada quedan las listas que se escriben (lugar): se abren al tocar el campo
-    const lista = page.locator('.lista-boton, .lista-campo input').first();
+    const lista = page.locator('.lista-boton').first();
     await lista.scrollIntoViewIfNeeded();
     await lista.click();
     const panel = page.locator('.lista-panel:not([hidden])').first();
@@ -213,43 +212,54 @@ test('Inicio es de vidrio: repisas y tarjetas de tinte, y la portada oscura sigu
     await page.goto('index.html');
     await expect(page.locator('.fondo-vivo')).toBeVisible();
     await expect(page.locator('.cerca-tarjeta').first()).toBeVisible();
-    for (const s of ['.publicos-section', '.como-funciona', '.cerca-tarjeta']) {
+    for (const s of ['.search-section', '.benefits-section', '.como-funciona', '.stat-box', '.cerca-tarjeta']) {
         expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
     }
     expect(await deVidrio(page.locator('.hero')), 'portada').toEqual({ translucido: false, desenfoca: false });
     // El carrusel 3D sigue solido: en 3D las tarjetas translucidas se verian unas a traves de otras
-    const campo = page.locator('.hero-buscar .search-input');
+    const campo = page.locator('.search-section .search-input');
     await campo.fill('mesero');
-    await page.locator('.hero-buscar .search-btn').click();
+    await page.locator('.search-section .search-btn').click();
     const tarjeta = page.locator('#results-container .cv-tarjeta').first();
     await expect(tarjeta).toBeVisible();
     expect((await deVidrio(tarjeta)).translucido, 'tarjeta del carrusel').toBe(false);
 });
 
-// Las secciones de Inicio alternan tonos para separarse (antes todas iguales se fundian),
-// siempre translucidas y sin rayas entre ellas
-test('Inicio alterna tonos de vidrio entre secciones, sin rayas entre ellas', async ({ page, context, api }) => {
-    const secciones = ['.destacadas', '.publicos-section', '.como-funciona'];
+// Con una repisa por seccion (cada una con su brillo y su raya) y la franja de las cifras sin vidrio,
+// Inicio se veia en franjas horizontales de bordes duros
+test('Inicio es una sola lámina de vidrio: el mismo tinte en todas las secciones, sin rayas entre ellas ni costura bajo la ola', async ({ page, context, api }) => {
+    const secciones = ['.search-section', '.impact-stats', '.como-funciona', '.benefits-section',
+        '.cerca-section', '.innovation-section'];
+    const leer = lista => page.evaluate(lista => lista.map(s => {
+        const cs = getComputedStyle(document.querySelector(s));
+        return { s, fondo: cs.backgroundColor, bordes: [cs.borderTopWidth, cs.borderBottomWidth] };
+    }), lista);
+
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
     await expect(page.locator('.fondo-vivo')).toBeVisible();
-    const leidas = await page.evaluate(lista => lista.map(s => {
-        const cs = getComputedStyle(document.querySelector(s));
-        return { s, fondo: cs.backgroundColor + ' ' + cs.backgroundImage, bordes: [cs.borderTopWidth, cs.borderBottomWidth] };
-    }), secciones);
-    for (const e of leidas) expect(e.bordes, e.s).toEqual(['0px', '0px']);
-    // Dos seguidas nunca tienen el mismo fondo
-    for (let i = 1; i < leidas.length; i++) expect(leidas[i].fondo, leidas[i].s).not.toBe(leidas[i - 1].fondo);
+    const visitante = await leer([...secciones, '.usuarios-empresas']);
+    expect(visitante[0].fondo, 'tinte translucido').toMatch(/^rgba\(.+, 0\.\d+\)$/);
+    for (const e of visitante) {
+        expect(e.fondo, e.s).toBe(visitante[0].fondo);
+        expect(e.bordes, e.s).toEqual(['0px', '0px']);
+    }
+    // Bajo la ola de la portada, el vidrio nace del mismo color de la ola y se funde
+    const ola = await page.locator('.hero-ola').evaluate(el => getComputedStyle(el).backgroundColor);
+    expect(await page.locator('.search-section').evaluate(el => getComputedStyle(el).backgroundImage)).toContain(ola);
 });
 
 test('con sesión, el panel de inicio también va sobre la lámina y el buscador la continúa sin costura', async ({ page, context, api }) => {
     await entrarComo(context, 'persona');
     await page.goto('index.html');
     await expect(page.locator('.panel-bloque').first()).toBeVisible();
-    const panel = await page.evaluate(() => getComputedStyle(document.querySelector('.panel-inicio')).backgroundColor);
-    expect(panel).toMatch(/^rgba\(.+, 0\.\d+\)$/);
-    // La busqueda del hero (escondido con sesion) pasa a la franja del saludo
-    await expect(page.locator('.panel-franja .hero-buscar')).toBeVisible();
+    const [panel, buscador] = await page.evaluate(() => ['.panel-inicio', '.search-section'].map(s => {
+        const cs = getComputedStyle(document.querySelector(s));
+        return { fondo: cs.backgroundColor, brillo: cs.backgroundImage };
+    }));
+    expect(panel.fondo).toMatch(/^rgba\(.+, 0\.\d+\)$/);
+    // Sin portada no hay ola: el buscador no empieza blanco (se veia una linea bajo el panel)
+    expect(buscador).toEqual({ fondo: panel.fondo, brillo: 'none' });
     // La franja oscura del saludo sigue solida
     expect(await deVidrio(page.locator('.panel-franja')), 'franja del saludo').toEqual({ translucido: false, desenfoca: false });
 });

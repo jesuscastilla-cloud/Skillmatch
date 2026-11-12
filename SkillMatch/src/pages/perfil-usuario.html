@@ -68,7 +68,7 @@
                             <h1 id="userName">Cargando...</h1>
                             <p class="profile-headline" id="userHeadline">Cargando información...</p>
                             <div class="profile-meta">
-                                <span id="userLocation"></span>
+                                <span id="userLocation"><i data-ico="pin"></i> Cartagena, Colombia</span>
                                 <span id="userConnections"><i data-ico="users"></i> 0 conexiones</span>
                             </div>
                         </div>
@@ -107,7 +107,7 @@
     <section class="profile-container perfil-panel">
         <div class="container">
             <!-- Resumen arriba (como las cifras del panel del reel de inventario): el
-                 progreso en un anillo con lo que falta (las cifras de postulaciones, guardadas y habilidades se quitaron: ya estaban en sus secciones). Es de quien inicio
+                 progreso en un anillo con lo que falta y tres cifras. Es de quien inicio
                  sesion: en el perfil de otra persona se esconde (profile.js) -->
             <section class="perfil-cifras" id="perfilCifras" aria-label="Resumen de tu perfil">
                 <article class="perfil-cifra cifra-progreso">
@@ -128,6 +128,27 @@
                             <li>Cargando...</li>
                         </ul>
                     </div>
+                </article>
+                <article class="perfil-cifra">
+                    <span class="cifra-icono es-mar" aria-hidden="true"><i data-ico="send"></i></span>
+                    <p class="cifra-numero" id="cifraPostulaciones">0</p>
+                    <p class="cifra-etiqueta">Postulaciones</p>
+                    <p class="cifra-nota" id="cifraPostulacionesNota">Aún no te postulas</p>
+                    <a class="cifra-ir" href="#applicationsCard">Ver <i data-ico="arrow"></i></a>
+                </article>
+                <article class="perfil-cifra">
+                    <span class="cifra-icono es-chispa" aria-hidden="true"><i data-ico="heart"></i></span>
+                    <p class="cifra-numero" id="cifraGuardadas">0</p>
+                    <p class="cifra-etiqueta">Vacantes guardadas</p>
+                    <p class="cifra-nota">Para postularte después</p>
+                    <a class="cifra-ir" href="#savedJobsCard">Ver <i data-ico="arrow"></i></a>
+                </article>
+                <article class="perfil-cifra">
+                    <span class="cifra-icono es-verde" aria-hidden="true"><i data-ico="target"></i></span>
+                    <p class="cifra-numero" id="cifraHabilidades">0</p>
+                    <p class="cifra-etiqueta">Habilidades</p>
+                    <p class="cifra-nota">Las comparamos con cada vacante</p>
+                    <button type="button" class="cifra-ir" id="cifraAgregarHabilidad">Agregar <i data-ico="plus"></i></button>
                 </article>
             </section>
 
@@ -161,7 +182,7 @@
 
                     <div class="sidebar-card">
                         <div class="card-header-flex">
-                            <h2 class="card-title" id="recomendadasTitulo"><i data-ico="briefcase"></i> Vacantes para ti</h2>
+                            <h2 class="card-title"><i data-ico="briefcase"></i> Vacantes para ti</h2>
                         </div>
                         <div id="recommendedJobs">
                             <p class="loading-text">Cargando oportunidades...</p>
@@ -182,7 +203,7 @@
                     </div>
 
                     <div class="sidebar-card" id="applicationsCard">
-                        <h2 class="card-title"><i data-ico="send"></i> Tus postulaciones <span class="vista-cuenta" id="applicationsCount"></span></h2>
+                        <h2 class="card-title"><i data-ico="send"></i> Tus postulaciones</h2>
                         <div id="interestedCompanies">
                             <p class="loading-text">Cargando empresas...</p>
                         </div>
@@ -199,59 +220,46 @@
         </div>
     </section>
 
-    <!-- Modal Editar Perfil. data-confirmar-cierre: si hay algo escrito, cerrar pregunta
-         "¿Descartar cambios?" (ui.js). Los errores salen dentro, encima de los botones. -->
-    <div id="editProfileModal" class="modal" data-confirmar-cierre>
+    <!-- Modal Editar Perfil -->
+    <div id="editProfileModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2><i data-ico="pencil"></i> Editar perfil</h2>
-                <button type="button" class="btn-close-modal" onclick="closeEditModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
+                <button type="button" class="btn-close-modal" onclick="closeEditModal()"><i data-ico="close"></i></button>
             </div>
-            <form id="editProfileForm" novalidate>
-                <fieldset class="form-grupo">
-                    <legend>Datos personales</legend>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editFirstName">Nombre *</label>
-                            <input type="text" id="editFirstName" autocomplete="given-name" maxlength="50" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="editLastName">Apellido *</label>
-                            <input type="text" id="editLastName" autocomplete="family-name" maxlength="50" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editEmail">Correo electrónico</label>
-                            <!-- No se edita aquí: el correo nuevo se confirma con un código (ui.js, cambiarCorreo) -->
-                            <div class="campo-bloqueado">
-                                <input type="email" id="editEmail" readonly aria-describedby="editEmailAyuda">
-                                <i data-ico="lock" aria-hidden="true"></i>
-                            </div>
-                            <small class="input-help" id="editEmailAyuda">Para cambiarlo, <button type="button" class="btn-enlace" id="editCambiarCorreoBtn">cambia tu correo con un código</button>.</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="editPhone">Teléfono</label>
-                            <input type="tel" id="editPhone" autocomplete="tel" placeholder="Ej.: 300 123 4567">
-                        </div>
-                    </div>
-                </fieldset>
-                <fieldset class="form-grupo">
-                    <legend>Perfil profesional</legend>
+            <form id="editProfileForm">
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="editHeadline">Título profesional</label>
-                        <input type="text" id="editHeadline" maxlength="200" placeholder="Ej.: Auxiliar contable, mesero bilingüe, técnico electricista">
+                        <label for="editFirstName">Nombre *</label>
+                        <input type="text" id="editFirstName" autocomplete="given-name" maxlength="50" required>
                     </div>
                     <div class="form-group">
-                        <label for="editLocation">Ubicación</label>
-                        <input type="text" id="editLocation" maxlength="100" autocomplete="address-level2" placeholder="Ej.: Cartagena, Bolívar">
+                        <label for="editLastName">Apellido *</label>
+                        <input type="text" id="editLastName" autocomplete="family-name" maxlength="50" required>
                     </div>
-                    <div class="form-group">
-                        <label for="editBio">Biografía</label>
-                        <textarea id="editBio" rows="4" maxlength="500" aria-describedby="editBioCuenta" placeholder="Cuenta en pocas líneas qué haces y qué buscas."></textarea>
-                        <small class="input-help contador" id="editBioCuenta" aria-live="polite" data-contar="editBio">0 / 500</small>
-                    </div>
-                </fieldset>
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">Correo electrónico</label>
+                    <!-- No se edita aquí: el correo nuevo se confirma con un código (ui.js, cambiarCorreo) -->
+                    <input type="email" id="editEmail" readonly aria-describedby="editEmailAyuda">
+                    <small class="input-help" id="editEmailAyuda">Para cambiarlo, <button type="button" class="btn-enlace" id="editCambiarCorreoBtn">cambia tu correo con un código</button>.</small>
+                </div>
+                <div class="form-group">
+                    <label for="editPhone">Teléfono</label>
+                    <input type="tel" id="editPhone">
+                </div>
+                <div class="form-group">
+                    <label for="editHeadline">Título profesional</label>
+                    <input type="text" id="editHeadline" placeholder="Ej.: Auxiliar contable, mesero bilingüe, técnico electricista">
+                </div>
+                <div class="form-group">
+                    <label for="editLocation">Ubicación</label>
+                    <input type="text" id="editLocation" maxlength="100" placeholder="Ej.: Cartagena, Bolívar">
+                </div>
+                <div class="form-group">
+                    <label for="editBio">Biografía</label>
+                    <textarea id="editBio" rows="4" placeholder="Cuéntanos sobre ti..."></textarea>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeEditModal()">Cancelar</button>
                     <button type="submit" class="btn-primary-modal">Guardar cambios</button>
@@ -260,11 +268,10 @@
         </div>
     </div>
 
-
     <!-- Modal Cambiar Foto -->
     <!-- La foto se sube desde el equipo: editor-imagen.js la valida, deja
          encuadrarla y la reduce antes de guardarla -->
-    <div id="changePhotoModal" class="modal modal-imagen" data-confirmar-cierre>
+    <div id="changePhotoModal" class="modal modal-imagen">
         <div class="modal-content">
             <div class="modal-header">
                 <h2><i data-ico="camera"></i> Cambiar foto de perfil</h2>
@@ -282,7 +289,7 @@
 
     <!-- Modal Cambiar Portada -->
     <!-- Portada: una de la galeria de SkillMatch o una foto propia -->
-    <div id="changeCoverModal" class="modal modal-imagen" data-confirmar-cierre>
+    <div id="changeCoverModal" class="modal modal-imagen">
         <div class="modal-content">
             <div class="modal-header">
                 <h2><i data-ico="image"></i> Cambiar portada</h2>
@@ -303,20 +310,17 @@
         </div>
     </div>
 
-    <!-- Habilidad, experiencia y estudio: la misma ventana sirve para agregar y para
-         editar (profile.js la abre ya llena y cambia el titulo y el boton). -->
-    <div id="addSkillModal" class="modal" data-confirmar-cierre>
+    <!-- Modal Agregar Habilidad -->
+    <div id="addSkillModal" class="modal">
         <div class="modal-content-small">
             <div class="modal-header">
-                <h2><i data-ico="target"></i> <span id="skillModalTitulo">Agregar habilidad</span></h2>
-                <button type="button" class="btn-close-modal" onclick="closeAddSkillModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
+                <h2><i data-ico="target"></i> Agregar habilidad</h2>
+                <button type="button" class="btn-close-modal" onclick="closeAddSkillModal()"><i data-ico="close"></i></button>
             </div>
-            <form id="addSkillForm" novalidate>
+            <form id="addSkillForm">
                 <div class="form-group">
                     <label for="skillName">Nombre de la habilidad *</label>
-                    <!-- Sugerencias mientras se escribe, para no escribir lo mismo de formas distintas -->
-                    <input type="text" id="skillName" maxlength="80" list="sugerenciasHabilidades" autocomplete="off" placeholder="Ej.: Atención al cliente, Excel, Inglés" required>
-                    <datalist id="sugerenciasHabilidades"></datalist>
+                    <input type="text" id="skillName" maxlength="80" placeholder="Ej.: Atención al cliente, Excel, Inglés" required>
                 </div>
                 <div class="form-group">
                     <label for="skillLevel">Nivel de dominio *</label>
@@ -330,36 +334,36 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeAddSkillModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal" data-texto-nuevo="Agregar habilidad">Agregar habilidad</button>
+                    <button type="submit" class="btn-primary-modal">Agregar habilidad</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="addExperienceModal" class="modal" data-confirmar-cierre>
+    <!-- Modal Agregar Experiencia -->
+    <div id="addExperienceModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="briefcase"></i> <span id="expModalTitulo">Agregar experiencia</span></h2>
-                <button type="button" class="btn-close-modal" onclick="closeAddExperienceModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
+                <h2><i data-ico="briefcase"></i> Agregar experiencia</h2>
+                <button type="button" class="btn-close-modal" onclick="closeAddExperienceModal()"><i data-ico="close"></i></button>
             </div>
-            <form id="addExperienceForm" novalidate>
+            <form id="addExperienceForm">
                 <div class="form-group">
                     <label for="expCompany">Empresa *</label>
-                    <input type="text" id="expCompany" maxlength="150" placeholder="Nombre de la empresa" required>
+                    <input type="text" id="expCompany" placeholder="Nombre de la empresa" required>
                 </div>
                 <div class="form-group">
                     <label for="expPosition">Cargo *</label>
-                    <input type="text" id="expPosition" maxlength="150" placeholder="Tu cargo o rol" required>
+                    <input type="text" id="expPosition" placeholder="Tu cargo o rol" required>
                 </div>
-                <!-- Mes y año (no el día): profile.js dibuja las dos listas y guarda AAAA-MM-01 -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="expStartDateMes">Desde *</label>
-                        <input type="hidden" id="expStartDate" data-mes-anio="inicio">
+                        <label for="expStartDate">Fecha de inicio *</label>
+                        <input type="date" id="expStartDate" required>
                     </div>
                     <div class="form-group">
-                        <label for="expEndDateMes">Hasta</label>
-                        <input type="hidden" id="expEndDate" data-mes-anio="fin">
+                        <label for="expEndDate">Fecha de fin</label>
+                        <input type="date" id="expEndDate">
                     </div>
                 </div>
                 <div class="form-group">
@@ -374,44 +378,44 @@
                 </div>
                 <div class="form-group">
                     <label for="expDescription">Descripción</label>
-                    <textarea id="expDescription" rows="4" maxlength="2000" aria-describedby="expDescriptionCuenta" placeholder="Describe tus responsabilidades y logros"></textarea>
-                    <small class="input-help contador" id="expDescriptionCuenta" aria-live="polite" data-contar="expDescription">0 / 2000</small>
+                    <textarea id="expDescription" rows="4" placeholder="Describe tus responsabilidades y logros"></textarea>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeAddExperienceModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal" data-texto-nuevo="Agregar experiencia">Agregar experiencia</button>
+                    <button type="submit" class="btn-primary-modal">Agregar experiencia</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="addEducationModal" class="modal" data-confirmar-cierre>
+    <!-- Modal Agregar Educación -->
+    <div id="addEducationModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i data-ico="cap"></i> <span id="eduModalTitulo">Agregar educación</span></h2>
-                <button type="button" class="btn-close-modal" onclick="closeAddEducationModal()" aria-label="Cerrar"><i data-ico="close"></i></button>
+                <h2><i data-ico="cap"></i> Agregar educación</h2>
+                <button type="button" class="btn-close-modal" onclick="closeAddEducationModal()"><i data-ico="close"></i></button>
             </div>
-            <form id="addEducationForm" novalidate>
+            <form id="addEducationForm">
                 <div class="form-group">
                     <label for="eduSchool">Institución *</label>
-                    <input type="text" id="eduSchool" maxlength="200" placeholder="Nombre de la institución" required>
+                    <input type="text" id="eduSchool" placeholder="Nombre de la institución" required>
                 </div>
                 <div class="form-group">
                     <label for="eduDegree">Título *</label>
-                    <input type="text" id="eduDegree" maxlength="200" placeholder="Ej.: Técnico en Contabilidad" required>
+                    <input type="text" id="eduDegree" placeholder="Ej.: Técnico en Contabilidad" required>
                 </div>
                 <div class="form-group">
                     <label for="eduFieldOfStudy">Campo de estudio</label>
-                    <input type="text" id="eduFieldOfStudy" maxlength="200" placeholder="Ej.: Administración">
+                    <input type="text" id="eduFieldOfStudy" placeholder="Ej.: Administración">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="eduStartDateMes">Desde *</label>
-                        <input type="hidden" id="eduStartDate" data-mes-anio="inicio" data-futuro="1">
+                        <label for="eduStartDate">Fecha de inicio *</label>
+                        <input type="date" id="eduStartDate" required>
                     </div>
                     <div class="form-group">
-                        <label for="eduEndDateMes">Hasta</label>
-                        <input type="hidden" id="eduEndDate" data-mes-anio="fin" data-futuro="10">
+                        <label for="eduEndDate">Fecha de fin</label>
+                        <input type="date" id="eduEndDate">
                     </div>
                 </div>
                 <div class="form-group">
@@ -422,16 +426,15 @@
                 </div>
                 <div class="form-group">
                     <label for="eduDescription">Descripción</label>
-                    <textarea id="eduDescription" rows="3" maxlength="2000" placeholder="Actividades, logros, promedio, etc."></textarea>
+                    <textarea id="eduDescription" rows="3" placeholder="Actividades, logros, promedio, etc."></textarea>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" onclick="closeAddEducationModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal" data-texto-nuevo="Agregar educación">Agregar educación</button>
+                    <button type="submit" class="btn-primary-modal">Agregar educación</button>
                 </div>
             </form>
         </div>
     </div>
-
 
     <footer>
         <div class="container">

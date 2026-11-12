@@ -54,7 +54,7 @@ test.describe('en el computador', () => {
         await page.goto('index.html');
         await sinCambiarDePagina(page);
         await expect.poll(() => lineaDebajoDe(page, 'Inicio')).toBe(true);
-        await page.locator('.cerca-pie a[href="oportunidades.html"]').click();
+        await page.locator('.hero-actions a[href="oportunidades.html"]').click();
         // Todavía en la portada: la línea ya se fue a "Vacantes"
         await expect.poll(() => lineaDebajoDe(page, 'Vacantes')).toBe(true);
         // La página cambia cuando la línea terminó el recorrido, no antes
@@ -91,7 +91,7 @@ test.describe('en el computador', () => {
             window.__anotado = JSON.parse(sessionStorage.getItem('skillmatch_deslizar') || 'null');
         }));
         await page.goto('index.html');
-        await page.locator('.cerca-pie a[href="oportunidades.html"]').click();
+        await page.locator('.hero-actions a[href="oportunidades.html"]').click();
         await expect(page).toHaveURL(/oportunidades\.html$/);
         await expect.poll(() => page.evaluate(() => window.__anotado)).toMatchObject({ dir: 'derecha' });
         expect((await page.evaluate(() => window.__anotado)).a).toMatch(/oportunidades\.html$/);
@@ -110,7 +110,7 @@ test.describe('en el computador', () => {
     test('al volver con "atrás" desde la memoria, la línea vuelve a la página', async ({ page, api }) => {
         await page.goto('index.html');
         await sinCambiarDePagina(page);
-        await page.locator('.cerca-pie a[href="oportunidades.html"]').click();
+        await page.locator('.hero-actions a[href="oportunidades.html"]').click();
         await expect.poll(() => lineaDebajoDe(page, 'Vacantes')).toBe(true);
         // Lo que hace el navegador al sacar la página de la memoria (bfcache)
         await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
@@ -235,7 +235,6 @@ test('en cada página el guion del <head> va después de las hojas de estilo', a
     const carpeta = path.join(__dirname, '../../SkillMatch/src/pages');
     for (const f of fs.readdirSync(carpeta).filter(f => f.endsWith('.html'))) {
         const head = fs.readFileSync(path.join(carpeta, f), 'utf8').split('</head>')[0];
-        if (head.includes('http-equiv="refresh"')) continue;
         const guion = head.indexOf('<script>(function(){var t=');
         expect(guion, f + ' tiene el guion del tema').toBeGreaterThan(0);
         expect(guion, f).toBeGreaterThan(head.lastIndexOf('<link rel="stylesheet"'));

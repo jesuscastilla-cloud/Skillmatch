@@ -1,43 +1,99 @@
 ﻿// index.js
-// Portada: busqueda del hero, cifras, titular que rota, demo del match, selector
-// de publicos y "Como funciona".
+// Maneja selección de filtros en la página principal
 
 document.addEventListener('DOMContentLoaded', () => {
-    const formulario = document.querySelector('.hero-buscar');
+    const searchBtn = document.querySelector('.search-btn');
     const searchInput = document.querySelector('.search-input');
     const locationSelect = document.getElementById('location-select');
-    if (!formulario || !searchInput) return;
+    const modalitySelect = document.getElementById('modality-select');
+    const experienceSelect = document.getElementById('experience-select');
+    const salarySelect = document.getElementById('salary-select');
 
-    const criterios = () => ({ q: searchInput.value.trim(), location: locationSelect ? locationSelect.value : '' });
+    const filters = {
+        q: '',
+        location: '',
+        modality: '',
+        experience: '',
+        salary: ''
+    };
 
-    // Si ya hay resultados en pantalla, cambiar el lugar los actualiza al instante
+    // Actualiza valor cuando se escribe en search
+    searchInput.addEventListener('input', (e) => {
+        filters.q = e.target.value;
+    });
+
+    // Enter en el buscador busca, como en cualquier buscador (antes no hacia nada)
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchBtn.click();
+        }
+    });
+
+    // Si ya hay resultados en pantalla, cambiar un filtro los actualiza al instante
     function actualizarSiHayResultados() {
         const resultados = document.getElementById('results-container');
         if (resultados && !resultados.classList.contains('hidden') && typeof performSearch === 'function') {
-            performSearch(criterios());
+            performSearch({ ...filters });
         }
     }
-    if (locationSelect) locationSelect.addEventListener('change', actualizarSiHayResultados);
 
-    // Buscar (boton o Enter). Sin search-handler.js el formulario sigue a Vacantes con ?q=
-    formulario.addEventListener('submit', (e) => {
-        if (typeof performSearch !== 'function') return;
-        e.preventDefault();
-        const resultsContainer = document.getElementById('results-container');
-        const bajar = () => { if (resultsContainer) resultsContainer.scrollIntoView({ behavior: 'smooth' }); };
-        const c = criterios();
-        // Sin nada escrito ni lugar elegido, lleva a todas las vacantes
-        if (!c.q && !c.location) { window.location.href = 'oportunidades.html'; return; }
-        const busqueda = performSearch(c);
-        bajar();
-        Promise.resolve(busqueda).then(bajar);
+    // Cuando cambia la ubicación
+    if (locationSelect) {
+        locationSelect.addEventListener('change', (e) => {
+            filters.location = e.target.value;
+            actualizarSiHayResultados();
+        });
+    }
+
+    // Cuando cambia la modalidad
+    if (modalitySelect) {
+        modalitySelect.addEventListener('change', (e) => {
+            filters.modality = e.target.value;
+            actualizarSiHayResultados();
+        });
+    }
+
+    // Cuando cambia la experiencia
+    if (experienceSelect) {
+        experienceSelect.addEventListener('change', (e) => {
+            filters.experience = e.target.value;
+            actualizarSiHayResultados();
+        });
+    }
+
+    // Cuando cambia el salario
+    if (salarySelect) {
+        salarySelect.addEventListener('change', (e) => {
+            filters.salary = e.target.value;
+            actualizarSiHayResultados();
+        });
+    }
+
+    // Al hacer click en Buscar - conectar con search-handler
+    searchBtn.addEventListener('click', () => {
+        const criteria = {
+            q: filters.q,
+            location: filters.location,
+            modality: filters.modality,
+            experience: filters.experience,
+            salary: filters.salary
+        };
+        // Llamar a función del search-handler (espera las vacantes si aun no llegan)
+        if (typeof performSearch === 'function') {
+            const resultsContainer = document.getElementById('results-container');
+            const bajar = () => { if (resultsContainer) resultsContainer.scrollIntoView({ behavior: 'smooth' }); };
+            const busqueda = performSearch(criteria);
+            bajar();
+            Promise.resolve(busqueda).then(bajar);
+        }
     });
 });
 
 /* ---------------------------------------------------------------
- * Cifras reales en la portada: una sola fuente (/public/stats) y una
- * sola vez, en el hero. Si la API no responde, los guiones se quedan:
- * la pagina nunca muestra un cero falso ni un error al visitante.
+ * Cifras reales en la portada.
+ * Si la API no responde, los guiones se quedan como estan: la
+ * pagina nunca muestra un cero falso ni un error al visitante.
  * --------------------------------------------------------------- */
 (function () {
     const destinos = document.querySelectorAll('[data-stat]');
@@ -72,15 +128,16 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 
 /* ---------------------------------------------------------------
- * Hero
- *  0. Palabra clave del titular en bucle: el trabajo / la práctica / el proyecto
- *  1. Gradiente que reacciona al mouse (solo con mouse)
- *  2. Demo del match en vivo en la tarjeta del hero
+ * Fase 2 — portada premium (solo esta pagina; lo global vive en ui.js)
+ *  1. Palabra clave del titular en bucle: trabajo / practica / proyecto
+ *  2. Gradiente del hero que reacciona al mouse
+ *  3. Demo del match en vivo en la tarjeta del hero
+ * Todo es opcional: si un elemento no existe, esa parte no hace nada.
  * --------------------------------------------------------------- */
 (function () {
     const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // 0. Palabra clave en bucle (con movimiento reducido se queda "el trabajo").
+    // 1. Palabra clave en bucle (con movimiento reducido se queda "El trabajo").
     //    La que sale se deshace en esporas que el viento se lleva y la nueva
     //    aparece letra por letra (idea de Luis).
     const rotador = document.querySelector('.hero-rotador');
@@ -178,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3200);
     }
 
-    // 1. Gradiente que sigue al mouse, un cuadro por fotograma (solo con mouse)
+    // 2. Gradiente que sigue al mouse, un cuadro por fotograma (solo con mouse)
     const hero = document.querySelector('.hero');
     if (hero && !reducido && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
         let pendiente = 0, x = 0, y = 0;
@@ -199,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Demo del match: cada habilidad pesa en el %, el anillo se recalcula
+    // 3. Demo del match: cada habilidad pesa en el %, el anillo se recalcula
     const demo = document.querySelector('.match-demo');
     if (!demo) return;
     const botones = Array.from(demo.querySelectorAll('.demo-skill'));
@@ -225,10 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (texto) texto.textContent = pct + '%';
             return;
         }
-        // Un pulso breve al cambiar (app.css, .match-ring.cambia)
-        anillo.classList.remove('cambia');
-        void anillo.offsetWidth;
-        anillo.classList.add('cambia');
         const inicio = performance.now();
         const paso = function (ahora) {
             const t = Math.min(1, (ahora - inicio) / 500);
@@ -261,48 +314,61 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 
 /* ---------------------------------------------------------------
- * Pestanas de la portada (las controla la persona; nada cambia solo)
- *  3. "Busco trabajo | Soy empresa": el contenido cambia con una transicion
- *  4. "Como funciona": cada paso muestra su escena al lado
- * Teclado: flechas, Inicio y Fin, como cualquier lista de pestanas.
+ * Fase 2 — scroll-telling "Como funciona" y cifras de impacto
+ *  4. El paso que cruza el centro de la pantalla enciende su escena
+ *  5. Las cifras de impacto cuentan cuando la seccion entra en pantalla
  * --------------------------------------------------------------- */
 (function () {
-    function pestanas(lista, alElegir) {
-        if (!lista) return;
-        const tabs = Array.from(lista.querySelectorAll('[role="tab"]'));
-        function elegir(tab, enfocar) {
-            tabs.forEach(function (t) {
-                const si = t === tab;
-                t.setAttribute('aria-selected', String(si));
-                t.tabIndex = si ? 0 : -1;
-                t.classList.toggle('is-activo', si);
-                const panel = document.getElementById(t.getAttribute('aria-controls'));
-                if (panel) panel.hidden = !si;
-            });
-            if (enfocar) tab.focus();
-            if (alElegir) alElegir(tab);
-        }
-        tabs.forEach(function (t) {
-            t.addEventListener('click', function () { elegir(t, false); });
-            t.addEventListener('keydown', function (e) {
-                const i = tabs.indexOf(t);
-                const destino = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
-                if (destino === undefined) return;
-                e.preventDefault();
-                elegir(tabs[(destino + tabs.length) % tabs.length], true);
-            });
-        });
+    const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // 4. Scroll-telling
+    const layout = document.querySelector('.cf-layout');
+    const pasos = layout ? Array.from(layout.querySelectorAll('.cf-paso')) : [];
+    if (layout && pasos.length && 'IntersectionObserver' in window) {
+        layout.classList.add('js-scroll');
+        const activar = function (paso) {
+            pasos.forEach(function (p) { p.classList.toggle('is-activo', p === paso); });
+            layout.dataset.escena = paso.dataset.paso;
+        };
+        activar(pasos[0]);
+        // Una franja en el centro de la pantalla: el paso que la cruza es el activo
+        const observador = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (e) { if (e.isIntersecting) activar(e.target); });
+        }, { rootMargin: '-45% 0px -45% 0px' });
+        pasos.forEach(function (p) { observador.observe(p); });
     }
 
-    // 3. Publicos
-    pestanas(document.querySelector('.publicos-selector'), function (tab) {
-        const caja = document.querySelector('.publicos');
-        if (caja) caja.dataset.publico = tab.id === 'tabEmpresa' ? 'empresa' : 'persona';
-    });
+    // 5. Cifras de impacto: search-handler.js las escribe ("3,0K+"); aqui
+    //    solo se animan desde 0 cuando la seccion se ve, conservando el formato.
+    const impacto = document.querySelector('.impact-stats');
+    if (!impacto || reducido || !('IntersectionObserver' in window)) return;
+    let visto = false;
 
-    // 4. Como funciona
-    const layout = document.querySelector('.cf-layout');
-    pestanas(layout && layout.querySelector('.cf-pasos'), function (tab) {
-        layout.dataset.escena = tab.dataset.paso;
-    });
+    function contar(el) {
+        const m = el.textContent.trim().match(/^([\d.,]+)(.*)$/);
+        if (!m || el.dataset.contado) return;
+        el.dataset.contado = '1';
+        const decimales = (m[1].split(',')[1] || '').length;
+        const valor = parseFloat(m[1].replace(/\./g, '').replace(',', '.'));
+        const sufijo = m[2];
+        const inicio = performance.now();
+        const paso = function (ahora) {
+            const t = Math.min(1, (ahora - inicio) / 1100);
+            const suave = 1 - Math.pow(1 - t, 3);
+            el.textContent = (valor * suave).toFixed(decimales).replace('.', ',') + sufijo;
+            if (t < 1) requestAnimationFrame(paso);
+        };
+        requestAnimationFrame(paso);
+    }
+    function contarTodas() { impacto.querySelectorAll('.stat-value').forEach(contar); }
+
+    new IntersectionObserver(function (entradas, obs) {
+        if (!entradas[0].isIntersecting) return;
+        visto = true;
+        contarTodas();
+        obs.disconnect();
+    }, { threshold: 0.4 }).observe(impacto);
+    // Si las cifras llegan de la API cuando la seccion ya esta en pantalla
+    new MutationObserver(function () { if (visto) contarTodas(); })
+        .observe(impacto, { childList: true, subtree: true, characterData: true });
 })();

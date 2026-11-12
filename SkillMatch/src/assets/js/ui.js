@@ -279,55 +279,6 @@
         }
     }
 
-    /** Con sesion, "Mi perfil" y "Cerrar sesion" ya no son dos botones grandes en la
-     *  barra: quedan en un menu que se abre al tocar las iniciales, como en la
-     *  mayoria de los sitios. Cerrar sesion va al final, separado y en rojo. */
-    function menuDeCuenta() {
-        const datos = datosSesion();
-        const salir = document.querySelector('header nav > .nav-links a[data-cerrar-sesion]');
-        if (!datos || !salir || document.getElementById('menuCuenta')) return;
-        const esEmpresa = datos.userType === 'empresa';
-        const perfil = esEmpresa ? 'perfil-empresa.html' : 'perfil-usuario.html';
-        const enlacePerfil = document.querySelector('header nav > .nav-links a[href="' + perfil + '"]');
-        const nombre = [datos.firstName, esEmpresa ? '' : datos.lastName].filter(Boolean).join(' ').trim();
-        const iniciales = (nombre || datos.email || '?').split(/\s+/).map(function (p) { return p.charAt(0); }).join('').slice(0, 2).toUpperCase();
-        const opciones = (esEmpresa ? [
-            [perfil, 'building', 'Mi empresa'],
-            ['perfil-empresa.html?nueva=1', 'plus', 'Publicar una vacante'],
-            ['perfil-empresa.html?tab=applicants', 'users', 'Candidatos']
-        ] : [
-            [perfil, 'user', 'Mi perfil'],
-            ['perfil-usuario.html?tab=applications', 'send', 'Mis postulaciones'],
-            ['oportunidades.html?guardadas=1', 'bookmark', 'Vacantes guardadas']
-        ]).map(function (o) {
-            return '<a role="menuitem" href="' + o[0] + '"><i data-ico="' + o[1] + '"></i><span>' + o[2] + '</span></a>';
-        }).join('');
-
-        const li = document.createElement('li');
-        li.className = 'menu-cuenta';
-        li.innerHTML =
-            '<button type="button" class="cuenta-boton" data-menu="menuCuenta" aria-haspopup="menu" aria-expanded="false" aria-controls="menuCuenta">' +
-                '<span class="cuenta-iniciales" aria-hidden="true">' + escaparHtml(iniciales) + '</span>' +
-                '<span class="sr-only">Tu cuenta' + (nombre ? ': ' + escaparHtml(nombre) : '') + '</span>' +
-                svgIcon('chevron', 'cuenta-flecha') +
-            '</button>' +
-            '<div class="menu-acciones menu-cuenta-lista" id="menuCuenta" role="menu" aria-label="Tu cuenta" hidden>' +
-                '<p class="menu-cuenta-nombre">' + escaparHtml(nombre || datos.email || '') + '</p>' +
-                opciones +
-                '<button type="button" role="menuitem" data-cambiar-clave><i data-ico="lock"></i><span>Cambiar contraseña</span></button>' +
-                '<hr>' +
-                '<a role="menuitem" href="index.html" class="es-peligro" data-cerrar-sesion><i data-ico="logout"></i><span>Cerrar sesión</span></a>' +
-            '</div>';
-        li.querySelector('[data-cambiar-clave]').addEventListener('click', function () { UI.cambiarContrasena(); });
-        // El menu toma el lugar de los dos botones; en la pagina del perfil el
-        // enlace sigue marcado como actual dentro del menu
-        const lugar = (enlacePerfil || salir).parentElement;
-        lugar.before(li);
-        if (enlacePerfil && enlacePerfil.parentElement !== salir.parentElement) enlacePerfil.parentElement.remove();
-        salir.parentElement.remove();
-        if (paginaActual() === perfil) li.querySelector('.cuenta-boton').classList.add('es-actual');
-    }
-
     /** En las paginas para entrar o registrarse sobra el boton que lleva a esa
      *  misma pagina: "Iniciar sesion" en los logins y "Unirse ahora" en la
      *  eleccion de cuenta y los registros. Cada una ya tiene sus enlaces para
@@ -567,9 +518,7 @@
     const REVELAR = '.reveal, .section-header-center, .innovation-header, .why-header, ' +
                     '.feature-card, .benefit-item, .pathway-card, .roadmap-card, ' +
                     '.opportunity-card, .connection-card, .suggestion-card, ' +
-                    '.offer-card, .candidate-mini-card, .application-card, ' +
-                    // Portada: cada bloque marcado y, en las listas, cada tarjeta por separado
-                    '[data-revelar], [data-revelar-hijos] > *';
+                    '.offer-card, .candidate-mini-card, .application-card';
     // Las vacantes no suben desde abajo: salen de debajo de la tarjeta de
     // arriba, una tras otra, como cartas que se reparten (idea de Luis)
     const BARAJA = '.opportunity-card';
@@ -656,67 +605,6 @@
             if (destino) destino.removeAttribute('aria-busy');
         },
 
-        /** Boton de guardar mientras espera al servidor: se desactiva y dice
-         *  "Guardando…" con un indicador (en Render Free puede tardar y un segundo
-         *  clic creaba duplicados). Devuelve la funcion que lo deja como estaba. */
-        guardando: function (boton, texto) {
-            const el = typeof boton === 'string' ? document.querySelector(boton) : boton;
-            if (!el || el.dataset.ocupado) return function () {};
-            const antes = el.innerHTML;
-            el.dataset.ocupado = '1';
-            el.disabled = true;
-            el.setAttribute('aria-busy', 'true');
-            el.innerHTML = '<span class="girando" aria-hidden="true"></span>' + (texto || 'Guardando…');
-            return function () {
-                el.innerHTML = antes;
-                el.disabled = false;
-                el.removeAttribute('aria-busy');
-                delete el.dataset.ocupado;
-            };
-        },
-
-        /** Error de un formulario, debajo de el y no en un aviso flotante (como en
-         *  "Cambiar contraseña"). Si se dice el campo, se marca en rojo y recibe el foco. */
-        errorEnFormulario: function (form, texto, campo) {
-            if (!form) return;
-            let caja = form.querySelector('.form-error');
-            if (!caja) {
-                caja = document.createElement('p');
-                caja.className = 'error-text form-error';
-                caja.setAttribute('role', 'alert');
-                const acciones = form.querySelector('.modal-actions');
-                if (acciones) acciones.before(caja); else form.appendChild(caja);
-            }
-            form.querySelectorAll('[aria-invalid="true"]').forEach(function (c) {
-                c.removeAttribute('aria-invalid');
-                c.classList.remove('is-invalid');
-            });
-            caja.textContent = texto || '';
-            caja.hidden = !texto;
-            const el = typeof campo === 'string' ? form.querySelector('#' + campo) : campo;
-            if (texto && el) {
-                el.classList.add('is-invalid');
-                el.setAttribute('aria-invalid', 'true');
-                if (!caja.id) caja.id = (form.id || 'form') + 'Error';
-                el.setAttribute('aria-describedby', ((el.getAttribute('aria-describedby') || '').replace(caja.id, '') + ' ' + caja.id).trim());
-                el.focus();
-            }
-        },
-
-        /** Quien tiene datos de prueba: empresas y vacantes con "(ejemplo)" en el nombre. */
-        esEjemplo: function (texto) { return /\(ejemplo\)/i.test(String(texto || '')); },
-        /** El nombre sin "(ejemplo)": la etiqueta ya lo dice. */
-        sinEjemplo: function (texto) { return String(texto || '').replace(/\s*\(ejemplo\)\s*/ig, ' ').trim(); },
-        etiquetaEjemplo: function () {
-            return '<span class="etiqueta-ejemplo" title="Datos de muestra: no es una oferta real">Ejemplo</span>';
-        },
-        /** Un dato que la empresa no lleno ("No especificada", vacio): null, para
-         *  mostrar en su lugar un texto que no parezca definitivo. */
-        datoReal: function (valor) {
-            const t = String(valor == null ? '' : valor).trim();
-            return !t || /^(no especificad[oa]|sin especificar|n\/?a|null|undefined)$/i.test(t) ? null : t;
-        },
-
         /** Marca un boton como ocupado y devuelve la funcion que lo libera. */
         ocupado: function (boton) {
             const el = typeof boton === 'string' ? document.querySelector(boton) : boton;
@@ -734,10 +622,8 @@
         /**
          * Aviso breve. El texto dice que paso, no pide disculpas.
          * tipo: 'ok' | 'error' | 'info'
-         * accion (opcional): { texto: 'Reintentar', alHacer: fn } pone un boton
-         * en el aviso; un error asi dice que paso y que hacer.
          */
-        aviso: function (mensaje, tipo, duracion, accion) {
+        aviso: function (mensaje, tipo, duracion) {
             let pila = document.querySelector('.toast-stack');
             if (!pila) {
                 pila = document.createElement('div');
@@ -758,26 +644,9 @@
                 setTimeout(function () { toast.remove(); }, 240);
             };
             toast.querySelector('button').addEventListener('click', cerrar);
-            if (accion && typeof accion.alHacer === 'function') {
-                const boton = document.createElement('button');
-                boton.type = 'button';
-                boton.className = 'toast-accion';
-                boton.textContent = accion.texto || 'Reintentar';
-                boton.addEventListener('click', function () { cerrar(); accion.alHacer(); });
-                toast.insertBefore(boton, toast.lastElementChild);
-            }
             pila.appendChild(toast);
-            setTimeout(cerrar, duracion || (accion ? 9000 : 4200));
+            setTimeout(cerrar, duracion || 4200);
             return cerrar;
-        },
-
-        /** Exito corto, en el mismo tono en todo el sitio: "Experiencia guardada". */
-        guardado: function (texto) { return UI.aviso(escaparHtml(texto), 'ok', 3200); },
-
-        /** Error con salida: dice que hacer y, si se puede, ofrece "Reintentar". */
-        noSeGuardo: function (texto, reintentar) {
-            return UI.aviso(escaparHtml(texto || 'No pudimos guardar. Revisa tu conexión e intenta de nuevo.'), 'error', 0,
-                reintentar ? { texto: 'Reintentar', alHacer: reintentar } : null);
         },
 
         icono: svgIcon,
@@ -821,9 +690,9 @@
         if (!ventana || !ventana.hasAttribute('data-confirmar-cierre') || ventana.dataset.cambios !== '1') return Promise.resolve(true);
         if (document.getElementById('ventanaConfirmar')) return Promise.resolve(false); // ya se esta preguntando
         return UI.confirmar({
-            titulo: '¿Descartar cambios?',
-            texto: 'Lo que escribiste en esta ventana todavía no se ha guardado.',
-            aceptar: 'Descartar cambios',
+            titulo: '¿Cerrar sin guardar?',
+            texto: 'Se perderá lo que escribiste en esta ventana.',
+            aceptar: 'Cerrar sin guardar',
             cancelar: 'Seguir editando',
             peligro: true
         }).then(function (si) {
@@ -1333,58 +1202,31 @@
         pendientes.forEach(function (a) { mostrarAviso(a.texto, a.tipo); });
     }
 
-    /* ---------- 15. Pie de pagina (el mismo en todas las paginas) ---------- */
+    /* ---------- 15. Pie de pagina grande (el mismo en todas las paginas) ---------- */
 
-    // Una sola fuente para todas las paginas: aqui se dibuja dentro del <footer>
+    // Una sola fuente para las 13 paginas: aqui se dibuja dentro del <footer>
     // que trae cada HTML (si el JS fallara, queda el texto corto de siempre).
     // Solo enlaces reales; nada de redes ni datos de contacto inventados.
-    // Con sesion ofrece lo de la cuenta; sin sesion, crear una o entrar.
-    const PIE_SKILLMATCH = { titulo: 'SkillMatch', enlaces: [
-        ['oportunidades.html', 'Vacantes'],
-        ['empresas.html', 'Empresas'],
-        ['index.html#como-funciona', 'Cómo funciona'],
-        ['dashboard.html', 'Indicadores del mercado'],
-        // La Ley 1581 pide que la politica de datos este siempre a la mano
-        ['politica-datos.html', 'Política de datos']
-    ] };
-
-    function columnasDelPie() {
-        const datos = datosSesion();
-        if (datos && datos.userType === 'empresa') {
-            return [{ titulo: 'Mi empresa', enlaces: [
-                ['perfil-empresa.html', 'Mi empresa'],
-                ['perfil-empresa.html?nueva=1', 'Publicar una vacante'],
-                ['perfil-empresa.html?tab=applicants', 'Candidatos'],
-                ['mensajes.html', 'Mensajes'],
-                ['index.html', 'Cerrar sesión', 'data-cerrar-sesion']
-            ] }, PIE_SKILLMATCH];
-        }
-        if (datos) {
-            return [{ titulo: 'Mi cuenta', enlaces: [
-                ['perfil-usuario.html', 'Mi perfil'],
-                ['perfil-usuario.html?tab=applications', 'Mis postulaciones'],
-                ['oportunidades.html?guardadas=1', 'Vacantes guardadas'],
-                ['mensajes.html', 'Mensajes'],
-                ['index.html', 'Cerrar sesión', 'data-cerrar-sesion']
-            ] }, PIE_SKILLMATCH];
-        }
-        return [
-            { titulo: 'Busco trabajo', enlaces: [
-                ['registro-usuario.html', 'Crear mi perfil'],
-                ['oportunidades.html', 'Ver vacantes'],
-                ['login.html', 'Iniciar sesión']
-            ] },
-            { titulo: 'Soy empresa', enlaces: [
-                ['registro-empresa.html', 'Crear cuenta de empresa'],
-                ['login.html?tipo=empresa', 'Ya tengo cuenta']
-            ] },
-            PIE_SKILLMATCH
-        ];
-    }
-
-    // En el celular las columnas son acordeones (cerrados al llegar): antes el
-    // pie media casi 1.000 px. En pantallas grandes se ven todas abiertas.
-    const PIE_CELULAR = window.matchMedia('(max-width: 640px)');
+    const PIE_COLUMNAS = [
+        { titulo: 'Busco trabajo', enlaces: [
+            ['seleccionar-registro.html', 'Crear mi perfil'],
+            ['oportunidades.html', 'Ver vacantes'],
+            ['empresas.html', 'Conocer las empresas'],
+            ['login-usuario.html', 'Iniciar sesión']
+        ] },
+        { titulo: 'Empresas', enlaces: [
+            ['registro-empresa.html', 'Registrar mi empresa'],
+            ['login-empresa.html', 'Acceso empresas']
+        ] },
+        { titulo: 'SkillMatch', enlaces: [
+            ['index.html#como-funciona', 'Cómo funciona'],
+            ['index.html#cerca', 'Vacantes cerca de ti'],
+            ['dashboard.html', 'Indicadores del mercado'],
+            ['index.html#innovacion', 'Lo que viene'],
+            // La Ley 1581 pide que la politica de datos este siempre a la mano
+            ['politica-datos.html', 'Política de datos']
+        ] }
+    ];
 
     function construirPie() {
         const pie = document.querySelector('body > footer');
@@ -1396,21 +1238,18 @@
                 '<div class="pie-grid">' +
                     '<div class="pie-marca">' +
                         '<a href="index.html" class="pie-logo"><img src="../assets/img/logo-oscuro.png" alt="SkillMatch, ir al inicio" width="531" height="160" loading="lazy"></a>' +
-                        '<p>La bolsa de empleo de Cartagena: compara tus habilidades con cada vacante antes de postularte.</p>' +
+                        '<p>La bolsa de empleo de Cartagena para todos los sectores: compara tus habilidades con cada vacante de la ciudad antes de postularte.</p>' +
                     '</div>' +
                     '<nav class="pie-columnas" aria-label="Enlaces del pie de página">' +
-                        columnasDelPie().map(function (col) {
-                            return '<details class="pie-col" open><summary><h2 class="pie-titulo">' + col.titulo + '</h2>' +
-                                svgIcon('chevron', 'pie-flecha') + '</summary><ul>' +
-                                col.enlaces.map(function (e) {
-                                    return '<li><a href="' + e[0] + '"' + (e[2] ? ' ' + e[2] : '') + '>' + e[1] + '</a></li>';
-                                }).join('') +
-                                '</ul></details>';
+                        PIE_COLUMNAS.map(function (col) {
+                            return '<div><h2 class="pie-titulo">' + col.titulo + '</h2><ul>' +
+                                col.enlaces.map(function (e) { return '<li><a href="' + e[0] + '">' + e[1] + '</a></li>'; }).join('') +
+                                '</ul></div>';
                         }).join('') +
                     '</nav>' +
                 '</div>' +
                 '<div class="pie-base">' +
-                    '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias.</p>' +
+                    '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias para conectar a las personas y las empresas de la ciudad.</p>' +
                     // Tamano de letra (seccion 22): tres botones, el elegido marcado
                     '<div class="pie-letra" role="group" aria-label="Tamaño de letra">' +
                         '<span>Letra</span>' +
@@ -1424,22 +1263,8 @@
                         '<button type="button" class="pie-arriba"><i data-ico="arrow"></i>Volver arriba</button>' +
                     '</div>' +
                 '</div>' +
-            '</div>';
-        // (La palabra "SkillMatch" gigante con degradado se quito: quedaba cortada
-        // y parecia un error. La marca va una sola vez, con el logo.)
-
-        // Acordeones: cerrados en el celular; en pantalla grande siempre abiertos
-        const columnas = Array.from(pie.querySelectorAll('.pie-col'));
-        const ajustar = function () {
-            columnas.forEach(function (d) { d.open = !PIE_CELULAR.matches; });
-        };
-        ajustar();
-        if (PIE_CELULAR.addEventListener) PIE_CELULAR.addEventListener('change', ajustar);
-        columnas.forEach(function (d) {
-            d.querySelector('summary').addEventListener('click', function (e) {
-                if (!PIE_CELULAR.matches) e.preventDefault();
-            });
-        });
+            '</div>' +
+            '<div class="pie-gigante" aria-hidden="true"><span>Skill</span><span>Match</span></div>';
 
         pie.querySelectorAll('.pie-letra-btn').forEach(function (b) {
             b.addEventListener('click', function () { ponerTamanoLetra(b.dataset.letra); });
@@ -1453,6 +1278,19 @@
             const inicio = document.querySelector('header a');
             if (inicio) inicio.focus({ preventScroll: true });
         });
+
+        // La palabra gigante sube al entrar en pantalla
+        const gigante = pie.querySelector('.pie-gigante');
+        if (reduceMotion || !('IntersectionObserver' in window)) {
+            gigante.classList.add('is-visible');
+        } else {
+            const obs = new IntersectionObserver(function (entradas) {
+                if (!entradas[0].isIntersecting) return;
+                gigante.classList.add('is-visible');
+                obs.disconnect();
+            }, { threshold: 0.2 });
+            obs.observe(gigante);
+        }
     }
 
     /* ---------- 16. Listas desplegables ---------- */
@@ -3402,7 +3240,6 @@
         // Primero la barra segun la sesion: para un visitante cambia enlaces (por
         // ejemplo "Mensajes" pasa a "Empresas") y despues se marca el actual
         sesionEnBarra();
-        menuDeCuenta();
         sinBotonDeEstaPagina();
         marcarNavegacionActiva();
         seccionEnMenu();

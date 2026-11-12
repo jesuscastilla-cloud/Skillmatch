@@ -2,115 +2,6 @@
 
 let currentUserProfile = {};
 
-// ---- Ventanas del perfil ----
-// Se abren y se cierran con la clase "active" (ui.js las cierra tambien con Escape
-// y con un clic afuera). Todas llevan data-confirmar-cierre: si hay algo escrito,
-// cerrar pregunta "¿Descartar cambios?". Despues de guardar se cierran sin preguntar.
-function abrirVentana(id, enfocar) {
-    const ventana = document.getElementById(id);
-    if (!ventana) return;
-    ventana.style.removeProperty('display');
-    ventana.dataset.cambios = '';
-    const form = ventana.querySelector('form');
-    if (form && window.SkillMatchUI) SkillMatchUI.errorEnFormulario(form, '');
-    contarCaracteres(ventana);
-    ventana.classList.add('active');
-    const campo = (enfocar && document.getElementById(enfocar))
-        || ventana.querySelector('form input:not([type="hidden"]):not([readonly]), form select, form textarea');
-    if (campo) setTimeout(() => campo.focus(), 60);
-}
-
-function cerrarVentana(id, forzar, alCerrar) {
-    const ventana = document.getElementById(id);
-    if (!ventana) return Promise.resolve(false);
-    const permiso = forzar || !window.SkillMatchUI ? Promise.resolve(true) : SkillMatchUI.puedeCerrar(ventana);
-    return permiso.then(si => {
-        if (!si) return false;
-        ventana.classList.remove('active');
-        ventana.dataset.cambios = '';
-        if (alCerrar) alCerrar();
-        return true;
-    });
-}
-
-/** El error de un formulario, debajo de el y junto al campo (ui.js). */
-function errorEn(form, texto, campo) {
-    if (window.SkillMatchUI) SkillMatchUI.errorEnFormulario(form, texto, campo);
-    else alert(texto);
-}
-
-const SIN_CONEXION = 'No pudimos guardar. Revisa tu conexión e intenta de nuevo.';
-
-// Contador de caracteres de la biografia y las descripciones (data-contar="idDelCampo")
-function contarCaracteres(raiz) {
-    (raiz || document).querySelectorAll('[data-contar]').forEach(cuenta => {
-        const campo = document.getElementById(cuenta.dataset.contar);
-        if (!campo) return;
-        const max = Number(campo.getAttribute('maxlength')) || 0;
-        const n = campo.value.length;
-        cuenta.textContent = max ? `${n} / ${max}` : String(n);
-        cuenta.classList.toggle('casi-lleno', max && n >= max * 0.9);
-    });
-}
-
-// Fechas de experiencia y estudios: mes y año (no el dia). Cada campo oculto
-// (data-mes-anio) recibe dos listas y guarda "AAAA-MM-01", como pide el servidor.
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-
-function prepararMesAnio(oculto) {
-    if (oculto.dataset.listo) return;
-    oculto.dataset.listo = '1';
-    const etiqueta = document.querySelector(`label[for="${oculto.id}Mes"]`);
-    const nombre = etiqueta ? etiqueta.textContent.replace('*', '').trim() : 'Fecha';
-    const ultimo = new Date().getFullYear() + Number(oculto.dataset.futuro || 0);
-    const mes = document.createElement('select');
-    mes.id = oculto.id + 'Mes';
-    mes.innerHTML = '<option value="">Mes</option>' + MESES.map((m, i) =>
-        `<option value="${String(i + 1).padStart(2, '0')}">${m.charAt(0).toUpperCase() + m.slice(1)}</option>`).join('');
-    const anio = document.createElement('select');
-    anio.id = oculto.id + 'Anio';
-    anio.setAttribute('aria-label', `${nombre}: año`);
-    let anios = '<option value="">Año</option>';
-    for (let a = ultimo; a >= 1950; a--) anios += `<option value="${a}">${a}</option>`;
-    anio.innerHTML = anios;
-    const caja = document.createElement('div');
-    caja.className = 'mes-anio';
-    caja.append(mes, anio);
-    oculto.after(caja);
-    const actualizar = () => { oculto.value = mes.value && anio.value ? `${anio.value}-${mes.value}-01` : ''; };
-    mes.addEventListener('change', actualizar);
-    anio.addEventListener('change', actualizar);
-    oculto.ponerFecha = fecha => {
-        const m = String(fecha || '').match(/^(\d{4})-(\d{2})/);
-        anio.value = m ? m[1] : '';
-        mes.value = m ? m[2] : '';
-        actualizar();
-    };
-    oculto.desactivar = si => { mes.disabled = si; anio.disabled = si; };
-}
-
-function ponerFecha(id, fecha) {
-    const oculto = document.getElementById(id);
-    if (oculto && oculto.ponerFecha) oculto.ponerFecha(fecha);
-}
-
-// Un error de fechas va al campo del que habla
-function campoDeFecha(texto, prefijo) {
-    return /fin/i.test(texto) ? prefijo + 'EndDateMes' : prefijo + 'StartDateMes';
-}
-
-// Lo que ya esta guardado, para abrir "Editar" con el formulario lleno
-const habilidadesPorId = {}, experienciasPorId = {}, estudiosPorId = {};
-
-// Titulo y boton de la ventana: "Agregar ..." o "Editar ..." con "Guardar cambios"
-function modoVentana(form, tituloId, editando, nuevo, editar) {
-    const titulo = document.getElementById(tituloId);
-    if (titulo) titulo.textContent = editando ? editar : nuevo;
-    const boton = form.querySelector('[type="submit"]');
-    if (boton) boton.textContent = editando ? 'Guardar cambios' : boton.dataset.textoNuevo;
-    if (editando) form.dataset.editando = editando; else delete form.dataset.editando;
-}
-
 // Obtener datos del usuario desde localStorage o URL
 function getUserData() {
     // Verificar si hay un ID de usuario en la URL (para ver otros perfiles)
@@ -121,7 +12,7 @@ function getUserData() {
 
     if (!userData) {
         alert('Debes iniciar sesión para ver esta página');
-        window.location.href = 'login.html';
+        window.location.href = 'login-usuario.html';
         return null;
     }
     
@@ -135,7 +26,7 @@ function getUserData() {
     // Si no hay ID en URL, usar el usuario actual
     if (!userData) {
         alert('Error al cargar datos de usuario');
-        window.location.href = 'login.html';
+        window.location.href = 'login-usuario.html';
         return null;
     }
     
@@ -338,26 +229,12 @@ function setProfileAvatar(profileImageUrl, fullName) {
 function displayUserProfile(user) {
     const fullName = `${user.firstName} ${user.lastName}`;
     document.getElementById('userName').textContent = fullName;
-    // Sin titulo profesional no se rellena con "Perfil en SkillMatch": en el
-    // perfil propio se invita a agregarlo y el enlace abre ese campo
-    const titular = document.getElementById('userHeadline');
-    titular.hidden = false;
-    if (user.headline) titular.textContent = user.headline;
-    else if (!user.isOtherUser) titular.innerHTML = '<button type="button" class="btn-enlace agregar-dato" data-editar-campo="editHeadline"><i data-ico="plus"></i> Agrega tu título profesional</button>';
-    else titular.hidden = true;
-    // La ciudad es la que la persona escribio: si no hay, no se inventa una
-    // (antes salia "Cartagena, Colombia" y el formulario estaba vacio). El icono
-    // va como HTML y la ciudad como texto, que nunca se lee como codigo.
+    document.getElementById('userHeadline').textContent = user.headline || 'Perfil en SkillMatch';
+    // El icono va como HTML y la ciudad como texto (con textContent el icono
+    // salia escrito tal cual; con append la ciudad nunca se lee como codigo)
     const ubicacion = document.getElementById('userLocation');
-    ubicacion.hidden = false;
-    if (user.location) {
-        ubicacion.innerHTML = '<i data-ico="pin"></i> ';
-        ubicacion.append(user.location);
-    } else if (!user.isOtherUser) {
-        ubicacion.innerHTML = '<button type="button" class="btn-enlace agregar-dato" data-editar-campo="editLocation"><i data-ico="pin"></i> Agrega tu ciudad</button>';
-    } else {
-        ubicacion.hidden = true;
-    }
+    ubicacion.innerHTML = '<i data-ico="pin"></i> ';
+    ubicacion.append(user.location || 'Cartagena, Colombia');
 
     setProfileAvatar(user.profileImageUrl, fullName);
     // La portada guardada (antes solo se pintaba justo despues de cambiarla:
@@ -544,19 +421,17 @@ async function loadUserSkills() {
     }
 }
 
-/// Mostrar habilidades: cada una con "Editar" (lapiz) y "Quitar", en la misma esquina
+// Mostrar habilidades con opción de eliminar
 function displaySkills(skills) {
     const skillsContainer = document.getElementById('userSkills');
-
+    
     // Las recomendaciones de la derecha se comparan con estas habilidades
     setUserSkillNames((skills || []).map(skill => skill.name));
 
     const ajeno = esPerfilAjeno();
     ponerCifra('cifraHabilidades', (skills || []).length);
-    Object.keys(habilidadesPorId).forEach(k => delete habilidadesPorId[k]);
-    (skills || []).forEach(s => { habilidadesPorId[s.id] = s; });
     if (!skills || skills.length === 0) {
-        skillsContainer.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado habilidades' : 'Aún no has agregado habilidades. Con ellas calculamos qué tanto encajas en cada vacante.'}</p>`;
+        skillsContainer.innerHTML = `<p class="empty-text">${ajeno ? 'Esta persona aún no ha agregado habilidades' : 'Aún no has agregado habilidades'}</p>`;
         updateProfileChecklist('skills', false);
         return;
     }
@@ -565,13 +440,10 @@ function displaySkills(skills) {
         `<span class="skill-tag">
             ${escaparHtml(skill.name)}
             <span class="skill-level">${formatSkillLevel(skill.level)}</span>
-            ${ajeno ? '' : `<span class="item-acciones">
-                <button type="button" class="btn-edit-item" data-editar-habilidad="${escaparHtml(skill.id)}" title="Editar" aria-label="Editar ${escaparHtml(skill.name)}"><i data-ico="pencil"></i></button>
-                <button type="button" class="btn-remove-skill" onclick="deleteSkill('${escaparHtml(skill.id)}')" title="Quitar" aria-label="Quitar ${escaparHtml(skill.name)}"><i data-ico="close"></i></button>
-            </span>`}
+            ${ajeno ? '' : `<button class="btn-remove-skill" onclick="deleteSkill('${escaparHtml(skill.id)}')" title="Eliminar"><i data-ico="close"></i></button>`}
         </span>`
     ).join('');
-
+    
     updateProfileChecklist('skills', true);
 }
 
@@ -586,116 +458,81 @@ function formatSkillLevel(level) {
     return levels[level] || '';
 }
 
-// Abrir la ventana de habilidad: vacia para agregar, o llena para editar.
-// (Desde un boton llega el evento del clic: eso no es una habilidad.)
-function openAddSkillModal(habilidad) {
-    const editar = habilidad && habilidad.id ? habilidad : null;
-    const form = document.getElementById('addSkillForm');
-    form.reset();
-    modoVentana(form, 'skillModalTitulo', editar && editar.id, 'Agregar habilidad', 'Editar habilidad');
-    if (editar) {
-        document.getElementById('skillName').value = editar.name || '';
-        document.getElementById('skillLevel').value = editar.level || '';
-    }
-    llenarSugerencias();
-    abrirVentana('addSkillModal');
+// Abrir modal de agregar skill
+function openAddSkillModal() {
+    document.getElementById('addSkillModal').style.display = 'flex';
 }
 
-function closeAddSkillModal(forzar) {
-    return cerrarVentana('addSkillModal', forzar);
+// Cerrar modal de agregar skill
+function closeAddSkillModal() {
+    document.getElementById('addSkillModal').style.display = 'none';
+    document.getElementById('addSkillForm').reset();
 }
 
-// Agregar o editar una habilidad
+// Agregar una nueva skill
 async function addSkill(event) {
     event.preventDefault();
-
+    
     const user = getUserData();
     if (!user) return;
-
-    const form = document.getElementById('addSkillForm');
-    const editando = form.dataset.editando;
+    
     const skillName = Validar.limpiar(document.getElementById('skillName').value);
     const skillLevel = document.getElementById('skillLevel').value;
     const enHabilidad = Validar.habilidad(skillName);
-    if (enHabilidad) return errorEn(form, enHabilidad, 'skillName');
-    if (!skillLevel) return errorEn(form, 'Elige qué tanto dominas esta habilidad.', 'skillLevel');
-    // La misma habilidad escrita dos veces ("Excel" y "excel")
-    const repetida = Object.values(habilidadesPorId).find(h => h.id !== editando && normalizeSkill(h.name) === normalizeSkill(skillName));
-    if (repetida) return errorEn(form, `Ya tienes «${repetida.name}» en tu perfil. Edítala si quieres cambiar el nivel.`, 'skillName');
-
-    const listo = SkillMatchUI.guardando(form.querySelector('[type="submit"]'));
-    try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/skills${editando ? '/' + encodeURIComponent(editando) : ''}`, {
-            method: editando ? 'PUT' : 'POST',
-            body: JSON.stringify({ name: skillName, level: skillLevel })
-        });
-
-        if (response.ok) {
-            listo();
-            closeAddSkillModal(true);
-            SkillMatchUI.guardado('Habilidad guardada');
-            loadUserSkills();
-            return;
-        }
-        const error = await response.json().catch(() => ({}));
-        errorEn(form, error.message || 'No pudimos guardar la habilidad. Intenta de nuevo.');
-    } catch (error) {
-        errorEn(form, SIN_CONEXION);
+    if (enHabilidad) {
+        alert(enHabilidad);
+        return;
     }
-    listo();
+
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/skills`, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: skillName,
+                level: skillLevel
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            alert('¡Habilidad agregada exitosamente!');
+            closeAddSkillModal();
+            loadUserSkills(); // Recargar skills
+        } else {
+            const error = await response.json();
+            alert(error.message || 'Error al agregar la habilidad');
+        }
+    } catch (error) {
+        alert('Error al conectar con el servidor');
+    }
 }
 
-// Quitar una habilidad (pregunta antes; "Reintentar" ya no vuelve a preguntar)
-async function deleteSkill(skillId, yaConfirmado) {
+// Eliminar una skill
+async function deleteSkill(skillId) {
     const user = getUserData();
     if (!user) return;
-
-    if (!yaConfirmado) {
-        const quitar = await SkillMatchUI.confirmar({ titulo: 'Quitar habilidad', texto: '¿Quieres quitar esta habilidad de tu perfil?', aceptar: 'Quitar', peligro: true });
-        if (!quitar) return;
-    }
+    
+    // Pregunta de la marca (antes confirm() del navegador)
+    const quitar = await SkillMatchUI.confirmar({ titulo: 'Quitar habilidad', texto: '¿Quieres quitar esta habilidad de tu perfil?', aceptar: 'Quitar', peligro: true });
+    if (!quitar) return;
+    
 
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/skills/${skillId}`, {
             method: 'DELETE'
         });
-
+        
         if (response.ok) {
-            SkillMatchUI.guardado('Habilidad quitada');
-            loadUserSkills();
-            return;
+            alert('Habilidad eliminada exitosamente');
+            loadUserSkills(); // Recargar skills
+        } else {
+            const error = await response.json();
+            alert(error.message || 'Error al eliminar la habilidad');
         }
-        const error = await response.json().catch(() => ({}));
-        SkillMatchUI.noSeGuardo(error.message || 'No pudimos quitar la habilidad. Intenta de nuevo.', () => deleteSkill(skillId, true));
     } catch (error) {
-        SkillMatchUI.noSeGuardo('No pudimos quitar la habilidad. Revisa tu conexión e intenta de nuevo.', () => deleteSkill(skillId, true));
+        alert('Error al conectar con el servidor');
     }
-}
-
-// Sugerencias mientras se escribe una habilidad: las mas comunes de la ciudad y las
-// que piden las vacantes recientes, para no escribir lo mismo de formas distintas
-const HABILIDADES_COMUNES = ['Atención al cliente', 'Trabajo en equipo', 'Excel', 'Inglés', 'Ventas', 'Manejo de caja',
-    'Servicio al cliente', 'Comunicación', 'Contabilidad', 'Facturación', 'Inventarios', 'Logística', 'Cocina',
-    'Bartender', 'Reservas', 'Recepción', 'Conducción', 'Primeros auxilios', 'Redes sociales', 'Marketing digital',
-    'Diseño gráfico', 'Fotografía', 'Office', 'Word', 'Programación', 'JavaScript', 'Python', 'Soporte técnico',
-    'Electricidad', 'Mantenimiento', 'Soldadura', 'Construcción', 'Seguridad industrial', 'Enfermería', 'Docencia'];
-
-function llenarSugerencias() {
-    const lista = document.getElementById('sugerenciasHabilidades');
-    if (!lista) return;
-    const vistas = new Map();
-    const agregar = nombre => {
-        const limpio = String(nombre || '').trim();
-        const clave = normalizeSkill(limpio);
-        if (limpio && !vistas.has(clave)) vistas.set(clave, limpio);
-    };
-    HABILIDADES_COMUNES.forEach(agregar);
-    (recentJobs || []).forEach(job => (job.skills || []).forEach(agregar));
-    const propias = new Set(Object.values(habilidadesPorId).map(h => normalizeSkill(h.name)));
-    lista.innerHTML = [...vistas.entries()]
-        .filter(([clave]) => !propias.has(clave))
-        .sort((a, b) => a[1].localeCompare(b[1], 'es'))
-        .map(([, nombre]) => `<option value="${escaparHtml(nombre)}"></option>`).join('');
 }
 
 // ============ EXPERIENCE FUNCTIONS ============
@@ -717,7 +554,7 @@ async function loadUserExperiences() {
             container.innerHTML = '<p class="empty-text">No se pudieron cargar las experiencias</p>';
         }
     } catch (error) {
-        container.innerHTML = '<p class="error-text">No pudimos cargar tu experiencia. Revisa tu conexión y recarga la página.</p>';
+        container.innerHTML = '<p class="error-text">Error cargando experiencias</p>';
     }
 }
 
@@ -732,12 +569,6 @@ function estadoVacio(icono, titulo, porque, abre, accion) {
             <button type="button" class="btn btn-primary btn-small" data-abre="${abre}"><i data-ico="plus"></i> ${accion}</button>
         </div>
     </div>`;
-}
-
-/** Una sola accion por seccion: vacia, la del estado vacio; con datos, "+ Agregar" arriba. */
-function botonAgregar(id, hayDatos) {
-    const boton = document.getElementById(id);
-    if (boton && !esPerfilAjeno()) boton.hidden = !hayDatos;
 }
 
 /** "ene 2025" a partir de "2025-01-01". Con new Date("2025-01-01") la fecha se lee en
@@ -756,22 +587,11 @@ function periodoFechas(item) {
     return { startDate, endDate };
 }
 
-/** Editar y quitar, siempre en la misma esquina y con el mismo lapiz. */
-function accionesDeItem(tipo, id, nombre) {
-    return `<span class="item-acciones">
-        <button type="button" class="btn-edit-item" data-editar-${tipo}="${escaparHtml(id)}" title="Editar" aria-label="Editar ${escaparHtml(nombre)}"><i data-ico="pencil"></i></button>
-        <button type="button" class="btn-delete-item" onclick="${tipo === 'experiencia' ? 'deleteExperience' : 'deleteEducation'}('${escaparHtml(id)}')" title="Quitar" aria-label="Quitar ${escaparHtml(nombre)}"><i data-ico="trash"></i></button>
-    </span>`;
-}
-
 // Mostrar experiencias
 function displayExperiences(experiences) {
     const container = document.getElementById('experienceContainer');
-
+    
     const ajeno = esPerfilAjeno();
-    Object.keys(experienciasPorId).forEach(k => delete experienciasPorId[k]);
-    (experiences || []).forEach(e => { experienciasPorId[e.id] = e; });
-    botonAgregar('addExperienceBtn', experiences && experiences.length > 0);
     if (!experiences || experiences.length === 0) {
         container.innerHTML = ajeno
             ? '<p class="empty-text">Esta persona aún no ha agregado experiencia laboral</p>'
@@ -792,7 +612,7 @@ function displayExperiences(experiences) {
                 <div class="experience-content">
                     <div class="experience-header">
                         <h3>${escaparHtml(exp.position)}</h3>
-                        ${ajeno ? '' : accionesDeItem('experiencia', exp.id, exp.position)}
+                        ${ajeno ? '' : `<button class="btn-delete-item" onclick="deleteExperience('${escaparHtml(exp.id)}')" title="Eliminar"><i data-ico="trash"></i></button>`}
                     </div>
                     <p class="company">${escaparHtml(exp.company)}</p>
                     <p class="timeline">${startDate} - ${endDate}${exp.location ? ' | ' + escaparHtml(exp.location) : ''}</p>
@@ -802,116 +622,88 @@ function displayExperiences(experiences) {
         `;
     }).join('');
     limitarLista(container);
-
+    
     updateProfileChecklist('experience', true);
 }
 
-// Abrir la ventana de experiencia: vacia para agregar, o llena para editar
-function openAddExperienceModal(experiencia) {
-    const editar = experiencia && experiencia.id ? experiencia : null;
-    const form = document.getElementById('addExperienceForm');
-    form.reset();
-    modoVentana(form, 'expModalTitulo', editar && editar.id, 'Agregar experiencia', 'Editar experiencia');
-    const actual = !!(editar && editar.isCurrent);
-    if (editar) {
-        document.getElementById('expCompany').value = editar.company || '';
-        document.getElementById('expPosition').value = editar.position || '';
-        document.getElementById('expLocation').value = editar.location || '';
-        document.getElementById('expDescription').value = editar.description || '';
-    }
-    ponerFecha('expStartDate', editar && editar.startDate);
-    ponerFecha('expEndDate', actual ? '' : editar && editar.endDate);
-    document.getElementById('expIsCurrent').checked = actual;
-    finActual('expEndDate', actual);
-    abrirVentana('addExperienceModal');
+// Abrir modal agregar experiencia
+function openAddExperienceModal() {
+    document.getElementById('addExperienceModal').style.display = 'flex';
 }
 
-function closeAddExperienceModal(forzar) {
-    return cerrarVentana('addExperienceModal', forzar);
+// Cerrar modal agregar experiencia
+function closeAddExperienceModal() {
+    document.getElementById('addExperienceModal').style.display = 'none';
+    document.getElementById('addExperienceForm').reset();
 }
 
-// "Trabajo actual" o "Estudio actual": sin fecha de fin
-function finActual(id, si) {
-    const oculto = document.getElementById(id);
-    if (!oculto) return;
-    if (si) ponerFecha(id, '');
-    if (oculto.desactivar) oculto.desactivar(si);
-}
-
-// Agregar o editar una experiencia
+// Agregar experiencia
 async function addExperience(event) {
     event.preventDefault();
-
+    
     const user = getUserData();
     if (!user) return;
-
-    const form = document.getElementById('addExperienceForm');
-    const editando = form.dataset.editando;
+    
     const isCurrent = document.getElementById('expIsCurrent').checked;
 
     const data = {
-        company: Validar.limpiar(document.getElementById('expCompany').value),
-        position: Validar.limpiar(document.getElementById('expPosition').value),
+        company: document.getElementById('expCompany').value,
+        position: document.getElementById('expPosition').value,
         startDate: document.getElementById('expStartDate').value,
-        endDate: isCurrent ? null : (document.getElementById('expEndDate').value || null),
+        endDate: isCurrent ? null : document.getElementById('expEndDate').value,
         isCurrent: isCurrent,
         location: Validar.limpiar(document.getElementById('expLocation').value),
-        description: document.getElementById('expDescription').value.trim()
+        description: document.getElementById('expDescription').value
     };
-    if (!data.company) return errorEn(form, 'Escribe el nombre de la empresa.', 'expCompany');
-    if (!data.position) return errorEn(form, 'Escribe tu cargo.', 'expPosition');
     // Fechas que tengan sentido (fin después del inicio, nada en el futuro) y una ciudad válida
-    const enFechas = Validar.fechas(data.startDate, data.endDate, isCurrent, 'experiencia');
-    if (enFechas) return errorEn(form, enFechas, campoDeFecha(enFechas, 'exp'));
-    const enLugar = Validar.lugar(data.location);
-    if (enLugar) return errorEn(form, enLugar, 'expLocation');
+    const problema = Validar.fechas(data.startDate, data.endDate, isCurrent, 'experiencia') || Validar.lugar(data.location);
+    if (problema) {
+        alert(problema);
+        return;
+    }
 
-    const listo = SkillMatchUI.guardando(form.querySelector('[type="submit"]'));
+    
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/experiences${editando ? '/' + encodeURIComponent(editando) : ''}`, {
-            method: editando ? 'PUT' : 'POST',
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/experiences`, {
+            method: 'POST',
             body: JSON.stringify(data)
         });
 
         if (response.ok) {
-            listo();
-            closeAddExperienceModal(true);
-            SkillMatchUI.guardado('Experiencia guardada');
+            alert('¡Experiencia agregada exitosamente!');
+            closeAddExperienceModal();
             loadUserExperiences();
-            return;
+        } else {
+            const error = await response.json();
+            alert(error.message || 'Error al agregar la experiencia');
         }
-        const error = await response.json().catch(() => ({}));
-        errorEn(form, error.message || 'No pudimos guardar la experiencia. Intenta de nuevo.');
     } catch (error) {
-        errorEn(form, SIN_CONEXION);
+        alert('Error al conectar con el servidor');
     }
-    listo();
 }
 
-// Quitar experiencia
-async function deleteExperience(expId, yaConfirmado) {
+// Eliminar experiencia
+async function deleteExperience(expId) {
     const user = getUserData();
     if (!user) return;
-
-    if (!yaConfirmado) {
-        const quitar = await SkillMatchUI.confirmar({ titulo: 'Quitar experiencia', texto: '¿Quieres quitar esta experiencia de tu perfil?', aceptar: 'Quitar', peligro: true });
-        if (!quitar) return;
-    }
-
+    
+    const quitar = await SkillMatchUI.confirmar({ titulo: 'Quitar experiencia', texto: '¿Quieres quitar esta experiencia de tu perfil?', aceptar: 'Quitar', peligro: true });
+    if (!quitar) return;
+    
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/experiences/${expId}`, {
             method: 'DELETE'
         });
-
+        
         if (response.ok) {
-            SkillMatchUI.guardado('Experiencia quitada');
+            alert('Experiencia eliminada exitosamente');
             loadUserExperiences();
-            return;
+        } else {
+            const error = await response.json();
+            alert(error.message || 'Error al eliminar la experiencia');
         }
-        const error = await response.json().catch(() => ({}));
-        SkillMatchUI.noSeGuardo(error.message || 'No pudimos quitar la experiencia. Intenta de nuevo.', () => deleteExperience(expId, true));
     } catch (error) {
-        SkillMatchUI.noSeGuardo('No pudimos quitar la experiencia. Revisa tu conexión e intenta de nuevo.', () => deleteExperience(expId, true));
+        alert('Error al conectar con el servidor');
     }
 }
 
@@ -934,18 +726,15 @@ async function loadUserEducations() {
             container.innerHTML = '<p class="empty-text">No se pudo cargar la educación</p>';
         }
     } catch (error) {
-        container.innerHTML = '<p class="error-text">No pudimos cargar tus estudios. Revisa tu conexión y recarga la página.</p>';
+        container.innerHTML = '<p class="error-text">Error cargando educación</p>';
     }
 }
 
 // Mostrar educación
 function displayEducations(educations) {
     const container = document.getElementById('educationContainer');
-
+    
     const ajeno = esPerfilAjeno();
-    Object.keys(estudiosPorId).forEach(k => delete estudiosPorId[k]);
-    (educations || []).forEach(e => { estudiosPorId[e.id] = e; });
-    botonAgregar('addEducationBtn', educations && educations.length > 0);
     if (!educations || educations.length === 0) {
         container.innerHTML = ajeno
             ? '<p class="empty-text">Esta persona aún no ha agregado estudios</p>'
@@ -959,14 +748,14 @@ function displayEducations(educations) {
 
     container.innerHTML = educations.map(edu => {
         const { startDate, endDate } = periodoFechas(edu);
-
+        
         return `
             <div class="education-item">
                 <div class="education-badge"><i data-ico="cap"></i></div>
                 <div class="education-content">
                     <div class="education-header">
                         <h3>${escaparHtml(edu.degree)}</h3>
-                        ${ajeno ? '' : accionesDeItem('estudio', edu.id, edu.degree)}
+                        ${ajeno ? '' : `<button class="btn-delete-item" onclick="deleteEducation('${escaparHtml(edu.id)}')" title="Eliminar"><i data-ico="trash"></i></button>`}
                     </div>
                     <p class="school">${escaparHtml(edu.school)}</p>
                     <p class="timeline">${startDate} - ${endDate}${edu.fieldOfStudy ? ' | ' + escaparHtml(edu.fieldOfStudy) : ''}</p>
@@ -976,106 +765,88 @@ function displayEducations(educations) {
         `;
     }).join('');
     limitarLista(container);
-
+    
     updateProfileChecklist('education', true);
 }
 
-// Abrir la ventana de educación: vacia para agregar, o llena para editar
-function openAddEducationModal(estudio) {
-    const editar = estudio && estudio.id ? estudio : null;
-    const form = document.getElementById('addEducationForm');
-    form.reset();
-    modoVentana(form, 'eduModalTitulo', editar && editar.id, 'Agregar educación', 'Editar educación');
-    const actual = !!(editar && editar.isCurrent);
-    if (editar) {
-        document.getElementById('eduSchool').value = editar.school || '';
-        document.getElementById('eduDegree').value = editar.degree || '';
-        document.getElementById('eduFieldOfStudy').value = editar.fieldOfStudy || '';
-        document.getElementById('eduDescription').value = editar.description || '';
-    }
-    ponerFecha('eduStartDate', editar && editar.startDate);
-    ponerFecha('eduEndDate', actual ? '' : editar && editar.endDate);
-    document.getElementById('eduIsCurrent').checked = actual;
-    finActual('eduEndDate', actual);
-    abrirVentana('addEducationModal');
+// Abrir modal agregar educación
+function openAddEducationModal() {
+    document.getElementById('addEducationModal').style.display = 'flex';
 }
 
-function closeAddEducationModal(forzar) {
-    return cerrarVentana('addEducationModal', forzar);
+// Cerrar modal agregar educación
+function closeAddEducationModal() {
+    document.getElementById('addEducationModal').style.display = 'none';
+    document.getElementById('addEducationForm').reset();
 }
 
-// Agregar o editar un estudio
+// Agregar educación
 async function addEducation(event) {
     event.preventDefault();
-
+    
     const user = getUserData();
     if (!user) return;
-
-    const form = document.getElementById('addEducationForm');
-    const editando = form.dataset.editando;
+    
     const isCurrent = document.getElementById('eduIsCurrent').checked;
 
     const data = {
-        school: Validar.limpiar(document.getElementById('eduSchool').value),
-        degree: Validar.limpiar(document.getElementById('eduDegree').value),
-        fieldOfStudy: Validar.limpiar(document.getElementById('eduFieldOfStudy').value),
+        school: document.getElementById('eduSchool').value,
+        degree: document.getElementById('eduDegree').value,
+        fieldOfStudy: document.getElementById('eduFieldOfStudy').value,
         startDate: document.getElementById('eduStartDate').value,
-        endDate: isCurrent ? null : (document.getElementById('eduEndDate').value || null),
+        endDate: isCurrent ? null : document.getElementById('eduEndDate').value,
         isCurrent: isCurrent,
-        description: document.getElementById('eduDescription').value.trim()
+        description: document.getElementById('eduDescription').value
     };
-    if (!data.school) return errorEn(form, 'Escribe el nombre de la institución.', 'eduSchool');
-    if (!data.degree) return errorEn(form, 'Escribe el título o el nombre del curso.', 'eduDegree');
     // Un estudio puede terminar en el futuro (fecha de grado), pero no antes de empezar
     const enFechas = Validar.fechas(data.startDate, data.endDate, isCurrent, 'estudio');
-    if (enFechas) return errorEn(form, enFechas, campoDeFecha(enFechas, 'edu'));
+    if (enFechas) {
+        alert(enFechas);
+        return;
+    }
 
-    const listo = SkillMatchUI.guardando(form.querySelector('[type="submit"]'));
+
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/educations${editando ? '/' + encodeURIComponent(editando) : ''}`, {
-            method: editando ? 'PUT' : 'POST',
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/educations`, {
+            method: 'POST',
             body: JSON.stringify(data)
         });
-
+        
         if (response.ok) {
-            listo();
-            closeAddEducationModal(true);
-            SkillMatchUI.guardado('Estudio guardado');
+            alert('¡Educación agregada exitosamente!');
+            closeAddEducationModal();
             loadUserEducations();
-            return;
+        } else {
+            const error = await response.json();
+            alert(error.message || 'Error al agregar la educación');
         }
-        const error = await response.json().catch(() => ({}));
-        errorEn(form, error.message || 'No pudimos guardar el estudio. Intenta de nuevo.');
     } catch (error) {
-        errorEn(form, SIN_CONEXION);
+        alert('Error al conectar con el servidor');
     }
-    listo();
 }
 
-// Quitar un estudio
-async function deleteEducation(eduId, yaConfirmado) {
+// Eliminar educación
+async function deleteEducation(eduId) {
     const user = getUserData();
     if (!user) return;
-
-    if (!yaConfirmado) {
-        const quitar = await SkillMatchUI.confirmar({ titulo: 'Quitar estudio', texto: '¿Quieres quitar este estudio de tu perfil?', aceptar: 'Quitar', peligro: true });
-        if (!quitar) return;
-    }
-
+    
+    const quitar = await SkillMatchUI.confirmar({ titulo: 'Quitar estudio', texto: '¿Quieres quitar este estudio de tu perfil?', aceptar: 'Quitar', peligro: true });
+    if (!quitar) return;
+    
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/educations/${eduId}`, {
             method: 'DELETE'
         });
-
+        
         if (response.ok) {
-            SkillMatchUI.guardado('Estudio quitado');
+            alert('Educación eliminada exitosamente');
             loadUserEducations();
-            return;
+        } else {
+            const error = await response.json();
+            alert(error.message || 'Error al eliminar la educación');
         }
-        const error = await response.json().catch(() => ({}));
-        SkillMatchUI.noSeGuardo(error.message || 'No pudimos quitar el estudio. Intenta de nuevo.', () => deleteEducation(eduId, true));
     } catch (error) {
-        SkillMatchUI.noSeGuardo('No pudimos quitar el estudio. Revisa tu conexión e intenta de nuevo.', () => deleteEducation(eduId, true));
+        alert('Error al conectar con el servidor');
     }
 }
 
@@ -1121,13 +892,11 @@ async function loadRecommendedJobs() {
 // Mostrar oportunidades recomendadas
 function displayRecommendedJobs() {
     const jobsContainer = document.getElementById('recommendedJobs');
-    const titulo = document.getElementById('recomendadasTitulo');
 
     if (!recentJobs || recentJobs.length === 0) {
-        jobsContainer.innerHTML = '<p class="empty-text">No hay vacantes abiertas en este momento</p>';
+        jobsContainer.innerHTML = '<p class="empty-text">No hay oportunidades disponibles</p>';
         return;
     }
-    llenarSugerencias();
 
     const propias = new Set(userSkillNames);
     const jobs = recentJobs.map(job => {
@@ -1137,34 +906,29 @@ function displayRecommendedJobs() {
         return { job, pedidas: pedidas.length, tiene };
     });
     // Mas coincidencias primero; a igualdad, la que pide menos (le falta menos).
+    // Sin habilidades no hay con que comparar: quedan las mas recientes.
     if (propias.size) jobs.sort((a, b) => (b.tiene - a.tiene) || (a.pedidas - b.pedidas));
     jobs.splice(4);
-    // Solo es "para ti" si de verdad se comparo con tus habilidades y alguna coincide.
-    // Sin habilidades son las mas recientes, y el titulo lo dice.
-    const personalizado = propias.size > 0 && jobs.some(j => j.tiene > 0);
-    if (titulo) titulo.lastChild.textContent = personalizado ? ' Vacantes para ti' : ' Vacantes recientes';
 
     const aviso = propias.size === 0
         ? '<p class="recommend-hint"><i data-ico="bulb"></i> Agrega tus habilidades y te mostramos cuáles vacantes encajan contigo.</p>'
-        : (personalizado ? '' : '<p class="recommend-hint"><i data-ico="bulb"></i> Las vacantes más recientes todavía no piden tus habilidades.</p>');
+        : '';
 
     jobsContainer.innerHTML = aviso + jobs.map(({ job, pedidas, tiene }) => {
         // Naranja solo cuando tiene todas (el acento se reserva para el match alto)
         const clase = tiene === 0 ? 'match-fair' : (tiene === pedidas ? 'match-excellent' : 'match-good');
-        const etiqueta = pedidas && personalizado
+        const etiqueta = pedidas && propias.size
             ? `<span class="match-badge-small ${clase}" title="Habilidades que ya tienes de las que pide la vacante">${tiene} de ${pedidas}</span>`
             : '';
-        const empresa = job.company?.name || job.companyName || '';
-        const ejemplo = window.SkillMatchUI && SkillMatchUI.esEjemplo(empresa);
         return `
         <div class="opportunity-item-compact">
             <div class="opportunity-header-compact">
                 <h3>${escaparHtml(job.title)}</h3>
                 ${etiqueta}
             </div>
-            <p class="opportunity-company-compact">${escaparHtml(window.SkillMatchUI ? SkillMatchUI.sinEjemplo(empresa) : empresa)}${ejemplo ? ' ' + SkillMatchUI.etiquetaEjemplo() : ''}</p>
-            ${job.location ? `<p class="opportunity-location-compact"><i data-ico="pin"></i> ${escaparHtml(job.location)}</p>` : ''}
-            <a class="btn-apply-compact" href="oportunidades.html?jobId=${encodeURIComponent(job.id)}">Ver vacante</a>
+            <p class="opportunity-company-compact">${escaparHtml(job.company?.name || job.companyName)}</p>
+            <p class="opportunity-location-compact"><i data-ico="pin"></i> ${escaparHtml(job.location)}</p>
+            <a class="btn-apply-compact" href="oportunidades.html?jobId=${encodeURIComponent(job.id)}">Ver y postularme</a>
         </div>`;
     }).join('');
 }
@@ -1206,9 +970,9 @@ async function loadInterestedCompanies() {
             const companies = Array.from(companiesMap.values())
                 .sort((a, b) => b.appliedDate - a.appliedDate);
             misPostulaciones = companies;
-            // Cuantas, en el titulo de la tarjeta (antes tambien habia una cifra arriba)
-            const cuantas = document.getElementById('applicationsCount');
-            if (cuantas) cuantas.textContent = companies.length ? `(${companies.length})` : '';
+            ponerCifra('cifraPostulaciones', companies.length, companies.length
+                ? `${companies.filter(c => ['PENDIENTE', 'REVISADA'].includes(estadoPostulacion(c))).length} en proceso`
+                : 'Aún no te postulas');
 
             if (companies.length === 0) {
                 companiesContainer.innerHTML = '<p class="empty-text">Aún no te has postulado a ninguna vacante.</p>' +
@@ -1371,36 +1135,31 @@ async function retirarPostulacion(id, boton) {
 }
 
 // Funciones para modales
-// "Editar perfil" con los datos guardados. campo: el que recibe el foco (por
-// ejemplo "+ Agrega tu título profesional" abre directo en ese campo).
-function openEditModal(campo) {
+function openEditModal() {
     const user = getUserData();
     if (!user) return;
-    const enfocar = typeof campo === 'string' ? campo : null;
 
     // Cargar datos actuales
     fetchWithAuth(`${API_BASE_URL}/users/${user.id}`)
-    .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.json(); })
+    .then(response => response.json())
     .then(data => {
-        // Si ya esta abierta (dos clics seguidos), no se vuelve a llenar: pisaria lo que la persona escribio
-        if (document.getElementById('editProfileModal').classList.contains('active')) return;
         document.getElementById('editFirstName').value = data.firstName || '';
         document.getElementById('editLastName').value = data.lastName || '';
         document.getElementById('editEmail').value = data.email || '';
         document.getElementById('editPhone').value = data.phone || '';
         document.getElementById('editHeadline').value = data.headline || '';
-        // Lo mismo que muestra el perfil: si no hay ciudad, el campo queda vacio
         document.getElementById('editLocation').value = data.location || '';
         document.getElementById('editBio').value = data.bio || '';
-        abrirVentana('editProfileModal', enfocar);
+        
+        document.getElementById('editProfileModal').style.display = 'flex';
     })
-    .catch(() => {
-        SkillMatchUI.noSeGuardo('No pudimos cargar tus datos. Revisa tu conexión e intenta de nuevo.', () => openEditModal(enfocar));
+    .catch(error => {
+        alert('Error al cargar los datos del perfil');
     });
 }
 
-function closeEditModal(forzar) {
-    return cerrarVentana('editProfileModal', forzar);
+function closeEditModal() {
+    document.getElementById('editProfileModal').style.display = 'none';
 }
 
 // Editores de imagen (editor-imagen.js). Se crean la primera vez que se abre
@@ -1417,11 +1176,12 @@ function openPhotoModal() {
         });
     }
     photoEditor.reiniciar();
-    abrirVentana('changePhotoModal');
+    document.getElementById('changePhotoModal').style.display = 'flex';
 }
 
-function closePhotoModal(forzar) {
-    return cerrarVentana('changePhotoModal', forzar, () => { if (photoEditor) photoEditor.reiniciar(); });
+function closePhotoModal() {
+    document.getElementById('changePhotoModal').style.display = 'none';
+    if (photoEditor) photoEditor.reiniciar();
 }
 
 // Pestanas de la ventana de portada: "Galeria" o "Subir foto"
@@ -1459,11 +1219,12 @@ function openCoverModal() {
     // Si la portada actual es una foto propia, se abre en "Subir foto"
     const actual = currentUserProfile.coverImageUrl || '';
     showCoverTab(actual && actual.indexOf('galeria:') !== 0 ? 'subir' : 'galeria');
-    abrirVentana('changeCoverModal');
+    document.getElementById('changeCoverModal').style.display = 'flex';
 }
 
-function closeCoverModal(forzar) {
-    return cerrarVentana('changeCoverModal', forzar, () => { if (coverEditor) coverEditor.reiniciar(); });
+function closeCoverModal() {
+    document.getElementById('changeCoverModal').style.display = 'none';
+    if (coverEditor) coverEditor.reiniciar();
 }
 
 // Pinta la portada guardada: de la galeria, una foto subida o la de siempre
@@ -1491,12 +1252,9 @@ function notify(mensaje, tipo) {
     else alert(mensaje);
 }
 
-// Actualizar perfil: el boton dice "Guardando…" mientras espera y los errores
-// quedan dentro de la ventana
+// Actualizar perfil
 async function updateProfile(formData) {
     const user = getUserData();
-    const form = document.getElementById('editProfileForm');
-    const listo = SkillMatchUI.guardando(form.querySelector('[type="submit"]'));
 
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}`, {
@@ -1517,18 +1275,16 @@ async function updateProfile(formData) {
             };
             localStorage.setItem('userData', JSON.stringify(updatedUser));
             
-            listo();
-            closeEditModal(true);
-            SkillMatchUI.guardado('Perfil guardado');
+            alert('<i data-ico="check"></i> Perfil actualizado exitosamente');
+            closeEditModal();
             loadUserProfile();
-            return;
+        } else {
+            const error = await response.json();
+            alert('<i data-ico="close"></i> Error: ' + (error.message || 'No se pudo actualizar el perfil'));
         }
-        const error = await response.json().catch(() => ({}));
-        errorEn(form, error.message || 'No pudimos guardar tu perfil. Intenta de nuevo.');
     } catch (error) {
-        errorEn(form, SIN_CONEXION);
+        alert('<i data-ico="close"></i> Error al actualizar el perfil');
     }
-    listo();
 }
 
 // Actualizar foto de perfil
@@ -1546,14 +1302,14 @@ async function updateProfileImage(imageUrl) {
             currentUserProfile.profileImageUrl = data.profileImageUrl;
             const nombre = `${currentUserProfile.firstName || ''} ${currentUserProfile.lastName || ''}`.trim();
             setProfileAvatar(data.profileImageUrl, nombre);
-            SkillMatchUI.guardado('Foto guardada');
-            closePhotoModal(true);
+            notify('Foto de perfil actualizada');
+            closePhotoModal();
             return true;
         }
         const error = await response.json().catch(() => ({}));
-        errorEn(document.getElementById('changePhotoForm'), error.message || 'No pudimos guardar la foto. Intenta de nuevo.');
+        notify(error.message || 'No se pudo actualizar la foto', 'error');
     } catch (error) {
-        errorEn(document.getElementById('changePhotoForm'), SIN_CONEXION);
+        notify('Error al actualizar la foto de perfil', 'error');
     }
     return false;
 }
@@ -1572,14 +1328,14 @@ async function updateCoverImage(imageUrl) {
             const data = await response.json();
             currentUserProfile.coverImageUrl = data.coverImageUrl;
             applyCover(data.coverImageUrl);
-            SkillMatchUI.guardado('Portada guardada');
-            closeCoverModal(true);
+            notify('Portada actualizada');
+            closeCoverModal();
             return true;
         }
         const error = await response.json().catch(() => ({}));
-        errorEn(document.getElementById('changeCoverForm'), error.message || 'No pudimos guardar la portada. Intenta de nuevo.');
+        notify(error.message || 'No se pudo actualizar la portada', 'error');
     } catch (error) {
-        errorEn(document.getElementById('changeCoverForm'), SIN_CONEXION);
+        notify('Error al actualizar la portada', 'error');
     }
     return false;
 }
@@ -1661,7 +1417,7 @@ async function quitarGuardada(boton) {
 document.addEventListener('DOMContentLoaded', function() {
 
     if (!isAuthenticated()) {
-        window.location.href = 'login.html';
+        window.location.href = 'login-usuario.html';
         return;
     }
 
@@ -1733,14 +1489,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 bio: document.getElementById('editBio').value
             };
 
-            // Las mismas reglas que el servidor: se avisa antes de enviar, junto al campo
-            const reglas = [
-                ['editFirstName', Validar.persona(formData.firstName, 'El nombre')],
-                ['editLastName', Validar.persona(formData.lastName, 'El apellido')],
-                ['editLocation', Validar.lugar(formData.location)]
-            ];
-            const problema = reglas.find(r => r[1]);
-            if (problema) return errorEn(editProfileForm, problema[1], problema[0]);
+            // Las mismas reglas que el servidor: se avisa antes de enviar
+            const problema = Validar.persona(formData.firstName, 'El nombre')
+                || Validar.persona(formData.lastName, 'El apellido')
+                || Validar.lugar(formData.location);
+            if (problema) {
+                alert(problema);
+                return;
+            }
 
             updateProfile(formData);
         });
@@ -1752,7 +1508,7 @@ document.addEventListener('DOMContentLoaded', function() {
         changePhotoForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!photoEditor || !photoEditor.listo()) return;
-            const liberar = SkillMatchUI.guardando(document.getElementById('savePhotoBtn'));
+            const liberar = window.SkillMatchUI ? SkillMatchUI.ocupado(document.getElementById('savePhotoBtn')) : () => {};
             try {
                 // La foto sale recortada, a 400 x 400 y comprimida (data URL)
                 await updateProfileImage(await photoEditor.exportar());
@@ -1777,11 +1533,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 valor = coverGallery && coverGallery.valor();
                 // Nada elegido, o la misma que ya tiene: no hace falta guardar
                 if (!valor || valor === (currentUserProfile.coverImageUrl || 'galeria:marca')) {
-                    closeCoverModal(true);
+                    closeCoverModal();
                     return;
                 }
             }
-            const liberar = SkillMatchUI.guardando(document.getElementById('saveCoverBtn'));
+            const liberar = window.SkillMatchUI ? SkillMatchUI.ocupado(document.getElementById('saveCoverBtn')) : () => {};
             try {
                 // Foto propia: recortada a 1600 x 400 y comprimida (data URL)
                 if (subir) valor = await coverEditor.exportar();
@@ -1795,35 +1551,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // (Cerrar con un clic afuera o con Escape lo hace ui.js, y pregunta si hay
-    // algo escrito: antes un clic afuera cerraba y se perdia lo escrito.)
-
-    // Fechas con mes y año, y contadores de caracteres
-    document.querySelectorAll('input[data-mes-anio]').forEach(prepararMesAnio);
-    document.addEventListener('input', e => {
-        if (e.target.matches && e.target.matches('#editBio, #expDescription')) contarCaracteres(e.target.closest('form'));
+    // Cerrar modales al hacer click fuera
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
     });
 
-    // Editar lo que ya esta guardado (el lapiz de cada habilidad, experiencia y estudio)
-    // y los enlaces "+ Agrega tu título profesional" o "+ Agrega tu ciudad"
-    document.addEventListener('click', e => {
-        const el = e.target instanceof Element ? e.target : null;
-        if (!el) return;
-        const habilidad = el.closest('[data-editar-habilidad]');
-        if (habilidad) return openAddSkillModal(habilidadesPorId[habilidad.dataset.editarHabilidad]);
-        const experiencia = el.closest('[data-editar-experiencia]');
-        if (experiencia) return openAddExperienceModal(experienciasPorId[experiencia.dataset.editarExperiencia]);
-        const estudio = el.closest('[data-editar-estudio]');
-        if (estudio) return openAddEducationModal(estudiosPorId[estudio.dataset.editarEstudio]);
-        const campo = el.closest('[data-editar-campo]');
-        if (campo) openEditModal(campo.dataset.editarCampo);
-    });
-
-    // Botón agregar habilidad (la unica entrada de la seccion; arriba esta la guia del progreso)
+    // Botón agregar habilidad
     const addSkillBtn = document.getElementById('addSkillBtn');
     if (addSkillBtn) {
         addSkillBtn.addEventListener('click', openAddSkillModal);
     }
+    // El mismo formulario desde la cifra de habilidades de arriba
+    const cifraHabilidad = document.getElementById('cifraAgregarHabilidad');
+    if (cifraHabilidad) cifraHabilidad.addEventListener('click', openAddSkillModal);
     // Botones de las secciones vacías: hacen clic en su "+ Agregar" (estadoVacio)
     document.addEventListener('click', e => {
         const boton = e.target.closest('[data-abre]');
@@ -1864,13 +1606,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Checkbox "Trabajo actual" - deshabilitar fecha fin
     const expIsCurrent = document.getElementById('expIsCurrent');
     if (expIsCurrent) {
-        expIsCurrent.addEventListener('change', function() { finActual('expEndDate', this.checked); });
+        expIsCurrent.addEventListener('change', function() {
+            document.getElementById('expEndDate').disabled = this.checked;
+            if (this.checked) {
+                document.getElementById('expEndDate').value = '';
+            }
+        });
     }
 
     // Checkbox "Estudio actual" - deshabilitar fecha fin
     const eduIsCurrent = document.getElementById('eduIsCurrent');
     if (eduIsCurrent) {
-        eduIsCurrent.addEventListener('change', function() { finActual('eduEndDate', this.checked); });
+        eduIsCurrent.addEventListener('change', function() {
+            document.getElementById('eduEndDate').disabled = this.checked;
+            if (this.checked) {
+                document.getElementById('eduEndDate').value = '';
+            }
+        });
     }
 
 });

@@ -63,14 +63,10 @@
             heroe.hidden = true;
             if (heroe.id === 'main') heroe.removeAttribute('id');
         }
-        document.querySelectorAll('.publicos-section, .cta-final').forEach(s => { s.hidden = true; });
+        document.querySelectorAll('.usuarios-empresas, .cta-final').forEach(s => { s.hidden = true; });
         panel.innerHTML = html;
         panel.id = 'main';
         panel.hidden = false;
-        // La busqueda vive en el hero, que con sesion se esconde: pasa al panel
-        const buscar = document.querySelector('.hero-buscar');
-        const franja = panel.querySelector('.panel-franja .container');
-        if (buscar && franja) franja.appendChild(buscar);
     }
 
     function cifra(c) {
@@ -137,14 +133,12 @@
             ? `<div class="match-ring" data-pct="${v.coincidencia.pct}" role="img" title="Tienes ${v.coincidencia.tiene} de ${v.coincidencia.pedidas} habilidades que pide"
                     aria-label="${v.coincidencia.pct} por ciento: tienes ${v.coincidencia.tiene} de ${v.coincidencia.pedidas} habilidades que pide"></div>`
             : '';
-        const ui = window.SkillMatchUI;
-        const ejemplo = !!(ui && ui.esEjemplo(v.companyName));
-        const lugar = [ui ? ui.sinEjemplo(v.companyName) : v.companyName, v.location].filter(Boolean).map(escaparHtml).join(' · ');
+        const lugar = [v.companyName, v.location].filter(Boolean).map(escaparHtml).join(' · ');
         return `
             <li class="panel-vacante">
                 <div class="panel-vacante-datos">
                     <h3><a href="oportunidades.html?jobId=${encodeURIComponent(v.id)}">${escaparHtml(v.title || 'Vacante')}</a></h3>
-                    ${lugar || ejemplo ? `<p>${lugar}${ejemplo ? ' ' + ui.etiquetaEjemplo() : ''}</p>` : ''}
+                    ${lugar ? `<p>${lugar}</p>` : ''}
                 </div>
                 ${anillo}
             </li>`;
@@ -266,8 +260,6 @@
                     `${conPct.length} ${conPct.length === 1 ? 'pide' : 'piden'} alguna. Estas son las que más coinciden.`;
                 vacantes.innerHTML = conPct.slice(0, 3).map(tarjetaVacante).join('');
             } else {
-                // Sin coincidencias no es "para ti": el titulo dice lo que son
-                document.getElementById('panelVacTitulo').textContent = 'Vacantes recientes';
                 nota.innerHTML = habilidades.length
                     ? 'Las vacantes más recientes todavía no piden tus habilidades. Estas son las más nuevas:'
                     : 'Agrega tus habilidades en <a href="perfil-usuario.html">tu perfil</a> y aquí verás las vacantes que mejor encajan contigo. Por ahora, las más nuevas:';
@@ -288,7 +280,7 @@
             { objetivo: '.panel-postulaciones', titulo: 'Tus postulaciones, paso a paso', texto: 'Mira si la empresa ya revisó tu postulación y cuál fue su respuesta.' },
             { objetivo: '.panel-perfil', titulo: 'Tu perfil', texto: 'Completa lo que falta. Con tus habilidades, SkillMatch calcula qué tanto encajas en cada vacante.' },
             { objetivo: '.panel-vacantes', titulo: 'Vacantes para ti', texto: 'Las vacantes más recientes que más coinciden con lo que sabes hacer.' },
-            { objetivo: '.hero-buscar', titulo: 'Busca lo que quieras', texto: 'Escribe un cargo, una habilidad o una empresa. Para volver a ver este recorrido, toca "Cómo funciona" arriba.' }
+            { objetivo: '.search-section .search-box', titulo: 'Busca lo que quieras', texto: 'Escribe un cargo, una habilidad o una empresa. Para volver a ver este recorrido, toca "Cómo funciona" arriba.' }
         ] });
     }
 
@@ -298,7 +290,7 @@
             { objetivo: '#panelSaludo', titulo: 'Este es el inicio de tu empresa', texto: 'Cada vez que entres verás aquí cómo van tus vacantes y tus candidatos.' },
             { objetivo: '.panel-cifras', titulo: 'Tu resumen', texto: 'Ofertas activas, postulaciones por revisar y recibidas, y mensajes sin leer. Toca cualquiera para ir directo; el punto naranja avisa lo que espera respuesta.' },
             { objetivo: '.panel-acciones', titulo: 'Publica y revisa', texto: 'Publica una vacante nueva o mira a tus candidatos. "Cómo funciona" vuelve a mostrar este recorrido.' },
-            { objetivo: '.hero-buscar', titulo: 'Así buscan las personas', texto: 'Este es el buscador que usan para encontrar vacantes. Prueba con el cargo de una de tus ofertas.' }
+            { objetivo: '.search-section .search-box', titulo: 'Así buscan las personas', texto: 'Este es el buscador que usan para encontrar vacantes. Prueba con el cargo de una de tus ofertas.' }
         ] });
     }
 

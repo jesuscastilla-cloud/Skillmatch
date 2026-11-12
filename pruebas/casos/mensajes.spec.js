@@ -17,7 +17,7 @@ const abrirMenuDeMensaje = async (page, mensaje, info) => {
     } else {
         await mensaje.locator('.mensaje-menu').click();
     }
-    await expect(page.locator('.menu-acciones:not(#menuCuenta)')).toBeVisible();
+    await expect(page.locator('.menu-acciones')).toBeVisible();
 };
 const responderPregunta = async (page, si) => page.locator(`#ventanaConfirmar [data-${si ? 'si' : 'no'}]`).click();
 
@@ -50,7 +50,7 @@ test('archivar, ver archivadas y desarchivar', async ({ page, api }) => {
     await page.goto('mensajes.html');
     await abrirConversacion(page, 'u-digital');
     await page.locator('#chatMenuBtn').click();
-    await page.locator('.menu-acciones:not(#menuCuenta) button', { hasText: 'Archivar' }).click();
+    await page.locator('.menu-acciones button', { hasText: 'Archivar' }).click();
     await expect(page.locator('#chatActive')).toBeHidden();
     await expect(lista(page)).toHaveText(['Andrés Julio']);
     await expect(page.locator('.conv-archivadas')).toContainText('Archivadas');
@@ -58,14 +58,14 @@ test('archivar, ver archivadas y desarchivar', async ({ page, api }) => {
     await page.locator('[data-ver-archivadas="1"]').click();
     await expect(lista(page)).toHaveText(['Caribe Digital Estudio']);
     await page.locator('.conversation-item .conv-menu').click();
-    await page.locator('.menu-acciones:not(#menuCuenta) button', { hasText: 'Desarchivar' }).click();
+    await page.locator('.menu-acciones button', { hasText: 'Desarchivar' }).click();
     await expect(lista(page)).toHaveText(['Caribe Digital Estudio', 'Andrés Julio']);
 });
 
 test('una archivada vuelve sola cuando llega un mensaje nuevo', async ({ page, api }) => {
     await page.goto('mensajes.html');
     await page.locator('.conversation-item[data-user-id="u-digital"] .conv-menu').click();
-    await page.locator('.menu-acciones:not(#menuCuenta) button', { hasText: 'Archivar' }).click();
+    await page.locator('.menu-acciones button', { hasText: 'Archivar' }).click();
     await expect(lista(page)).toHaveText(['Andrés Julio']);
     api.estado.datos.mensajes.push({ id: 'm-nuevo', senderId: 'u-digital', receiverId: 'u-valentina', content: 'Te escribimos para la entrevista.', isRead: false, sentAt: '2999-01-01T09:00:00' });
     await page.evaluate(() => refrescarLista());
@@ -78,7 +78,7 @@ test('eliminar un mensaje lo borra solo para ti', async ({ page, api }, info) =>
     const ultimo = page.locator('#chatMessages .message').last();
     await expect(ultimo).toContainText('¿Cómo va mi proceso?');
     await abrirMenuDeMensaje(page, ultimo, info);
-    await page.locator('.menu-acciones:not(#menuCuenta) button', { hasText: 'Eliminar para mí' }).click();
+    await page.locator('.menu-acciones button', { hasText: 'Eliminar para mí' }).click();
     await responderPregunta(page, true);
     await expect(page.locator('#chatMessages')).not.toContainText('¿Cómo va mi proceso?');
     const m4 = api.estado.datos.mensajes.find(m => m.id === 'm-4');
@@ -88,7 +88,7 @@ test('eliminar un mensaje lo borra solo para ti', async ({ page, api }, info) =>
 test('eliminar una conversación la quita de tu lista y la otra persona la sigue viendo', async ({ page, api }) => {
     await page.goto('mensajes.html');
     await page.locator('.conversation-item[data-user-id="u-andres"] .conv-menu').click();
-    await page.locator('.menu-acciones:not(#menuCuenta) button', { hasText: 'Eliminar conversación' }).click();
+    await page.locator('.menu-acciones button', { hasText: 'Eliminar conversación' }).click();
     await expect(page.locator('#ventanaConfirmar')).toContainText('Andrés Julio la seguirá viendo');
     await responderPregunta(page, true);
     await expect(lista(page)).toHaveText(['Caribe Digital Estudio']);
@@ -103,7 +103,7 @@ test('copiar un mensaje lo deja en el portapapeles', async ({ page, context, api
     await page.goto('mensajes.html');
     await abrirConversacion(page, 'u-digital');
     await page.locator('#chatMessages .message').first().locator('.mensaje-menu').click();
-    await page.locator('.menu-acciones:not(#menuCuenta) button', { hasText: 'Copiar' }).click();
+    await page.locator('.menu-acciones button', { hasText: 'Copiar' }).click();
     await expect(page.locator('.toast').last()).toContainText('Mensaje copiado.');
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('Hola, vi la vacante de desarrollador web.');
 });
@@ -123,11 +123,11 @@ test('una conversación se abre con el teclado y dice cuántos mensajes hay sin 
 test('el menú se maneja con el teclado', async ({ page, api }) => {
     await page.goto('mensajes.html');
     await page.locator('.conversation-item[data-user-id="u-digital"] .conv-menu').click();
-    await expect(page.locator('.menu-acciones:not(#menuCuenta) button').first()).toBeFocused();
+    await expect(page.locator('.menu-acciones button').first()).toBeFocused();
     await page.keyboard.press('ArrowDown');
-    await expect(page.locator('.menu-acciones:not(#menuCuenta) button').nth(1)).toBeFocused();
+    await expect(page.locator('.menu-acciones button').nth(1)).toBeFocused();
     await page.keyboard.press('Escape');
-    await expect(page.locator('.menu-acciones:not(#menuCuenta)')).toHaveCount(0);
+    await expect(page.locator('.menu-acciones')).toHaveCount(0);
     await expect(page.locator('.conversation-item[data-user-id="u-digital"] .conv-menu')).toBeFocused();
 });
 
@@ -140,5 +140,5 @@ test('en el celular, mantener presionado un mensaje abre su menú', async ({ pag
         const r = b.getBoundingClientRect();
         b.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', clientX: r.left + 10, clientY: r.top + 10, bubbles: true }));
     });
-    await expect(page.locator('.menu-acciones:not(#menuCuenta) button')).toHaveText(['Copiar', 'Eliminar para mí']);
+    await expect(page.locator('.menu-acciones button')).toHaveText(['Copiar', 'Eliminar para mí']);
 });
