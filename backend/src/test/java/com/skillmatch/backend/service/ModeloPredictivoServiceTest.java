@@ -95,4 +95,31 @@ class ModeloPredictivoServiceTest {
         assertThat(guardadas).hasSize(1);
         assertThat(m).containsEntry("estado", "esperando").containsKey("historial");
     }
+
+    @Test
+    void siEsperabaDatosHaceMasDeMediaHora_vuelveAIntentar() {
+        List<ModeloVersion> guardadas = new ArrayList<>();
+        ModeloVersion vieja = version(LocalDateTime.now(ZoneId.of("America/Bogota")).minusMinutes(40));
+        when(versiones.findTopByOrderByFechaDesc()).thenAnswer(i ->
+                Optional.of(guardadas.isEmpty() ? vieja : guardadas.get(guardadas.size() - 1)));
+        when(versiones.save(any())).thenAnswer(i -> { guardadas.add(i.getArgument(0)); return i.getArgument(0); });
+        when(versiones.notas()).thenReturn(List.of());
+        when(tabla.filas()).thenReturn(List.of());
+        when(tabla.habilidadesDeVacantes()).thenReturn(List.of());
+
+        servicio.actual();
+
+        assertThat(guardadas).hasSize(1);
+    }
+
+    @Test
+    void siEsperabaDatosHaceCincoMinutos_noVuelveAIntentar() {
+        ModeloVersion reciente = version(LocalDateTime.now(ZoneId.of("America/Bogota")).minusMinutes(5));
+        when(versiones.findTopByOrderByFechaDesc()).thenReturn(Optional.of(reciente));
+        when(versiones.notas()).thenReturn(List.of());
+
+        servicio.actual();
+
+        verify(versiones, never()).save(any());
+    }
 }

@@ -182,7 +182,7 @@ public class AvisosCorreoService {
 
     // ---------------------------------------------------------------- 2. mensajes sin leer
 
-    @Scheduled(cron = "0 */30 * * * *", zone = "America/Bogota")
+    @Scheduled(cron = "${skillmatch.correos.cron.mensajes:0 */30 * * * *}", zone = "America/Bogota")
     public void mensajesSinLeer() {
         LocalDateTime ahora = LocalDateTime.now();
         Query q = new Query(Criteria.where("isRead").is(false).and("deletedByReceiver").ne(true)
@@ -198,7 +198,7 @@ public class AvisosCorreoService {
             if (u == null) return;
             for (String remitente : remitentes) {
                 if (yaSeAviso(receptor, PreferenciasCorreo.MENSAJES, remitente, ahora.minusDays(1))) continue;
-                String quien = userRepository.findById(remitente).map(this::nombre).orElse("Alguien");
+                String quien = userRepository.findById(remitente).map(x -> nombre(x).trim()).filter(x -> !x.isEmpty()).orElse("Alguien");
                 StringBuilder t = new StringBuilder("Hola").append(nombre(u)).append(",\n\n")
                         .append(quien).append(" te escribió en SkillMatch y todavía no has leído el mensaje.")
                         .append("\n\nLeerlo: ").append(sitio).append("/pages/mensajes.html?userId=").append(remitente);
@@ -211,7 +211,7 @@ public class AvisosCorreoService {
 
     // ---------------------------------------------------------------- 3. vacantes nuevas (opcional)
 
-    @Scheduled(cron = "0 0 8 * * MON", zone = "America/Bogota")
+    @Scheduled(cron = "${skillmatch.correos.cron.vacantes:0 0 8 * * MON}", zone = "America/Bogota")
     public void vacantesNuevas() {
         List<Job> nuevas = mongoTemplate.find(new Query(Criteria.where("active").is(true)
                 .and("status").is(JobStatus.ABIERTA).and("postedDate").gt(LocalDateTime.now().minusDays(7))), Job.class);
@@ -246,11 +246,12 @@ public class AvisosCorreoService {
 
     // ---------------------------------------------------------------- 4. postulaciones recibidas (empresas)
 
-    @Scheduled(cron = "0 0 19 * * *", zone = "America/Bogota")
+    @Scheduled(cron = "${skillmatch.correos.cron.resumen:0 0 19 * * *}", zone = "America/Bogota")
     public void resumenDePostulaciones() {
         String hoy = LocalDate.now(BOGOTA).toString();
+        // Las postulaciones de demostracion no cuentan: no se le escribe a una empresa por algo inventado
         List<Application> recientes = mongoTemplate.find(new Query(Criteria.where("appliedDate")
-                .gt(LocalDateTime.now().minusDays(1))), Application.class);
+                .gt(LocalDateTime.now().minusDays(1)).and("ejemplo").ne(true)), Application.class);
         Map<String, Long> porVacante = recientes.stream()
                 .collect(Collectors.groupingBy(Application::getJobId, LinkedHashMap::new, Collectors.counting()));
         Map<String, Map<String, Long>> porEmpresa = new LinkedHashMap<>();

@@ -117,6 +117,19 @@ Puedes ajustar el tamaño con `SEED_USERS`, `SEED_COMPANIES`, `SEED_JOBS`,
 `SEED_APPLICATIONS`. Los valores por defecto (150 / 40 / 120 / 300) están
 pensados para el plan gratuito de Atlas.
 
+### Datos de demostración para el modelo predictivo
+
+El modelo aprende de postulaciones que una empresa ya aceptó o rechazó (mínimo 30, con 8 de cada tipo).
+Mientras no haya tantas respuestas reales, se pueden cargar respuestas **de ejemplo**:
+
+- Base nueva: `SEED_ENABLED=true` ya las incluye.
+- Base que ya tiene datos: pon `SEED_MODELO_DEMO=true`, redespliega, espera el log
+  `Datos de demostración del modelo: N personas y N postulaciones` y vuelve a ponerla en `false`.
+  Necesita al menos 5 vacantes con habilidades de empresas «(ejemplo)». Si ya están cargados no duplica.
+- Esas postulaciones llevan `ejemplo = true`: la página «Cómo aprende SkillMatch» dice «Demostración»,
+  no entran en las cifras públicas y no se envían correos de consejos.
+- Cuando haya respuestas reales suficientes, pon `MODELO_SIN_EJEMPLOS=true` para que el modelo las ignore.
+
 Los usuarios creados son `usuario0@skillmatch.com` … y las empresas
 `empresa0@skillmatch.com` …, todos con contraseña `password123`.
 
@@ -155,6 +168,8 @@ COOKIE_SAME_SITE=None
 | `COOKIE_SECURE` | No | `false` | `true` si usas HTTPS |
 | `COOKIE_SAME_SITE` | No | `Lax` | `None` si el front está en otro dominio |
 | `SEED_ENABLED` | No | `false` | Poblar datos de prueba |
+| `SEED_MODELO_DEMO` | No | `false` | Cargar respuestas de ejemplo para el modelo (una sola vez) |
+| `MODELO_SIN_EJEMPLOS` | No | `false` | El modelo ignora las respuestas de ejemplo |
 | `RATE_LIMIT_MAX` | No | `20` | Intentos de login por IP/minuto |
 | `LOG_LEVEL_APP` | No | `INFO` | `DEBUG` para diagnosticar |
 

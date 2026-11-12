@@ -33,4 +33,9 @@ public interface ApplicationRepository extends MongoRepository<Application, Stri
     List<Application> findByUserIdOrderByAppliedDateDesc(String userId);
 
     List<Application> findByStatus(ApplicationStatus status);
+
+    boolean existsByEjemploTrue();
+
+    /** Las de verdad: las cifras publicas no cuentan las de demostracion. */
+    long countByEjemploNot(Boolean ejemplo);
 }
