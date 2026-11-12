@@ -140,7 +140,9 @@ public class ModeloPredictivoService {
             Map<String, Object> tomada = arbol.get(((Number) nodo.get(si ? "si" : "no")).intValue());
             Map<String, Object> otra = arbol.get(((Number) nodo.get(si ? "no" : "si")).intValue());
             double diferencia = ((Number) otra.get("prob")).doubleValue() - ((Number) tomada.get("prob")).doubleValue();
-            if (ACCIONABLES.contains(var) && diferencia > mejor) {
+            // Solo se aconseja SUBIR algo (mas habilidades, mas experiencia, carta...): si la rama
+            // con mas aceptadas fuera la de "menos", el consejo seria absurdo ("ten menos habilidades")
+            if (ACCIONABLES.contains(var) && !si && diferencia > mejor) {
                 mejor = diferencia;
                 frase = (String) nodo.get(si ? "frase_no" : "frase_si");
                 variable = var;

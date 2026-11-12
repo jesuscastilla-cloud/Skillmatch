@@ -42,6 +42,43 @@ class ModeloPredictivoServiceTest {
         verify(versiones, never()).save(any());
     }
 
+    /** Un arbol de una sola pregunta sobre las habilidades; probSi = aceptadas cuando tiene mas del 50 %. */
+    private void modeloDeUnaPregunta(double probSi, double probNo) {
+        Map<String, Object> raiz = new java.util.HashMap<>(Map.of("id", 0, "variable", "pct_habilidades", "umbral", 50.0,
+                "si", 1, "no", 2, "prob", 0.5,
+                "frase_si", "tienen más del 50 % de las habilidades pedidas",
+                "frase_no", "tienen el 50 % o menos de las habilidades pedidas"));
+        Map<String, Object> modelo = Map.of("estado", "listo", "dar_consejos", true, "arbol", List.of(raiz,
+                Map.of("id", 1, "hoja", true, "prob", probSi), Map.of("id", 2, "hoja", true, "prob", probNo)));
+        ModeloVersion v = version(LocalDateTime.now(ZoneId.of("America/Bogota")));
+        v.setEstado("listo");
+        v.setModelo(modelo);
+        when(versiones.findTopByOrderByFechaDesc()).thenReturn(Optional.of(v));
+        when(versiones.notas()).thenReturn(List.of());
+    }
+
+    private void postulacionCon(int pctHabilidades) {
+        when(tabla.unaPostulacion(any(), any())).thenReturn(Map.of(
+                "caracteristicas", Map.of("pct_habilidades", pctHabilidades), "faltan", List.of("Inglés básico")));
+    }
+
+    @Test
+    void elConsejoSoloPideSubirAlgo() {
+        // Quien tiene pocas habilidades, donde tener mas suele ir mejor: se le aconseja agregarlas
+        modeloDeUnaPregunta(0.8, 0.2);
+        postulacionCon(20);
+        assertThat(servicio.consejoPara(new com.skillmatch.backend.model.Application()))
+                .contains("más del 50 %").contains("Te falta: Inglés básico");
+    }
+
+    @Test
+    void nuncaAconsejaTenerMenos() {
+        // Si en los datos las de MENOS habilidades fueron mas aceptadas, no se aconseja "ten menos"
+        modeloDeUnaPregunta(0.2, 0.8);
+        postulacionCon(80);
+        assertThat(servicio.consejoPara(new com.skillmatch.backend.model.Application())).isEmpty();
+    }
+
     @Test
     void siElServidorDurmioLaNoche_aprendeAlDespertar() {
         List<ModeloVersion> guardadas = new ArrayList<>();

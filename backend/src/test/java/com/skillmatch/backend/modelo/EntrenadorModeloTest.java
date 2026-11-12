@@ -66,6 +66,23 @@ class EntrenadorModeloTest {
     @SuppressWarnings("unchecked")
     static Map<String, Object> mapa(Object o) { return (Map<String, Object>) o; }
 
+    /**
+     * El examen por vacante: Java reparte las postulaciones en los MISMOS 5 grupos que Python
+     * (pliegues_por_vacante en entrenar_modelo.py), y ninguna vacante queda en dos grupos.
+     */
+    @Test
+    void mismoExamenPorVacante() {
+        int[] y = filas.stream().mapToInt(f -> f.get("aceptada").intValue()).toArray();
+        int[] java = EntrenadorModelo.porVacante(filas, y);
+        assertEquals(Arrays.toString(pliegues), Arrays.toString(java), "mismos grupos que Python");
+        Map<Integer, Integer> grupoDe = new LinkedHashMap<>();
+        for (int i = 0; i < filas.size(); i++) {
+            int v = filas.get(i).get("vacante").intValue();
+            Integer antes = grupoDe.putIfAbsent(v, java[i]);
+            assertTrue(antes == null || antes == java[i], "la vacante " + v + " quedo en dos grupos");
+        }
+    }
+
     @Test
     void mismosDatos() {
         Map<String, Object> d = mapa(java.get("datos"));
@@ -156,15 +173,39 @@ class EntrenadorModeloTest {
     void mismaImportanciaYLogistica() {
         List<Map<String, Object>> imp = (List<Map<String, Object>>) java.get("importancia");
         JsonNode py = python.get("importancia");
-        assertEquals(py.size(), imp.size());
-        // Las mismas cifras en el mismo orden (el nombre puede cambiar entre dos datos equivalentes)
-        for (int i = 0; i < imp.size(); i++) {
-            assertEquals(py.get(i).get("valor").asDouble(), (Double) imp.get(i).get("valor"), 1e-3);
+        // En un empate (dos preguntas que separan a las mismas personas) el peso de ese nodo queda
+        // anotado a otro dato. Por eso: el peso total es el mismo, y cada dato que los dos usan en
+        // exactamente las mismas preguntas pesa lo mismo
+        Map<String, Double> pesoJava = new LinkedHashMap<>(), pesoPython = new LinkedHashMap<>();
+        imp.forEach(m -> pesoJava.put((String) m.get("id"), (Double) m.get("valor")));
+        py.forEach(n -> pesoPython.put(n.get("id").asText(), n.get("valor").asDouble()));
+        assertEquals(pesoPython.values().stream().mapToDouble(Double::doubleValue).sum(),
+                pesoJava.values().stream().mapToDouble(Double::doubleValue).sum(), 2e-3, "peso total");
+        Map<String, List<Integer>> nodosJava = nodosPorDato((List<Map<String, Object>>) java.get("arbol"));
+        Map<String, List<Integer>> nodosPython = new LinkedHashMap<>();
+        python.get("arbol").forEach(n -> {
+            if (!n.has("hoja")) nodosPython.computeIfAbsent(n.get("variable").asText(), k -> new ArrayList<>()).add(n.get("id").asInt());
+        });
+        int comparados = 0;
+        for (Map.Entry<String, List<Integer>> e : nodosPython.entrySet()) {
+            if (!e.getValue().equals(nodosJava.get(e.getKey()))) continue;
+            assertEquals(pesoPython.get(e.getKey()), pesoJava.get(e.getKey()), 1e-3, "peso de " + e.getKey());
+            comparados++;
         }
+        assertTrue(comparados >= nodosPython.size() - 2, "datos con el mismo peso: " + comparados + " de " + nodosPython.size());
         List<Double> coef = (List<Double>) mapa(java.get("logistica")).get("coef");
         for (int i = 0; i < coef.size(); i++) {
             assertEquals(python.at("/logistica/coef/" + i).asDouble(), coef.get(i), 1e-3, "coeficiente " + i);
         }
+    }
+
+    /** Las preguntas (numero de nodo) en que el arbol usa cada dato. */
+    static Map<String, List<Integer>> nodosPorDato(List<Map<String, Object>> arbol) {
+        Map<String, List<Integer>> m = new LinkedHashMap<>();
+        for (Map<String, Object> n : arbol) {
+            if (!n.containsKey("hoja")) m.computeIfAbsent((String) n.get("variable"), k -> new ArrayList<>()).add((Integer) n.get("id"));
+        }
+        return m;
     }
 
     @Test

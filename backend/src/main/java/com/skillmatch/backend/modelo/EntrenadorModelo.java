@@ -20,7 +20,7 @@ import java.util.Set;
  * (asi se puede probar con una tabla fija y comparar con el script de Python).
  *
  * Sigue el PDF: arbol CART (4 niveles, 5 casos por hoja), regresion logistica y modelo flojo,
- * validacion cruzada de 5 pliegues, minimo 30 respondidas con 8 y 8, notas, importancia y
+ * validacion cruzada de 5 pliegues por vacante, minimo 30 respondidas con 8 y 8, notas, importancia y
  * "habilidades que suelen ir juntas". Devuelve el mismo contenido que modelo-predictivo.json.
  */
 public final class EntrenadorModelo {
@@ -44,7 +44,7 @@ public final class EntrenadorModelo {
         {"tipo_practica", "Vacante de práctica", "book", "si_no", "Tipo de vacante: práctica."},
         {"tipo_freelance", "Vacante independiente", "rocket", "si_no", "Tipo de vacante: independiente (freelance)."},
         {"dias_para_postularse", "Qué tan rápido se postuló", "clock", "entero", "Días entre la publicación de la vacante y la postulación."},
-        {"postulantes_vacante", "Cuánta gente se postuló", "users", "entero", "Cuántas personas se postularon a esa vacante."},
+        {"postulantes_previos", "Cuántos se postularon antes", "users", "entero", "Cuántas personas ya se habían postulado a esa vacante cuando esta persona lo hizo."},
     };
     public static final List<String> COLUMNAS;
     static {
@@ -108,6 +108,7 @@ public final class EntrenadorModelo {
         param.put("profundidad_maxima", PROFUNDIDAD);
         param.put("casos_por_hoja", CASOS_POR_HOJA);
         param.put("pliegues", PLIEGUES);
+        param.put("examen", "por vacante");
         param.put("semilla", SEMILLA);
         r.put("parametros", param);
         r.put("niveles", Map.of("buenas", BUENAS, "regulares", REGULARES));
@@ -120,7 +121,9 @@ public final class EntrenadorModelo {
         }
 
         // ---------- El examen: 5 pliegues ----------
-        int[] grupo = pliegues != null ? pliegues : Pliegues.estratificados(y, PLIEGUES, SEMILLA);
+        // Por vacante: todas las postulaciones de una vacante en el mismo grupo (las de una tabla
+        // vieja, sin la columna "vacante", se reparten como antes)
+        int[] grupo = pliegues != null ? pliegues : porVacante(filas, y);
         double[] probArbol = new double[n], probLog = new double[n], probFlojo = new double[n];
         int[] dijoArbol = new int[n], dijoLog = new int[n], dijoFlojo = new int[n];
         for (int g = 0; g < PLIEGUES; g++) {
@@ -251,10 +254,17 @@ public final class EntrenadorModelo {
             case "tipo_freelance" -> new String[] {"¿Es una vacante independiente?", "son a vacantes independientes", "son a vacantes que no son independientes"};
             case "dias_para_postularse" -> new String[] {"¿Se postuló " + c + " días o más después de publicada?",
                     "llegan " + c + " días o más después de publicada la vacante", "llegan en los primeros " + c + " días de publicada la vacante"};
-            case "postulantes_vacante" -> new String[] {"¿La vacante tiene " + c + " postulantes o más?",
-                    "son a vacantes con " + c + " postulantes o más", "son a vacantes con menos de " + c + " postulantes"};
+            case "postulantes_previos" -> new String[] {"¿Ya había " + c + " postulantes o más cuando se postuló?",
+                    "llegan cuando ya había " + c + " postulantes o más", "llegan cuando había menos de " + c + " postulantes"};
             default -> new String[] {"¿" + var + " > " + d + "?", var + " > " + d, var + " ≤ " + d};
         };
+    }
+
+    /** El grupo del examen de cada fila, por vacante (Pliegues.porVacante). */
+    static int[] porVacante(List<Map<String, Number>> filas, int[] y) {
+        if (filas.stream().anyMatch(f -> f.get("vacante") == null)) return Pliegues.estratificados(y, PLIEGUES, SEMILLA);
+        int[] vacante = filas.stream().mapToInt(f -> f.get("vacante").intValue()).toArray();
+        return Pliegues.porVacante(y, vacante, PLIEGUES);
     }
 
     private static double num(Map<String, Number> f, String col) {

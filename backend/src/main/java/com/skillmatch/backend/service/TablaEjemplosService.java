@@ -49,7 +49,7 @@ public class TablaEjemplosService {
             "pct_habilidades", "nivel_dominio", "anos_experiencia", "alcanza_experiencia",
             "num_estudios", "perfil_completo", "tiene_carta", "palabras_carta", "misma_ciudad",
             "tipo_empleo", "tipo_practica", "tipo_freelance", "dias_para_postularse",
-            "postulantes_vacante", "es_ejemplo", "aceptada");
+            "postulantes_previos", "vacante", "es_ejemplo", "aceptada");
 
     private static final Map<String, Integer> NIVELES = Map.of(
             "BASICO", 1, "INTERMEDIO", 2, "AVANZADO", 3, "EXPERTO", 4);
@@ -79,9 +79,13 @@ public class TablaEjemplosService {
                 .collect(Collectors.toMap(Job::getId, Function.identity()));
         Map<String, String> empresas = companyRepository.findAll().stream()
                 .collect(Collectors.toMap(Company::getId, c -> c.getName() == null ? "" : c.getName()));
-        Map<String, Long> porVacante = postulaciones.stream()
-                .filter(a -> a.getJobId() != null)
-                .collect(Collectors.groupingBy(Application::getJobId, Collectors.counting()));
+        // Cuando se postulo cada quien, por vacante: para contar solo a los que llegaron ANTES
+        Map<String, List<LocalDateTime>> fechasPorVacante = postulaciones.stream()
+                .filter(a -> a.getJobId() != null && fecha(a) != null)
+                .collect(Collectors.groupingBy(Application::getJobId,
+                        Collectors.mapping(TablaEjemplosService::fecha, Collectors.toList())));
+        // Cada vacante pasa a ser un numero (arma el examen por vacante), sin su id real
+        Map<String, Integer> numeroVacante = new HashMap<>();
 
         List<Map<String, Number>> filas = new ArrayList<>();
         for (Application a : postulaciones) {
@@ -89,8 +93,14 @@ public class TablaEjemplosService {
             User u = usuarios.get(a.getUserId());
             Job v = vacantes.get(a.getJobId());
             if (u == null || v == null) continue;
-            filas.add(caracteristicas(a, u, v, empresas.getOrDefault(v.getCompanyId(), ""),
-                    porVacante.getOrDefault(a.getJobId(), 0L)));
+            Map<String, Number> f = caracteristicas(a, u, v, empresas.getOrDefault(v.getCompanyId(), ""),
+                    antes(fechasPorVacante.get(a.getJobId()), fecha(a)));
+            f.put("vacante", numeroVacante.computeIfAbsent(a.getJobId(), id -> numeroVacante.size()));
+            // "vacante" va antes de es_ejemplo y aceptada, como en la CABECERA
+            Number ejemplo = f.remove("es_ejemplo"), aceptada = f.remove("aceptada");
+            f.put("es_ejemplo", ejemplo);
+            f.put("aceptada", aceptada);
+            filas.add(f);
         }
         return filas;
     }
@@ -127,7 +137,9 @@ public class TablaEjemplosService {
         if (u == null) u = userRepository.findById(a.getUserId()).orElse(null);
         Job v = a.getJobId() == null ? null : jobRepository.findById(a.getJobId()).orElse(null);
         if (u == null || v == null) return null;
-        Map<String, Number> f = caracteristicas(a, u, v, "", applicationRepository.countByJobId(v.getId()));
+        List<LocalDateTime> fechas = applicationRepository.findByJobId(v.getId()).stream()
+                .map(TablaEjemplosService::fecha).filter(java.util.Objects::nonNull).toList();
+        Map<String, Number> f = caracteristicas(a, u, v, "", antes(fechas, fecha(a)));
         f.remove("es_ejemplo");
         f.remove("aceptada");
         // Las habilidades que pide y no tiene: para el consejo "te falta Ingles basico"
@@ -140,8 +152,22 @@ public class TablaEjemplosService {
         return item;
     }
 
-    /** Una fila de la tabla, en el orden de CABECERA (el mismo de caracteristicas.py). */
-    Map<String, Number> caracteristicas(Application a, User u, Job v, String empresa, long postulantes) {
+    /** Cuando se postulo: la fecha de la postulacion o, si falta, cuando se creo. */
+    static LocalDateTime fecha(Application a) {
+        return a.getAppliedDate() != null ? a.getAppliedDate() : a.getCreatedAt();
+    }
+
+    /**
+     * Cuantas personas se habian postulado a la vacante ANTES que esta. Las que llegaron despues
+     * no cuentan: es informacion del futuro que no se tiene al postularse (fuga de datos).
+     */
+    static long antes(List<LocalDateTime> fechas, LocalDateTime cuando) {
+        if (fechas == null || cuando == null) return 0;
+        return fechas.stream().filter(f -> f.isBefore(cuando)).count();
+    }
+
+    /** Una fila de la tabla, en el orden de CABECERA sin "vacante" (el mismo de caracteristicas.py). */
+    Map<String, Number> caracteristicas(Application a, User u, Job v, String empresa, long postulantesPrevios) {
         // 1) Habilidades que tiene de las pedidas y su nivel
         Set<String> pedidas = lista(v.getSkills()).stream().map(TablaEjemplosService::norm)
                 .filter(s -> !s.isEmpty()).collect(Collectors.toSet());
@@ -198,7 +224,7 @@ public class TablaEjemplosService {
         f.put("tipo_practica", b("práctica".equals(tipo) || "practica".equals(tipo)));
         f.put("tipo_freelance", b("freelance".equals(tipo) || "independiente".equals(tipo)));
         f.put("dias_para_postularse", dias);
-        f.put("postulantes_vacante", postulantes);
+        f.put("postulantes_previos", postulantesPrevios);
         f.put("es_ejemplo", b(ejemplo));
         f.put("aceptada", b(a.getStatus() == ApplicationStatus.ACEPTADA));
         return f;

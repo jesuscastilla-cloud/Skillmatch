@@ -78,7 +78,7 @@
      * Las caracteristicas de una postulacion (mismas columnas que la tabla de Python).
      * usuario: { firstName, lastName, email, phone, location, skills[{name, level}], experiences[], educations[] }
      * vacante: { skills[], experienceLevel, location, modality, type, postedDate }
-     * extra:   { carta, fechaPostulacion, postulantes }
+     * extra:   { carta, fechaPostulacion, postulantesPrevios }
      */
     function caracteristicasDe(usuario, vacante, extra) {
         usuario = usuario || {}; vacante = vacante || {}; extra = extra || {};
@@ -112,7 +112,8 @@
             tipo_practica: tipo === 'práctica' || tipo === 'practica' ? 1 : 0,
             tipo_freelance: tipo === 'freelance' || tipo === 'independiente' ? 1 : 0,
             dias_para_postularse: publicada ? Math.max(0, Math.floor((postulo - publicada) / 86400000)) : 0,
-            postulantes_vacante: Number(extra.postulantes) || 0,
+            // Solo los que se postularon ANTES (los de despues serian informacion del futuro)
+            postulantes_previos: Number(extra.postulantesPrevios) || 0,
             // Para el consejo: las habilidades que pide y no tiene
             _faltan: (vacante.skills || []).filter((h, i, a) => a.indexOf(h) === i && !suyas.has(texto(h).toLowerCase()))
         };
@@ -151,7 +152,9 @@
         let mejor = null;
         recorrido.camino.forEach(paso => {
             const n = paso.nodo;
-            if (!ACCIONABLES.includes(n.variable)) return;
+            // Solo se aconseja SUBIR algo (mas habilidades, mas experiencia, carta...): si la rama
+            // con mas aceptadas fuera la de "menos", el consejo seria absurdo ("ten menos habilidades")
+            if (!ACCIONABLES.includes(n.variable) || paso.si) return;
             const tomada = m.arbol[paso.si ? n.si : n.no];
             const otra = m.arbol[paso.si ? n.no : n.si];
             const diferencia = otra.prob - tomada.prob;

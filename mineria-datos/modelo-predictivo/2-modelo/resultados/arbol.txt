@@ -1,0 +1,28 @@
+|--- pct_habilidades <= 27.00
+|   |--- postulantes_previos <= 1.50
+|   |   |--- alcanza_experiencia <= 0.50
+|   |   |   |--- tipo_practica <= 0.50
+|   |   |   |   |--- class: 0
+|   |   |   |--- tipo_practica >  0.50
+|   |   |   |   |--- class: 1
+|   |   |--- alcanza_experiencia >  0.50
+|   |   |   |--- dias_para_postularse <= 8.00
+|   |   |   |   |--- class: 1
+|   |   |   |--- dias_para_postularse >  8.00
+|   |   |   |   |--- class: 1
+|   |--- postulantes_previos >  1.50
+|   |   |--- dias_para_postularse <= 45.50
+|   |   |   |--- pct_habilidades <= 18.50
+|   |   |   |   |--- class: 0
+|   |   |   |--- pct_habilidades >  18.50
+|   |   |   |   |--- class: 1
+|   |   |--- dias_para_postularse >  45.50
+|   |   |   |--- dias_para_postularse <= 67.50
+|   |   |   |   |--- class: 1
+|   |   |   |--- dias_para_postularse >  67.50
+|   |   |   |   |--- class: 0
+|--- pct_habilidades >  27.00
+|   |--- alcanza_experiencia <= 0.50
+|   |   |--- class: 0
+|   |--- alcanza_experiencia >  0.50
+|   |   |--- class: 0

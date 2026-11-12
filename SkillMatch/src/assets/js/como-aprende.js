@@ -215,7 +215,7 @@
         $('oPerfil').value = f.perfil_completo.value + ' %';
         $('oCarta').value = palabras;
         $('oDias').value = f.dias_para_postularse.value;
-        $('oPost').value = f.postulantes_vacante.value;
+        $('oPost').value = f.postulantes_previos.value;
         return {
             pct_habilidades: pct,
             nivel_dominio: pct > 0 ? Number(f.nivel_dominio.value) : 0,
@@ -230,7 +230,7 @@
             tipo_practica: f.tipo.value === 'practica' ? 1 : 0,
             tipo_freelance: f.tipo.value === 'freelance' ? 1 : 0,
             dias_para_postularse: Number(f.dias_para_postularse.value),
-            postulantes_vacante: Number(f.postulantes_vacante.value)
+            postulantes_previos: Number(f.postulantes_previos.value)
         };
     }
 

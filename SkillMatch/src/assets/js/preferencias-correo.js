@@ -66,7 +66,7 @@
                 });
                 guardar.disabled = false;
             })
-            .catch(() => problema('No pudimos cargar tus preferencias. Intenta de nuevo.'));
+            .catch(() => problema('No pudimos cargar tus preferencias. Revisa tu conexión e intenta de nuevo.'));
 
         form.addEventListener('submit', e => {
             e.preventDefault();
@@ -78,9 +78,9 @@
                 .then(r => {
                     if (!r.ok) throw new Error(r.status);
                     v.cerrar();
-                    SkillMatchUI.aviso('Listo: guardamos qué correos quieres recibir.', 'ok');
+                    SkillMatchUI.guardado('Correos guardados');
                 })
-                .catch(() => { problema('No se pudo guardar. Intenta de nuevo.'); guardar.disabled = false; });
+                .catch(() => { problema('No pudimos guardar. Revisa tu conexión e intenta de nuevo.'); guardar.disabled = false; });
         });
     }
 

@@ -1,0 +1,4 @@
+,exactitud,precision,sensibilidad,f1,roc_auc
+arbol,0.4636,0.4796,0.6104,0.5371,0.4373
+logistica,0.4503,0.4615,0.4675,0.4645,0.4466
+flojo,0.5099,0.5099,1.0,0.6754,0.5
