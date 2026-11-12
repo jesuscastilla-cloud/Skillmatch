@@ -29,10 +29,10 @@ const ida = page => page.evaluate(() => window.__ida);
 // Lo que queda anotado para que la página nueva se deslice de ese lado
 const direccion = page => page.evaluate(() => JSON.parse(sessionStorage.getItem('skillmatch_deslizar') || 'null'));
 
-// La línea empieza donde empieza el texto del enlace (sin su relleno) y queda debajo
+// La pastilla del menú cubre justo el enlace (mismo inicio y mismo ancho)
 const lineaDebajoDe = async (page, texto) => {
-    const [l, a] = await Promise.all([page.locator('.nav-linea').boundingBox(), enlace(page, texto).boundingBox()]);
-    return !!(l && a && Math.abs(l.x - (a.x + 12)) < 3 && l.y > a.y + a.height);
+    const [l, a] = await Promise.all([page.locator('.nav-pastilla').boundingBox(), enlace(page, texto).boundingBox()]);
+    return !!(l && a && Math.abs(l.x - a.x) < 1.5 && Math.abs(l.width - a.width) < 1.5);
 };
 
 // La pastilla cubre justo la pestaña
@@ -235,6 +235,8 @@ test('en cada página el guion del <head> va después de las hojas de estilo', a
     const carpeta = path.join(__dirname, '../../SkillMatch/src/pages');
     for (const f of fs.readdirSync(carpeta).filter(f => f.endsWith('.html'))) {
         const head = fs.readFileSync(path.join(carpeta, f), 'utf8').split('</head>')[0];
+        // login-usuario.html y login-empresa.html solo llevan a login.html: no tienen guion
+        if (head.includes('http-equiv="refresh"')) continue;
         const guion = head.indexOf('<script>(function(){var t=');
         expect(guion, f + ' tiene el guion del tema').toBeGreaterThan(0);
         expect(guion, f).toBeGreaterThan(head.lastIndexOf('<link rel="stylesheet"'));
