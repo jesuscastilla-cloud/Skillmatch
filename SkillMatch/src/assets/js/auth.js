@@ -33,8 +33,14 @@ function completarEntrada(data) {
         successMessage.style.display = 'block';
     }
 
+    // Si llego desde una pagina que pedia sesion (?volver=), vuelve alla; si no, a su perfil.
+    // Una empresa no vuelve a "mi perfil" de persona, ni una persona a "Mi empresa".
+    let destino = isEmpresa ? 'perfil-empresa.html' : 'perfil-usuario.html';
+    const volver = typeof destinoPedido === 'function' ? destinoPedido() : '';
+    if (volver && !(isEmpresa ? /^(perfil-usuario|hoja-de-vida|conexiones)\.html(\?(?!id=)|$)/ : /^perfil-empresa\.html/).test(volver)) destino = volver;
+
     setTimeout(() => {
-        window.location.href = isEmpresa ? 'perfil-empresa.html' : 'perfil-usuario.html';
+        window.location.href = destino;
     }, 1000);
     return true;
 }
@@ -116,7 +122,7 @@ async function volverDeGoogle() {
         try { msg = (await response.json()).message || msg; } catch (_) {}
         mostrarError(msg);
     } catch (_) {
-        mostrarError('Error de conexión. Por favor, verifica que el servidor esté corriendo e intenta de nuevo.');
+        mostrarError('No pudimos conectar con SkillMatch. Revisa tu internet e intenta de nuevo en un momento.');
     }
 }
 
@@ -145,7 +151,12 @@ function selectorDeCuenta() {
             if (si && enfocar) o.focus();
         });
         document.querySelectorAll('[data-texto-' + tipo + ']').forEach(el => { el.textContent = el.getAttribute('data-texto-' + tipo); });
-        document.querySelectorAll('[data-href-' + tipo + ']').forEach(el => { el.setAttribute('href', el.getAttribute('data-href-' + tipo)); });
+        // "Crear mi perfil" lleva el mismo ?volver= que trajo el login: al terminar el registro se vuelve alla
+        const volver = typeof destinoPedido === 'function' ? destinoPedido() : '';
+        document.querySelectorAll('[data-href-' + tipo + ']').forEach(el => {
+            const href = el.getAttribute('data-href-' + tipo);
+            el.setAttribute('href', volver ? href + '?volver=' + encodeURIComponent(volver) : href);
+        });
         document.querySelectorAll('[data-lista-persona]').forEach(el => { el.hidden = tipo !== 'persona'; });
         document.querySelectorAll('[data-lista-empresa]').forEach(el => { el.hidden = tipo !== 'empresa'; });
         const google = document.querySelector('.btn-google');
@@ -201,12 +212,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (errorMessage) errorMessage.style.display = 'none';
         if (successMessage) successMessage.style.display = 'none';
+        // El error queda unido al campo que fallo (aria-invalid + aria-describedby, ui.js)
+        const UI = window.SkillMatchUI;
+        const marcar = (...ids) => { if (UI && UI.marcarCampo) ids.forEach(id => UI.marcarCampo(document.getElementById(id), 'error-message')); };
+        if (UI && UI.desmarcarCampos) UI.desmarcarCampos(loginForm);
 
         if (!email || !password) {
             // Dice qué falta y lleva el foco ahí, como el registro
             const msg = !email && !password ? 'Escribe tu correo y tu contraseña.' : (!email ? 'Escribe tu correo.' : 'Escribe tu contraseña.');
             if (errorMessage) { errorMessage.textContent = msg; errorMessage.style.display = 'block'; }
             else alert(msg);
+            marcar(...(!email && !password ? ['email', 'password'] : [!email ? 'email' : 'password']));
             document.getElementById(!email ? 'email' : 'password').focus();
             return;
         }
@@ -235,12 +251,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 } catch (_) {}
                 if (errorMessage) { errorMessage.textContent = errorText; errorMessage.style.display = 'block'; }
                 else alert(errorText);
+                if (response.status === 401 || response.status === 400) marcar('email', 'password');
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Iniciar sesión';
             }
 
         } catch (error) {
-            const msg = 'Error de conexión. Por favor, verifica que el servidor esté corriendo e intenta de nuevo.';
+            const msg = 'No pudimos conectar con SkillMatch. Revisa tu internet e intenta de nuevo en un momento.';
             if (errorMessage) { errorMessage.textContent = msg; errorMessage.style.display = 'block'; }
             else alert(msg);
             loginBtn.disabled = false;

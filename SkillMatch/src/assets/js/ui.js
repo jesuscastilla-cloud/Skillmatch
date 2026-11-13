@@ -350,18 +350,35 @@
         if (boton && boton.parentElement) boton.parentElement.hidden = true;
     }
 
-    /** Barra inferior en movil: cinco destinos, siempre los mismos. */
+    // Sin sesion, "Red", "Mensajes" y "Perfil" solo llevaban al login: el visitante ve lo
+    // que si puede usar (revision 2026-11-13, hallazgo 9)
+    const DESTINOS_VISITANTE = [
+        { href: 'index.html',          ico: 'home',      label: 'Inicio' },
+        { href: 'oportunidades.html',  ico: 'briefcase', label: 'Vacantes' },
+        { href: 'empresas.html',       ico: 'building',  label: 'Empresas' },
+        { href: 'login.html',          ico: 'user',      label: 'Entrar' }
+    ];
+    // Paginas para terminar una sola tarea (entrar, registrarse): sin barra de abajo, que en
+    // el celular tapaba "¿Olvidaste tu contraseña?" y empujaba el boton de entrar
+    const SIN_TABBAR = /^(login|login-usuario|login-empresa|recuperar|registro-usuario|registro-empresa|seleccionar-registro)\.html$/;
+
+    /** Barra inferior en movil: los mismos destinos en todas las paginas (segun haya sesion). */
     function construirTabbar() {
         if (document.querySelector('.tabbar')) return;
         if (!document.querySelector('header nav')) return;
 
         const actual = paginaActual();
+        if (SIN_TABBAR.test(actual)) return;
         const esPerfilEmpresa = document.querySelector('a[href="perfil-empresa.html"]');
+        const destinos = sesionActiva() ? DESTINOS : DESTINOS_VISITANTE;
 
         const nav = document.createElement('nav');
         nav.className = 'tabbar';
         nav.setAttribute('aria-label', 'Navegacion principal');
-        nav.innerHTML = '<ul>' + DESTINOS.map(function (d) {
+        nav.innerHTML = '<ul>' + destinos.map(function (destino) {
+            // A una empresa "Red" (conexiones entre personas) no le sirve: va a sus candidatos
+            const d = destino.href === 'conexiones.html' && esPerfilEmpresa
+                ? { href: 'perfil-empresa.html#candidatos', ico: 'users', label: 'Candidatos' } : destino;
             let href = d.href;
             if (d.href === 'perfil-usuario.html' && esPerfilEmpresa) href = 'perfil-empresa.html';
             const activo = href === actual ? ' class="is-active" aria-current="page"' : '';
@@ -783,14 +800,50 @@
             }
             campo.classList.toggle('is-invalid', !campo.checkValidity());
             campo.classList.toggle('is-valid', campo.checkValidity() && !!campo.value);
+            // El lector de pantalla tambien sabe que el campo esta mal (WCAG 3.3.1)
+            if (!campo.checkValidity()) campo.setAttribute('aria-invalid', 'true');
+            else if (!campo.dataset.errorDe) campo.removeAttribute('aria-invalid');
         }, true);
 
         document.addEventListener('input', function (e) {
-            if (e.target.classList && e.target.classList.contains('is-invalid') && e.target.checkValidity()) {
-                e.target.classList.remove('is-invalid');
+            const campo = e.target;
+            if (campo.classList && campo.classList.contains('is-invalid') && campo.checkValidity()) {
+                campo.classList.remove('is-invalid');
+                if (!campo.dataset.errorDe) campo.removeAttribute('aria-invalid');
             }
+            // Un error marcado con UI.marcarCampo se quita apenas la persona corrige
+            if (campo.dataset && campo.dataset.errorDe) UI.desmarcarCampo(campo);
         });
     }
+
+    /** Un error que vino de revisar el formulario queda unido a SU campo: aria-invalid,
+     *  el texto del error como descripcion (aria-describedby) y el borde de error.
+     *  idMensaje: el elemento donde ya se escribio el error. Se quita al escribir. */
+    UI.marcarCampo = function (campo, idMensaje) {
+        if (!campo) return;
+        campo.setAttribute('aria-invalid', 'true');
+        campo.classList.add('is-invalid');
+        if (idMensaje) {
+            const antes = (campo.getAttribute('aria-describedby') || '').split(/\s+/).filter(function (x) { return x && x !== idMensaje; });
+            campo.dataset.describiaAntes = antes.join(' ');
+            campo.setAttribute('aria-describedby', antes.concat(idMensaje).join(' '));
+        }
+        campo.dataset.errorDe = idMensaje || '1';
+    };
+    UI.desmarcarCampo = function (campo) {
+        if (!campo || !campo.dataset.errorDe) return;
+        campo.removeAttribute('aria-invalid');
+        campo.classList.remove('is-invalid');
+        if (campo.dataset.describiaAntes) campo.setAttribute('aria-describedby', campo.dataset.describiaAntes);
+        else campo.removeAttribute('aria-describedby');
+        delete campo.dataset.errorDe;
+        delete campo.dataset.describiaAntes;
+    };
+    /** Quita todas las marcas de error de un formulario (o de un paso). */
+    UI.desmarcarCampos = function (raiz) {
+        if (!raiz) return;
+        raiz.querySelectorAll('[data-error-de]').forEach(UI.desmarcarCampo);
+    };
 
     /* ---------- 8. Anillos de compatibilidad ---------- */
 
@@ -1306,6 +1359,39 @@
         ] }
     ];
 
+    // Con sesion, el pie ya no ofrece "Crear mi perfil" ni "Iniciar sesion": lleva a lo
+    // de la cuenta (revision 2026-11-13). La columna "SkillMatch" es la misma para todos.
+    const PIE_PERSONA = [
+        { titulo: 'Tu cuenta', enlaces: [
+            ['perfil-usuario.html', 'Mi perfil'],
+            ['oportunidades.html?guardadas=1', 'Vacantes guardadas'],
+            ['hoja-de-vida.html', 'Hoja de vida en PDF'],
+            ['mensajes.html', 'Mensajes']
+        ] },
+        { titulo: 'Explora', enlaces: [
+            ['oportunidades.html', 'Ver vacantes'],
+            ['empresas.html', 'Conocer las empresas'],
+            ['conexiones.html', 'Tu red de contactos']
+        ] }
+    ];
+    const PIE_EMPRESA = [
+        { titulo: 'Tu empresa', enlaces: [
+            ['perfil-empresa.html', 'Mi empresa'],
+            ['perfil-empresa.html#candidatos', 'Postulaciones recibidas'],
+            ['perfil-empresa.html#ofertas', 'Tus vacantes'],
+            ['mensajes.html', 'Mensajes']
+        ] },
+        { titulo: 'Explora', enlaces: [
+            ['oportunidades.html', 'Ver vacantes'],
+            ['empresas.html', 'Otras empresas']
+        ] }
+    ];
+    function columnasDelPie() {
+        const datos = datosSesion();
+        if (!datos) return PIE_COLUMNAS;
+        return (datos.userType === 'empresa' ? PIE_EMPRESA : PIE_PERSONA).concat(PIE_COLUMNAS.slice(-1));
+    }
+
     function construirPie() {
         const pie = document.querySelector('body > footer');
         if (!pie || pie.classList.contains('pie')) return;
@@ -1319,7 +1405,7 @@
                         '<p>La bolsa de empleo de Cartagena para todos los sectores: compara tus habilidades con cada vacante de la ciudad antes de postularte.</p>' +
                     '</div>' +
                     '<nav class="pie-columnas" aria-label="Enlaces del pie de página">' +
-                        PIE_COLUMNAS.map(function (col) {
+                        columnasDelPie().map(function (col) {
                             return '<div><h2 class="pie-titulo">' + col.titulo + '</h2><ul>' +
                                 col.enlaces.map(function (e) { return '<li><a href="' + e[0] + '">' + e[1] + '</a></li>'; }).join('') +
                                 '</ul></div>';
@@ -2297,6 +2383,82 @@
         const primero = raiz.querySelector('.modal-body input, .modal-body textarea, .modal-body select');
         if (primero) primero.focus();
         return { raiz: raiz, cuerpo: raiz.querySelector('.modal-body'), cerrar: cerrar };
+    };
+
+    /** La chispa del match (el naranja del logo, con turquesa y azul): un estallido corto de
+     *  puntos que salen de un elemento. Para los momentos que valen la pena: postularse,
+     *  aceptar a alguien. Solo transform y opacity, ~700 ms, y nada con "reducir movimiento".
+     *  (revision 2026-11-13) */
+    UI.chispa = function (el) {
+        if (!el || reduceMotion || !Element.prototype.animate) return;
+        const r = el.getBoundingClientRect();
+        if (!r.width) return;
+        const capa = document.createElement('div');
+        capa.className = 'chispa-match';
+        capa.setAttribute('aria-hidden', 'true');
+        // La capa sigue al elemento mientras dura (si la lista se reacomoda, la chispa no se queda atras)
+        let siguiendo = true;
+        const seguir = function () {
+            // Si el elemento ya no esta (la lista se volvio a pintar), la chispa termina donde iba
+            if (!el.isConnected) { if (siguiendo) requestAnimationFrame(seguir); return; }
+            const q = el.getBoundingClientRect();
+            capa.style.transform = 'translate(' + (q.left + q.width / 2) + 'px, ' + (q.top + q.height / 2) + 'px)';
+            if (siguiendo) requestAnimationFrame(seguir);
+        };
+        seguir();
+        const colores = ['var(--naranja)', 'var(--naranja)', 'var(--personaje-turquesa, #00B4CC)', '#2F6FE4'];
+        const n = 14;
+        const animaciones = [];
+        for (let i = 0; i < n; i++) {
+            const p = document.createElement('i');
+            const angulo = (i / n) * Math.PI * 2 + Math.random() * .35;
+            const lejos = 46 + Math.random() * 34;
+            const tam = 7 + Math.round(Math.random() * 5);
+            p.style.width = p.style.height = tam + 'px';
+            p.style.background = colores[i % colores.length];
+            capa.appendChild(p);
+            animaciones.push(p.animate([
+                { transform: 'translate(-50%, -50%) scale(.4)', opacity: 1 },
+                { transform: 'translate(calc(-50% + ' + Math.cos(angulo) * lejos + 'px), calc(-50% + ' + Math.sin(angulo) * lejos + 'px)) scale(1)', opacity: 1, offset: .55 },
+                { transform: 'translate(calc(-50% + ' + Math.cos(angulo) * lejos * 1.25 + 'px), calc(-50% + ' + (Math.sin(angulo) * lejos * 1.25 + 10) + 'px)) scale(.2)', opacity: 0 }
+            ], { duration: 640 + Math.random() * 160, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'forwards' }));
+        }
+        // Un aro que se abre, como el anillo de compatibilidad
+        const aro = document.createElement('b');
+        capa.appendChild(aro);
+        animaciones.push(aro.animate([{ transform: 'translate(-50%, -50%) scale(.3)', opacity: .9 }, { transform: 'translate(-50%, -50%) scale(1.6)', opacity: 0 }],
+            { duration: 560, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'forwards' }));
+        document.body.appendChild(capa);
+        // Se quita cuando termina la ultima pieza (no con un reloj aparte)
+        const quitar = function () { siguiendo = false; capa.remove(); };
+        Promise.all(animaciones.map(function (a) { return a.finished; })).then(quitar, quitar);
+    };
+
+    /** Algo pide sesion (postularse, guardar): en lugar de mandar sola a la persona al
+     *  login a los 1,2 s, se le pregunta con dos caminos, y los dos recuerdan a donde
+     *  volver (?volver=, ver api-config.js): al entrar o al terminar el registro sigue
+     *  donde iba. opciones: { titulo, texto, volver, tipo: 'empresa' } */
+    UI.pedirCuenta = function (opciones) {
+        const volver = opciones.volver;
+        const conVuelta = function (pagina) {
+            if (typeof direccionDeEntrada === 'function') return direccionDeEntrada(pagina, volver);
+            return pagina;
+        };
+        const registro = opciones.tipo === 'empresa' ? 'registro-empresa.html' : 'registro-usuario.html';
+        const v = UI.ventana({
+            id: 'ventanaPedirCuenta',
+            titulo: opciones.titulo || 'Entra para seguir',
+            icono: 'user',
+            cuerpo:
+                '<p class="confirmar-texto">' + escaparHtml(opciones.texto || '') + '</p>' +
+                '<div class="modal-actions">' +
+                  '<a class="btn-secondary-modal" href="' + escaparHtml(conVuelta(registro)) + '">' +
+                    escaparHtml(opciones.tipo === 'empresa' ? 'Crear cuenta de empresa' : 'Crear mi perfil') + '</a>' +
+                  '<a class="btn-primary-modal" href="' + escaparHtml(conVuelta('login.html')) + '" data-entrar>Entrar</a>' +
+                '</div>'
+        });
+        v.cuerpo.querySelector('[data-entrar]').focus();
+        return v;
     };
 
     /** Pregunta de la marca en lugar de confirm() del navegador. Devuelve una
@@ -3338,11 +3500,25 @@
         window.addEventListener('pageshow', function () { cerrar(false); });
     }
 
+    /* ---------- 30. Lo que no se ve no se mueve (revision 2026-11-13) ----------
+     * Los brillos que se mueven lento detras de la portada azul, del cierre y del pie
+     * (mesh-drift, las olas) son animaciones infinitas. Medido en Edge: quieta en el pie,
+     * la portada seguia moviendo los de arriba y gastaba ~0,9 s de trabajo cada 2 s.
+     * Ahora cada seccion pausa los suyos mientras no esta en pantalla (app.css seccion 60). */
+    function pausarFueraDeVista() {
+        if (!('IntersectionObserver' in window)) return;
+        const observador = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (e) { e.target.classList.toggle('fuera-de-vista', !e.isIntersecting); });
+        }, { rootMargin: '120px 0px' });
+        document.querySelectorAll('.hero, .cta-final, footer.pie, .panel-inicio').forEach(function (s) { observador.observe(s); });
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
         avisoServidorDormido();
         construirPie();
+        pausarFueraDeVista();
         registrarApp();
         botonInstalar();
         hydrateIcons(document);

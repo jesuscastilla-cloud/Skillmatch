@@ -118,7 +118,7 @@ async function iniciarHoja() {
     if (!hoja) return;
     const sesion = sesionHoja();
     if (!sesion) {
-        window.location.href = 'login.html';
+        irAlLogin();
         return;
     }
     const pedida = new URLSearchParams(window.location.search).get('id');

@@ -185,6 +185,43 @@ function isAuthenticated() {
     return haySesion();
 }
 
+/* ---------- Volver a donde ibas despues de entrar ----------
+ * Antes, quien tocaba "Postularme" sin sesion terminaba en su perfil despues de
+ * entrar y tenia que buscar la vacante otra vez. Ahora el login lleva en la
+ * direccion a donde volver: login.html?volver=oportunidades.html%3FjobId%3D...
+ * Solo se acepta una pagina de este mismo sitio ("nombre.html" con su consulta):
+ * asi nadie puede armar un enlace que, despues de entrar, mande a otro sitio. */
+const PAGINAS_SIN_VUELTA = /^(login|login-usuario|login-empresa|registro-usuario|registro-empresa|seleccionar-registro|recuperar|sin-conexion)\.html/i;
+
+function destinoSeguro(valor) {
+    const v = String(valor || '').trim();
+    if (!/^[a-z0-9-]+\.html(\?[^#\s<>"']*)?$/i.test(v)) return '';
+    return PAGINAS_SIN_VUELTA.test(v) ? '' : v;
+}
+
+/** La pagina actual con su consulta (sin el #): "oportunidades.html?jobId=7" */
+function paginaActualConConsulta() {
+    return (window.location.pathname.split('/').pop() || 'index.html') + window.location.search;
+}
+
+/** login.html (o el registro) con ?volver=...; volver por defecto = esta pagina. extra: 'tipo=empresa' */
+function direccionDeEntrada(pagina, volver, extra) {
+    const p = new URLSearchParams(extra || '');
+    const d = destinoSeguro(volver === undefined ? paginaActualConConsulta() : volver);
+    if (d && d !== 'index.html') p.set('volver', d);
+    const q = p.toString();
+    return (pagina || 'login.html') + (q ? '?' + q : '');
+}
+
+function irAlLogin(volver, extra) {
+    window.location.href = direccionDeEntrada('login.html', volver, extra);
+}
+
+/** El ?volver= que trae esta pagina, ya revisado ('' si no hay o no es del sitio). */
+function destinoPedido() {
+    return destinoSeguro(new URLSearchParams(window.location.search).get('volver'));
+}
+
 /**
  * Texto del servidor dentro de HTML. Lo que escribe una persona (un mensaje,
  * su nombre, el titulo de una vacante) puede traer "<script>" o un <img onerror>:
@@ -342,7 +379,7 @@ async function fetchWithAuth(url, options = {}) {
         limpiarSesion();
         const path = window.location.pathname;
         if (!/index\.html|login|registro|seleccionar-registro/.test(path)) {
-            window.location.href = 'login.html';
+            irAlLogin();
         }
     }
 
