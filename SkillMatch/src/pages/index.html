@@ -27,6 +27,11 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="../assets/css/app.css">
     <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');document.documentElement.style.setProperty('--reloj',Date.now()%864e5+'ms');addEventListener('pagereveal',function(e){var v=e.viewTransition,d;try{d=JSON.parse(sessionStorage.getItem('skillmatch_deslizar'));sessionStorage.removeItem('skillmatch_deslizar');}catch(x){}if(d&&d.a===location.pathname&&Date.now()-d.t<15000){if(v&&v.types)v.types.add('ir-'+d.dir);var h=document.documentElement,c='entra-'+d.dir;h.classList.add(c);setTimeout(function(){h.classList.remove(c);},1400);}});})();</script>
+    <!-- La isla de la barra se abre (index.js y app.css, seccion 49): solo cuando la portada es la
+         primera pagina que se abre en esta pestana (no al recargar ni al volver desde otra pagina
+         del sitio) y sin "reducir movimiento". Se decide aqui para que la barra salga ya pequena
+         desde el primer cuadro. Si index.js fallara, a los 3 s la barra se muestra igual -->
+    <script>(function(){var h=document.documentElement;try{if(sessionStorage.getItem('skillmatch_isla_vista'))return;sessionStorage.setItem('skillmatch_isla_vista','1');if(matchMedia('(prefers-reduced-motion: reduce)').matches&&localStorage.getItem('skillmatch_animar')!=='1')return;if(document.referrer&&new URL(document.referrer).origin===location.origin)return;}catch(e){return;}h.classList.add('isla-intro');setTimeout(function(){h.classList.remove('isla-intro');},3000);})();</script>
 </head>
 
 <body class="pagina-vidrio">
@@ -43,7 +48,6 @@
                 <ul class="nav-links nav-principales">
                     <li><a href="#main" class="active-nav" aria-current="page">Inicio</a></li>
                     <li><a href="oportunidades.html">Vacantes</a></li>
-                    <li><a href="#como-funciona">Cómo funciona</a></li>
                     <li><a href="empresas.html">Empresas</a></li>
                 </ul>
             </div>
@@ -59,8 +63,6 @@
     <section class="panel-inicio" id="panelInicio" hidden aria-labelledby="panelSaludo"></section>
 
     <section class="hero" id="main">
-        <!-- Profundidad de la portada (decorativo): estrellas en dos planos -->
-        <div class="hero-estrellas" aria-hidden="true"></div>
         <div class="container">
             <div class="hero-grid">
                 <div class="hero-copy">
@@ -96,6 +98,10 @@
                             <span class="stat-number" data-stat="users">—</span>
                             <span class="stat-label">perfiles registrados</span>
                         </div>
+                        <div>
+                            <span class="stat-number" data-stat="applications">—</span>
+                            <span class="stat-label">postulaciones enviadas</span>
+                        </div>
                     </div>
                 </div>
 
@@ -114,8 +120,14 @@
     </section>
 
     
-    <section class="search-section">
+    <!-- Encuentra tu vacante: el buscador, sus resultados y "Vacantes cerca de ti" van juntos (antes los
+         separaban las cifras, "Como funciona" y "Por que SkillMatch"). index.js arma cada parte al bajar -->
+    <section class="search-section" aria-labelledby="encuentra-titulo">
         <div class="container">
+            <div class="section-header-center">
+                <h2 id="encuentra-titulo">Encuentra tu vacante</h2>
+                <p>Busca por cargo, habilidad o empresa, o mira las que están más cerca de ti.</p>
+            </div>
             <div class="search-box">
                 <input type="text" placeholder="Busca por cargo, habilidad o empresa..." class="search-input" aria-label="Buscar vacantes por cargo, habilidad o empresa">
                 <button class="search-btn"><i data-ico="search"></i> Buscar</button>
@@ -220,27 +232,68 @@
         </div>
     </section>
 
-    <!-- ESTADÍSTICAS IMPACTANTES -->
-    <section class="impact-stats">
+    <!-- Vacantes cerca de ti (vacantes-cerca.js): las vacantes abiertas mas cercanas a la persona, en lugar
+         de las fotos y el mapa de Cartagena. La ubicacion se pide solo al tocar "Usar mi ubicacion" y no sale
+         del navegador; sin ella se usa la ciudad elegida, la del perfil o Cartagena. Las empresas no la ven -->
+    <section class="cerca-section" id="cerca" aria-labelledby="cerca-titulo">
         <div class="container">
-            <div class="stat-box">
-                <div class="stat-value" id="stat-users">—</div>
-                <div class="stat-label">Personas registradas</div>
+            <div class="section-header-center">
+                <h2 id="cerca-titulo">Vacantes cerca de ti</h2>
+                <p id="cercaFrase" aria-live="polite">Las vacantes abiertas más cercanas, de la más cerca a la más lejos.</p>
             </div>
-            <div class="stat-box">
-                <div class="stat-value" id="stat-companies">—</div>
-                <div class="stat-label">Empresas registradas</div>
+            <div class="cerca-controles">
+                <button type="button" class="btn btn-primary cerca-ubicacion" id="cercaUbicacion" hidden>
+                    <i data-ico="pin"></i> <span>Usar mi ubicación</span>
+                </button>
+                <div class="cerca-ciudad">
+                    <label for="cercaCiudad" class="sr-only">Tu ciudad</label>
+                    <select id="cercaCiudad" class="filter-select" data-lista="buscable" data-icono="pin"
+                            data-placeholder="Tu ciudad" data-vacio="Revisa cómo se escribe o prueba con otra ciudad."></select>
+                </div>
+                <!-- Tu alcance (vacantes-cerca.js): hasta donde se buscan vacantes. El mapa traza el anillo de
+                     ese radio y una ruta hacia cada ciudad con vacantes dentro de el -->
+                <div class="cerca-alcance" id="cercaAlcance" role="radiogroup" aria-labelledby="cercaAlcanceTitulo">
+                    <span class="cerca-alcance-titulo" id="cercaAlcanceTitulo">¿Hasta dónde te mueves?</span>
+                    <button type="button" role="radio" aria-checked="false" data-km="0">Mi ciudad</button>
+                    <button type="button" role="radio" aria-checked="true" data-km="25">25 km</button>
+                    <button type="button" role="radio" aria-checked="false" data-km="50">50 km</button>
+                    <button type="button" role="radio" aria-checked="false" data-km="100">100 km</button>
+                </div>
             </div>
-            <div class="stat-box">
-                <div class="stat-value" id="stat-jobs">—</div>
-                <div class="stat-label">Vacantes publicadas</div>
+            <div class="cerca-cuerpo">
+                <!-- El planeta en 3D (mapa-cerca.js): tu punto, las ciudades con vacantes y las rutas entre
+                     ellas. El dibujo es decorativo (lo mismo ya lo dicen la frase y las tarjetas); sus botones no -->
+                <div class="cerca-mapa" id="cercaMapa">
+                    <div class="cerca-mapa-cabeza" aria-hidden="true">
+                        <div>
+                            <p class="cerca-mapa-titulo">Tu zona</p>
+                            <p class="cerca-mapa-sub">Buscando vacantes cerca…</p>
+                        </div>
+                        <div class="cerca-mapa-guia">
+                            <p class="cerca-mapa-leyenda"><span class="cm-ley cm-ley-tu"></span> Tú <span class="cm-ley cm-ley-vacante"></span> Vacantes</p>
+                            <p class="cm-pista"><span class="cm-pista-mouse">Arrastra el planeta para girarlo</span><span class="cm-pista-dedo">Desliza de lado para girarlo</span></p>
+                        </div>
+                    </div>
+                    <div class="cerca-mapa-lienzo"></div>
+                </div>
+                <div class="cerca-resultados">
+                    <!-- Las ciudades dentro de tu alcance y cuantas vacantes tiene cada una -->
+                    <ul class="cerca-ciudades" id="cercaCiudades" aria-label="Ciudades dentro de tu alcance" hidden></ul>
+                    <div class="cerca-lista" id="cercaCargando"></div>
+                    <ul class="cerca-lista" id="cercaLista" hidden></ul>
+                    <div class="cerca-vacio" id="cercaVacio" hidden></div>
+                </div>
             </div>
-            <div class="stat-box">
-                <div class="stat-value" id="stat-applications">—</div>
-                <div class="stat-label">Postulaciones enviadas</div>
-            </div>
+            <p class="cerca-pie">
+                <a href="oportunidades.html" class="link-view-all">Ver todas las vacantes <i data-ico="arrow" class="ico-sm"></i></a>
+            </p>
+            <!-- Credito de los datos del mapa: la licencia de los limites municipales (CC BY 4.0) lo pide -->
+            <p class="cerca-credito">Mapa: Natural Earth. Límites municipales: DANE, Marco Geoestadístico Nacional, vía
+                <a href="https://www.geoboundaries.org" rel="noopener" target="_blank">geoBoundaries</a> (CC BY 4.0).
+                Distancias en línea recta.</p>
         </div>
     </section>
+
 
     <!-- Como funciona: la rueda de 4 pasos. rueda-pasos.js arma el aro dentro de #cfRueda;
          al elegir una pieza la rueda gira y se muestra ese paso. Sin JavaScript se leen los 4 pasos. -->
@@ -330,99 +383,18 @@
         </div>
     </section>
 
-    <section class="benefits-section" id="beneficios">
-        <div class="container">
-            <div class="why-header">
-                <h2>¿Por qué SkillMatch?</h2>
-                <p>Una bolsa de empleo hecha para la ciudad: vacantes reales, personas de aquí y procesos simples.</p>
-            </div>
-            <div class="why-grid">
-                <div class="benefit-item">
-                    <div class="benefit-badge"><i data-ico="target"></i></div>
-                    <h3>Compatibilidad clara</h3>
-                    <ul>
-                        <li>Ves qué tanto encajas en cada vacante</li>
-                        <li>Sabes qué habilidades te faltan</li>
-                        <li>Vacantes ordenadas para ti</li>
-                    </ul>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-badge"><i data-ico="globe"></i></div>
-                    <h3>Hecho para Cartagena</h3>
-                    <ul>
-                        <li>Empresas de tu ciudad y la región</li>
-                        <li>Todos los sectores y oficios</li>
-                        <li>Más visibilidad para tu perfil</li>
-                    </ul>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-badge"><i data-ico="settings"></i></div>
-                    <h3>Proceso simple</h3>
-                    <ul>
-                        <li>Postularte toma un minuto</li>
-                        <li>Sigues el estado de cada postulación</li>
-                        <li>Hablas con las empresas por mensajes</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Vacantes cerca de ti (vacantes-cerca.js): las vacantes abiertas mas cercanas a la persona, en lugar
-         de las fotos y el mapa de Cartagena. La ubicacion se pide solo al tocar "Usar mi ubicacion" y no sale
-         del navegador; sin ella se usa la ciudad elegida, la del perfil o Cartagena. Las empresas no la ven -->
-    <section class="cerca-section" id="cerca" aria-labelledby="cerca-titulo">
-        <div class="container">
-            <div class="section-header-center">
-                <h2 id="cerca-titulo">Vacantes cerca de ti</h2>
-                <p id="cercaFrase" aria-live="polite">Las vacantes abiertas más cercanas, de la más cerca a la más lejos.</p>
-            </div>
-            <div class="cerca-controles">
-                <button type="button" class="btn btn-primary cerca-ubicacion" id="cercaUbicacion" hidden>
-                    <i data-ico="pin"></i> <span>Usar mi ubicación</span>
-                </button>
-                <div class="cerca-ciudad">
-                    <label for="cercaCiudad" class="sr-only">Tu ciudad</label>
-                    <select id="cercaCiudad" class="filter-select" data-lista="buscable" data-icono="pin"
-                            data-placeholder="Tu ciudad" data-vacio="Revisa cómo se escribe o prueba con otra ciudad."></select>
-                </div>
-            </div>
-            <div class="cerca-cuerpo">
-                <!-- El planeta en 3D (mapa-cerca.js): tu punto, las ciudades con vacantes y las rutas entre
-                     ellas. El dibujo es decorativo (lo mismo ya lo dicen la frase y las tarjetas); sus botones no -->
-                <div class="cerca-mapa" id="cercaMapa">
-                    <div class="cerca-mapa-cabeza" aria-hidden="true">
-                        <div>
-                            <p class="cerca-mapa-titulo">Tu zona</p>
-                            <p class="cerca-mapa-sub">Buscando vacantes cerca…</p>
-                        </div>
-                        <div class="cerca-mapa-guia">
-                            <p class="cerca-mapa-leyenda"><span class="cm-ley cm-ley-tu"></span> Tú <span class="cm-ley cm-ley-vacante"></span> Vacantes</p>
-                            <p class="cm-pista"><span class="cm-pista-mouse">Arrastra el planeta para girarlo</span><span class="cm-pista-dedo">Desliza de lado para girarlo</span></p>
-                        </div>
-                    </div>
-                    <div class="cerca-mapa-lienzo"></div>
-                </div>
-                <div class="cerca-resultados">
-                    <div class="cerca-lista" id="cercaCargando"></div>
-                    <ul class="cerca-lista" id="cercaLista" hidden></ul>
-                    <div class="cerca-vacio" id="cercaVacio" hidden></div>
-                </div>
-            </div>
-            <p class="cerca-pie">
-                <a href="oportunidades.html" class="link-view-all">Ver todas las vacantes <i data-ico="arrow" class="ico-sm"></i></a>
-            </p>
-        </div>
-    </section>
 
-    <section class="usuarios-empresas" id="usuarios-empresas">
-        <div class="container">
-            <div class="section-header-center">
-                <h2>Elige cómo quieres usar SkillMatch</h2>
-                <p>Si buscas trabajo, armas tu perfil y te postulas. Si eres empresa, publicas vacantes y encuentras a quién contratar.</p>
-            </div>
 
+    <!-- Dos caminos: la llamada final y "Elige como quieres usar SkillMatch" eran la misma decision, una tras
+         otra. Ahora es un solo cierre: persona a la izquierda, empresa a la derecha (index.js las junta al bajar) -->
+    <section class="cta-final" id="usuarios-empresas" aria-labelledby="cta-final-titulo">
+        <div class="container">
+            <h2 id="cta-final-titulo">Tu próximo paso en Cartagena empieza hoy</h2>
+            <p>Elige cómo quieres usar SkillMatch: para encontrar trabajo o para encontrar a quién contratar.</p>
             <div class="pathways">
+                <!-- La chispa del match: donde se encuentran las dos tarjetas (index.js la enciende) -->
+                <span class="caminos-chispa" aria-hidden="true"></span>
                 <div class="pathway-card usuario">
                     <div class="pathway-header">
                         <div class="pathway-icon"><i data-ico="user"></i></div>
@@ -436,7 +408,7 @@
                         <li><i data-ico="check"></i> Vacantes ordenadas según tus habilidades</li>
                         <li><i data-ico="check"></i> Seguimiento de tus postulaciones</li>
                     </ul>
-                    <a href="registro-usuario.html" class="btn btn-primary">Crear mi perfil <i data-ico="arrow"></i></a>
+                    <a href="registro-usuario.html" class="btn btn-accent">Crear mi perfil <i data-ico="arrow"></i></a>
                 </div>
 
                 <div class="pathway-card empresa">
@@ -452,20 +424,8 @@
                         <li><i data-ico="check"></i> Postulaciones con el perfil de cada candidato</li>
                         <li><i data-ico="check"></i> Gestión simple de ofertas y candidatos</li>
                     </ul>
-                    <a href="login.html?tipo=empresa" class="btn btn-primary">Publicar mis vacantes <i data-ico="arrow"></i></a>
+                    <a href="login.html?tipo=empresa" class="btn btn-secondary">Publicar mis vacantes <i data-ico="arrow"></i></a>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Llamada final (Fase 2): franja oscura que continua en el pie de pagina -->
-    <section class="cta-final" aria-labelledby="cta-final-titulo">
-        <div class="container">
-            <h2 id="cta-final-titulo">Tu próximo paso en Cartagena empieza hoy</h2>
-            <p>Crea tu perfil, descubre qué tan cerca estás de cada vacante y postúlate a las que más te convienen.</p>
-            <div class="cta-final-acciones">
-                <a href="seleccionar-registro.html" class="btn btn-accent">Crear mi perfil</a>
-                <a href="login.html?tipo=empresa" class="btn btn-secondary">Soy empresa</a>
             </div>
         </div>
     </section>

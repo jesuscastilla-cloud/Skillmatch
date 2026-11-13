@@ -16,7 +16,10 @@ test('el HTML de las páginas públicas trae escrito el menú de visitante', asy
 test('un visitante ve Iniciar sesión y Unirse ahora', async ({ page, context, api }) => {
     await entrarComo(context, 'visitante');
     await page.goto('oportunidades.html');
-    expect(await enlacesDelMenu(page)).toEqual(expect.arrayContaining(['Inicio', 'Vacantes', 'Cómo funciona', 'Empresas', 'Iniciar sesión', 'Unirse ahora']));
+    const menu = await enlacesDelMenu(page);
+    expect(menu).toEqual(expect.arrayContaining(['Inicio', 'Vacantes', 'Empresas', 'Iniciar sesión', 'Unirse ahora']));
+    // "Cómo funciona" salió del menú: la sección se ve al bajar por la portada
+    expect(menu).not.toContain('Cómo funciona');
 });
 
 test('una persona ve Conexiones, Mensajes, Mi perfil y Cerrar sesión', async ({ page, context, api }) => {

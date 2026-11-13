@@ -11,6 +11,13 @@
  *   3. La ciudad de su perfil, si tiene sesion.
  *   4. Cartagena.
  *
+ * Tu alcance (2026-11-12): "¿Hasta donde te mueves?" (tu ciudad, 25, 50 o
+ * 100 km). Se piden las vacantes de cada ciudad dentro de ese radio, con su
+ * total real, y las tarjetas se reparten UNA POR CIUDAD, de la mas cerca a la
+ * mas lejos: asi cada tarjeta tiene su ruta en el mapa (antes las 4 solian ser
+ * de tu misma ciudad y el mapa no decia nada). Las distancias son en linea
+ * recta: las vacantes solo dicen su ciudad, no su direccion.
+ *
  * La ubicacion se pide solo al tocar "Usar mi ubicacion": si el
  * navegador pregunta apenas se entra, mucha gente bloquea sin saber
  * para que es, y despues la pagina ya no puede volver a preguntar.
@@ -29,6 +36,8 @@
     const POR_RONDA = 8;    // ciudades que se consultan a la vez
     const RONDAS = 3;       // hasta 24 ciudades: mas lejos ya no es "cerca"
     const RECUERDO = 'skillmatch_cerca';
+    const RECUERDO_KM = 'skillmatch_cerca_km';
+    const ALCANCES = [0, 25, 50, 100];   // km; 0 = solo tu ciudad
 
     const boton = document.getElementById('cercaUbicacion');
     const selector = document.getElementById('cercaCiudad');
@@ -36,6 +45,8 @@
     const cargando = document.getElementById('cercaCargando');
     const lista = document.getElementById('cercaLista');
     const vacio = document.getElementById('cercaVacio');
+    const grupoAlcance = document.getElementById('cercaAlcance');
+    const listaCiudades = document.getElementById('cercaCiudades');
 
     const leerLocal = clave => { try { return localStorage.getItem(clave); } catch (e) { return null; } };
     let datos = null;
@@ -63,6 +74,12 @@
     function recordar(valor) { try { localStorage.setItem(RECUERDO, JSON.stringify(valor)); } catch (e) { /* sin almacenamiento */ } }
     function recuerdo() { try { return JSON.parse(leerLocal(RECUERDO) || 'null'); } catch (e) { return null; } }
 
+    let alcance = (() => {
+        const guardado = leerLocal(RECUERDO_KM);
+        return guardado !== null && ALCANCES.includes(Number(guardado)) ? Number(guardado) : 25;
+    })();
+    let origenActual = null;
+
     function marcarCiudad(ciudad) {
         desdeCodigo = true;
         selector.value = ciudad.clave;
@@ -79,33 +96,75 @@
         const pagina = await respuesta.json();
         const contenido = Array.isArray(pagina) ? pagina : (pagina.content || []);
         // El servidor busca el nombre dentro del texto: aqui se confirma que de verdad sea esa ciudad
-        return contenido.filter(v => v && v.id && C.esDe(ciudad, v.location));
+        const vacantes = contenido.filter(v => v && v.id && C.esDe(ciudad, v.location));
+        // El total de la ciudad: el del servidor, salvo que haya colado vacantes de otra ciudad con un
+        // nombre parecido (entonces solo se cuentan las confirmadas)
+        const total = vacantes.length === contenido.length && typeof pagina.totalElements === 'number'
+            ? Math.max(pagina.totalElements, vacantes.length) : vacantes.length;
+        return { vacantes: vacantes, total: total };
     }
+    const kmHasta = (origen, c) => C.distanciaKm(origen.lat, origen.lon, c.lat, c.lon);
 
+    /**
+     * Las ciudades dentro de tu alcance (tu ciudad siempre primero), cada una con su total y sus
+     * primeras vacantes. Devuelve { ciudades, encontradas, fuera }: encontradas son las tarjetas, una por
+     * ciudad en orden de cercania (si hay menos de 4 ciudades, se completa con las mas cercanas).
+     * Si dentro de tu alcance no hay nada, se buscan las mas cercanas que existan, esten donde esten
+     * (fuera = true): asi alguien en Madrid, o en un pueblo sin vacantes, igual ve a donde ir.
+     */
     async function buscar(origen) {
-        const ciudades = C.porCercania(origen.lat, origen.lon);
-        const vistas = new Set();
-        const encontradas = [];
-        let pedidas = 0, fallidas = 0;
-        for (let ronda = 0; ronda < RONDAS && encontradas.length < MOSTRAR; ronda++) {
-            const grupo = ciudades.slice(ronda * POR_RONDA, (ronda + 1) * POR_RONDA);
+        const cerca = alcance === 0 ? [] : C.porCercania(origen.lat, origen.lon)
+            .filter(c => c.clave !== origen.ciudad.clave && kmHasta(origen, c) <= alcance);
+        const candidatas = [origen.ciudad].concat(cerca).slice(0, POR_RONDA * RONDAS);
+        const ciudades = [];
+        let fallidas = 0;
+        for (let i = 0; i < candidatas.length; i += POR_RONDA) {
+            const grupo = candidatas.slice(i, i + POR_RONDA);
             // Una ciudad que falla no tumba a las demas
-            const respuestas = await Promise.all(grupo.map(c => vacantesDe(c).catch(() => { fallidas++; return []; })));
-            pedidas += grupo.length;
-            // Las respuestas vienen en el orden del grupo: de la ciudad mas cercana a la mas lejana
-            respuestas.forEach((vacantes, i) => vacantes.forEach(v => {
-                if (vistas.has(v.id)) return;
-                vistas.add(v.id);
-                encontradas.push({ vacante: v, ciudad: grupo[i] });
-            }));
+            const respuestas = await Promise.all(grupo.map(c => vacantesDe(c).catch(() => { fallidas++; return null; })));
+            respuestas.forEach((r, j) => {
+                if (r && r.vacantes.length) ciudades.push({ ciudad: grupo[j], km: kmHasta(origen, grupo[j]), total: r.total, vacantes: r.vacantes });
+            });
         }
-        if (!encontradas.length && fallidas === pedidas) throw new Error('No respondió ninguna ciudad');
-        return encontradas.slice(0, MOSTRAR);
+        if (!ciudades.length && fallidas === candidatas.length) throw new Error('No respondió ninguna ciudad');
+        let fuera = false;
+        if (!ciudades.length) {
+            // Nada dentro de tu alcance: las mas cercanas que haya, por rondas, de cerca a lejos
+            fuera = true;
+            const pedidas = new Set(candidatas.map(c => c.clave));
+            const todas = C.porCercania(origen.lat, origen.lon).filter(c => !pedidas.has(c.clave));
+            let encontradasFuera = 0;
+            for (let ronda = 0; ronda < RONDAS && encontradasFuera < MOSTRAR; ronda++) {
+                const grupo = todas.slice(ronda * POR_RONDA, (ronda + 1) * POR_RONDA);
+                if (!grupo.length) break;
+                const respuestas = await Promise.all(grupo.map(c => vacantesDe(c).catch(() => null)));
+                respuestas.forEach((r, j) => {
+                    if (!r || !r.vacantes.length) return;
+                    ciudades.push({ ciudad: grupo[j], km: kmHasta(origen, grupo[j]), total: r.total, vacantes: r.vacantes });
+                    encontradasFuera += r.vacantes.length;
+                });
+            }
+        }
+        const vistas = new Set(), encontradas = [];
+        for (let ronda = 0; ronda < MOSTRAR && encontradas.length < MOSTRAR; ronda++) {
+            ciudades.forEach(c => {
+                const v = c.vacantes[ronda];
+                if (!v || vistas.has(v.id) || encontradas.length >= MOSTRAR) return;
+                vistas.add(v.id);
+                encontradas.push({ vacante: v, ciudad: c.ciudad });
+            });
+        }
+        // Las tarjetas, de la mas cerca a la mas lejos
+        encontradas.sort((x, y) => kmHasta(origen, x.ciudad) - kmHasta(origen, y.ciudad));
+        return { ciudades: ciudades, encontradas: encontradas, fuera: fuera };
     }
 
     // ---- Pintar ----
     function nombreLugar(origen) {
-        return origen.porUbicacion ? `tu ubicación (cerca de ${origen.ciudad.corto})` : origen.ciudad.corto;
+        // "cerca de" solo si de verdad esta cerca: desde Madrid, la ciudad mas cercana de la lista queda a
+        // miles de km y la frase decia "tu ubicacion (cerca de Puerto Carreno)"
+        if (!origen.porUbicacion) return origen.ciudad.corto;
+        return kmHasta(origen, origen.ciudad) <= 50 ? `tu ubicación (cerca de ${origen.ciudad.corto})` : 'tu ubicación';
     }
 
     // i: su numero en la lista; el mapa (mapa-cerca.js) lo usa para iluminar su punto
@@ -134,39 +193,73 @@
 
     function mostrarCargando(origen) {
         if (mapa()) mapa().cargando(origen);
-        frase.textContent = `Buscando las vacantes más cercanas a ${nombreLugar(origen)}…`;
+        frase.textContent = 'Buscando vacantes ' + alcanceTexto() + ' de ' + nombreLugar(origen) + '…';
         lista.hidden = true;
         vacio.hidden = true;
         cargando.hidden = false;
         if (window.SkillMatchUI) SkillMatchUI.skeletons(cargando, 3);
     }
 
-    function mostrarResultado(encontradas, origen) {
+    const alcanceTexto = () => alcance === 0 ? 'en tu ciudad' : 'a ' + alcance + ' km o menos';
+
+    // Las ciudades dentro de tu alcance, con cuantas vacantes tiene cada una. Al pasar el mouse por una,
+    // el mapa ilumina su ruta (la de su tarjeta)
+    function pintarCiudades(ciudades, encontradas, origen) {
+        if (!listaCiudades) return;
+        if (ciudades.length < 2) { listaCiudades.hidden = true; listaCiudades.innerHTML = ''; return; }
+        listaCiudades.innerHTML = ciudades.map(c => {
+            const i = encontradas.findIndex(e => e.ciudad.clave === c.ciudad.clave);
+            const aqui = c.ciudad.clave === origen.ciudad.clave;
+            const km = Math.max(1, Math.round(c.km));
+            return '<li class="cerca-ciudad-fila' + (aqui ? ' es-aqui' : '') + '"' + (i >= 0 ? ' data-i="' + i + '"' : '') + '>' +
+                '<span class="cerca-ciudad-nombre">' + escaparHtml(c.ciudad.corto) + '</span>' +
+                '<span class="cerca-ciudad-km">' + (aqui ? 'tu ciudad' : km + ' km') + '</span>' +
+                '<span class="cerca-ciudad-total">' + c.total.toLocaleString('es-CO') + '</span></li>';
+        }).join('');
+        listaCiudades.hidden = false;
+    }
+
+    function mostrarResultado(resultado, origen) {
+        const encontradas = resultado.encontradas, ciudades = resultado.ciudades;
         cargando.hidden = true;
         cargando.innerHTML = '';
         cargando.removeAttribute('aria-busy');
         const lugar = nombreLugar(origen);
         if (!encontradas.length) {
             if (mapa()) mapa().vacio(origen);
-            frase.textContent = `Todavía no hay vacantes abiertas cerca de ${lugar}.`;
+            pintarCiudades([], [], origen);
+            // Ni dentro de tu alcance ni en las ciudades mas cercanas
+            frase.textContent = 'Todavía no hay vacantes abiertas cerca de ' + lugar + '.';
             lista.hidden = true;
             lista.innerHTML = '';
             vacio.innerHTML = `<div class="estado-vacio">
                     <span class="estado-vacio-icono"><i data-ico="pin"></i></span>
                     <div>
                         <p class="estado-vacio-titulo">Nada cerca por ahora</p>
-                        <p class="estado-vacio-texto">Prueba con otra ciudad en la lista o mira todas las vacantes abiertas.</p>
+                        <p class="estado-vacio-texto">Amplía hasta dónde te mueves, prueba con otra ciudad o mira todas las vacantes abiertas.</p>
                     </div>
                 </div>`;
             vacio.hidden = false;
             return;
         }
-        const n = encontradas.length;
-        frase.textContent = `${n === 1 ? 'La vacante abierta más cercana' : `Las ${n} vacantes abiertas más cercanas`} a ${lugar}, de la más cerca a la más lejos.`;
+        const total = ciudades.reduce((t, c) => t + c.total, 0);
+        const vacantes = total === 1 ? '1 vacante abierta' : total.toLocaleString('es-CO') + ' vacantes abiertas';
+        if (resultado.fuera) {
+            frase.textContent = (alcance === 0 ? 'No hay vacantes abiertas en ' + lugar : 'No hay vacantes abiertas ' + alcanceTexto() + ' de ' + lugar) +
+                '. Estas son las más cercanas, de la más cerca a la más lejos (en línea recta).';
+        } else {
+            frase.textContent = alcance === 0
+                ? vacantes + ' en ' + lugar + '. Aquí tienes las más recientes.'
+                : vacantes + ' ' + alcanceTexto() + ' de ' + lugar + ', en ' + (ciudades.length === 1 ? '1 ciudad' : ciudades.length + ' ciudades') +
+                  '. Una por ciudad, de la más cerca a la más lejos (en línea recta).';
+        }
         lista.innerHTML = encontradas.map((e, i) => tarjeta(e, origen, i)).join('');
         lista.hidden = false;
         vacio.hidden = true;
-        if (mapa()) mapa().mostrar(origen, encontradas);
+        pintarCiudades(ciudades, encontradas, origen);
+        const totales = {};
+        ciudades.forEach(c => { totales[c.ciudad.clave] = c.total; });
+        if (mapa()) mapa().mostrar(origen, encontradas, { radio: alcance, totales: totales });
     }
 
     function mostrarError(origen) {
@@ -176,6 +269,7 @@
         cargando.removeAttribute('aria-busy');
         lista.hidden = true;
         lista.innerHTML = '';
+        pintarCiudades([], [], origen);
         frase.textContent = 'No pudimos cargar las vacantes cercanas.';
         vacio.innerHTML = `<div class="estado-vacio">
                 <span class="estado-vacio-icono"><i data-ico="alert"></i></span>
@@ -191,11 +285,12 @@
 
     async function cargarDesde(origen) {
         const miTurno = ++turno;
+        origenActual = origen;
         marcarCiudad(origen.ciudad);
         mostrarCargando(origen);
         try {
-            const encontradas = await buscar(origen);
-            if (miTurno === turno) mostrarResultado(encontradas, origen);
+            const resultado = await buscar(origen);
+            if (miTurno === turno) mostrarResultado(resultado, origen);
         } catch (e) {
             if (miTurno === turno) mostrarError(origen);
         }
@@ -245,7 +340,48 @@
         catch (e) { return false; }
     }
 
+    // ---- ¿Hasta donde te mueves? (un grupo de opciones: flechas para moverse, como las pestanas) ----
+    function prepararAlcance() {
+        if (!grupoAlcance) return;
+        const opciones = Array.from(grupoAlcance.querySelectorAll('[data-km]'));
+        const marcar = () => opciones.forEach(o => {
+            const si = +o.dataset.km === alcance;
+            o.setAttribute('aria-checked', String(si));
+            o.tabIndex = si ? 0 : -1;
+        });
+        const elegir = (o, enfocar) => {
+            if (enfocar) o.focus();
+            if (+o.dataset.km === alcance) return;
+            alcance = +o.dataset.km;
+            try { localStorage.setItem(RECUERDO_KM, String(alcance)); } catch (e) { /* sin almacenamiento */ }
+            marcar();
+            if (origenActual) cargarDesde(origenActual);
+        };
+        opciones.forEach(o => o.addEventListener('click', () => elegir(o, false)));
+        grupoAlcance.addEventListener('keydown', e => {
+            const i = opciones.indexOf(document.activeElement);
+            if (i < 0) return;
+            const paso = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+            let destino = null;
+            if (paso) destino = opciones[(i + paso + opciones.length) % opciones.length];
+            else if (e.key === 'Home') destino = opciones[0];
+            else if (e.key === 'End') destino = opciones[opciones.length - 1];
+            if (!destino) return;
+            e.preventDefault();
+            elegir(destino, true);
+        });
+        marcar();
+    }
+
+    // Pasar el mouse por una ciudad de la lista ilumina su ruta en el mapa (y su tarjeta)
+    if (listaCiudades) {
+        const filaDe = el => el && el.closest && el.closest('.cerca-ciudad-fila[data-i]');
+        listaCiudades.addEventListener('pointerover', e => { const f = filaDe(e.target); if (f && mapa() && mapa().resaltar) mapa().resaltar(+f.dataset.i); });
+        listaCiudades.addEventListener('pointerleave', () => { if (mapa() && mapa().resaltar) mapa().resaltar(null); });
+    }
+
     async function iniciar() {
+        prepararAlcance();
         if (puedeUbicar) {
             boton.hidden = false;
             boton.addEventListener('click', () => ubicar(avisarFallo));

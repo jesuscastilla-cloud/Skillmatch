@@ -188,6 +188,61 @@
         });
     }
 
+    /** Barra de arriba (2026-11-12, idea de Luis a partir de torre.ai): cada opcion lleva su icono encima
+     *  del texto, como la barra de pestanas del celular. El icono sale del destino del enlace; el boton
+     *  turquesa ("Unirse ahora") va sin icono. Se agrega despues de sesionEnBarra, que cambia textos y
+     *  enlaces (al cambiar el texto se borraria el icono). */
+    function iconoDeEnlace(a) {
+        if (a.hasAttribute('data-cerrar-sesion')) return 'logout';
+        if (a.classList.contains('btn-register')) return null;
+        const h = (a.getAttribute('href') || '').split('?')[0];
+        if (h === '#main' || /(^|\/)index\.html$/.test(h)) return 'home';
+        if (/oportunidades\.html$/.test(h) || h === '#ofertas') return 'briefcase';
+        if (/conexiones\.html$/.test(h) || h === '#candidatos') return 'users';
+        if (/mensajes\.html$/.test(h)) return 'chat';
+        if (/empresas?\.html$|perfil-empresa\.html$/.test(h)) return 'building';
+        if (/perfil-usuario\.html$|login(-usuario|-empresa)?\.html$/.test(h)) return 'user';
+        if (/#como-funciona$/.test(h)) return 'bulb';
+        return null;
+    }
+    // Los iconos del menu, dibujados igual que los de ICONS pero con sus piezas separadas: asi cada uno hace
+    // su propio gesto al pasar el mouse (app.css, seccion 56): el techo de la casa se levanta y se enciende la
+    // puerta, las ventanas del edificio se encienden una por una, en el globo de mensajes aparecen los tres
+    // puntos de "escribiendo"... Los que no estan aqui usan su dibujo de siempre
+    const ICONOS_MENU = {
+        home: '<path class="nv-casa" d="M5 10.4V19a1.5 1.5 0 0 0 1.5 1.5H9.5v-6h5v6h3a1.5 1.5 0 0 0 1.5-1.5v-8.6"/>' +
+              '<path class="nv-techo" d="m3 11 9-7 9 7"/>' +
+              '<rect class="nv-puerta" x="10.3" y="15.3" width="3.4" height="4.4" rx=".6"/>',
+        briefcase: '<g class="nv-maletin"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 12h18"/>' +
+                   '<path class="nv-asa" d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/></g>',
+        building: '<path d="M4 20V5.5A1.5 1.5 0 0 1 5.5 4h7A1.5 1.5 0 0 1 14 5.5V20M14 10h4.5A1.5 1.5 0 0 1 20 11.5V20M2.5 20h19"/>' +
+                  '<path d="M7 8h4M7 12h4M7 16h4M17 14h0M17 17h0"/>' +
+                  '<path class="nv-luz" style="--i:0" d="M7 16h4"/><path class="nv-luz" style="--i:1" d="M17 17h0"/>' +
+                  '<path class="nv-luz" style="--i:2" d="M7 12h4"/><path class="nv-luz" style="--i:3" d="M17 14h0"/><path class="nv-luz" style="--i:4" d="M7 8h4"/>',
+        users: '<g class="nv-uno"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 19.5a6.5 6.5 0 0 1 13 0"/></g>' +
+               '<g class="nv-otro"><path d="M16.5 5.2a3.2 3.2 0 0 1 0 5.6M18 19.5a6.5 6.5 0 0 0-2.2-4.9"/></g>',
+        chat: '<path class="nv-globo" d="M20 15a2 2 0 0 1-2 2H8l-4 3.5V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9Z"/>' +
+              '<circle class="nv-punto" style="--i:0" cx="8.5" cy="10.5" r="1"/><circle class="nv-punto" style="--i:1" cx="12" cy="10.5" r="1"/>' +
+              '<circle class="nv-punto" style="--i:2" cx="15.5" cy="10.5" r="1"/>',
+        user: '<circle class="nv-cabeza" cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+        logout: '<path d="M14 7V5.5A1.5 1.5 0 0 0 12.5 4h-6A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h6a1.5 1.5 0 0 0 1.5-1.5V17"/>' +
+                '<path class="nv-flecha" d="M10 12h10M17 8.5l3.5 3.5L17 15.5"/>'
+    };
+    function iconoDelMenu(nombre) {
+        if (!ICONOS_MENU[nombre]) return svgIcon(nombre, 'nav-ico');
+        // Sin la clase ico-<nombre>: su gesto es el de la seccion 56, no el saltito comun de la seccion 25d
+        return '<svg class="ico nav-ico nv-' + nombre + '" viewBox="0 0 24 24" aria-hidden="true">' + ICONOS_MENU[nombre] + '</svg>';
+    }
+    function iconosDeLaBarra() {
+        document.querySelectorAll('header .nav-links a').forEach(function (a) {
+            if (a.querySelector('.ico, [data-ico]')) return;
+            const nombre = iconoDeEnlace(a);
+            if (!nombre) return;
+            a.insertAdjacentHTML('afterbegin', iconoDelMenu(nombre));
+            a.classList.add('con-icono');
+        });
+    }
+
     /** Sesion en la barra superior.
      *  - Todo enlace con data-cerrar-sesion cierra la sesion de verdad. Antes,
      *    en Oportunidades y Conexiones "Cerrar sesion" solo llevaba al login y
@@ -231,7 +286,8 @@
                 a.className = clase || '';
                 a.removeAttribute('data-cerrar-sesion');
             };
-            cambiar(conexiones, 'index.html#como-funciona', 'Cómo funciona');
+            // "Cómo funciona" ya no va en el menú (está al bajar en la portada): Conexiones se quita
+            conexiones.parentElement.remove();
             cambiar(principales.querySelector('a[href="mensajes.html"]'), 'empresas.html', 'Empresas');
             cambiar(miPerfil, 'login.html', 'Iniciar sesión', 'btn-login');
             cambiar(document.querySelector('header .nav-links a[data-cerrar-sesion]'), 'seleccionar-registro.html', 'Unirse ahora', 'btn-register');
@@ -247,17 +303,19 @@
             }
         }
         // Paginas publicas (portada, Indicadores, politica...) escritas con la
-        // barra de visitante: con sesion se ve la misma barra del resto del sitio.
-        // Antes una persona veia "Como funciona" y "Empresas" en lugar de
-        // Conexiones y Mensajes (y el numero de mensajes sin leer no salia)
-        const comoFunciona = principales && principales.querySelector('a[href$="#como-funciona"]');
+        // barra de visitante (Inicio, Vacantes, Empresas): con sesion se ve la
+        // misma barra del resto del sitio. Una persona recibe Conexiones antes
+        // de Mensajes; una empresa no usa Conexiones. (Antes "Cómo funciona" se
+        // convertia en Conexiones; ese enlace ya no va en el menu)
         const enlaceEmpresas = principales && principales.querySelector('a[href="empresas.html"]');
-        if (comoFunciona && enlaceEmpresas) {
-            if (datos.userType === 'empresa') {
-                comoFunciona.parentElement.remove();
-            } else {
-                comoFunciona.setAttribute('href', 'conexiones.html');
-                comoFunciona.textContent = 'Conexiones';
+        if (enlaceEmpresas && !principales.querySelector('a[href="mensajes.html"]')) {
+            if (datos.userType !== 'empresa' && !principales.querySelector('a[href="conexiones.html"]')) {
+                const li = document.createElement('li');
+                const enlace = document.createElement('a');
+                enlace.setAttribute('href', 'conexiones.html');
+                enlace.textContent = 'Conexiones';
+                li.appendChild(enlace);
+                enlaceEmpresas.parentElement.before(li);
             }
             enlaceEmpresas.setAttribute('href', 'mensajes.html');
             enlaceEmpresas.textContent = 'Mensajes';
@@ -539,6 +597,8 @@
         if (raiz.matches && raiz.matches(REVELAR)) elementos.push(raiz);
         elementos.forEach(function (el) {
             if (el.dataset.revelado) return;
+            // Las secciones de la portada que se arman a su manera (index.js, "se construye al bajar")
+            if (el.closest('[data-construye]')) return;
             el.dataset.revelado = '1';
             if (observadorEntrada) {
                 el.classList.add('reveal');
@@ -1081,11 +1141,21 @@
         boton.setAttribute('aria-label', 'Buscar vacantes y navegar (' + (ES_MAC ? 'Cmd' : 'Ctrl') + ' + K)');
         // En la barra se ve solo la lupa: el texto de ayuda sale al pasar el mouse
         boton.setAttribute('title', 'Buscar (' + (ES_MAC ? '⌘' : 'Ctrl') + ' + K)');
-        boton.innerHTML = svgIcon('search') + '<span class="cmdk-texto">Buscar</span><kbd class="cmdk-atajo">' + (ES_MAC ? '⌘K' : 'Ctrl K') + '</kbd>';
+        boton.innerHTML = '<span class="cmdk-texto">Buscar vacantes</span>' + svgIcon('search') + '<kbd class="cmdk-atajo">' + (ES_MAC ? '⌘K' : 'Ctrl K') + '</kbd>';
         boton.addEventListener('click', abrirPaleta);
-        const li = document.createElement('li');
-        li.appendChild(boton);
-        toggle.parentElement.parentElement.insertBefore(li, toggle.parentElement);
+        // Al lado del logo, como el buscador de torre.ai: buscar es lo primero que hace quien busca empleo.
+        // (Si la pagina no tiene logo en la barra, va donde iba antes: junto al tema)
+        const logo = document.querySelector('header .nav-left > .logo');
+        if (logo) {
+            const caja = document.createElement('div');
+            caja.className = 'nav-buscar';
+            caja.appendChild(boton);
+            logo.after(caja);
+        } else {
+            const li = document.createElement('li');
+            li.appendChild(boton);
+            toggle.parentElement.parentElement.insertBefore(li, toggle.parentElement);
+        }
     }
 
     /* ---------- 13. Tooltips animados ---------- */
@@ -3077,8 +3147,10 @@
         lista.addEventListener('mouseover', function (e) {
             const a = e.target instanceof Element && e.target.closest('a');
             if (a && lista.contains(a) && a !== sobre) { sobre = a; ubicar(); }
+            // La gota de vidrio (app.css, seccion 56) aparece mientras el mouse esta en el menu
+            if (a && lista.contains(a)) lista.classList.add('con-sobre');
         });
-        lista.addEventListener('mouseleave', function () { sobre = null; ubicar(); });
+        lista.addEventListener('mouseleave', function () { sobre = null; lista.classList.remove('con-sobre'); ubicar(); });
         // Un clic que lleva a una pagina del menu, este en el menu o en cualquier
         // parte ("Ver vacantes" en la portada): la linea se va de una vez hasta
         // ella. Gana el enlace identico ("Como funciona" lleva ancla) y si no,
@@ -3280,6 +3352,7 @@
         sesionEnBarra();
         sinBotonDeEstaPagina();
         marcarNavegacionActiva();
+        iconosDeLaBarra();
         seccionEnMenu();
         lineaDelMenu();
         construirTabbar();

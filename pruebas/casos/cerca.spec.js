@@ -8,13 +8,18 @@ const BOGOTA = { latitude: 4.65, longitude: -74.08 };
 const distancias = page => page.locator('#cercaLista .cerca-tarjeta .cerca-distancia');
 const cargos = page => page.locator('#cercaLista .cerca-tarjeta .cerca-cargo');
 
+// "¿Hasta donde te mueves?": las pruebas del globo como tal (vuelo, arrastre, zoom, pines) usan "Mi ciudad",
+// donde las 4 tarjetas son de tu ciudad, como era el mapa antes de "Tu alcance" (2026-11-12)
+const soloMiCiudad = context => context.addInitScript(() => { try { localStorage.setItem('skillmatch_cerca_km', '0'); } catch (e) { /* sin almacenamiento */ } });
+const alcanceElegido = page => page.locator('#cercaAlcance [aria-checked="true"]');
+
 // Elegir ciudad como lo hace la lista de la marca: cambia el valor del <select> y avisa "change"
 const elegirCiudad = (page, clave) => page.locator('#cercaCiudad').evaluate((select, clave) => {
     select.value = clave;
     select.dispatchEvent(new Event('change', { bubbles: true }));
 }, clave);
 
-test('sin permiso ni sesión salen las más cercanas a Cartagena, y la ubicación no se pide al entrar', async ({ page, context, api }) => {
+test('sin permiso ni sesión sale tu alcance desde Cartagena (25 km), una tarjeta por ciudad, y la ubicación no se pide al entrar', async ({ page, context, api }) => {
     // Se cuenta cada vez que la pagina pide la ubicacion: al entrar debe ser 0
     await context.addInitScript(() => {
         window.__pedidasUbicacion = 0;
@@ -23,9 +28,11 @@ test('sin permiso ni sesión salen las más cercanas a Cartagena, y la ubicació
     });
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
-    await expect(page.locator('#cercaFrase')).toHaveText('Las 4 vacantes abiertas más cercanas a Cartagena, de la más cerca a la más lejos.');
+    await expect(page.locator('#cercaFrase')).toHaveText(/^\d+ vacantes abiertas a 25 km o menos de Cartagena, en 3 ciudades\. Una por ciudad, de la más cerca a la más lejos \(en línea recta\)\.$/);
+    await expect(alcanceElegido(page)).toHaveText('25 km');
     await expect(cargos(page)).toHaveCount(4);
-    await expect(distancias(page).first()).toHaveText('En Cartagena');
+    // Una por ciudad (Turbaco y Arjona tienen una cada una) y se completa con tu ciudad, de cerca a lejos
+    await expect(distancias(page)).toHaveText(['En Cartagena', 'En Cartagena', 'Turbaco · a 10 km', 'Arjona · a 21 km']);
     await expect(page.locator('#cercaUbicacion')).toBeVisible();
     expect(await page.evaluate(() => window.__pedidasUbicacion)).toBe(0);
     // Cada tarjeta lleva a su vacante en Vacantes
@@ -39,7 +46,7 @@ test('con la ubicación en Turbaco: primero Turbaco y después Cartagena a 10 km
     await page.goto('index.html');
     await expect(cargos(page)).toHaveCount(4);
     await page.locator('#cercaUbicacion').click();
-    await expect(page.locator('#cercaFrase')).toHaveText('Las 4 vacantes abiertas más cercanas a tu ubicación (cerca de Turbaco), de la más cerca a la más lejos.');
+    await expect(page.locator('#cercaFrase')).toContainText('a 25 km o menos de tu ubicación (cerca de Turbaco)');
     await expect(distancias(page).first()).toHaveText('En Turbaco');
     await expect(cargos(page).first()).toHaveText('Auxiliar de cocina');
     await expect(distancias(page).nth(1)).toHaveText('Cartagena · a 10 km');
@@ -60,7 +67,7 @@ test('si no da permiso, avisa con amabilidad y se queda con su ciudad', async ({
     await page.locator('#cercaUbicacion').click();
     await expect(page.locator('.toast', { hasText: 'No diste permiso para usar tu ubicación. Elige tu ciudad en la lista.' })).toBeVisible();
     await expect(page.locator('#cercaUbicacion')).toBeEnabled();
-    await expect(page.locator('#cercaFrase')).toContainText('más cercanas a Cartagena');
+    await expect(page.locator('#cercaFrase')).toContainText('a 25 km o menos de Cartagena');
 });
 
 test('en Bogotá dice que todavía no hay vacantes cerca y ofrece verlas todas', async ({ page, context, api }) => {
@@ -79,14 +86,14 @@ test('en Bogotá dice que todavía no hay vacantes cerca y ofrece verlas todas',
 test('con sesión parte de la ciudad del perfil; otra ciudad elegida cambia la lista y se recuerda', async ({ page, context, api }) => {
     await entrarComo(context, 'otra');   // Andres vive en Turbaco
     await page.goto('index.html');
-    await expect(page.locator('#cercaFrase')).toContainText('más cercanas a Turbaco');
+    await expect(page.locator('#cercaFrase')).toContainText('o menos de Turbaco');
     await expect(distancias(page).first()).toHaveText('En Turbaco');
     await elegirCiudad(page, 'arjona');
-    await expect(page.locator('#cercaFrase')).toContainText('más cercanas a Arjona');
+    await expect(page.locator('#cercaFrase')).toContainText('o menos de Arjona');
     await expect(cargos(page).first()).toHaveText('Persona para manejar redes sociales');
     await expect(distancias(page).nth(1)).toHaveText('Turbaco · a 11 km');
     await page.reload();
-    await expect(page.locator('#cercaFrase')).toContainText('más cercanas a Arjona');
+    await expect(page.locator('#cercaFrase')).toContainText('o menos de Arjona');
 });
 
 test('las empresas no ven la sección (no buscan empleo)', async ({ page, context, api }) => {
@@ -129,6 +136,7 @@ const mapaListo = async page => {
 };
 
 test('el mapa es un globo: vuela del planeta entero a tu zona y pone un pin numerado por tarjeta', async ({ page, context, api, errores }, info) => {
+    await soloMiCiudad(context);
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
     await expect(distancias(page)).toHaveCount(4);
@@ -166,13 +174,16 @@ test('el mapa es un globo: vuela del planeta entero a tu zona y pone un pin nume
         const columnas = await page.locator('#cercaLista').evaluate(l => getComputedStyle(l).gridTemplateColumns.split(' ').length);
         expect(columnas).toBe(2);
     }
-    // Desde Barranquilla: una vacante contigo y UNA ruta hacia Cartagena y Turbaco (quedan pegadas en el mapa)
+    // Desde Barranquilla, a 100 km: una vacante contigo y UNA ruta hacia Cartagena y Turbaco (en el mapa quedan
+    // pegadas y se agrupan), que dice cuantas vacantes tienen entre las dos
     await elegirCiudad(page, 'barranquilla');
-    await expect(page.locator('#cercaMapa .cerca-mapa-sub')).toHaveText('4 vacantes en 3 ciudades · la más lejos a 100 km');
+    await page.locator('#cercaAlcance [data-km="100"]').click();
+    await expect(page.locator('#cercaMapa .cerca-mapa-sub')).toHaveText(/^\d+ vacantes a 100 km o menos$/);
     await mapaListo(page);
     await expect(page.locator('#cercaMapa .cm-ruta')).toHaveCount(1);
-    await expect(page.locator('#cercaMapa .cm-ciudad')).toHaveText('Cartagena y Turbaco');
+    await expect(page.locator('#cercaMapa .cm-ciudad')).toHaveText(/^Cartagena y Turbaco · \d+$/);
     await expect(page.locator('#cercaMapa .cm-km')).toHaveText('100 km');
+    await expect(page.locator('#cercaMapa .cm-alcance-km')).toHaveText('100 km');
     await expect(page.locator('#cercaMapa .cm-pin-vacante i')).toHaveText(['1', '2', '3', '4']);
     // Ningun pin queda fuera del mapa
     const fuera = await page.evaluate(() => {
@@ -184,7 +195,7 @@ test('el mapa es un globo: vuela del planeta entero a tu zona y pone un pin nume
     });
     expect(fuera).toBe(0);
     if (info.project.name === 'escritorio') {
-        // La tarjeta 2 (en Turbaco) ilumina su punto y la ruta de su ciudad; la 1 (en tu ciudad), solo su punto
+        // La tarjeta 2 (en Cartagena) ilumina su punto y la ruta de su ciudad; la 1 (en tu ciudad), solo su punto
         await page.locator('#cercaLista .cerca-tarjeta').nth(1).hover();
         await expect(page.locator('#cercaMapa .cm-pin-vacante.es-resaltado i')).toHaveText('2');
         await expect(page.locator('#cercaMapa .cm-ruta.es-resaltada')).toHaveCount(1);
@@ -202,6 +213,8 @@ test('el mapa sirve para cualquier lugar del mundo: desde Madrid se ve el planet
     await page.goto('index.html');
     await expect(cargos(page)).toHaveCount(4);
     await page.locator('#cercaUbicacion').click();
+    // A 25 km de Madrid no hay nada: lo dice y muestra igual las mas cercanas
+    await expect(page.locator('#cercaFrase')).toHaveText('No hay vacantes abiertas a 25 km o menos de tu ubicación. Estas son las más cercanas, de la más cerca a la más lejos (en línea recta).');
     await expect(page.locator('#cercaMapa .cm-pin-tu b')).toHaveText('Tu ubicación');
     await mapaListo(page);
     const e = await estadoMapa(page);
@@ -214,6 +227,7 @@ test('el mapa sirve para cualquier lugar del mundo: desde Madrid se ve el planet
 });
 
 test('con "reducir movimiento" el mapa aparece ya en su sitio, sin vuelo ni luces', async ({ page, context, api }) => {
+    await soloMiCiudad(context);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
@@ -227,6 +241,7 @@ test('con "reducir movimiento" el mapa aparece ya en su sitio, sin vuelo ni luce
 });
 
 test('si el archivo del mundo no carga, el mapa igual muestra tu punto y los pines', async ({ page, context, api, errores }) => {
+    await soloMiCiudad(context);
     await context.route('**/assets/data/mundo.json', ruta => ruta.abort());
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
@@ -240,6 +255,7 @@ test('si el archivo del mundo no carga, el mapa igual muestra tu punto y los pin
 
 test('el planeta flota sin recuadro y se arrastra para girarlo; el botón vuelve a tu zona', async ({ page, context, api, errores }, info) => {
     test.skip(info.project.name !== 'escritorio', 'el arrastre con mouse se prueba en el computador');
+    await soloMiCiudad(context);
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
     await expect(cargos(page)).toHaveCount(4);
@@ -279,6 +295,7 @@ test('el planeta flota sin recuadro y se arrastra para girarlo; el botón vuelve
 });
 
 test('los botones acercan y alejan el mapa hasta ver el planeta entero', async ({ page, context, api }) => {
+    await soloMiCiudad(context);
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
     await expect(cargos(page)).toHaveCount(4);
@@ -298,6 +315,7 @@ test('los botones acercan y alejan el mapa hasta ver el planeta entero', async (
 });
 
 test('tocar un pin elige su tarjeta; tocar el mapa la suelta', async ({ page, context, api }) => {
+    await soloMiCiudad(context);
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
     await expect(cargos(page)).toHaveCount(4);
@@ -313,4 +331,81 @@ test('tocar un pin elige su tarjeta; tocar el mapa la suelta', async ({ page, co
     const caja = await page.locator('#cercaMapa .cerca-mapa-lienzo').boundingBox();
     await page.mouse.click(caja.x + caja.width / 2, caja.y + caja.height * 0.2);
     await expect(page.locator('#cercaLista .cerca-tarjeta.es-resaltada')).toHaveCount(0);
+});
+
+// Tu alcance (2026-11-12): el anillo, una tarjeta por ciudad, la lista de ciudades y el grupo de opciones
+test('tu alcance: anillo en el mapa, ciudades con su total y opciones que se eligen con flechas y se recuerdan', async ({ page, context, api, errores }) => {
+    await entrarComo(context, 'visitante');
+    await page.goto('index.html');
+    await expect(cargos(page)).toHaveCount(4);
+    // Un grupo de opciones de verdad: una elegida, y solo ella se alcanza con Tab
+    await expect(page.locator('#cercaAlcance')).toHaveAttribute('role', 'radiogroup');
+    await expect(page.locator('#cercaAlcance [role="radio"]')).toHaveCount(4);
+    await expect(page.locator('#cercaAlcance [tabindex="0"]')).toHaveText('25 km');
+    // La lista de ciudades: tu ciudad primero, y cada una con su total
+    await expect(page.locator('#cercaCiudades .cerca-ciudad-nombre')).toHaveText(['Cartagena', 'Turbaco', 'Arjona']);
+    await expect(page.locator('#cercaCiudades .cerca-ciudad-km')).toHaveText(['tu ciudad', '10 km', '21 km']);
+    await expect(page.locator('#cercaCiudades .cerca-ciudad-total').nth(1)).toHaveText('1');
+    // El mapa: el anillo de 25 km, cada ciudad con su total y las rutas hacia ellas
+    await mapaListo(page);
+    await expect(page.locator('#cercaMapa .cm-alcance:not(.cm-fuera)')).toHaveCount(1);
+    await expect(page.locator('#cercaMapa .cm-alcance-km')).toHaveText('25 km');
+    await expect(page.locator('#cercaMapa .cm-ciudad').first()).toHaveText(/ · 1$/);
+    expect(await page.locator('#cercaMapa .cm-ruta').count()).toBeGreaterThan(0);
+    // Los municipios del DANE llegan en un rato libre; cada ciudad cae en su municipio (por su punto, no por
+    // su nombre) y la pagina da credito a la fuente, como pide la licencia
+    await expect.poll(async () => (await estadoMapa(page)).municipios, { timeout: 15000 }).toBe(1122);
+    expect((await estadoMapa(page)).municipioDeCartagena).toBe('Cartagena de Indias');
+    await expect(page.locator('#cerca .cerca-credito')).toContainText('geoBoundaries (CC BY 4.0)');
+    // Con las flechas se pasa a 50 km: la frase cambia y se recuerda al volver
+    await page.locator('#cercaAlcance [aria-checked="true"]').focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(alcanceElegido(page)).toHaveText('50 km');
+    await expect(page.locator('#cercaAlcance [data-km="50"]')).toBeFocused();
+    await expect(page.locator('#cercaFrase')).toContainText('a 50 km o menos de Cartagena');
+    await page.reload();
+    await expect(alcanceElegido(page)).toHaveText('50 km');
+    // "Mi ciudad": solo tu ciudad, sin lista de ciudades ni anillo
+    await page.locator('#cercaAlcance [data-km="0"]').click();
+    await expect(page.locator('#cercaFrase')).toHaveText(/^\d+ vacantes abiertas en Cartagena\. Aquí tienes las más recientes\.$/);
+    await expect(distancias(page)).toHaveText(['En Cartagena', 'En Cartagena', 'En Cartagena', 'En Cartagena']);
+    await expect(page.locator('#cercaCiudades')).toBeHidden();
+    await mapaListo(page);
+    await expect(page.locator('#cercaMapa .cm-alcance')).toHaveCount(0);
+    expect(errores).toEqual([]);
+});
+
+// Las etiquetas del mapa no se montan sobre los pines (Luis, 2026-11-12: al arrastrar el planeta en plena
+// entrada, el vuelo se corta a medio acercar y "25 km" y los nombres quedaban encima de los pines)
+test('al arrastrar el planeta en plena entrada, ninguna etiqueta tapa un pin ni tu nombre', async ({ page, context, api, errores }, info) => {
+    test.skip(info.project.name !== 'escritorio', 'el arrastre con mouse se prueba en el computador');
+    await entrarComo(context, 'visitante');
+    await page.goto('index.html');
+    await expect(cargos(page)).toHaveCount(4);
+    await page.locator('#cercaMapa').scrollIntoViewIfNeeded();
+    // A medio vuelo, se toma el planeta y se suelta
+    await expect.poll(async () => { const e = await estadoMapa(page); return !!(e && e.volando && e.zoom > 30); }, { timeout: 15000, intervals: [16] }).toBe(true);
+    const caja = await page.locator('#cercaMapa .cerca-mapa-lienzo').boundingBox();
+    await page.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(caja.x + caja.width / 2 + 8, caja.y + caja.height / 2 + 4, { steps: 3 });
+    await page.mouse.up();
+    await mapaListo(page);
+    const choques = await page.evaluate(() => {
+        const visibles = sel => [...document.querySelectorAll(sel)].filter(e => !e.closest('.cm-fuera') && getComputedStyle(e).visibility !== 'hidden' && e.offsetWidth);
+        const cajas = sel => visibles(sel).map(e => ({ t: e.textContent.trim(), r: e.getBoundingClientRect() }));
+        const pines = cajas('#cercaMapa .cm-pin-vacante i').concat(cajas('#cercaMapa .cm-pin-tu b'));
+        const etiquetas = cajas('#cercaMapa .cm-ciudad').concat(cajas('#cercaMapa .cm-km'), cajas('#cercaMapa .cm-alcance-km'));
+        const tocan = (a, b) => a.left < b.right - 2 && a.right > b.left + 2 && a.top < b.bottom - 2 && a.bottom > b.top + 2;
+        const malos = [];
+        etiquetas.forEach((e, i) => {
+            pines.forEach(p => { if (tocan(e.r, p.r)) malos.push(e.t + ' sobre ' + p.t); });
+            etiquetas.slice(i + 1).forEach(o => { if (tocan(e.r, o.r)) malos.push(e.t + ' sobre ' + o.t); });
+        });
+        return malos;
+    });
+    expect(choques).toEqual([]);
+    // Los 4 pines siguen ahi: lo que se esconde son las etiquetas que no caben
+    await expect(page.locator('#cercaMapa .cm-pin-vacante')).toHaveCount(4);
+    expect(errores).toEqual([]);
 });

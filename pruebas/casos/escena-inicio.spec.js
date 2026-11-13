@@ -22,8 +22,8 @@ test.describe('escena del inicio', () => {
         // Ni el panel de "Pruebalo" ni la barra con Pausar y Repetir
         await expect(page.locator('.hero .demo-skill')).toHaveCount(0);
         await expect(page.locator('.hero').getByRole('button', { name: /Pausar|Repetir/ })).toHaveCount(0);
-        // El porcentaje termina en 80
-        await page.evaluate(() => window.SkillMatchEscenas.verCuadro(document.querySelector('.hero-demo .escenario'), 7600));
+        // El porcentaje termina en 80 (cuenta de 7,5 s a 8,3 s)
+        await page.evaluate(() => window.SkillMatchEscenas.verCuadro(document.querySelector('.hero-demo .escenario'), 8400));
         await expect(escenario.locator('[data-contar]')).toHaveText('80 %');
     });
 
@@ -61,27 +61,57 @@ test.describe('escena del inicio', () => {
         expect(errores).toEqual([]);
     });
 
-    test('al bajar, la portada tiene profundidad y la línea de la barra avanza', async ({ page, context, api }, info) => {
-        test.skip(info.project.name !== 'escritorio', 'el menú de arriba solo se ve en el computador');
+    test('la portada ya no es inmersiva: al bajar nada se mueve por capas y no hay estrellas', async ({ page, context, api }) => {
         await entrarComo(context, 'visitante');
         await page.goto('index.html');
-        // La línea de avance va en el borde de abajo de la isla (su ::after): al principio, sin estirar
-        const avance = () => page.locator('body > header').evaluate(h => new DOMMatrix(getComputedStyle(h, '::after').transform).a);
-        expect(await avance()).toBe(0);
+        await expect(page.locator('.hero-estrellas')).toHaveCount(0);
         await page.evaluate(() => window.scrollTo({ top: 300, behavior: 'instant' }));
-        await expect.poll(avance).toBeGreaterThan(0);
-        // El texto baja más despacio que la página (se corre hacia abajo dentro de la portada) y la escena sube
-        await expect.poll(() => page.locator('.hero-copy').evaluate(c => parseFloat(getComputedStyle(c).translate.split(' ')[1]) || 0)).toBeGreaterThan(10);
-        expect(await page.locator('.hero-demo').evaluate(c => parseFloat(getComputedStyle(c).translate.split(' ')[1]) || 0)).toBeLessThan(-5);
+        await page.waitForTimeout(300);
+        expect(await page.locator('.hero-copy').evaluate(c => getComputedStyle(c).translate)).toBe('none');
+        expect(await page.locator('.hero-copy').evaluate(c => getComputedStyle(c).opacity)).toBe('1');
+        expect(await page.locator('.hero-demo').evaluate(c => getComputedStyle(c).translate)).toBe('none');
+        expect(await page.locator('body > header').evaluate(h => getComputedStyle(h, '::after').content)).toBe('none');
     });
 
-    test('con "reducir movimiento" la portada no se mueve al bajar', async ({ page, context, api }) => {
+    // "La ciudad se enciende" (2026-11-12): ciudad de noche, frases que no se cruzan, sin inclinarse
+    test('las frases de abajo nunca se leen encimadas', async ({ page, context, api }) => {
         await entrarComo(context, 'visitante');
-        await page.emulateMedia({ reducedMotion: 'reduce' });
         await page.goto('index.html');
-        await page.evaluate(() => window.scrollTo({ top: 300, behavior: 'instant' }));
-        await page.waitForTimeout(200);
-        expect(await page.locator('.hero-copy').evaluate(c => getComputedStyle(c).translate)).toBe('none');
-        expect(await page.locator(ESCENARIO + ' > svg').evaluate(g => getComputedStyle(g).animationName)).toBe('none');
+        // Se recorre el ciclo entero cada 50 ms: nunca hay dos frases visibles a la vez
+        const encimadas = await page.locator(ESCENARIO).evaluate(el => {
+            const malos = [];
+            for (let t = 0; t <= 12500; t += 50) {
+                window.SkillMatchEscenas.verCuadro(el, t);
+                const vistas = [...el.querySelectorAll('.e-leyenda')].filter(f => +getComputedStyle(f).opacity > .05);
+                if (vistas.length > 1) malos.push(t);
+            }
+            return malos;
+        });
+        expect(encimadas).toEqual([]);
+    });
+
+    test('el halo de luz crece con cada habilidad que coincide', async ({ page, context, api }) => {
+        await entrarComo(context, 'visitante');
+        await page.goto('index.html');
+        const halo = ms => page.locator(ESCENARIO).evaluate((el, t) => {
+            window.SkillMatchEscenas.verCuadro(el, t);
+            return +getComputedStyle(el, '::before').opacity;
+        }, ms);
+        const antes = await halo(1000), conDos = await halo(3300), alFinal = await halo(8400);
+        expect(antes).toBeLessThan(conDos);
+        expect(conDos).toBeLessThan(alFinal);
+        // Ingles: el ultimo piso queda marcado (ventanas en naranja punteado)
+        expect(await page.locator(ESCENARIO + ' polygon[stroke-dasharray]').count()).toBe(7);
+    });
+
+    test('no se inclina con el mouse', async ({ page, context, api }) => {
+        await entrarComo(context, 'visitante');
+        await page.goto('index.html');
+        const escenario = page.locator(ESCENARIO);
+        await escenario.scrollIntoViewIfNeeded();
+        const caja = await escenario.boundingBox();
+        await page.mouse.move(caja.x + caja.width * .9, caja.y + caja.height * .2, { steps: 5 });
+        await page.waitForTimeout(400);
+        expect(await escenario.evaluate(e => e.style.transform)).toBe('');
     });
 });

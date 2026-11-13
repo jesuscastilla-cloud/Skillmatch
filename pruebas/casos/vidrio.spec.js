@@ -16,6 +16,9 @@ test('en todas las páginas la barra de arriba es de vidrio (y en el celular tam
     await entrarComo(context, 'persona');
     for (const pagina of ['index.html', 'oportunidades.html', 'mensajes.html', 'empresas.html', 'dashboard.html']) {
         await page.goto(pagina);
+        // La primera vez que se abre la portada en la pestana, la isla se abre (index.js) y mientras tanto
+        // pinta su vidrio con piezas: se espera a que termine
+        await expect(page.locator('html')).not.toHaveClass(/isla-(intro|abriendo)/);
         expect(await deVidrio(page.locator('body > header')), pagina).toEqual({ translucido: true, desenfoca: true });
         if (info.project.name === 'celular') {
             await expect(page.locator('.tabbar')).toBeVisible();
@@ -212,7 +215,8 @@ test('Inicio es de vidrio: repisas y tarjetas de tinte, y la portada oscura sigu
     await page.goto('index.html');
     await expect(page.locator('.fondo-vivo')).toBeVisible();
     await expect(page.locator('.cerca-tarjeta').first()).toBeVisible();
-    for (const s of ['.search-section', '.benefits-section', '.como-funciona', '.stat-box', '.cerca-tarjeta']) {
+    // (2026-11-12: se quitaron las cifras repetidas y "Por que SkillMatch")
+    for (const s of ['.search-section', '.como-funciona', '.cerca-tarjeta']) {
         expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
     }
     expect(await deVidrio(page.locator('.hero')), 'portada').toEqual({ translucido: false, desenfoca: false });
@@ -228,8 +232,7 @@ test('Inicio es de vidrio: repisas y tarjetas de tinte, y la portada oscura sigu
 // Con una repisa por seccion (cada una con su brillo y su raya) y la franja de las cifras sin vidrio,
 // Inicio se veia en franjas horizontales de bordes duros
 test('Inicio es una sola lámina de vidrio: el mismo tinte en todas las secciones, sin rayas entre ellas ni costura bajo la ola', async ({ page, context, api }) => {
-    const secciones = ['.search-section', '.impact-stats', '.como-funciona', '.benefits-section',
-        '.cerca-section'];
+    const secciones = ['.search-section', '.cerca-section', '.como-funciona'];
     const leer = lista => page.evaluate(lista => lista.map(s => {
         const cs = getComputedStyle(document.querySelector(s));
         return { s, fondo: cs.backgroundColor, bordes: [cs.borderTopWidth, cs.borderBottomWidth] };
@@ -238,7 +241,7 @@ test('Inicio es una sola lámina de vidrio: el mismo tinte en todas las seccione
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
     await expect(page.locator('.fondo-vivo')).toBeVisible();
-    const visitante = await leer([...secciones, '.usuarios-empresas']);
+    const visitante = await leer(secciones);
     expect(visitante[0].fondo, 'tinte translucido').toMatch(/^rgba\(.+, 0\.\d+\)$/);
     for (const e of visitante) {
         expect(e.fondo, e.s).toBe(visitante[0].fondo);

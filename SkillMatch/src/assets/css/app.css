@@ -2231,14 +2231,17 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     fill: url(#cfRuedaLuz); stroke: url(#cfRuedaLuz);
     opacity: 0;
     transition: opacity .5s var(--ease-out);
-    filter: drop-shadow(0 0 12px rgba(19, 165, 182, .5));
 }
+/* El brillo de la pieza elegida: una copia detras con un trazo grueso y translucido. Antes era un
+   filter: drop-shadow, que el navegador recalculaba al pintar y trababa el scroll 83 ms (medido) */
+.cf-seg .cf-seg-aura { fill: none; stroke: rgba(19, 165, 182, .22); stroke-width: 26; opacity: 0; transition: opacity .5s var(--ease-out); }
+.cf-seg.is-activo .cf-seg-aura { opacity: 1; }
 .cf-seg.is-activo { transform: translate(var(--dx), var(--dy)); }
 .cf-seg.is-activo .cf-seg-luz { opacity: 1; }
 @media (hover: hover) { .cf-seg:not(.is-activo):hover .cf-seg-luz { opacity: .38; } }
 
 /* Primer dibujo y cambios de tamano: sin transiciones. Antes de su entrada, oculta (sin parpadeo) */
-.cf-rueda.quieta :is(.cf-rueda-giro, .cf-marca, .cf-seg, .cf-seg-luz, .cf-centro-numeros b) { transition: none; }
+.cf-rueda.quieta :is(.cf-rueda-giro, .cf-marca, .cf-seg, .cf-seg-luz, .cf-seg-aura, .cf-centro-numeros b) { transition: none; }
 .cf-rueda.por-entrar :is(.cf-rueda-giro, .cf-rueda-centro) { opacity: 0; }
 
 /* El boton de cada pieza: su icono. Gira al reves que la rueda (rueda-pasos.js), asi queda derecho */
@@ -7811,15 +7814,12 @@ body:has(> .hero:not([hidden])) > .hero {
     .cerca-mapa .cerca-mapa-lienzo { flex: none; max-width: 420px; min-height: 0; margin-inline: auto; aspect-ratio: 1 / 1; }
 }
 
-/* ---------- 47. Portada inmersiva: la escena sin marco y la pagina con profundidad ----------
+/* ---------- 47. Portada: la escena sin marco ----------
    (Va despues de las secciones 19 y 36 y las ajusta.)
-   - La escena del inicio ya no va en un recuadro azul: es una isla que flota sobre la portada,
-     con su luz turquesa detras y su sombra debajo, y mas grande.
-   - Profundidad: estrellas en dos planos; al bajar, el texto, la escena y las estrellas se
-     mueven cada uno a su velocidad (index.js les escribe su lugar). Nada sigue al cursor.
-   - Arriba, una linea fina dice cuanto de la pagina se ha recorrido.
-   Rendimiento (medido con el navegador): lo que flota o titila va en cajas HTML, que el navegador
-   mueve sin repintar; dentro del SVG solo se mueve la historia. Con "reducir movimiento" nada se mueve. */
+   La escena del inicio ya no va en un recuadro azul: es una isla que flota sobre la portada, con su
+   luz turquesa detras y su sombra debajo, y mas grande. La portada ya no es "inmersiva": al bajar no
+   se mueve nada por capas, no hay estrellas ni linea de avance (se quitaron el 2026-11-12).
+   Lo que flota va en cajas HTML, que el navegador mueve sin repintar; con "reducir movimiento" no se mueve. */
 .hero .escenario {
     border-radius: 0;
     overflow: visible;
@@ -7838,6 +7838,9 @@ body:has(> .hero:not([hidden])) > .hero {
     background: radial-gradient(closest-side, rgba(95, 208, 220, .3), rgba(95, 208, 220, 0));
     pointer-events: none;
 }
+/* Con la ciudad de noche (escenas.js) el halo es la luz de la escena: mas fuerte, y escenas.js le baja
+   o sube la opacidad con la historia (crece con cada habilidad que coincide) */
+.hero .escenario::before { background: radial-gradient(closest-side, rgba(95, 208, 220, .42), rgba(95, 208, 220, .12) 55%, rgba(95, 208, 220, 0)); }
 .hero .escenario::after {
     content: "";
     position: absolute; left: 20%; top: 84.7%;
@@ -7857,27 +7860,6 @@ body:has(> .hero:not([hidden])) > .hero {
 .escenario .e-brota { transform-box: fill-box; transform-origin: 50% 100%; }
 .escenario .e-chispa { transform-box: fill-box; transform-origin: 50% 50%; }
 
-/* Estrellas de la portada: dos planos de puntos (el de atras, mas chico) */
-.hero-estrellas, .hero-estrellas::after {
-    position: absolute; inset: -60px;
-    pointer-events: none;
-    background-image:
-        radial-gradient(1.2px 1.2px at 30px 40px, rgba(255, 255, 255, .75), transparent 100%),
-        radial-gradient(1px 1px at 150px 120px, rgba(95, 208, 220, .8), transparent 100%),
-        radial-gradient(1.4px 1.4px at 90px 210px, rgba(255, 255, 255, .5), transparent 100%),
-        radial-gradient(1px 1px at 230px 60px, rgba(255, 255, 255, .6), transparent 100%);
-    background-size: 290px 250px, 370px 310px, 230px 330px, 410px 270px;
-    opacity: .55;
-}
-.hero-estrellas::after {
-    content: "";
-    inset: 0;
-    background-size: 430px 390px, 520px 450px, 350px 480px, 600px 410px;
-    background-position: 80px 30px, 20px 140px, 200px 60px, 120px 220px;
-    opacity: .9;
-    animation: hero-titila 7s ease-in-out infinite;
-}
-@keyframes hero-titila { 50% { opacity: .45; } }
 /* --hx y --hy (la posicion del mouse, de -1 a 1) solo las usan las dos manchas de color del fondo.
    Registradas sin herencia, cambiarlas ya no obliga a recalcular los 300 elementos de la portada:
    solo las manchas, que las piden a proposito con "inherit" */
@@ -7886,7 +7868,7 @@ body:has(> .hero:not([hidden])) > .hero {
 .hero::before, .hero::after { --hx: inherit; --hy: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
-    .hero .escenario > svg, .hero .escenario::after, .hero-estrellas::after { animation: none; }
+    .hero .escenario > svg, .hero .escenario::after { animation: none; }
 }
 
 /* ---------- 48. La barra es una isla flotante: una sola, igual en toda la pagina y en todas las paginas ----------
@@ -7894,8 +7876,7 @@ body:has(> .hero:not([hidden])) > .hero {
    Antes la barra del inicio pasaba por tres aspectos al bajar (transparente, azul, blanca con capsula)
    y cambiaba de forma. Ahora es una capsula de vidrio ahumado separada de los bordes de la ventana, con
    el logo, las opciones (sin iconos) y los botones adentro, que no cambia nunca: ni al bajar ni de una pagina a otra,
-   ni entre el tema claro y el oscuro. Lo unico que se mueve es la linea fina de su borde de abajo,
-   que dice cuanto de la pagina se ha recorrido (index.js escribe --avance).
+   ni entre el tema claro y el oscuro.
    Por dentro usa el estilo limpio de la seccion 43 (opciones sin capsula, la activa en turquesa). */
 
 /* Dentro de la isla rigen los colores del tema oscuro, sea cual sea el tema de la pagina: asi la
@@ -7983,6 +7964,29 @@ body:has(> .hero:not([hidden])) > .hero {
         inset 0 -1px 0 rgba(255, 255, 255, .07);
     color: var(--ink);
 }
+/* Mas transparente: el tinte cambia segun lo que pasa por detras, la forma y los colores de adentro no.
+   - Sobre el azul de la portada (.sobre-hero): casi solo cristal. Se ve el brillo desenfocado,
+     y el blanco de las opciones se lee igual porque el fondo ya es oscuro.
+   - Sobre las secciones claras: tinte al 64 % (medido con pixeles: las letras blancas quedan en 4,8:1).
+   El cambio es un fundido del tinte; la isla no cambia de forma ni de lugar */
+:root body > header,
+:root body > header.is-scrolled {
+    background-color: rgba(9, 24, 44, .64);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, .04));
+    /* Desenfoque corto: lo de atras se adivina (brillos, tarjetas), no se borra del todo */
+    -webkit-backdrop-filter: blur(12px) saturate(170%);
+            backdrop-filter: blur(12px) saturate(170%);
+    transition: background-color .5s var(--ease-out), box-shadow .5s var(--ease-out);
+}
+/* Arriba del todo de la portada, casi solo cristal. Apenas se baja, vuelve el tinte: si no, la escena
+   (edificios blancos) pasaba por detras de las letras blancas y "Iniciar sesion" no se leia */
+:root body > header.sobre-hero:not(.is-scrolled) { background-color: rgba(9, 24, 44, .08); }
+/* Una sombra muy tenue debajo de las letras: separa el texto de lo que pasa por detras del cristal */
+:root body > header :is(.nav-links a, .btn-login) { text-shadow: 0 1px 2px rgba(2, 10, 24, .45); }
+:root body > header a.btn-register { text-shadow: none; }
+/* El logo, mas abajo: con el ajuste de la barra vieja (sube 15 %) las cabezas de los personajes casi
+   tocaban el borde de arriba de la isla. Ahora queda con el mismo aire arriba y abajo */
+:root body > header .logo img { height: 36px; translate: 0 -4%; }
 /* Las opciones, sin icono: solo la palabra (el texto ya dice a donde llevan). Rellenos parejos */
 :root body > header .nav-left > .nav-links a { padding: var(--s2) 14px; gap: 0; }
 :root body > header .nav-left > .nav-links a { color: rgba(255, 255, 255, .8); }
@@ -8015,21 +8019,556 @@ body:has(> .hero:not([hidden])) > .hero {
     :root body > header .nav-links a:not(.btn-login):not(.btn-register) { padding-inline: 6px; }
     :root body > header a.btn-login { padding: 0 10px !important; }
 }
-/* La linea de avance: en el borde de abajo de la isla, del turquesa al naranja.
-   --avance (de 0 a 1) esta registrada sin herencia: al cambiar solo se recalcula esta linea */
-@property --avance { syntax: '<number>'; inherits: false; initial-value: 0; }
-:root body > header::after {
-    content: "";
-    position: absolute; left: 28px; right: 28px; bottom: -1px;
-    height: 2px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--sea-luz), var(--naranja));
-    --avance: inherit;
-    transform: scaleX(var(--avance));
-    transform-origin: 0 50%;
-    pointer-events: none;
-}
 /* Quien pide menos transparencia en su sistema: la isla, solida */
 @media (prefers-reduced-transparency: reduce) {
     :root body > header, :root body > header.is-scrolled { background: #081A30; background-color: #081A30; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
+
+/* ---------- 49. La isla compacta y su apertura ----------
+   (Va despues de la seccion 48 y la ajusta.)
+   1. La isla mide lo que mide su contenido y va centrada: antes ocupaba 1280 px y quedaba un hueco
+      grande entre el logo y las opciones. Ahora el logo, el menu y la cuenta van juntos, como un
+      solo objeto (estilo "Dynamic Island" del iPhone). En celular sigue a lo ancho.
+   2. Un filo de luz arriba en vez del contorno blanco parejo, y una linea fina que separa el menu
+      (a donde ir) de la cuenta (buscar, tema, entrar, unirse).
+   3. La apertura (index.js, "La isla de la barra se abre"): la primera vez que se abre la portada en
+      la pestana, la isla aparece pequena, solo con el logo, y luego se abre hacia los dos lados.
+      Solo se anima transform y opacity: la isla no cambia de ancho, se arma con tres piezas (tapa
+      izquierda, centro y tapa derecha); las tapas se deslizan y el centro se estira. */
+
+/* El tinte del vidrio, en una variable: lo usan la isla y sus piezas durante la apertura.
+   Sobre la portada (arriba del todo) el tinte casi desaparece desde el primer cuadro: antes la isla
+   cargaba oscura y se aclaraba medio segundo despues, cuando ui.js le ponia .sobre-hero */
+:root body > header {
+    --isla-tinte: rgba(9, 24, 44, .64);
+    --isla-borde: rgba(255, 255, 255, .12);
+    --isla-w0: 160px;                       /* ancho de la isla pequena: el logo (120 px) y su aire */
+}
+:root body > header.sobre-hero:not(.is-scrolled),
+:root body:has(> .hero:not([hidden])) > header:not(.is-scrolled) { --isla-tinte: rgba(9, 24, 44, .08); }
+:root body > header,
+:root body > header.is-scrolled,
+:root body > header.sobre-hero:not(.is-scrolled),
+:root body:has(> .hero:not([hidden])) > header:not(.is-scrolled) {
+    background-color: var(--isla-tinte);
+    /* El filo: el borde casi no se ve y la luz de arriba (sombra interior) marca el grosor del cristal */
+    border-color: var(--isla-borde);
+    box-shadow:
+        0 14px 34px -16px rgba(2, 10, 24, .6),
+        inset 0 1px 0 rgba(255, 255, 255, .28),
+        inset 0 -1px 0 rgba(255, 255, 255, .05);
+}
+
+/* 1. Compacta y centrada (en celular sigue de lado a lado) */
+@media (width > 760px) {
+    :root body > header,
+    :root body > header.is-scrolled {
+        width: fit-content;
+        max-width: min(calc(100% - 24px), 1280px);
+    }
+    :root body > header > nav { justify-content: flex-start; gap: 0; padding: 0 8px 0 20px; }
+    /* Sin los lados de igual ancho de la seccion 38: cada bloque mide lo suyo */
+    :root body > header > nav > .nav-left > .logo { flex: none; min-width: 0; margin-right: 24px; }
+    :root body > header > nav > .nav-left > .nav-links,
+    :root body > header > nav > .nav-links { flex: none; min-width: 0; }
+    /* 2. La linea que separa el menu de la cuenta */
+    :root body > header > nav > .nav-links { margin-left: 12px; }
+    :root body > header > nav > .nav-links::before {
+        content: "";
+        flex: none;
+        align-self: center;
+        width: 1px;
+        height: 22px;
+        margin-right: 4px;
+        background: rgba(255, 255, 255, .16);
+    }
+}
+@media (width > 760px) and (width <= 1100px) {
+    :root body > header > nav { padding-left: 16px; }
+    :root body > header > nav > .nav-left > .logo { margin-right: 12px; }
+    :root body > header > nav > .nav-links { margin-left: 4px; }
+}
+/* El logo a la altura del menu. En la imagen, la palabra "SkillMatch" va en la parte baja (filas 88 a
+   145 de 160) y los muñequitos ocupan casi todo el alto: con el logo centrado, la palabra quedaba 7,5 px
+   por debajo del texto del menu. Sube el 25 % de su alto (medido con pixeles: el centro de la palabra
+   queda donde el centro de "Vacantes"). En porcentaje sirve igual con el logo de 30 px de la tableta.
+   Al subir, las cabezas casi tocaban el borde de la isla (56 px): la isla pasa a 64 px de alto y las
+   cabezas quedan con aire. Las piezas de la apertura y el espacio de la seccion 50 usan esta medida */
+:root body > header { --isla-alto: 64px; }
+:root body > header,
+:root body > header.is-scrolled { height: var(--isla-alto); }
+:root body > header .logo img { height: 36px; translate: 0 -25%; }   /* 36 px (antes 32): el logo con mas presencia; la palabra sigue a la altura del menu (medido) */
+@media (width > 760px) and (width <= 860px) {
+    :root body > header .logo img { height: 30px; }
+}
+/* En la isla pequena de la apertura el logo va centrado entero (index.js lo lleva luego a su sitio) */
+:root.isla-intro body > header .logo img { translate: none; }
+
+/* "Unirse ahora" con el mismo filo de luz del cristal: una gema, no una calcomania */
+:root body > header a.btn-register { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 6px 16px -8px rgba(43, 182, 198, .7); }
+
+/* 3. La apertura. html.isla-intro la pone el guion del <head> de la portada; index.js la cambia por
+   html.isla-abriendo mientras se abre y la quita al final. Mientras tanto la isla real no pinta su
+   vidrio: lo pintan la isla pequena (::before) y luego las tres piezas */
+:root.isla-intro body > header,
+:root.isla-abriendo body > header {
+    background: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+    transition: none !important;
+    /* Con nombre de transicion la barra encierra a sus hijos: el vidrio de las piezas no veria la
+       pagina de atras (saldria menos azul que el de la isla). Durante la apertura no hace falta */
+    view-transition-name: none;
+}
+/* El mismo vidrio de la isla, para la isla pequena y las piezas: tinte, brillo y filo. El desenfoque
+   va aparte (.isla-vidrio): en las piezas se sumaba dos veces donde se tocan y dejaba una linea */
+:root.isla-intro body > header::before,
+.isla-piezas > :not(.isla-vidrio) {
+    border: 1px solid var(--isla-borde);
+    background-color: var(--isla-tinte);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, .04));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), inset 0 -1px 0 rgba(255, 255, 255, .05);
+}
+/* La isla pequena: centrada, con el logo adentro. Aparece creciendo un poco */
+:root.isla-intro body > header::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: -1px;
+    bottom: -1px;
+    left: 50%;
+    width: var(--isla-w0);
+    margin-left: calc(var(--isla-w0) / -2);
+    border-radius: 999px;
+    pointer-events: none;
+    animation: isla-aparece .42s cubic-bezier(.23, 1, .32, 1) both;
+}
+:root.isla-intro body > header .logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    animation: isla-aparece .42s cubic-bezier(.23, 1, .32, 1) both;
+}
+/* El logo se centra respecto a la isla: en celular con mouse, .nav-left (seccion 6, :has(.con-linea))
+   queda posicionado y mide 0 px (sus enlaces van abajo), y el 50 % de 0 dejaba el logo a la izquierda */
+:root.isla-intro body > header .nav-left { position: static; }
+@keyframes isla-aparece { from { opacity: 0; transform: scale(.9); } }
+/* Lo demas espera adentro, invisible (sigue en su sitio: se puede medir) */
+:root.isla-intro body > header .nav-buscar,
+:root.isla-intro body > header :is(.nav-principales, nav > .nav-links) > li,
+:root.isla-intro body > header > nav > .nav-links::before { opacity: 0; }
+/* La linea del menu lleva opacity en el atributo style (ui.js): solo !important la esconde */
+:root.isla-intro body > header .nav-pastilla { opacity: 0 !important; }
+/* Las tres piezas (index.js las crea y las quita): tapas de media luna y un centro recto.
+   Cubren el borde de la isla (inset -1px) y quedan detras de su contenido */
+.isla-piezas { position: absolute; inset: -1px; z-index: -1; pointer-events: none; }
+.isla-piezas > span { position: absolute; top: 0; bottom: 0; will-change: transform; }
+.isla-piezas { --tapa: calc(var(--isla-alto) / 2); }   /* media luna: la mitad del alto de la isla */
+.isla-piezas > .isla-tapa-izq { left: 0; width: var(--tapa); border-right: 0; border-radius: var(--tapa) 0 0 var(--tapa); }
+.isla-piezas > .isla-centro { left: calc(var(--tapa) - 1px); right: calc(var(--tapa) - 1px); border-left: 0; border-right: 0; border-radius: 0; } /* 1 px debajo de cada tapa: sin rendijas */
+.isla-piezas > .isla-tapa-der { right: 0; width: var(--tapa); border-left: 0; border-radius: 0 var(--tapa) var(--tapa) 0; }
+/* El desenfoque del cristal, de una sola pieza y ya del tamano final: aparece cuando la isla se posa */
+.isla-piezas > .isla-vidrio {
+    left: 0;
+    right: 0;
+    border-radius: 999px;
+    opacity: 0;
+    will-change: opacity;
+    -webkit-backdrop-filter: blur(12px) saturate(170%);
+            backdrop-filter: blur(12px) saturate(170%);
+}
+@media (prefers-reduced-transparency: reduce) {
+    .isla-piezas > .isla-vidrio { display: none; }
+    :root body > header,
+    :root body > header.sobre-hero:not(.is-scrolled),
+    :root body:has(> .hero:not([hidden])) > header:not(.is-scrolled) { --isla-tinte: #081A30; }
+    /* Sin el fundido del tinte: al pedir menos transparencia la isla queda solida de una vez */
+    :root body > header, :root body > header.is-scrolled { transition: none; }
+    :root.isla-intro body > header::before, .isla-piezas > span { background: #081A30; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* ---------- 50. El fondo de cada pagina llega hasta arriba, detras de la isla ----------
+   Antes, el primer bloque de cada pagina (la cabecera de Vacantes, el registro, las dos columnas del
+   login...) empezaba debajo de la barra, y arriba quedaba una franja con otro tono: el fondo
+   de la pagina. Ahora ese bloque sube hasta el borde de la ventana y la isla flota sobre su fondo.
+   El truco (el mismo de la portada, seccion 42, generalizado):
+   - margin-top negativo: el bloque sube lo que ocupa la isla;
+   - borde superior transparente del mismo alto: el fondo de un elemento se pinta tambien debajo de su
+     borde, asi que el cristal llega hasta arriba, pero el contenido queda exactamente donde estaba;
+   - background-origin: border-box: los degradados empiezan arriba del todo y no se repiten en la franja.
+   Como el bloque sube lo que ocupa la isla y crece lo mismo, todo lo que viene despues queda en su sitio. */
+:root { --isla-espacio: 76px; }   /* lo que ocupa la isla: 8 de aire + 64 de alto (seccion 49) + 4, en todo ancho */
+
+/* (Con :root delante: la seccion 41b quita los bordes de arriba y abajo a varias secciones de cristal) */
+/* Paginas que empiezan con una seccion (Vacantes, Conexiones, perfiles, registro) */
+:root body > header + section:not(.hero, .panel-inicio, [hidden]),
+/* Paginas que empiezan con <main> y una seccion adentro (Empresas, una empresa, Indicadores) */
+:root body > header + main > section:first-child,
+/* El panel de inicio (con sesion): sube su franja azul, como la portada */
+:root body > header + .panel-inicio:not([hidden]) > :first-child,
+/* Login y recuperar: las dos columnas suben, cada una con su fondo (la oscura llega arriba) */
+:root body > header + main.auth-shell > * {
+    border-top: var(--isla-espacio) solid transparent;
+    background-origin: border-box;
+}
+:root body > header + section:not(.hero, [hidden]),
+:root body > header + main:has(> section:first-child),
+:root body > header + main.auth-shell {
+    margin-top: calc(-1 * var(--isla-espacio));
+}
+/* Login angosto (seccion 26): las columnas van una sobre otra y la de los personajes va arriba; solo
+   ella sube. Si no hay personajes, la columna oscura se oculta y sube el formulario */
+@media (max-width: 1080px) {
+    :root body > header + main.auth-shell:has(.login-personajes svg) > .auth-panel { border-top-width: 0; }
+}
+/* El login ocupaba "toda la pantalla menos la barra"; ahora empieza arriba del todo, asi que mide la
+   barra de mas para que el pie quede donde estaba */
+:root body > header + main.auth-shell { min-height: calc(100vh - var(--app-bar-h) + var(--isla-espacio)); }
+
+/* La portada usaba --app-bar-h, que en celular vale 60 px mientras la isla ocupa 68: quedaba una raya
+   de 8 px arriba. Ahora sube lo mismo que ocupa la isla */
+body:has(> .hero:not([hidden])) > .hero {
+    margin-top: calc(-1 * var(--isla-espacio));
+    padding-top: calc(var(--s9) + var(--isla-espacio));
+}
+@media (max-width: 760px) {
+    body:has(> .hero:not([hidden])) > .hero { padding-top: calc(var(--s7) + var(--isla-espacio)); }
+}
+
+/* ---------- 51. La portada en cinco bloques (2026-11-12) ----------
+   Portada -> Encuentra tu vacante (buscador + resultados + Vacantes cerca de ti) -> Como funciona ->
+   Dos caminos (la llamada final con las tarjetas de persona y empresa) -> pie.
+   Se quitaron las cifras repetidas (ya estan en la portada) y "Por que SkillMatch" (repetia 7 de sus 9 frases).
+   Las reglas viejas de .impact-stats, .benefits-section y .usuarios-empresas quedan sin uso. */
+
+/* Encuentra tu vacante: el buscador lleva titulo y "Vacantes cerca de ti" sigue pegado, como parte del bloque */
+.search-section { padding-top: var(--s8); }
+.search-section > .container > .section-header-center { margin-bottom: var(--s5); }
+.search-section ~ .cerca-section { padding-top: var(--s7); }
+
+/* Dos caminos: las dos tarjetas son el cierre, sobre la franja oscura (cristal oscuro en los dos temas) */
+.cta-final .pathways { position: relative; max-width: 980px; margin: var(--s7) auto 0; text-align: left; }
+.pagina-vidrio .cta-final .pathway-card,
+.cta-final .pathway-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .04));
+    border: 1px solid rgba(255, 255, 255, .14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 24px 48px -28px rgba(0, 0, 0, .7);
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+    color: #EEF3FA;
+}
+.cta-final .pathway-card h3 { color: #FFFFFF; }
+.cta-final .pathway-card p { margin: 0; max-width: none; font-size: var(--t-base); color: rgba(255, 255, 255, .72); }
+.cta-final .pathway-card .pathway-features li { color: #C7D5E5; }
+.cta-final .pathway-card .pathway-features .ico { color: #5FD0DC; }
+.cta-final .pathway-card .pathway-icon { background: rgba(95, 208, 220, .14); color: #5FD0DC; }
+/* La chispa del match: un punto naranja donde se encuentran las dos tarjetas. Quieta no se ve:
+   index.js la enciende cuando las tarjetas se juntan */
+.caminos-chispa {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 2;
+    width: 34px;
+    height: 34px;
+    margin: -17px 0 0 -17px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #FFF3E6 0 14%, #FFA05C 26%, #FF7618 42%, rgba(255, 118, 24, .35) 58%, rgba(255, 118, 24, 0) 72%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ---------- 52. La portada se construye al bajar (index.js) ----------
+   Cada grupo de piezas espera invisible hasta que llega a la pantalla; ahi index.js lo arma (una sola vez)
+   y le quita .cons-espera. Solo lo pone index.js: sin JavaScript, o con "reducir movimiento", todo se ve ya */
+.cons-espera.cons-pieza,
+.cons-espera .cons-pieza { opacity: 0; }
+/* Las palabras de los titulos se mueven una por una: cada una en su caja */
+.cons-palabra { display: inline-block; }
+
+/* ---------- 53. Tu alcance: "¿Hasta dónde te mueves?" (vacantes-cerca.js y mapa-cerca.js) ----------
+   Un grupo de 4 opciones (tu ciudad, 25, 50, 100 km). El mapa dibuja el anillo de ese radio y una ruta
+   hacia cada ciudad con vacantes dentro; encima de las tarjetas, la lista de esas ciudades con su total */
+.cerca-alcance {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+}
+.cerca-alcance-titulo { padding: 0 var(--s2) 0 var(--s3); font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); }
+.cerca-alcance [role="radio"] {
+    min-height: 40px;
+    padding: 0 var(--s4);
+    border: 0;
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--ink-2);
+    font: 600 var(--t-sm)/1 var(--font-text);
+    cursor: pointer;
+    transition: background-color .2s var(--ease-out), color .2s var(--ease-out);
+}
+@media (hover: hover) { .cerca-alcance [role="radio"]:hover { background: var(--hairline-soft); color: var(--ink); } }
+.cerca-alcance [role="radio"][aria-checked="true"] { background: var(--sea-deep); color: #FFFFFF; }
+[data-theme="dark"] .cerca-alcance [role="radio"][aria-checked="true"] { background: var(--sea); color: #04192F; }
+@media (pointer: coarse) { .cerca-alcance [role="radio"] { min-height: 44px; } }
+
+/* Las ciudades dentro de tu alcance: una fila de pastillas "Turbaco · 10 km · 3" encima de las tarjetas */
+.cerca-ciudades { display: flex; flex-wrap: wrap; gap: var(--s2); margin: 0 0 var(--s4); padding: 0; list-style: none; }
+.cerca-ciudad-fila {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px 4px 12px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    font-size: var(--t-sm);
+    transition: border-color .2s var(--ease-out);
+}
+.cerca-ciudad-nombre { font-weight: 600; color: var(--ink); }
+.cerca-ciudad-km { color: var(--ink-3); }
+.cerca-ciudad-total {
+    min-width: 24px;
+    padding: 2px 8px;
+    border-radius: var(--r-pill);
+    background: var(--sea-light);
+    color: var(--sea-deep);
+    font-weight: 700;
+    text-align: center;
+}
+.cerca-ciudad-fila.es-aqui .cerca-ciudad-total { background: var(--naranja-soft); color: var(--naranja-texto); }
+.cerca-ciudad-fila.es-resaltada { border-color: #FF7618; }
+
+/* El anillo de tu alcance sobre el planeta: un area turquesa muy tenue con su borde punteado */
+.cm-alcance-area { fill: rgba(95, 208, 220, .1); stroke: none; }
+.cm-alcance-borde { fill: none; stroke: var(--sea-luz); stroke-width: 1.5; stroke-dasharray: 5 6; stroke-linecap: round; opacity: .85; }
+.cm-alcance-km {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 0 8px;
+    border-radius: var(--r-pill);
+    background: var(--sea-luz);
+    color: #04192F;
+    font: 700 11px/1.6 var(--font-text);
+    white-space: nowrap;
+    pointer-events: none;
+}
+/* Las rutas brillan con su halo (una copia gruesa y tenue): sin filter, que es caro de pintar mientras el
+   planeta se mueve (la misma leccion de la rueda: un drop-shadow trababa el scroll) */
+.cm-ruta { filter: none; }
+/* Celular: el titulo arriba y las 4 opciones en una fila pareja (antes se partian en dos renglones) */
+@media (max-width: 560px) {
+    .cerca-alcance {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        width: min(100%, 380px);
+        border-radius: 22px;
+    }
+    .cerca-alcance-titulo { grid-column: 1 / -1; padding: 6px 0 2px; text-align: center; }
+    .cerca-alcance [role="radio"] { padding: 0 6px; }
+}
+
+/* ---------- 54. Credito de los datos del mapa (Vacantes cerca de ti) ---------- */
+.cerca-credito { margin: var(--s3) auto 0; max-width: 70ch; text-align: center; font-size: var(--t-xs, 12px); line-height: 1.5; color: var(--ink-3); }
+.cerca-credito a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---------- 55. La barra con icono arriba y texto abajo (idea de Luis a partir de torre.ai, 2026-11-12) ----------
+   (Va despues de las secciones 38 a 49 y las ajusta.) Con nuestro estilo: la misma isla de vidrio oscuro y los
+   mismos colores. Cada opcion lleva su icono (ui.js, iconosDeLaBarra) encima del texto, como la barra de
+   pestanas del celular; el buscador es una pastilla visible al lado del logo (ui.js la pone ahi) y abre la
+   misma paleta de siempre (Ctrl K). "Unirse ahora" sigue siendo el boton turquesa, sin icono. */
+@media (width > 760px) {
+    :root body > header .nav-links a.con-icono,
+    :root body > header .nav-links :is(.theme-toggle, .notifications-btn) {
+        display: inline-flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        width: auto;
+        height: auto;
+        min-width: 0;
+        min-height: 50px;
+        padding: 4px 10px !important;
+        border: 0 !important;
+        border-radius: 12px;
+        background: none;
+        box-shadow: none;
+        color: rgba(255, 255, 255, .74);
+        font: 600 12px/1.15 var(--font-text);
+        letter-spacing: .01em;
+        text-shadow: none;
+        translate: none;
+    }
+    :root body > header .nav-links a.con-icono .ico,
+    :root body > header .nav-links :is(.theme-toggle, .notifications-btn) .ico { width: 20px; height: 20px; color: inherit; }
+    /* El tema y los avisos no tienen texto propio (su nombre para el lector de pantalla esta en aria-label):
+       la palabra de abajo se pone aqui y el lector no la repite */
+    :root body > header .theme-toggle::after { content: "Tema"; }
+    :root body > header .notifications-btn::after { content: "Avisos"; }
+    @media (hover: hover) {
+        :root body > header .nav-links a.con-icono:hover,
+        :root body > header .nav-links :is(.theme-toggle, .notifications-btn):hover { color: #FFFFFF; background: rgba(255, 255, 255, .06); }
+    }
+    /* La opcion activa: el texto en blanco, el icono en turquesa y la linea turquesa debajo (como antes) */
+    :root body > header .nav-left > .nav-links :is(a.active-nav, a.active) { color: #FFFFFF; }
+    :root body > header .nav-left > .nav-links :is(a.active-nav, a.active) .ico { color: var(--sea-luz); }
+    :root body > header .nav-left > .nav-links { gap: 2px; }
+    :root body > header > nav > .nav-links { gap: 2px; }
+
+    /* El buscador: una pastilla de vidrio con el texto y la lupa, al lado del logo */
+    :root body > header > nav > .nav-left > .logo { margin-right: 16px; }
+    :root body > header .nav-buscar { display: flex; align-items: center; flex: none; margin-right: 18px; }
+    :root body > header .nav-buscar .cmdk-boton {
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 220px;
+        height: 42px;
+        padding: 0 12px 0 18px;
+        border: 1px solid rgba(255, 255, 255, .16);
+        border-radius: var(--r-pill);
+        background: rgba(255, 255, 255, .07);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+        color: rgba(255, 255, 255, .7);
+        font: 500 var(--t-sm)/1 var(--font-text);
+        cursor: pointer;
+        transition: border-color .2s var(--ease-out), background-color .2s var(--ease-out), color .2s var(--ease-out);
+    }
+    :root body > header .nav-buscar .cmdk-boton .cmdk-texto { display: inline; }
+    :root body > header .nav-buscar .cmdk-boton .cmdk-atajo { display: none; }
+    :root body > header .nav-buscar .cmdk-boton .ico { width: 20px; height: 20px; color: #FFFFFF; }
+    @media (hover: hover) {
+        :root body > header .nav-buscar .cmdk-boton:hover { border-color: rgba(95, 208, 220, .55); background: rgba(255, 255, 255, .1); color: #FFFFFF; }
+    }
+}
+/* Tableta y laptop pequena: el buscador se encoge a su lupa (con "Buscar" debajo, como las demas) */
+@media (width > 760px) and (width <= 1180px) {
+    :root body > header .nav-buscar { margin-right: 6px; }
+    :root body > header .nav-buscar .cmdk-boton {
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        width: auto;
+        height: auto;
+        min-height: 50px;
+        padding: 4px 10px;
+        border: 0;
+        border-radius: 12px;
+        background: none;
+        box-shadow: none;
+        font: 600 12px/1.15 var(--font-text);
+    }
+    :root body > header .nav-buscar .cmdk-boton .cmdk-texto { order: 2; }
+    :root body > header .nav-buscar .cmdk-boton .cmdk-texto { font-size: 0; }
+    :root body > header .nav-buscar .cmdk-boton .cmdk-texto::after { content: "Buscar"; font-size: 12px; }
+    :root body > header .nav-links a.con-icono,
+    :root body > header .nav-links :is(.theme-toggle, .notifications-btn) { padding: 4px 7px !important; }
+}
+/* En tableta los iconos del menu vuelven (la seccion 41 los escondia porque no cabian: ahora si) */
+@media (width > 760px) {
+    :root body > header .nav-left > .nav-links a.con-icono .ico { display: block; }
+}
+/* El logo, centrado entero y de 40 px: igual que las opciones tiene dos filas (los muñequitos a la altura de
+   los iconos y "SkillMatch" a la de los textos). Medido con pixeles: la base de la palabra cae en la misma
+   linea que la base de los textos del menu, y quedan 12 px de aire sobre las cabezas */
+:root body > header .logo img { height: 40px; translate: none; }
+:root body > header { --isla-w0: 172px; }   /* la isla pequena de la apertura, para el logo de 40 px */
+@media (width > 760px) and (width <= 860px) {
+    :root body > header .logo img { height: 32px; }
+}
+/* La linea turquesa de la opcion activa, un poco mas abajo: con el icono encima, el texto queda cerca del
+   borde de abajo de la opcion y la linea se le pegaba (2,6 px; ahora 5,6) */
+@media (width > 760px) {
+    :root body > header .nav-pastilla::after { bottom: -2px; }
+    :root body > header .nav-left > .nav-links:not(.con-linea) :is(a.active-nav, a.active) { box-shadow: inset 0 -2px 0 var(--nav-acento); }
+}
+
+/* ---------- 56. Al pasar por el menu: la gota de vidrio y el gesto de cada icono (2026-11-12) ----------
+   1. La gota: mientras el mouse esta en el menu, la pastilla que se desliza (ui.js, lineaDelMenu) se vuelve una
+      capsula de cristal que viaja de opcion en opcion estirandose como una gota (el estiramiento ya lo hace
+      ui.js), y el icono que queda debajo crece un poco, como bajo una lupa. Sin el mouse, solo queda la linea
+      turquesa bajo la pagina actual: "donde estas" y "a donde apuntas" se distinguen.
+   2. El gesto: cada icono cuenta lo que es (ui.js, ICONOS_MENU los dibuja con sus piezas separadas).
+   Solo transform y opacity; nada en pantallas tactiles ni con "reducir movimiento"; nada sigue al cursor. */
+
+/* Piezas que solo se ven en el gesto */
+.nav-ico .nv-puerta { fill: var(--sea-luz); stroke: none; opacity: 0; }
+.nav-ico .nv-luz { stroke: var(--sea-luz); stroke-width: 2.2; opacity: 0; }
+.nav-ico .nv-punto { fill: currentColor; stroke: none; opacity: 0; }
+.nav-ico :is(.nv-techo, .nv-maletin, .nv-otro, .nv-uno, .nv-cabeza, .nv-flecha, .nv-punto, .nv-globo) { transform-box: fill-box; }
+.nav-ico .nv-techo { transform-origin: 50% 100%; }
+.nav-ico .nv-maletin { transform-origin: 50% 0; }
+.nav-ico .nv-globo { transform-origin: 0 100%; }
+
+@media (width > 760px) and (hover: hover) and (pointer: fine) {
+    /* La gota: el cristal es un ::before de la pastilla (su opacidad la maneja ui.js) y aparece con el mouse */
+    :root body > header .nav-pastilla::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, .17), rgba(255, 255, 255, .04) 72%);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .34),
+            inset 0 -12px 16px -14px rgba(95, 208, 220, .9),
+            0 10px 20px -12px rgba(0, 0, 0, .65);
+        opacity: 0;
+        transition: opacity .22s var(--ease-out);
+    }
+    :root body > header .nav-principales.con-sobre > .nav-pastilla::before { opacity: 1; }
+    /* La lupa: el icono que queda bajo la gota crece un poco */
+    :root body > header .nav-links a.con-icono .nav-ico { transition: scale .28s cubic-bezier(.34, 1.4, .64, 1), color .2s var(--ease-out); }
+    :root body > header .nav-principales.con-sobre a.con-icono:hover .nav-ico { scale: 1.14; }
+    /* En el grupo de la cuenta (sin gota que viaje): el mismo cristal, quieto, en la opcion */
+    :root body > header > nav > .nav-links :is(a.con-icono, .theme-toggle, .notifications-btn) { transition: background-color .2s var(--ease-out), box-shadow .2s var(--ease-out), color .2s var(--ease-out); }
+    :root body > header > nav > .nav-links :is(a.con-icono, .theme-toggle, .notifications-btn):hover {
+        background: linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .04) 72%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 -12px 16px -14px rgba(95, 208, 220, .9);
+    }
+}
+
+/* Los gestos: cortos (el menu se usa mucho) y solo al entrar el mouse */
+@media (width > 760px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    /* Inicio: el techo se levanta y cae, y se enciende la puerta (llegas a casa) */
+    header a.con-icono:hover .nv-techo { animation: nv-techo .42s var(--ease-out); }
+    header a.con-icono .nv-puerta { transition: opacity .2s var(--ease-out); }
+    header a.con-icono:hover .nv-puerta { opacity: .95; transition-delay: .16s; }
+    /* Vacantes: el maletin se mece, como al levantarlo del asa */
+    header a.con-icono:hover .nv-maletin { animation: nv-maletin .5s var(--ease-out); }
+    /* Empresas: las ventanas se encienden una por una, de abajo hacia arriba (como los pisos de la escena) */
+    header a.con-icono .nv-luz { transition: opacity .18s var(--ease-out); }
+    header a.con-icono:hover .nv-luz { opacity: 1; transition-delay: calc(var(--i) * 65ms); }
+    /* Conexiones: la segunda persona llega y se pone al lado */
+    header a.con-icono:hover .nv-otro { animation: nv-llega .45s var(--ease-out); }
+    header a.con-icono:hover .nv-uno { animation: nv-recibe .45s var(--ease-out); }
+    /* Mensajes: el globo se infla un poco y aparecen los tres puntos de "escribiendo" */
+    header a.con-icono:hover .nv-globo { animation: nv-globo .38s var(--ease-out); }
+    header a.con-icono .nv-punto { transition: opacity .15s var(--ease-out); }
+    header a.con-icono:hover .nv-punto { opacity: 1; transition-delay: calc(.12s + var(--i) * 70ms); animation: nv-escribe .8s ease-in-out calc(.25s + var(--i) * 110ms) 2; }
+    /* Mi perfil / Iniciar sesion: la cabeza saluda */
+    header a.con-icono:hover .nv-cabeza { animation: nv-cabeza .5s var(--ease-out); }
+    /* Cerrar sesion: la flecha sale por la puerta y vuelve */
+    header a.con-icono:hover .nv-flecha { animation: nv-sale .45s var(--ease-out); }
+    /* Tema: la luna (o el sol) gira un poco */
+    header .theme-toggle:hover .ico { animation: nv-luna .5s var(--ease-out); }
+}
+@keyframes nv-techo { 0% { transform: none; } 38% { transform: translateY(-3px); } 68% { transform: translateY(.6px); } 100% { transform: none; } }
+@keyframes nv-maletin { 0% { transform: none; } 28% { transform: translateY(-1.5px) rotate(-8deg); } 58% { transform: translateY(-.5px) rotate(5deg); } 82% { transform: rotate(-2deg); } 100% { transform: none; } }
+@keyframes nv-llega { 0% { transform: translateX(5px); opacity: 0; } 60% { transform: translateX(-.6px); opacity: 1; } 100% { transform: none; } }
+@keyframes nv-recibe { 0%, 100% { transform: none; } 55% { transform: translateX(-.8px); } }
+@keyframes nv-globo { 0% { transform: none; } 45% { transform: scale(1.08); } 100% { transform: none; } }
+@keyframes nv-escribe { 0%, 100% { transform: none; } 40% { transform: translateY(-1.4px); } }
+@keyframes nv-cabeza { 0%, 100% { transform: none; } 30% { transform: translateY(-1.8px); } 55% { transform: translateY(.4px); } 76% { transform: translateY(-.8px); } }
+@keyframes nv-sale { 0% { transform: none; } 45% { transform: translateX(3px); } 100% { transform: none; } }
+@keyframes nv-luna { 0% { transform: none; } 40% { transform: rotate(-24deg) scale(1.06); } 72% { transform: rotate(6deg); } 100% { transform: none; } }

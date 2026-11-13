@@ -16,6 +16,14 @@
  *    vacante: 4 lineas casi iguales no se entendian). En la ciudad, cada vacante
  *    tiene su pin con el mismo numero de su tarjeta, y la ruta dice cuantos km hay.
  *  - Pasar el mouse por una tarjeta ilumina su pin y su ruta en naranja, y al reves.
+ *  - Municipios (2026-11-12): al acercarse aparecen los limites de los municipios de Colombia
+ *    (assets/data/municipios-col.json: DANE, Marco Geoestadistico Nacional, via geoBoundaries,
+ *    CC BY 4.0; lo genera herramientas/hacer-municipios.mjs). Los que tienen vacantes dentro de
+ *    tu alcance se pintan en turquesa (mas fuerte cuantas mas tienen) y el de la tarjeta
+ *    señalada, en naranja. El archivo se pide en un rato libre, despues del mundo.
+ *  - Tu alcance (2026-11-12): si vacantes-cerca.js manda un radio (25, 50 o 100 km), se dibuja
+ *    el anillo de ese radio sobre la esfera (un circulo de verdad, medido en km), crece desde ti
+ *    al llegar, y la camara lo encuadra. Cada ciudad dice cuantas vacantes tiene.
  *
  * Como se dibuja un globo sin WebGL: cada punto (latitud, longitud) se convierte una
  * sola vez en un punto de una esfera de radio 1 (x, y, z). En cada cuadro, la camara
@@ -44,6 +52,7 @@
     const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // El archivo del mundo esta junto a los scripts: ../data/mundo.json
     const URL_MUNDO = new URL('../data/mundo.json', (document.currentScript && document.currentScript.src) || location.href).href;
+    const URL_MUNICIPIOS = new URL('../data/municipios-col.json', (document.currentScript && document.currentScript.src) || location.href).href;
 
     // El mar, el resplandor de la atmosfera y la sombra que lo hace ver redondo son cajas con degradados
     // de CSS (.cm-halo, el fondo de .cm-globo y .cm-brillo): el navegador las compone sin repintarlas.
@@ -91,6 +100,15 @@
         const p = Math.sin((1 - t) * w) / s, q = Math.sin(t * w) / s;
         return [a[0] * p + b[0] * q, a[1] * p + b[1] * q, a[2] * p + b[2] * q];
     }
+    /** Los puntos que estan a "km" de o, alrededor de el (n puntos): un circulo dibujado sobre la esfera. */
+    function circulo(o, km, n) {
+        const a = km / RADIO_TIERRA, b = base(o), ca = Math.cos(a), sa = Math.sin(a), lista = [];
+        for (let i = 0; i < n; i++) {
+            const t = i / n * 2 * Math.PI, ct = Math.cos(t) * sa, st = Math.sin(t) * sa;
+            lista.push([o[0] * ca + b.e[0] * ct + b.n[0] * st, o[1] * ca + b.e[1] * ct + b.n[1] * st, o[2] * ca + b.e[2] * ct + b.n[2] * st]);
+        }
+        return lista;
+    }
     /** Las tres flechas de la camara que mira al punto c: este, norte y hacia el que mira. */
     function base(c) {
         const l = Math.atan2(c[1], c[0]), sf = entre(c[2], -1, 1), cf = Math.sqrt(1 - sf * sf), sl = Math.sin(l), cl = Math.cos(l);
@@ -132,6 +150,9 @@
             if (visible && !reducido) pedirCuadro();       // aparecen con un fundido
             else { alfaTierra = 1; pintar(); }
             if (capa) dibujarMini();
+            // Los municipios (384 KB) en el proximo rato libre: nunca mientras la persona baja por la pagina
+            if ('requestIdleCallback' in window) requestIdleCallback(pedirMunicipios, { timeout: 6000 });
+            else setTimeout(pedirMunicipios, 1500);
         }).catch(() => { mundoFallo = true; if (esperaMundo) lanzar(); });   // sin continentes el mapa igual funciona
     }
 
@@ -141,10 +162,11 @@
      * son 35 km y el archivo trae un punto cada kilometro. Los extremos de cada arco se toman siempre
      * y en los dos sentidos se usan los mismos puntos: asi dos paises vecinos calzan sin huecos.
      */
-    function recorrer(anillo, hacer, s) {
+    function recorrer(anillo, hacer, s, datos) {
         s = s || 1;
+        const arcos = (datos || mundo).arcos;
         for (let k = 0; k < anillo.length; k++) {
-            const i = anillo[k], a = mundo.arcos[i >= 0 ? i : ~i], fin = a.n - 1;
+            const i = anillo[k], a = arcos[i >= 0 ? i : ~i], fin = a.n - 1;
             // Los arcos se tocan en sus extremos: el primer punto de cada arco siguiente ya se dio
             if (i >= 0) {
                 for (let j = k ? s : 0; j < fin; j += s) hacer(a, j);
@@ -157,12 +179,13 @@
         }
     }
 
-    /** En que pais cae un punto (-1: en ninguno, por ejemplo en el mar). */
-    function paisDe(lat, lon) {
-        if (!mundo) return -1;
+    /** En que pais (o municipio, con datos = municipios) cae un punto (-1: en ninguno, por ejemplo en el mar). */
+    function paisDe(lat, lon, datos) {
+        const d = datos || mundo;
+        if (!d) return -1;
         const v = vec(lat, lon);
-        for (let k = 0; k < mundo.paises.length; k++) {
-            const p = mundo.paises[k];
+        for (let k = 0; k < d.paises.length; k++) {
+            const p = d.paises[k];
             if (angulo(p.cv, v) > p.r + 0.01) continue;
             for (const anillo of p.anillos) {
                 // Regla par-impar: una linea hacia el este cruza el borde un numero impar de veces si esta adentro
@@ -172,12 +195,32 @@
                     ax = bx; ay = by;
                 };
                 let x0 = null, y0 = 0;
-                recorrer(anillo, (a, j) => { if (x0 === null) { x0 = a.ll[2 * j]; y0 = a.ll[2 * j + 1]; } probar(a.ll[2 * j], a.ll[2 * j + 1]); });
+                recorrer(anillo, (a, j) => { if (x0 === null) { x0 = a.ll[2 * j]; y0 = a.ll[2 * j + 1]; } probar(a.ll[2 * j], a.ll[2 * j + 1]); }, 1, d);
                 probar(x0, y0);
                 if (dentro) return k;
             }
         }
         return -1;
+    }
+
+    /* ---------- 2b. Los municipios de Colombia: se piden en un rato libre, despues del mundo ---------- */
+    let municipios = null, municipiosPedidos = false;
+    const municipioDe = {};       // clave de una ciudad (ciudades.js) -> indice del municipio que la contiene
+    let municipioResaltado = -1;  // el municipio de la tarjeta senalada (se pinta en naranja)
+    function pedirMunicipios() {
+        if (municipiosPedidos) return;
+        municipiosPedidos = true;
+        fetch(URL_MUNICIPIOS).then(r => { if (!r.ok) throw new Error('sin municipios'); return r.json(); }).then(json => {
+            municipios = leerMundo(json);
+            // Los arcos que usa un solo municipio son el borde de afuera de Colombia (costa o frontera)
+            const usos = new Uint8Array(municipios.arcos.length);
+            municipios.paises.forEach(mu => mu.anillos.forEach(an => an.forEach(i => { usos[i >= 0 ? i : ~i]++; })));
+            municipios.afuera = usos;
+            // Cada ciudad de la tabla, en el municipio que la contiene (por su punto, no por su nombre:
+            // hay varios "San Rafael" y el DANE escribe "Cartagena de Indias")
+            C.lista.forEach(c => { const i = paisDe(c.lat, c.lon, municipios); if (i >= 0) municipioDe[c.clave] = i; });
+            if (cam && m) pintar();
+        }).catch(() => { /* sin municipios el mapa funciona igual */ });
     }
 
     let miPais = -1;        // indice del pais donde estas (-1: ninguno o todavia no se sabe)
@@ -213,14 +256,15 @@
         }
     }
 
-    function trazarPais(lapiz, pais, cam, m) {
+    function trazarPais(lapiz, pais, cam, m, datos) {
+        const arcos = (datos || mundo).arcos;
         for (const anillo of pais.anillos) {
-            for (const i of anillo) proyectarArco(mundo.arcos[i >= 0 ? i : ~i], cam, m);
+            for (const i of anillo) proyectarArco(arcos[i >= 0 ? i : ~i], cam, m);
             let primero = true;
             recorrer(anillo, (a, j) => {
                 if (primero) { lapiz.moveTo(a.p[3 * j], a.p[3 * j + 1]); primero = false; }
                 else lapiz.lineTo(a.p[3 * j], a.p[3 * j + 1]);
-            }, salto);
+            }, salto, datos);
             lapiz.closePath();
         }
     }
@@ -294,21 +338,30 @@
                 if (t < Math.PI / 2 && t < vista) visibles.push(i);
             });
             const conMiPais = miPais >= 0 && visibles.indexOf(miPais) >= 0;
+            // Los municipios: aparecen al acercarse (con el disco abarcando menos de unos 450 km). Cuando se ven,
+            // la tierra de Colombia se dibuja con ellos (la costa precisa del DANE) y la del mapa del mundo
+            // (1:50 millones, en lineas rectas) se desvanece: antes se veian dos costas
+            const alfaMunicipios = !mini && municipios ? entre((k - R * 14) / (R * 10), 0, 1) : 0;
+            const colombiaFina = conMiPais && alfaMunicipios > 0 && mundo.paises[miPais].n === 'Colombia';
+            // Con los municipios ya del todo, la Colombia del mapa del mundo ni se dibuja (invisible, igual costaba)
+            const colombiaGruesa = conMiPais && !(colombiaFina && alfaMunicipios > 0.99);
             lapiz.globalAlpha = alfaTierra;
             // Todos los paises en un solo trazo (un solo relleno); el tuyo aparte, mas claro
             lapiz.fillStyle = '#1C3D61';
             lapiz.beginPath();
             visibles.forEach(i => { if (i !== miPais) trazarPais(lapiz, mundo.paises[i], cam, m); });
             lapiz.fill();
-            if (conMiPais) {
+            if (colombiaGruesa) {
+                lapiz.globalAlpha = alfaTierra * (colombiaFina ? 1 - alfaMunicipios : 1);
                 lapiz.fillStyle = '#27587F';
                 lapiz.beginPath();
                 trazarPais(lapiz, mundo.paises[miPais], cam, m);
                 lapiz.fill();
+                lapiz.globalAlpha = alfaTierra;
             }
             if (!mini) {
                 // Costas y fronteras: cada arco una sola vez, y solo lo que esta del lado visible
-                lapiz.strokeStyle = 'rgba(165, 205, 240, ' + (entero ? 0.2 : 0.3) + ')';
+                lapiz.strokeStyle = 'rgba(165, 205, 240, ' + ((entero ? 0.2 : 0.3) * (colombiaFina ? 1 - 0.85 * alfaMunicipios : 1)).toFixed(3) + ')';
                 lapiz.lineWidth = entero ? 0.6 : 0.9;
                 lapiz.lineJoin = 'round';
                 lapiz.beginPath();
@@ -328,13 +381,16 @@
                 }
                 lapiz.stroke();
             }
-            // El borde de tu pais, en turquesa
-            if (conMiPais) {
+            if (alfaMunicipios > 0.01) dibujarMunicipios(lapiz, cam, m, vista, alfaMunicipios, colombiaFina);
+            // El borde de tu pais, en turquesa (con los municipios a la vista lo dibujan ellos, mas preciso)
+            if (colombiaGruesa) {
+                lapiz.globalAlpha = alfaTierra * (colombiaFina ? 1 - alfaMunicipios : 1);
                 lapiz.strokeStyle = mini ? 'rgba(95, 208, 220, .9)' : 'rgba(95, 208, 220, .75)';
                 lapiz.lineWidth = mini ? 1 : 1.3;
                 lapiz.beginPath();
                 trazarPais(lapiz, mundo.paises[miPais], cam, m);
                 lapiz.stroke();
+                lapiz.globalAlpha = alfaTierra;
             }
             if (!mini && alfaRotulos > 0.01 && k > R * 2) rotular(lapiz, cam, m, visibles);
             lapiz.globalAlpha = 1;
@@ -347,6 +403,92 @@
             lapiz.fillStyle = sombra;
             lapiz.beginPath(); lapiz.arc(cx, cy, R, 0, 2 * Math.PI); lapiz.fill();
         }
+    }
+
+    /**
+     * Los municipios a la vista: rellenos para los que tienen vacantes dentro de tu alcance (turquesa, mas
+     * fuerte cuantas mas tienen; naranja el de la tarjeta senalada), bordes finos para todos y, muy de
+     * cerca, el nombre de los vecinos (los que tienen vacantes ya llevan su etiqueta en el mapa).
+     */
+    function dibujarMunicipios(lapiz, cam, m, vista, alfa, comoTierra) {
+        const visibles = [];
+        municipios.paises.forEach((p, i) => { if (angulo(p.cv, cam.b.c) - p.r < vista) visibles.push(i); });
+        if (!visibles.length) return;
+        const base = lapiz.globalAlpha;
+        lapiz.globalAlpha = base * alfa;
+        // La tierra de Colombia, con la costa precisa (reemplaza la del mapa del mundo, que se desvanece)
+        if (comoTierra) {
+            lapiz.fillStyle = '#27587F';
+            lapiz.beginPath();
+            visibles.forEach(i => trazarPais(lapiz, municipios.paises[i], cam, m, municipios));
+            lapiz.fill();
+        }
+        const totales = actual && actual.totales;
+        const conVacantes = new Set();
+        if (totales) {
+            Object.keys(totales).forEach(clave => {
+                const i = municipioDe[clave];
+                if (i === undefined || !totales[clave] || visibles.indexOf(i) < 0) return;
+                conVacantes.add(i);
+                const fuerza = Math.min(1, Math.log10(totales[clave] + 1) / 2.5);   // 1 vacante: tenue; 300: lleno
+                lapiz.fillStyle = i === municipioResaltado ? 'rgba(255, 118, 24, .4)' : 'rgba(95, 208, 220, ' + (0.12 + 0.26 * fuerza).toFixed(3) + ')';
+                lapiz.beginPath();
+                trazarPais(lapiz, municipios.paises[i], cam, m, municipios);
+                lapiz.fill();
+            });
+        }
+        // Bordes: cada arco una sola vez, solo los de los municipios a la vista
+        visibles.forEach(i => {
+            for (const anillo of municipios.paises[i].anillos) for (const j of anillo) proyectarArco(municipios.arcos[j >= 0 ? j : ~j], cam, m);
+        });
+        // Los bordes: los de adentro (entre municipios) finos y tenues; el de afuera (costa y frontera), en
+        // turquesa como el borde de tu pais
+        const trazar = (deAfuera) => {
+            lapiz.beginPath();
+            municipios.arcos.forEach((a, n) => {
+                if (a.sello !== sello || (municipios.afuera[n] === 1) !== deAfuera) return;
+                const p = a.p, fin = a.n - 1;
+                let levantado = true;
+                for (let i = 0; i <= fin; i = (i < fin && i + salto > fin) ? fin : i + salto) {
+                    const j = 3 * i;
+                    if (p[j + 2] <= 0) { levantado = true; continue; }
+                    if (levantado) { lapiz.moveTo(p[j], p[j + 1]); levantado = false; } else lapiz.lineTo(p[j], p[j + 1]);
+                }
+            });
+            lapiz.stroke();
+        };
+        lapiz.lineJoin = 'round';
+        // Mientras el planeta se mueve (arrastre, vuelo, inercia) solo lo esencial: los bordes de adentro y los
+        // nombres vuelven apenas se detiene. Asi arrastrar sigue fluido (con todo, algunos cuadros pasaban de 20 ms)
+        const quieto = !vuelo && !moviendo && !arrastre && !inercia;
+        lapiz.strokeStyle = 'rgba(165, 205, 240, .26)';
+        lapiz.lineWidth = 0.7;
+        if (quieto) trazar(false);
+        if (comoTierra) {
+            lapiz.strokeStyle = 'rgba(95, 208, 220, .75)';
+            lapiz.lineWidth = 1.3;
+            trazar(true);
+        }
+        // Nombres de los municipios vecinos, muy tenues, solo si caben y no tapan pines ni etiquetas
+        if (quieto && alfaRotulos > 0.01 && cam.k > m.R * 60) {
+            lapiz.font = '500 11px "Instrument Sans", system-ui, sans-serif';
+            lapiz.textAlign = 'center';
+            lapiz.textBaseline = 'middle';
+            lapiz.fillStyle = 'rgba(210, 232, 250, ' + (0.42 * alfaRotulos).toFixed(3) + ')';
+            const puestos = [];
+            visibles.forEach(i => {
+                const mu = municipios.paises[i];
+                if (conVacantes.has(i) || !mu.n || Math.sqrt(mu.s) * RAD * cam.k < 70) return;
+                const q = enPantalla(mu.cv, cam, m);
+                if (q[2] < 0.3 || Math.hypot(q[0] - m.cx, q[1] - m.cy) > m.R - 30) return;
+                const medio = lapiz.measureText(mu.n).width / 2 + 6;
+                if (evitar.some(o => Math.abs(o[0] - q[0]) < medio + o[2] && Math.abs(o[1] - q[1]) < 10 + o[2])) return;
+                if (puestos.some(o => Math.abs(o[0] - q[0]) < medio + o[2] && Math.abs(o[1] - q[1]) < 18)) return;
+                puestos.push([q[0], q[1], medio]);
+                lapiz.fillText(mu.n, q[0], q[1]);
+            });
+        }
+        lapiz.globalAlpha = base;
     }
 
     /** Nombres de paises y ciudades de referencia; se corren o se omiten si tapan tu punto o un pin. */
@@ -427,13 +569,23 @@
      * para los pines. Si todo queda en tu ciudad se ve tu zona (con la costa o las ciudades vecinas
      * para ubicarse); si las ciudades estan muy lejos unas de otras, el planeta entero.
      */
-    function camaraPara(origen, encontradas) {
+    function camaraPara(origen, encontradas, radio) {
         const puntos = [vec(origen.lat, origen.lon)], vistas = new Set();
+        // Con un alcance, el anillo entero entra en la vista (8 puntos de su borde bastan)
+        if (radio) circulo(puntos[0], radio, 8).forEach(v => puntos.push(v));
         (encontradas || []).forEach(e => {
             if (vistas.has(e.ciudad.clave)) return;
             vistas.add(e.ciudad.clave);
             puntos.push(vec(e.ciudad.lat, e.ciudad.lon));
         });
+        // Con un alcance la vista se centra en ti y el anillo ocupa casi todo el planeta (con aire para los
+        // pines del borde): asi cada ciudad queda separada de tu punto, con su ruta y sus km
+        if (radio) {
+            const yo = puntos[0];
+            const abreAnillo = Math.max(radio * 1.12, 12) / RADIO_TIERRA;
+            const lejos = Math.max.apply(null, puntos.slice(9).map(v => angulo(yo, v)).concat([abreAnillo]));
+            return { b: base(yo), k: Math.max(m.R, m.R * 0.86 / Math.sin(Math.min(Math.PI / 2, lejos))) };
+        }
         const centro = normal(puntos.reduce((s, v) => [s[0] + v[0], s[1] + v[1], s[2] + v[2]], [0, 0, 0]));
         const minimo = puntos.length > 1 ? 95 : 240;      // km; sin vacantes que mostrar, una vista mas amplia de la region
         const abre = Math.max(minimo / RADIO_TIERRA, Math.max.apply(null, puntos.map(v => angulo(centro, v))));
@@ -592,7 +744,10 @@
             // El nombre del grupo: primero la ciudad con mas vacantes
             const cuantas = c => g.indices.filter(i => encontradas[i].ciudad.clave === c.clave).length;
             g.ciudades.sort((x, y) => cuantas(y) - cuantas(x));
-            const nombre = g.ciudades[0].corto + (g.ciudades.length === 2 ? ' y ' + g.ciudades[1].corto : (g.ciudades.length > 2 ? ' y ' + (g.ciudades.length - 1) + ' más' : ''));
+            const nombre0 = g.ciudades[0].corto + (g.ciudades.length === 2 ? ' y ' + g.ciudades[1].corto : (g.ciudades.length > 2 ? ' y ' + (g.ciudades.length - 1) + ' más' : ''));
+            // Con el total de cada ciudad (tu alcance): "Turbaco · 3"
+            const suma = actual.totales ? g.ciudades.reduce((t, c) => t + (actual.totales[c.clave] || 0), 0) : 0;
+            const nombre = suma ? nombre0 + ' · ' + suma.toLocaleString('es-CO') : nombre0;
             const km = Math.max(1, Math.round(C.distanciaKm(origen.lat, origen.lon, g.ciudades[0].lat, g.ciudades[0].lon)));
             if (entrar && !reducido) {
                 // La ruta se "dibuja" destapandola: un rectangulo acostado sobre ella que se estira desde tu punto
@@ -612,8 +767,12 @@
             g.indices.forEach(i => { pines += pinDe(i, g); });
         });
 
+        // El anillo de tu alcance (debajo de las rutas) y su etiqueta con los km
+        const radio = actual.radio || 0;
+        const anillo = radio ? '<g class="cm-alcance"><path class="cm-alcance-area"/><path class="cm-alcance-borde"/></g>' : '';
+        if (radio) pines += '<span class="cm-alcance-km">' + radio + ' km</span>';
         recortes.innerHTML = defs;
-        capaRutas.innerHTML = rayos + rutas;
+        capaRutas.innerHTML = anillo + rayos + rutas;
         capaPines.innerHTML = pines;
         // Cada grupo guarda sus elementos: colocar() solo les cambia el lugar
         const delGrupo = g => {
@@ -628,6 +787,20 @@
             g.luz = de(capaRutas, '.cm-luz'); g.nodo = de(capaPines, '.cm-nodo'); g.nombre = de(capaPines, '.cm-ciudad'); g.km = de(capaPines, '.cm-km');
         });
         capa = { aqui: partes.aqui, lejos: partes.lejos, k: cam.k };
+        // El tamano de cada etiqueta, medido una vez: colocar() decide en cada cuadro si choca con algo
+        // haciendo cuentas, sin volver a medir (medir en cada cuadro obligaria a recalcular la pagina)
+        const tam = el => el ? [el.offsetWidth, el.offsetHeight] : [0, 0];
+        partes.lejos.forEach(g => { g.tamNombre = tam(g.nombre); g.tamKm = tam(g.km); });
+        // La caja del nombre de tu punto, contada desde el centro del punto (que es donde cae "yo" en colocar)
+        const rPunto = pinTu.querySelector('i').getBoundingClientRect(), rNombre = pinTu.querySelector('b').getBoundingClientRect();
+        const pcx = rPunto.left + rPunto.width / 2, pcy = rPunto.top + rPunto.height / 2;
+        capa.cajaTu = [rNombre.left - pcx, rNombre.top - pcy, rNombre.right - pcx, rNombre.bottom - pcy];
+        if (radio) capa.alcance = {
+            g: capaRutas.querySelector('.cm-alcance'), area: capaRutas.querySelector('.cm-alcance-area'),
+            borde: capaRutas.querySelector('.cm-alcance-borde'), km: capaPines.querySelector('.cm-alcance-km'),
+            puntos: circulo(vOrigen, radio, 96)
+        };
+        if (capa.alcance) capa.alcance.tam = tam(capa.alcance.km);
         lienzo.classList.toggle('cm-entra', !!entrar && !reducido);
         lienzo.classList.add('cm-listo');
         colocar();
@@ -639,6 +812,12 @@
                 { duration: 1100, delay: 150 + i * 160, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'backwards' }));
             entradas = todas;
             if (todas.length) todas[todas.length - 1].finished.then(() => { if (entradas === todas) quitarRecortes(); }).catch(() => {});
+            // El anillo crece desde tu punto, antes que las rutas: primero el alcance, despues lo que hay en el
+            if (capa.alcance) {
+                capa.alcance.g.animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }],
+                    { duration: 1100, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'backwards' });
+                capa.alcance.km.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 800, easing: 'ease-out', fill: 'backwards' });
+            }
         }
         encenderLuces(entrar ? 1300 : 200);
         dibujarMini();
@@ -654,6 +833,22 @@
         const nuevos = yoSeVe ? [[yo[0], yo[1] - 22, 26]] : [];
         capa.lejos.forEach(g => { const q = enPantalla(g.v, cam, m); g.p = [q[0], q[1]]; g.seVe = enDisco(q, m); });
 
+        // El anillo de tu alcance: sus 96 puntos en la pantalla. Crece desde tu punto (transform-origin)
+        if (capa.alcance) {
+            const A0 = capa.alcance, q = A0.puntos.map(v => enPantalla(v, cam, m));
+            // Se ve si tu punto se ve, todo el anillo queda de este lado y no es un puntito (desde Madrid,
+            // con el planeta entero, 25 km miden 2 pixeles: ahi el anillo y su etiqueta sobran)
+            const seVe = yoSeVe && q.every(p => p[2] > 0.02) && Math.hypot(q[0][0] - yo[0], q[0][1] - yo[1]) > 14;
+            esconder(A0.g, !seVe); esconder(A0.km, !seVe);
+            if (seVe) {
+                const d = 'M' + q.map(p => f(p[0]) + ' ' + f(p[1])).join('L') + 'Z';
+                A0.area.setAttribute('d', d); A0.borde.setAttribute('d', d);
+                A0.g.style.transformOrigin = f(yo[0]) + 'px ' + f(yo[1]) + 'px';
+            }
+            A0.q = seVe ? q : null;      // su etiqueta se pone al final, cuando ya se sabe que hay alrededor
+        }
+        const pinesPuestos = [];         // donde quedo cada pin en este cuadro (para que las etiquetas no los tapen)
+
         // Las de tu ciudad: en abanico debajo de ti (arriba va tu nombre), de izquierda a derecha.
         // Si hay rutas hacia otras ciudades, el abanico se abre hacia el lado contrario para no cruzarlas
         const A = capa.aqui, n0 = A.indices.length;
@@ -664,15 +859,17 @@
                 const suma = capa.lejos.reduce((t, g) => { const d = Math.hypot(g.p[0] - yo[0], g.p[1] - yo[1]) || 1; return [t[0] + (g.p[0] - yo[0]) / d, t[1] + (g.p[1] - yo[1]) / d]; }, [0, 0]);
                 if (Math.hypot(suma[0], suma[1]) > 0.2) {
                     frente = Math.atan2(-suma[1], -suma[0]) / RAD;
-                    // Arriba esta tu nombre: si el lado contrario cae alli, se corre hacia el costado mas cercano
-                    const aArriba = ((frente + 90 + 540) % 360) - 180;       // diferencia con "arriba" (-90)
-                    if (Math.abs(aArriba) < 65) frente = -90 + (aArriba >= 0 ? 65 : -65);
+                    // Arriba esta tu nombre: si el lado contrario apunta hacia arriba, el abanico baja a ese
+                    // costado (abajo a la derecha o abajo a la izquierda). Antes solo se corria 65 grados y el
+                    // primer pin quedaba debajo de "Tu · Cartagena"
+                    if (Math.sin(frente * RAD) < 0.25) frente = Math.cos(frente * RAD) >= 0 ? 25 : 155;
                 }
             }
             A.indices.forEach((i, j) => {
                 const a = (frente - (j - (n0 - 1) / 2) * paso) * RAD;
                 const p = dentro([yo[0] + 46 * Math.cos(a), yo[1] + 46 * Math.sin(a)]), rayo = A.rayos[j];
                 mover(A.pines[j], p); esconder(A.pines[j], !yoSeVe); esconder(rayo, !yoSeVe);
+                if (yoSeVe) pinesPuestos.push(p);
                 rayo.setAttribute('x1', f(yo[0])); rayo.setAttribute('y1', f(yo[1])); rayo.setAttribute('x2', f(p[0])); rayo.setAttribute('y2', f(p[1]));
             });
             if (yoSeVe) nuevos.push([yo[0] + 30 * Math.cos(frente * RAD), yo[1] + 30 * Math.sin(frente * RAD), 40]);
@@ -693,6 +890,7 @@
                 const a = rumbo + (j - (n - 1) / 2) * 46 * RAD;
                 const p = n === 1 ? b : dentro([b[0] + 36 * Math.cos(a), b[1] + 36 * Math.sin(a)]), rayo = g.rayos[j];
                 mover(g.pines[j], p); esconder(g.pines[j], !g.seVe);
+                if (g.seVe) pinesPuestos.push(p);
                 if (rayo) {
                     esconder(rayo, !g.seVe);
                     rayo.setAttribute('x1', f(b[0])); rayo.setAttribute('y1', f(b[1])); rayo.setAttribute('x2', f(p[0])); rayo.setAttribute('y2', f(p[1]));
@@ -703,15 +901,63 @@
             const abreArriba = Math.sin(rumbo) < 0, salto = n === 1 ? 18 : 12;
             let arriba = n > 1 && !abreArriba;
             if (yoSeVe && Math.abs(b[0] - yo[0]) < 70 && Math.abs((arriba ? b[1] - salto - 12 : b[1] + salto + 12) - (yo[1] - 14)) < 34) arriba = !arriba;
-            mover(g.nombre, [entre(b[0], 40, m.w - 40), arriba ? b[1] - salto : b[1] + salto], arriba ? ' translate(-50%, -100%)' : ' translate(-50%, 0)');
+            const tn = g.tamNombre || [0, 0], w = tn[0], h = tn[1], x = b[0], y = b[1];
+            // Lugares posibles para el nombre: el de siempre (del lado contrario al abanico), el otro lado,
+            // a la derecha y a la izquierda del pin. colocar() se queda con el primero que no choque
+            const abajo = { p: [x, y + salto], tf: ' translate(-50%, 0)', r: [x - w / 2, y + salto, x + w / 2, y + salto + h] };
+            const encima = { p: [x, y - salto], tf: ' translate(-50%, -100%)', r: [x - w / 2, y - salto - h, x + w / 2, y - salto] };
+            const derecha = { p: [x + 16, y], tf: ' translate(0, -50%)', r: [x + 16, y - h / 2, x + 16 + w, y + h / 2] };
+            const izquierda = { p: [x - 16, y], tf: ' translate(-100%, -50%)', r: [x - 16 - w, y - h / 2, x - 16, y + h / 2] };
+            g.lugaresNombre = g.seVe ? (arriba ? [encima, abajo] : [abajo, encima]).concat(Math.cos(rumbo) >= 0 ? [derecha, izquierda] : [izquierda, derecha]) : null;
             esconder(g.nombre, !g.seVe);
             // Los kilometros, en la mitad de la ruta (si la ruta es larga y cabe)
             const conKm = conRuta && largo > 60;
             esconder(g.km, !conKm);
             const mx = 0.25 * yo[0] + 0.5 * c[0] + 0.25 * b[0], my = Math.max(14, 0.25 * yo[1] + 0.5 * c[1] + 0.25 * b[1]);
-            if (conKm) { mover(g.km, [mx, my], ' translate(-50%, -50%)'); nuevos.push([mx, my, 22]); }
+            const tk = g.tamKm || [0, 0];
+            // Lugares posibles para los km: la mitad de la ruta, o un poco antes o despues
+            g.lugaresKm = conKm ? [0.5, 0.36, 0.64].map(t => {
+                const u = 1 - t, px = u * u * yo[0] + 2 * u * t * c[0] + t * t * b[0], py = Math.max(14, u * u * yo[1] + 2 * u * t * c[1] + t * t * b[1]);
+                return { p: [px, py], tf: ' translate(-50%, -50%)', r: [px - tk[0] / 2, py - tk[1] / 2, px + tk[0] / 2, py + tk[1] / 2] };
+            }) : null;
+            if (conKm) nuevos.push([mx, my, 22]);
             if (g.seVe) nuevos.push([b[0], b[1], 44]);
         });
+
+        // Etiquetas que no se pisan. Los pines numerados y tu punto (con su nombre) siempre se ven; despues,
+        // por orden de importancia, los nombres de las ciudades, los km de cada ruta y los km del anillo: cada
+        // uno se esconde si su caja choca con algo ya puesto. Con el planeta a medio acercar (al arrastrarlo en
+        // plena entrada) las etiquetas se montaban sobre los pines y no se leia nada
+        const ocupado = pinesPuestos.map(p => [p[0] - 14, p[1] - 14, p[0] + 14, p[1] + 14]);
+        if (yoSeVe) {
+            ocupado.push([yo[0] - 9, yo[1] - 9, yo[0] + 9, yo[1] + 9]);
+            if (capa.cajaTu) ocupado.push([yo[0] + capa.cajaTu[0], yo[1] + capa.cajaTu[1], yo[0] + capa.cajaTu[2], yo[1] + capa.cajaTu[3]]);
+        }
+        const choca = r => ocupado.some(o => r[0] < o[2] - 1 && r[2] > o[0] + 1 && r[1] < o[3] - 1 && r[3] > o[1] + 1);
+        const cabe = r => r[0] >= 2 && r[1] >= 2 && r[2] <= m.w - 2 && r[3] <= m.h - 2;
+        const poner = (el, lugares) => {
+            if (!el || !lugares) return;
+            const libre = lugares.find(l => cabe(l.r) && !choca(l.r));
+            if (!libre) { esconder(el, true); return; }
+            mover(el, libre.p, libre.tf);
+            ocupado.push(libre.r);
+        };
+        capa.lejos.forEach(g => poner(g.nombre, g.lugaresNombre));
+        capa.lejos.forEach(g => poner(g.km, g.lugaresKm));
+        // Los km del anillo: en el primer punto del borde (de 8, empezando por el noreste) donde no choquen con nada
+        if (capa.alcance) {
+            const A0 = capa.alcance, t = A0.tam || [0, 0];
+            let lugar = null;
+            if (A0.q) {
+                for (let j = 1; j < 9 && !lugar; j++) {
+                    const c = dentro(A0.q[Math.round(((j % 8) / 8) * A0.q.length) % A0.q.length]);
+                    const r = [c[0] - t[0] / 2, c[1] - t[1] / 2, c[0] + t[0] / 2, c[1] + t[1] / 2];
+                    if (!choca(r)) lugar = { c: c, r: r };
+                }
+            }
+            esconder(A0.km, !lugar);
+            if (lugar) { mover(A0.km, lugar.c, ' translate(-50%, -50%)'); ocupado.push(lugar.r); nuevos.push([lugar.c[0], lugar.c[1], 24]); }
+        }
         evitar = nuevos;
     }
 
@@ -792,7 +1038,7 @@
         const origen = actual.origen;
         vOrigen = vec(origen.lat, origen.lon);
         buscarPais();
-        const destino = camaraPara(origen, actual.encontradas);
+        const destino = camaraPara(origen, actual.encontradas, actual.radio);
         limpiarEncima();
         giroLibre = false; moviendo = false; inercia = null;
         lienzo.classList.remove('cm-moviendo');
@@ -855,7 +1101,8 @@
         moviendo = false;
         lienzo.classList.remove('cm-moviendo');
         if (capa && Math.abs(Math.log(cam.k / capa.k)) > 0.03) { armar(false); pintar(); }
-        else { encenderLuces(200); dibujarMini(); }
+        // Quieto otra vez: se dibuja completo (mientras se movia, los municipios iban sin bordes de adentro)
+        else { encenderLuces(200); dibujarMini(); pintar(); }
         actualizarControles();
     }
     function actualizarControles() {
@@ -877,7 +1124,7 @@
     function volver() {
         if (!cam || !m || !actual || !entro && !reducido) return;
         empezarMovimiento();
-        const destino = camaraPara(actual.origen, actual.encontradas);
+        const destino = camaraPara(actual.origen, actual.encontradas, actual.radio);
         if (reducido) { cam = destino; pintar(); asentar(); return; }
         volarA(destino, null);
     }
@@ -936,20 +1183,26 @@
             actual = { tipo: 'cargando', origen: origen, encontradas: [] };
             lanzar();
         },
-        mostrar(origen, encontradas) {
+        mostrar(origen, encontradas, extra) {
+            extra = extra || {};
             const ciudades = new Map();
             encontradas.forEach(e => ciudades.set(e.ciudad.clave, e.ciudad));
             const unicas = Array.from(ciudades.values());
             const n = encontradas.length, vac = n === 1 ? '1 vacante' : n + ' vacantes';
             const km = Math.max(1, Math.round(Math.max.apply(null, unicas.map(c => C.distanciaKm(origen.lat, origen.lon, c.lat, c.lon)))));
-            if (unicas.length === 1 && unicas[0].clave === origen.ciudad.clave) texto(vac + ' en ' + origen.ciudad.corto);
+            const totales = extra.totales || null;
+            const total = totales ? Object.keys(totales).reduce((t, c) => t + totales[c], 0) : 0;
+            if (extra.radio && total) texto(total.toLocaleString('es-CO') + (total === 1 ? ' vacante' : ' vacantes') + ' a ' + extra.radio + ' km o menos');
+            else if (unicas.length === 1 && unicas[0].clave === origen.ciudad.clave) texto(vac + ' en ' + origen.ciudad.corto);
             else if (unicas.length === 1) texto(vac + ' en ' + unicas[0].corto + ' · a ' + km + ' km');
             else texto(vac + ' en ' + unicas.length + ' ciudades · la más lejos a ' + km + ' km');
-            actual = { tipo: 'vacantes', origen: origen, encontradas: encontradas };
+            actual = { tipo: 'vacantes', origen: origen, encontradas: encontradas, radio: extra.radio || 0, totales: totales };
             lanzar();
         },
         vacio(origen) { texto('Nada cerca por ahora'); actual = { tipo: 'vacio', origen: origen, encontradas: [] }; lanzar(); },
         error(origen) { texto('No pudimos cargar las vacantes'); actual = { tipo: 'error', origen: origen, encontradas: [] }; lanzar(); },
+        /** Ilumina la vacante i (su pin, su ruta y su tarjeta); null apaga. */
+        resaltar(i) { resaltar(i); },
         /** Para las pruebas: como quedo la camara y en que pais te encontro. */
         estado() {
             if (!cam || !m) return null;
@@ -957,7 +1210,9 @@
             return {
                 listo: !!capa, volando: !!vuelo, moviendo: moviendo || !!arrastre || !!inercia, conMundo: !!mundo,
                 lat: Math.asin(entre(c[2], -1, 1)) / RAD, lon: Math.atan2(c[1], c[0]) / RAD,
-                zoom: cam.k / m.R, pais: mundo && miPais >= 0 ? mundo.paises[miPais].n : '', elegida: fijado
+                zoom: cam.k / m.R, pais: mundo && miPais >= 0 ? mundo.paises[miPais].n : '', elegida: fijado,
+                municipios: municipios ? municipios.paises.length : 0,
+                municipioDeCartagena: municipios && municipioDe.cartagena !== undefined ? municipios.paises[municipioDe.cartagena].n : ''
             };
         }
     };
@@ -975,6 +1230,14 @@
         capaRutas.querySelectorAll('.cm-ruta, .cm-ruta-halo').forEach(r => r.classList.toggle('es-resaltada', r.dataset.g === ruta));
         capaRutas.querySelectorAll('.cm-rayo').forEach(r => r.classList.toggle('es-resaltado', r.dataset.i === clave));
         if (lista) lista.querySelectorAll('.cerca-tarjeta').forEach(t => t.classList.toggle('es-resaltada', t.dataset.i === clave));
+        document.querySelectorAll('#cercaCiudades .cerca-ciudad-fila').forEach(t => t.classList.toggle('es-resaltada', t.dataset.i === clave));
+        // Su municipio, en naranja (se redibuja solo si cambio y el planeta esta quieto: si se mueve, ya se redibuja)
+        const e = clave !== null && actual && actual.encontradas ? actual.encontradas[+clave] : null;
+        const nuevo = e && municipioDe[e.ciudad.clave] !== undefined ? municipioDe[e.ciudad.clave] : -1;
+        if (nuevo !== municipioResaltado) {
+            municipioResaltado = nuevo;
+            if (municipios && cam && m && !vuelo && !moviendo) dibujarGlobo(ctx, cam, m);
+        }
     }
     /** Clic en un pin: su vacante queda elegida y su tarjeta se acerca a la vista. */
     function fijar(i) {
@@ -1003,6 +1266,12 @@
             if (entradasIO[0].isIntersecting) { cerca.disconnect(); pedirMundo(); }
         }, { rootMargin: '900px 0px' });
         cerca.observe(panel);
+        // Y si la pagina queda libre antes (lo normal), se preparan en ese rato: procesar el mundo (300 KB)
+        // justo al acercarse trababa el scroll 77 ms. En un momento libre no lo nota nadie
+        if ('requestIdleCallback' in window) {
+            const preparar = () => requestIdleCallback(() => { cerca.disconnect(); pedirMundo(); }, { timeout: 4000 });
+            if (document.readyState === 'complete') preparar(); else addEventListener('load', preparar, { once: true });
+        }
         new IntersectionObserver(entradasIO => {
             visible = entradasIO[0].isIntersecting;
             panel.classList.toggle('cm-quieto', !visible);

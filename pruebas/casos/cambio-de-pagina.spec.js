@@ -98,15 +98,6 @@ test.describe('en el computador', () => {
         expect(await direccion(page), 'se usa una sola vez').toBeNull();
     });
 
-    test('un enlace a la misma página no la deja fija (el scroll la sigue moviendo)', async ({ page, api }) => {
-        await page.goto('index.html');
-        await enlace(page, 'Cómo funciona').click();
-        await page.mouse.move(900, 500);
-        await expect.poll(() => lineaDebajoDe(page, 'Cómo funciona')).toBe(true);
-        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
-        await expect.poll(() => lineaDebajoDe(page, 'Inicio')).toBe(true);
-    });
-
     test('al volver con "atrás" desde la memoria, la línea vuelve a la página', async ({ page, api }) => {
         await page.goto('index.html');
         await sinCambiarDePagina(page);
@@ -304,4 +295,19 @@ test('con movimiento reducido no se mueve nada, pero la página igual se funde',
     expect(haciaUnLado).toContainEqual({ de: '::view-transition-old(root)', nombre: 'vt-desvanecer' });
     // Y los bloques no entran en fila: llega la clase, pero sin animación
     expect(await mostrarConDireccion(page, { dir: 'derecha' })).toMatchObject({ clase: ['entra-derecha'], bloques: 0 });
+});
+
+// Un enlace a la misma página no deja fija la línea del menú. Antes se probaba con "Cómo funciona"
+// de la portada; salió del menú (2026-11-12) y ahora los enlaces a secciones de la misma página son
+// los de Mi empresa ("Mis ofertas", "Candidatos"). Va aparte: el grupo de arriba entra como visitante
+test('un enlace a la misma página no la deja fija (el scroll la sigue moviendo)', async ({ page, context, api }, info) => {
+    test.skip(info.project.name !== 'escritorio', 'el menú de arriba solo se ve en el computador');
+    await entrarComo(context, 'empresa');
+    await page.goto('perfil-empresa.html');
+    await expect(page.locator('#applications-list .application-card').first()).toBeVisible();
+    await enlace(page, 'Mis ofertas').click();
+    await page.mouse.move(900, 500);
+    await expect.poll(() => lineaDebajoDe(page, 'Mis ofertas')).toBe(true);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await expect.poll(() => lineaDebajoDe(page, 'Mi empresa')).toBe(true);
 });

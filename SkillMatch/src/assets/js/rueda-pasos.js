@@ -68,7 +68,7 @@
         const d = contorno(i), angulo = i * ANGULO;
         const lugar = punto(angulo, R_MARCA);
         piezas += '<g class="cf-seg" data-i="' + i + '" style="--dx:' + num(SALTO * Math.sin(rad(angulo))) + 'px;--dy:' +
-                  num(-SALTO * Math.cos(rad(angulo))) + 'px"><path class="cf-seg-base" d="' + d + '"/><path class="cf-seg-luz" d="' + d + '"/></g>';
+                  num(-SALTO * Math.cos(rad(angulo))) + 'px"><path class="cf-seg-aura" d="' + d + '"/><path class="cf-seg-base" d="' + d + '"/><path class="cf-seg-luz" d="' + d + '"/></g>';
         marcasHtml += '<button type="button" class="cf-marca" role="tab" id="cf-pieza-' + (i + 1) + '" data-i="' + i + '"' +
                       ' aria-controls="' + paso.id + '" aria-label="Paso ' + (i + 1) + ': ' + titulos[i] + '"' +
                       ' style="--x:' + num(lugar[0] / LADO * 100) + '%;--y:' + num(lugar[1] / LADO * 100) + '%">' +
@@ -225,8 +225,16 @@
                           { duration: dura, easing: suave });
             marca.animate([{ opacity: 0, offset: 0 }], { duration: 500, delay: 200 + i * 110, easing: 'ease-out', fill: 'backwards' });
         });
+        // Cada pieza llega desde su propio lado (la de arriba desde arriba, la de la derecha desde la
+        // derecha...), se pasa un poco hacia el centro y vuelve: encaja con un pequeno golpe. Como la rueda
+        // da media vuelta mientras tanto, las cuatro llegan en espiral y se arman en el aro
         segmentos.forEach(function (s, i) {
-            s.animate([{ opacity: 0, transform: 'scale(.55)', offset: 0 }], { duration: 800, delay: i * 110, easing: suave, fill: 'backwards' });
+            const a = rad(i * ANGULO), lejos = 120, golpe = 3;
+            s.animate([
+                { offset: 0, opacity: 0, transform: 'translate(' + num(lejos * Math.sin(a)) + 'px, ' + num(-lejos * Math.cos(a)) + 'px)' },
+                { offset: .35, opacity: 1 },
+                { offset: .8, transform: 'translate(' + num(-golpe * Math.sin(a)) + 'px, ' + num(golpe * Math.cos(a)) + 'px)', easing: 'cubic-bezier(.3, 0, .3, 1)' }
+            ], { duration: 1000, delay: 80 + i * 130, easing: suave, fill: 'backwards' });
         });
         centro.animate([{ opacity: 0, transform: 'translate(-50%, -50%) scale(.6)', offset: 0 }], { duration: 900, delay: 300, easing: suave, fill: 'backwards' });
     }

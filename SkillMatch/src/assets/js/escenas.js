@@ -13,8 +13,9 @@
  *  - Solo mueve transform y opacity (rendimiento a 60 cuadros por segundo).
  *  - Se detiene sola fuera de pantalla o con la pestana oculta, y con
  *    "reducir movimiento" se queda quieta en su cuadro final.
- *  - Con mouse real se inclina unos grados cuando el cursor pasa por encima
- *    (nunca en pantallas tactiles).
+ *  - Ya no se inclina con el mouse (2026-11-12): nada de efectos que sigan al cursor.
+ *  - Una receta puede traer "halo": la luz de detras de la escena (una caja HTML,
+ *    ::before) sube o baja con la historia, con el mismo reloj.
  *
  * Para agregar otra escena: una receta nueva en CONSTRUCTORES (ciclo y dibujar)
  * y en el HTML <div class="escenario" data-escena="..."><svg viewBox="0 0 480 360"
@@ -24,7 +25,6 @@
     'use strict';
 
     var rm = window.matchMedia('(prefers-reduced-motion: reduce)');
-    var conMouse = window.matchMedia('(hover: hover) and (pointer: fine)');
     var reducido = rm.matches;
     if (!('animate' in Element.prototype) || typeof KeyframeEffect === 'undefined') return;
 
@@ -36,18 +36,21 @@
     };
 
     /* ================= Piezas isometricas (las mismas para todas las escenas) ================= */
-    // Colores de cada cara (arriba, izquierda, derecha): turquesa y naranja del logo, azul marino
+    // Colores de cada cara (arriba, izquierda, derecha). Es una ciudad DE NOCHE con los azules de la
+    // portada: antes era blanca, de dia, y sobre el azul noche se veia como una foto recortada y pegada.
+    // Ahora la luz la ponen las ventanas y las habilidades (turquesa) y la chispa del match (naranja)
     var C = {
-        suelo: { arriba: '#E4EEF6', izq: '#AFC6D8', der: '#8FADC4' },
-        pared: { arriba: '#F4F8FB', izq: '#FFFFFF', der: '#D6E3EE' },
-        hotel: { arriba: '#EEF4F9', izq: '#FFFFFF', der: '#D2E0EB' },
-        cian: { arriba: '#5FD0DC', izq: '#2BB6C6', der: '#1B8F9C' },
+        suelo: { arriba: '#173A5C', izq: '#0F2C48', der: '#0B2138' },
+        pared: { arriba: '#3A6288', izq: '#2C5378', der: '#21446A' },
+        hotel: { arriba: '#355D84', izq: '#2A5176', der: '#1F4266' },
+        cian: { arriba: '#7FE3EC', izq: '#2BB6C6', der: '#1B8F9C' },
         naranja: { arriba: '#FFA05C', izq: '#FF7618', der: '#D45F10' },
         navy: { arriba: '#1A3A5E', izq: '#12365E', der: '#0B2440' },
         vidrioAuto: { arriba: '#CFEFF5', izq: '#9DD6E2', der: '#78BCCB' },
-        ventana: ['#B7C9D8', '#A6BDCF'],
-        ventanaLuz: ['#5FD0DC', '#2BB6C6'],
-        acera: '#CBD9E5', calle: '#2B4766', navyTexto: '#08203C'
+        ventana: ['#1B3B5C', '#16324F'],          // apagadas
+        ventanaLuz: ['#7FE3EC', '#45C3D1'],       // encendidas por una habilidad
+        acera: '#22496E', calle: '#0B1E33', navyTexto: '#08203C',
+        borde: '#5FD0DC'                          // filo de luz de la isla (como el de la barra)
     };
     function f1(n) { return n.toFixed(1); }
 
@@ -67,23 +70,25 @@
             var a = [x + w / 2, y + d / 2, z + h];
             return poli([[x, y + d, z], [x + w, y + d, z], a], c1) + poli([[x + w, y, z], [x + w, y + d, z], a], c2);
         };
-        // Ventanas de un piso en las dos caras de adelante de un edificio
-        var ventanas = function (x, y, w, d, z1, alto, colores, n1, n2) {
-            var v = '', paso1 = w / n1, paso2 = d / n2, an = Math.min(7, paso1 * .55), an2 = Math.min(7, paso2 * .55);
-            for (var i = 0; i < n1; i++) { var wx = x + paso1 * i + (paso1 - an) / 2; v += poli([[wx, y + d + .1, z1], [wx + an, y + d + .1, z1], [wx + an, y + d + .1, z1 + alto], [wx, y + d + .1, z1 + alto]], colores[0]); }
-            for (var j = 0; j < n2; j++) { var wy = y + paso2 * j + (paso2 - an2) / 2; v += poli([[x + w + .1, wy, z1], [x + w + .1, wy + an2, z1], [x + w + .1, wy + an2, z1 + alto], [x + w + .1, wy, z1 + alto]], colores[1]); }
+        // Ventanas de un piso en las dos caras de adelante de un edificio. Devuelve una lista (una por
+        // ventana, de izquierda a derecha) para poder encenderlas una por una; unidas, es el piso entero
+        var ventanasLista = function (x, y, w, d, z1, alto, colores, n1, n2) {
+            var v = [], paso1 = w / n1, paso2 = d / n2, an = Math.min(7, paso1 * .55), an2 = Math.min(7, paso2 * .55);
+            for (var i = 0; i < n1; i++) { var wx = x + paso1 * i + (paso1 - an) / 2; v.push(poli([[wx, y + d + .1, z1], [wx + an, y + d + .1, z1], [wx + an, y + d + .1, z1 + alto], [wx, y + d + .1, z1 + alto]], colores[0])); }
+            for (var j = n2 - 1; j >= 0; j--) { var wy = y + paso2 * j + (paso2 - an2) / 2; v.push(poli([[x + w + .1, wy, z1], [x + w + .1, wy + an2, z1], [x + w + .1, wy + an2, z1 + alto], [x + w + .1, wy, z1 + alto]], colores[1])); }
             return v;
         };
-        // Arbol de copa redonda (sirve para cualquier ciudad); se mece desde la base del tronco
+        var ventanas = function (x, y, w, d, z1, alto, colores, n1, n2) { return ventanasLista(x, y, w, d, z1, alto, colores, n1, n2).join(''); };
+        // Arbol de copa redonda (sirve para cualquier ciudad). Quieto: mecerse sin parar obligaba al
+        // navegador a redibujar la escena entera en cada cuadro, aunque no pasara nada mas
         var arbol = function (x, y, k) {
             k = k || 1;
             var b = iso(x, y, 0), h = 13 * k, r = 9.5 * k, cy = b[1] - h - r * .55;
-            return '<ellipse cx="' + f1(b[0]) + '" cy="' + f1(b[1]) + '" rx="' + f1(9 * k) + '" ry="' + f1(4.5 * k) + '" fill="#0B2440" fill-opacity=".16"/>' +
-                '<g class="e-mece" style="animation-delay:-' + (((x * 13 + y * 7) % 40) / 10).toFixed(1) + 's">' +
-                '<line x1="' + f1(b[0]) + '" y1="' + f1(b[1]) + '" x2="' + f1(b[0]) + '" y2="' + f1(b[1] - h) + '" stroke="#8A6A45" stroke-width="' + f1(3 * k) + '" stroke-linecap="round"/>' +
-                '<circle cx="' + f1(b[0]) + '" cy="' + f1(cy) + '" r="' + f1(r) + '" fill="#2A9D84"/>' +
-                '<circle cx="' + f1(b[0] + r * .25) + '" cy="' + f1(cy + r * .22) + '" r="' + f1(r * .72) + '" fill="#23866F"/>' +
-                '<circle cx="' + f1(b[0] - r * .3) + '" cy="' + f1(cy - r * .3) + '" r="' + f1(r * .45) + '" fill="#57C4A6"/></g>';
+            return '<ellipse cx="' + f1(b[0]) + '" cy="' + f1(b[1]) + '" rx="' + f1(9 * k) + '" ry="' + f1(4.5 * k) + '" fill="#020A16" fill-opacity=".35"/>' +
+                '<line x1="' + f1(b[0]) + '" y1="' + f1(b[1]) + '" x2="' + f1(b[0]) + '" y2="' + f1(b[1] - h) + '" stroke="#4A3A2A" stroke-width="' + f1(3 * k) + '" stroke-linecap="round"/>' +
+                '<circle cx="' + f1(b[0]) + '" cy="' + f1(cy) + '" r="' + f1(r) + '" fill="#1E7466"/>' +
+                '<circle cx="' + f1(b[0] + r * .25) + '" cy="' + f1(cy + r * .22) + '" r="' + f1(r * .72) + '" fill="#185F54"/>' +
+                '<circle cx="' + f1(b[0] - r * .3) + '" cy="' + f1(cy - r * .3) + '" r="' + f1(r * .45) + '" fill="#2E9A86"/>';
         };
         // Manzana: el suelo de la escena, con acera y calle al frente
         var manzana = function (w, d, acera, calle) {
@@ -92,23 +97,34 @@
             if (calle !== null && calle !== undefined) {
                 s += poli([[0, calle, .2], [w, calle, .2], [w, d, .2], [0, d, .2]], C.calle);
                 var ym = calle + (d - calle) / 2;
-                for (var x = 6; x + 12 < w; x += 24) s += poli([[x, ym - .9, .3], [x + 12, ym - .9, .3], [x + 12, ym + .9, .3], [x, ym + .9, .3]], 'rgba(255,255,255,.55)');
+                for (var x = 6; x + 12 < w; x += 24) s += poli([[x, ym - .9, .3], [x + 12, ym - .9, .3], [x + 12, ym + .9, .3], [x, ym + .9, .3]], 'rgba(95,208,220,.4)');
             }
+            // Filo de luz en los dos bordes de adelante, como el de la barra: separa la isla del fondo
+            // sin recuadro, y la integra a la portada
+            s += '<polyline points="' + P([[0, d, 0], [w, d, 0], [w, 0, 0]]) + '" fill="none" stroke="' + C.borde + '" stroke-opacity=".55" stroke-width="1.2" stroke-linejoin="round"/>';
+            s += '<polyline points="' + P([[0, d, 0], [0, 0, 0], [w, 0, 0]]) + '" fill="none" stroke="' + C.borde + '" stroke-opacity=".14" stroke-width="1"/>';
             return s;
         };
         var auto = function (x, y, c) {
             return caja(x + 1.5, y + .8, 0, 13, 6.4, 1.6, C.navy) + caja(x, y, 1.6, 16, 8, 4.6, c) + caja(x + 4, y + 1, 6.2, 8, 6, 3.6, C.vidrioAuto);
         };
-        return { iso: iso, poli: poli, caja: caja, techo: techo, ventanas: ventanas, arbol: arbol, manzana: manzana, auto: auto };
+        return { iso: iso, poli: poli, caja: caja, techo: techo, ventanas: ventanas, ventanasLista: ventanasLista, arbol: arbol, manzana: manzana, auto: auto };
     }
 
-    // Piezas planas (en la pantalla, no en el suelo)
+    // Piezas planas (en la pantalla, no en el suelo).
+    // o.vidrio: cristal oscuro con filo de luz, como la barra (antes eran calcomanias blancas)
+    // o.punto: un punto de color antes del texto
     function pastilla(cx, cy, texto, o) {
         o = o || {};
-        var tam = o.tam || 13, ancho = Math.round(texto.length * tam * .56 + 26), alto = o.alto || 24;
+        var tam = o.tam || 13, punto = o.punto ? 13 : 0, alto = o.alto || 24;
+        var ancho = Math.round(texto.length * tam * .56 + 26 + punto);
         var x = cx - ancho / 2, y = cy - alto / 2;
-        return '<rect x="' + x + '" y="' + y + '" width="' + ancho + '" height="' + alto + '" rx="' + (alto / 2) + '" fill="' + (o.fondo || '#FFFFFF') + '"/>' +
-            '<text class="e-letra" x="' + cx + '" y="' + f1(cy + tam * .36) + '" text-anchor="middle" font-size="' + tam + '" fill="' + (o.color || C.navyTexto) + '">' + texto + '</text>';
+        var caja = o.vidrio
+            ? '<rect x="' + f1(x + .5) + '" y="' + f1(y + .5) + '" width="' + (ancho - 1) + '" height="' + (alto - 1) + '" rx="' + ((alto - 1) / 2) + '" fill="#0C2440" fill-opacity=".82" stroke="#FFFFFF" stroke-opacity=".24"/>'
+            : '<rect x="' + x + '" y="' + y + '" width="' + ancho + '" height="' + alto + '" rx="' + (alto / 2) + '" fill="' + (o.fondo || '#FFFFFF') + '"/>';
+        var marca = punto ? '<circle cx="' + f1(x + 14) + '" cy="' + f1(cy) + '" r="3.5" fill="' + o.punto + '"/>' : '';
+        return caja + marca +
+            '<text class="e-letra" x="' + f1(cx + punto / 2) + '" y="' + f1(cy + tam * .36) + '" text-anchor="middle" font-size="' + tam + '" fill="' + (o.color || (o.vidrio ? '#EEF3FA' : C.navyTexto)) + '">' + texto + '</text>';
     }
     // Texto de abajo que cuenta lo que pasa; cambia con un fundido
     function leyenda(texto, t, hasta, color) {
@@ -146,55 +162,88 @@
     /* ================= Escenas ================= */
     var CONSTRUCTORES = {};
 
-    /* ---- Tarjeta del inicio: las habilidades viajan de tu casa a la vacante ----
-       Cada habilidad sale como un cubo, salta por el camino y enciende un piso del hotel.
-       La quinta (Ingles) se queda a mitad de camino y el resultado es 80 %. */
+    /* ---- Tarjeta del inicio: "la ciudad se enciende" ----
+       De noche, tu casa se enciende (tu perfil). Cada habilidad viaja como un cubo de luz con estela y,
+       al llegar, enciende un piso del edificio de la vacante ventana por ventana; la luz del suelo y el
+       halo de detras crecen con cada una. Ingles se queda a mitad de camino: intenta saltar dos veces y
+       no puede, y el ultimo piso queda marcado en naranja (lo que falta). Al final, cuatro luces salen
+       de los pisos encendidos y forman el 80 %.
+       Linea de tiempo (ms): casa 250-700 · habilidades 1400-5000 · Ingles 5300-6400 · resultado 6900-8300 */
+    var T_HAB = [1400, 2350, 3300, 4250];        // salida de cada habilidad (llega 860 ms despues)
     CONSTRUCTORES.tarjeta = {
-        ciclo: 11000,
+        ciclo: 12500,
+        // El halo de luz detras de la isla (app.css, .hero .escenario::before) crece con cada coincidencia
+        halo: [[0, .35]].concat(T_HAB.map(function (t, c) { return [t + 860, .35 + (c + 1) * .14]; }), [[7450, 1], [11600, 1], [12240, .35], [12500, .35]]),
         dibujar: function () {
             var I = Iso(222, 112), s = '';
+            s += '<defs><radialGradient id="e-luz-tarjeta"><stop offset="0" stop-color="#5FD0DC" stop-opacity=".6"/><stop offset="1" stop-color="#5FD0DC" stop-opacity="0"/></radialGradient></defs>';
             // Sin marco: la manzana es una isla que flota sobre la portada. La luz de atras, la sombra de
             // abajo y el vaiven van en CSS sobre la caja de la escena (app.css), no dentro del dibujo: todo
             // lo que se mueve DENTRO de un SVG obliga al navegador a repintarlo entero en cada cuadro
             s += '<g class="e-isla">';
-            s += motas(5, 3);
             s += I.manzana(200, 160, [114, 128], 128);
             s += I.arbol(16, 120, .85) + I.arbol(194, 4, .9);
             s += transita(I.auto(2, 132, C.cian), 176, 13, 2) + transita(I.auto(182, 148, C.naranja), -176, 10, 6);
             s += '<g class="e-capa">';
-            // Camino de la casa al hotel
+            // La luz que cae al suelo frente al edificio: una capa por habilidad, se suman
+            var base = I.iso(154, 64, 0);
+            T_HAB.forEach(function (t) {
+                s += '<ellipse cx="' + f1(base[0]) + '" cy="' + f1(base[1]) + '" rx="74" ry="32" fill="url(#e-luz-tarjeta)" data-t="' + (t + 860) + '" data-dur="700" data-op=".45"/>';
+            });
+            // Camino de la casa al edificio
             var c1 = I.iso(66, 82, .4), c2 = I.iso(150, 82, .4);
-            s += '<g data-t="800">' + I.poli([[60, 76, .3], [160, 76, .3], [160, 88, .3], [60, 88, .3]], '#C9D8E4') + I.poli([[148, 58, .3], [160, 58, .3], [160, 76, .3], [148, 76, .3]], '#C9D8E4') +
-                 '<line x1="' + f1(c1[0]) + '" y1="' + f1(c1[1]) + '" x2="' + f1(c2[0]) + '" y2="' + f1(c2[1]) + '" stroke="#FFFFFF" stroke-width="1.6" stroke-dasharray="5 6"/></g>';
-            // Tu casa y el hotel de la vacante brotan del suelo
+            s += '<g data-t="800">' + I.poli([[60, 76, .3], [160, 76, .3], [160, 88, .3], [60, 88, .3]], '#1E4568') + I.poli([[148, 58, .3], [160, 58, .3], [160, 76, .3], [148, 76, .3]], '#1E4568') +
+                 '<line x1="' + f1(c1[0]) + '" y1="' + f1(c1[1]) + '" x2="' + f1(c2[0]) + '" y2="' + f1(c2[1]) + '" stroke="#5FD0DC" stroke-opacity=".5" stroke-width="1.4" stroke-dasharray="4 6"/></g>';
+            // Tu casa brota del suelo, apagada...
+            var ventanaCasa = [[60.1, 70, 16], [60.1, 82, 16], [60.1, 82, 28], [60.1, 70, 28]];
             s += '<g class="e-brota" data-t="250">' + I.caja(18, 60, 0, 42, 40, 38, C.pared) + I.techo(18, 60, 38, 42, 40, 22, '#2BB6C6', '#1B8F9C') +
-                 I.poli([[34, 100.1, 0], [44, 100.1, 0], [44, 100.1, 18], [34, 100.1, 18]], '#0B2440') +
-                 I.poli([[60.1, 70, 16], [60.1, 82, 16], [60.1, 82, 28], [60.1, 70, 28]], '#5FD0DC') + '</g>';
-            var hotel = I.caja(128, 12, 0, 52, 48, 128, C.hotel) + I.poli([[146, 60.1, 0], [162, 60.1, 0], [162, 60.1, 16], [146, 60.1, 16]], '#0B2440');
+                 I.poli([[34, 100.1, 0], [44, 100.1, 0], [44, 100.1, 18], [34, 100.1, 18]], '#081A2E') + I.poli(ventanaCasa, C.ventana[1]) + '</g>';
+            // ...y se enciende: tu perfil despierta
+            var vc = I.iso(60.1, 76, 22);
+            s += '<g data-t="900" data-dur="500"><circle cx="' + f1(vc[0]) + '" cy="' + f1(vc[1]) + '" r="16" fill="url(#e-luz-tarjeta)"/>' + I.poli(ventanaCasa, C.ventanaLuz[0]) +
+                 I.poli([[34, 100.2, 0], [44, 100.2, 0], [44, 100.2, 3], [34, 100.2, 3]], '#7FE3EC') + '</g>';
+            // El edificio de la vacante brota apagado (las ventanas en azul noche)
+            var hotel = I.caja(128, 12, 0, 52, 48, 128, C.hotel) + I.poli([[146, 60.1, 0], [162, 60.1, 0], [162, 60.1, 16], [146, 60.1, 16]], '#081A2E');
             for (var k = 0; k < 5; k++) hotel += I.ventanas(128, 12, 52, 48, 24 + k * 20, 11, C.ventana, 4, 3);
             s += '<g class="e-brota" data-t="420" data-dur="1100">' + hotel + '</g>';
-            s += '<g class="e-crece" data-t="900">' + pastilla(186, 92, 'Tu perfil') + '</g>';
-            s += '<g class="e-crece" data-t="1150">' + pastilla(318, 34, 'Recepcionista bilingüe') + '</g>';
-            // Cuatro habilidades: cada cubo salta en dos tramos, enciende su piso y deja una onda al llegar
-            for (var c = 0; c < 4; c++) {
-                var t0 = 1300 + c * 950;
-                s += '<g data-t="' + t0 + '" data-dur="300" data-hasta="' + (t0 + 900) + '"><g class="e-viaja" data-t="' + (t0 + 120) + '" data-dur="420" data-dx="64.1" data-dy="37" data-salto="7">' +
-                     '<g class="e-viaja" data-t="' + (t0 + 540) + '" data-dur="360" data-dx="20.8" data-dy="-12" data-salto="5">' + I.caja(68, 77, 0, 10, 10, 10, C.cian) + '</g></g></g>';
-                s += '<g data-t="' + (t0 + 860) + '" data-dur="500">' + I.ventanas(128, 12, 52, 48, 24 + c * 20, 11, C.ventanaLuz, 4, 3) + '</g>';
+            s += '<g class="e-crece" data-t="1000">' + pastilla(186, 92, 'Tu perfil', { vidrio: true, punto: '#5FD0DC' }) + '</g>';
+            s += '<g class="e-crece" data-t="1200">' + pastilla(318, 34, 'Recepcionista bilingüe', { vidrio: true, punto: '#FFA05C' }) + '</g>';
+            // Cuatro habilidades: cada cubo de luz salta en dos tramos, con una estela de dos copias que
+            // lo siguen un poco despues y mas tenues; al llegar, su piso se enciende ventana por ventana
+            var cubo = function (t, op) {
+                return '<g data-t="' + t + '" data-dur="300" data-op="' + op + '" data-hasta="' + (t + 900) + '"><g class="e-viaja" data-t="' + (t + 120) + '" data-dur="420" data-dx="64.1" data-dy="37" data-salto="7">' +
+                       '<g class="e-viaja" data-t="' + (t + 540) + '" data-dur="360" data-dx="20.8" data-dy="-12" data-salto="5">' + I.caja(68, 77, 0, 10, 10, 10, C.cian) + '</g></g></g>';
+            };
+            T_HAB.forEach(function (t0, c) {
+                s += cubo(t0 + 140, '.18') + cubo(t0 + 70, '.4') + cubo(t0, '1');
+                I.ventanasLista(128, 12, 52, 48, 24 + c * 20, 11, C.ventanaLuz, 4, 3).forEach(function (v, i) {
+                    s += '<g data-t="' + (t0 + 860 + i * 45) + '" data-dur="260">' + v + '</g>';
+                });
                 s += onda(t0 + 860, 299, 206, 8, '#5FD0DC');
-            }
-            // Ingles: sale, pero se queda a mitad de camino
-            s += '<g data-t="5200" data-dur="400"><g class="e-viaja" data-t="5320" data-dur="560" data-dx="32" data-dy="18.5" data-salto="6">' + I.caja(68, 77, 0, 10, 10, 10, C.naranja) + '</g></g>';
-            s += '<g class="e-crece" data-t="5900"><path d="M240 226l6-8 6 8z" fill="#FF7618"/>' + pastilla(246, 239, 'Te falta Inglés', { fondo: '#FF7618', color: '#FFFFFF', alto: 26 }) + '</g>';
-            // Resultado: el porcentaje cuenta hasta 80; lo rodea un aro punteado y al llegar saltan chispas
-            s += '<g class="e-crece" data-t="6100"><g class="e-flota"><circle cx="420" cy="96" r="39" fill="none" stroke="#FFA05C" stroke-opacity=".6" stroke-width="1.5" stroke-dasharray="3 8" stroke-linecap="round"/>' +
+            });
+            // Ingles: sale, llega a mitad de camino e intenta seguir dos veces, pero no puede
+            s += '<g data-t="5300" data-dur="400"><g class="e-viaja" data-t="5420" data-dur="560" data-dx="32" data-dy="18.5" data-salto="6">' +
+                 '<g class="e-viaja" data-t="6050" data-dur="300" data-salto="7"><g class="e-viaja" data-t="6420" data-dur="260" data-salto="4">' +
+                 I.caja(68, 77, 0, 10, 10, 10, C.naranja) + '</g></g></g></g>';
+            // El piso que falta: sus ventanas, marcadas en naranja punteado
+            var falta = I.ventanasLista(128, 12, 52, 48, 24 + 4 * 20, 11, ['#FF7618', '#FF7618'], 4, 3).join('')
+                .replace(/fill="#FF7618"/g, 'fill="#FF7618" fill-opacity=".22" stroke="#FFA05C" stroke-width="1" stroke-dasharray="2 1.6"');
+            s += '<g data-t="6250" data-dur="500">' + falta + '</g>';
+            s += '<g class="e-crece" data-t="6450"><path d="M240 226l6-8 6 8z" fill="#FF7618"/>' + pastilla(246, 239, 'Te falta Inglés', { fondo: '#FF7618', color: '#FFFFFF', alto: 26 }) + '</g>';
+            // Resultado: una luz sale de cada piso encendido y vuela hasta el circulo, que cuenta hasta 80
+            T_HAB.forEach(function (t, c) {
+                var x = 347, y = 190.5 - 20 * c, ti = 6900 + c * 90;
+                s += '<g data-t="' + ti + '" data-dur="150" data-hasta="' + (ti + 700) + '"><circle class="e-viaja" data-t="' + ti + '" data-dur="620" data-dx="' + f1(420 - x) + '" data-dy="' + f1(96 - y) + '" data-salto="18" cx="' + x + '" cy="' + f1(y) + '" r="3.5" fill="#7FE3EC"/></g>';
+            });
+            s += '<g class="e-crece" data-t="7400"><circle cx="420" cy="96" r="39" fill="none" stroke="#FFA05C" stroke-opacity=".6" stroke-width="1.5" stroke-dasharray="3 8" stroke-linecap="round"/>' +
                  '<circle cx="420" cy="96" r="31" fill="#061A31" stroke="#FF7618" stroke-width="4"/>' +
-                 '<text class="e-letra-titulo" x="420" y="102" text-anchor="middle" font-size="18" fill="#FFFFFF" data-contar data-valor="80" data-desde="6150" data-fin="7000">0 %</text></g></g>';
-            s += onda(6250, 420, 96, 31) + chispas(6950, 420, 96, 33, 8);
+                 '<text class="e-letra-titulo" x="420" y="102" text-anchor="middle" font-size="18" fill="#FFFFFF" data-contar data-valor="80" data-desde="7500" data-fin="8300">0 %</text></g>';
+            s += onda(7550, 420, 96, 31) + chispas(8300, 420, 96, 33, 8);
             s += '</g></g>';
-            // Las frases de abajo no flotan con la isla: quedan quietas para leerse
-            s += '<g class="e-capa">' + leyenda('Tus habilidades viajan hacia la vacante', 1300, 5200) + leyenda('Inglés todavía no está en tu perfil', 5200, 6400, '#FFA05C') +
-                 '<text class="e-letra e-leyenda" x="240" y="344" text-anchor="middle" font-size="14" fill="#EEF3FA" data-t="6400">Coincides en 4 de 5. Te falta <tspan fill="#FFA05C">Inglés</tspan>.</text></g>';
+            // Las frases de abajo no flotan con la isla: quedan quietas para leerse. Una sale del todo
+            // antes de que entre la siguiente (antes se cruzaban y se leian encimadas)
+            s += '<g class="e-capa">' + leyenda('Tus habilidades viajan hacia la vacante', 1400, 5300) + leyenda('Inglés todavía no está en tu perfil', 5700, 7000, '#FFA05C') +
+                 '<text class="e-letra e-leyenda" x="240" y="344" text-anchor="middle" font-size="14" fill="#EEF3FA" data-t="7400">Coincides en 4 de 5. Te falta <tspan fill="#FFA05C">Inglés</tspan>.</text></g>';
             return s;
         }
     };
@@ -273,10 +322,18 @@
         // cuando termino el ciclo y hay que volver a empezar)
         this.reloj = new Animation(new KeyframeEffect(null, [], { duration: L, fill: 'forwards' }), document.timeline);
         this.anims.push(this.reloj);
+        // El halo de detras (::before de la escena) sigue la historia: [ms, opacidad]. Es una caja HTML, asi
+        // que cambiar su opacidad no obliga a redibujar el SVG
+        if (receta.halo) {
+            try {
+                this.anims.push(el.animate(receta.halo.map(function (h) {
+                    return { offset: Math.min(1, h[0] / L), opacity: h[1], easing: CURVA.suave };
+                }), { duration: L, fill: 'both', pseudoElement: '::before' }));
+            } catch (e) { /* navegador sin animacion de pseudo-elementos: el halo queda fijo */ }
+        }
         this.contadores = Array.prototype.map.call(el.querySelectorAll('[data-contar]'), function (c) {
             return { el: c, v: +c.dataset.valor, a: +c.dataset.desde, b: +c.dataset.fin };
         });
-        inclinable(el);
         this.ir(reducido ? this.final : 0);
     }
     Escena.prototype.tiempo = function () {
@@ -312,27 +369,6 @@
             if (c.el.textContent !== txt) c.el.textContent = txt;
         });
     };
-
-    // Inclinacion 3D con el mouse: hasta 5 grados arriba/abajo y 7 a los lados, solo mientras el cursor
-    // esta encima de la escena
-    function inclinable(esc) {
-        var zona = esc;
-        var meta = { x: 0, y: 0 }, ahora = { x: 0, y: 0 }, vivo = false;
-        var paso = function () {
-            ahora.x += (meta.x - ahora.x) * .08; ahora.y += (meta.y - ahora.y) * .08;
-            esc.style.transform = 'perspective(1100px) rotateX(' + (-ahora.y * 10).toFixed(2) + 'deg) rotateY(' + (ahora.x * 14).toFixed(2) + 'deg)';
-            if (Math.abs(meta.x - ahora.x) + Math.abs(meta.y - ahora.y) > .002) requestAnimationFrame(paso);
-            else { vivo = false; if (!meta.x && !meta.y) esc.style.transform = ''; }
-        };
-        var pedir = function () { if (!vivo) { vivo = true; requestAnimationFrame(paso); } };
-        zona.addEventListener('pointermove', function (ev) {
-            if (!conMouse.matches || reducido || ev.pointerType !== 'mouse') return;
-            var r = zona.getBoundingClientRect();
-            meta.x = (ev.clientX - r.left) / r.width - .5; meta.y = (ev.clientY - r.top) / r.height - .5;
-            pedir();
-        });
-        zona.addEventListener('pointerleave', function () { meta.x = 0; meta.y = 0; pedir(); });
-    }
 
     // Mientras alguna escena corre: los porcentajes cuentan cuadro a cuadro y, al acabar el ciclo, se reinicia
     var bucleActivo = false;
