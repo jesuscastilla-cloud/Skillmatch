@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Verificar autenticación
     if (!isAuthenticated()) {
-        window.location.href = 'login.html';
+        irAlLogin();
         return;
     }
 
@@ -439,6 +439,11 @@ function displayMessages(messages) {
         return;
     }
 
+    // Los mensajes que ya estaban en esta misma conversacion (para animar solo los nuevos)
+    const mismaConversacion = container.dataset.conversacion === String(currentConversationUserId);
+    const antes = mismaConversacion ? new Set([...container.querySelectorAll('.message[data-id]')].map(m => m.dataset.id)) : null;
+    container.dataset.conversacion = String(currentConversationUserId);
+
     let diaAnterior = '';
     container.innerHTML = messages.map(msg => {
         const isMyMessage = String(msg.senderId) === String(myUserId);
@@ -467,6 +472,11 @@ function displayMessages(messages) {
             </div>
         `;
     }).join('');
+    // Cada mensaje nuevo llega desde su lado: el tuyo desde la derecha, el de la otra persona
+    // desde la izquierda (app.css seccion 69). Al abrir la conversacion no se anima nada.
+    if (antes && antes.size) {
+        container.querySelectorAll('.message[data-id]').forEach(m => { if (!antes.has(m.dataset.id)) m.classList.add('llega'); });
+    }
 }
 
 // Enviar mensaje

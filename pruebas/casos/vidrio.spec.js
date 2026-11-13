@@ -184,8 +184,9 @@ test('el anillo de compatibilidad es un aro hueco: sin el círculo blanco del ce
 test('Empresas y Conexiones son de vidrio, con los títulos de sección sobre una repisa', async ({ page, context, api }) => {
     await entrarComo(context, 'persona');
     await page.goto('empresas.html');
-    await expect(page.locator('.empresa-tarjeta').first()).toBeVisible();
-    for (const s of ['.directorio-cabecera', '.empresa-tarjeta', '.directorio-titulo']) {
+    // Con pocas empresas el bloque "Publicaron vacantes hace poco" se oculta (revision 2026-11-13): se miran las visibles
+    await expect(page.locator('.empresa-tarjeta:visible').first()).toBeVisible();
+    for (const s of ['.directorio-cabecera', '.empresa-tarjeta:visible', '.directorio-titulo:visible']) {
         expect(await deVidrio(page.locator(s).first()), s).toEqual({ translucido: true, desenfoca: false });
     }
     await page.goto('conexiones.html');

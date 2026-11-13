@@ -47,6 +47,12 @@ function avisar(texto, tipo) {
     else alert(texto.replace(/<[^>]+>/g, ''));
 }
 
+// Sin sesion: ventana con "Entrar" y "Crear mi perfil" que recuerdan a donde volver (ui.js)
+function pedirCuenta(titulo, texto, volver) {
+    if (window.SkillMatchUI && SkillMatchUI.pedirCuenta) SkillMatchUI.pedirCuenta({ titulo, texto, volver });
+    else irAlLogin(volver);
+}
+
 // Cargar oportunidades al iniciar
 document.addEventListener('DOMContentLoaded', function() {
     // Filtros y orden que traiga la direccion (antes de elegir el orden inicial)
@@ -80,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     loadJobs();
     setupEventListeners();
+    prepararHojaDeFiltros();
     updateFilterBadges();
 
     // Un aviso, la portada, la paleta o un enlace compartido traen ?jobId=: se
@@ -88,10 +95,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // recargar un detalle (ya tiene su paso en el historial) solo se abre.
     vigilarVentanasEnHistorial();
     const pedida = new URLSearchParams(window.location.search).get('jobId');
+    // Al volver del login con ?accion=postular (ver postularme), se abre la postulacion sola
+    const accion = new URLSearchParams(window.location.search).get('accion');
+    if (accion) {
+        const sinAccion = new URL(window.location.href);
+        sinAccion.searchParams.delete('accion');
+        history.replaceState(history.state, '', sinAccion);
+    }
     if (pedida) {
         const recarga = history.state && history.state.vacante === String(pedida);
         if (!recarga) history.replaceState(null, '', direccionConVacante(null));
-        abrirDetallePorId(pedida, { sinHistorial: recarga });
+        abrirDetallePorId(pedida, { sinHistorial: recarga }).then(async () => {
+            if (accion !== 'postular' || !sesion() || esEmpresa()) return;
+            await userSkillsReady; // asi ya se sabe si se habia postulado
+            if (appliedJobIds.has(String(pedida))) avisar('Ya te habías postulado a esta vacante.', 'info');
+            else postularme(pedida);
+        });
     }
 });
 
@@ -404,7 +423,9 @@ function displayJobs(jobs) {
 }
 
 function textoSalario(job) {
-    return job.salaryMin && job.salaryMax
+    // Si el minimo y el maximo son iguales, un solo valor (antes "$1.423.500 - $1.423.500")
+    return job.salaryMin && job.salaryMax && Number(job.salaryMin) === Number(job.salaryMax) ? formatCurrency(job.salaryMin)
+        : job.salaryMin && job.salaryMax
         ? `${formatCurrency(job.salaryMin)} - ${formatCurrency(job.salaryMax)}`
         : job.salaryMin ? `Desde ${formatCurrency(job.salaryMin)}`
         : job.salaryMax ? `Hasta ${formatCurrency(job.salaryMax)}`
@@ -638,8 +659,11 @@ function repintar() {
 function postularme(jobId) {
     const datos = sesion();
     if (!datos) {
-        avisar('Inicia sesión para postularte a esta vacante.', 'info');
-        setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+        // Se pregunta (entrar o crear perfil) y, al entrar, vuelve aqui con la postulacion abierta
+        const vacante = allJobs.find(j => String(j.id) === String(jobId)) || vacanteAbierta;
+        pedirCuenta('Inicia sesión para postularte',
+            `Para postularte${vacante && vacante.title ? ' a ' + vacante.title : ''}, entra con tu cuenta o crea tu perfil: es gratis y al terminar vuelves a esta vacante.`,
+            `oportunidades.html?jobId=${encodeURIComponent(jobId)}&accion=postular`);
         return;
     }
     if (datos.userType === 'empresa') {
@@ -700,12 +724,105 @@ async function enviarPostulacion() {
         appliedJobIds.add(String(job.id));
         cerrarVentana('applyModal');
         repintar();
+        // El momento del match: la chispa sale del "Ya te postulaste" de su tarjeta (ui.js)
+        const sello = document.querySelector(`.opportunity-card[data-job-id="${CSS.escape(String(job.id))}"] .btn-apply.applied`);
+        if (sello && window.SkillMatchUI && SkillMatchUI.chispa) {
+            sello.classList.add('recien-postulado');
+            setTimeout(() => SkillMatchUI.chispa(sello), 120);
+        }
         avisar(`Postulación enviada a <strong>${escaparHtml(job.companyName || 'la empresa')}</strong>. Puedes seguirla en tu perfil.`, 'ok');
     } catch (e) {
         error.textContent = 'No se pudo enviar la postulación: ' + e.message;
         error.hidden = false;
         boton.disabled = false;
         boton.textContent = 'Enviar postulación';
+    }
+}
+
+// ---- Filtros en una hoja que sube desde abajo (celular y tableta) ----
+// Antes, en el celular la columna de filtros iba antes que la lista: habia que bajar
+// ~700 px para ver la primera vacante. Ahora un boton "Filtros (2)" la abre como hoja;
+// cada cambio filtra al instante, como siempre, y "Ver N vacantes" la cierra.
+// En escritorio no cambia nada: la columna sigue al lado y sigue al bajar (sticky).
+function prepararHojaDeFiltros() {
+    const hoja = document.getElementById('panelFiltros');
+    const abrir = document.getElementById('filtrosAbrir');
+    if (!hoja || !abrir) return;
+    const angosta = window.matchMedia('(max-width: 1080px)');
+    const fondo = document.createElement('div');
+    fondo.className = 'filtros-fondo';
+    document.body.appendChild(fondo); // fuera de la cuadricula de la lista
+    let volverA = null;
+
+    const abierta = () => hoja.classList.contains('abierta');
+    function abrirHoja() {
+        volverA = document.activeElement;
+        hoja.classList.add('abierta');
+        fondo.classList.add('abierta');
+        document.documentElement.classList.add('hoja-filtros-abierta');
+        abrir.setAttribute('aria-expanded', 'true');
+        const primero = hoja.querySelector('.filtros-cerrar');
+        if (primero) primero.focus({ preventScroll: true });
+    }
+    function cerrarHoja() {
+        if (!abierta()) return;
+        hoja.classList.remove('abierta');
+        fondo.classList.remove('abierta');
+        document.documentElement.classList.remove('hoja-filtros-abierta');
+        abrir.setAttribute('aria-expanded', 'false');
+        if (volverA && volverA.focus) volverA.focus({ preventScroll: true });
+    }
+    // En la hoja es una ventana (role="dialog"); en la columna de escritorio, un "aside" normal
+    function segunAncho() {
+        if (angosta.matches) {
+            hoja.setAttribute('role', 'dialog');
+            hoja.setAttribute('aria-modal', 'true');
+        } else {
+            hoja.removeAttribute('role');
+            hoja.removeAttribute('aria-modal');
+            cerrarHoja();
+        }
+    }
+    segunAncho();
+    if (angosta.addEventListener) angosta.addEventListener('change', segunAncho);
+
+    abrir.addEventListener('click', abrirHoja);
+    fondo.addEventListener('click', cerrarHoja);
+    hoja.querySelector('.filtros-cerrar').addEventListener('click', cerrarHoja);
+    hoja.querySelector('.filtros-ver').addEventListener('click', cerrarHoja);
+    document.addEventListener('keydown', e => {
+        if (!abierta()) return;
+        if (e.key === 'Escape') { e.preventDefault(); cerrarHoja(); return; }
+        // El foco no sale de la hoja mientras esta abierta
+        if (e.key === 'Tab') {
+            const enfocables = [...hoja.querySelectorAll('button, input, select, summary, a[href]')]
+                .filter(el => el.offsetParent !== null && !el.disabled);
+            if (!enfocables.length) return;
+            const [primero, ultimo] = [enfocables[0], enfocables[enfocables.length - 1]];
+            if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+            else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+        }
+    });
+
+    // El boton dice cuantos filtros hay puestos, y el de la hoja cuantas vacantes quedan
+    const texto = abrir.querySelector('span');
+    function contarFiltros() {
+        const n = hoja.querySelectorAll('input[type="checkbox"]:checked, input[type="radio"]:checked:not([value=""])').length;
+        texto.textContent = n ? `Filtros (${n})` : 'Filtros';
+        abrir.classList.toggle('con-filtros', n > 0);
+    }
+    hoja.addEventListener('change', contarFiltros);
+    hoja.querySelector('.btn-clear-filters').addEventListener('click', () => setTimeout(contarFiltros, 0));
+    contarFiltros();
+    const cuenta = document.getElementById('resultsCount');
+    const ver = hoja.querySelector('.filtros-ver');
+    if (cuenta && ver) {
+        const ponerTexto = () => {
+            const m = cuenta.textContent.match(/^\s*([\d.]+)/);
+            ver.textContent = m ? `Ver ${m[1]} ${m[1] === '1' ? 'vacante' : 'vacantes'}` : 'Ver vacantes';
+        };
+        new MutationObserver(ponerTexto).observe(cuenta, { childList: true, characterData: true, subtree: true });
+        ponerTexto();
     }
 }
 
@@ -1049,8 +1166,9 @@ async function loadSavedJobs() {
 // Guardar o quitar trabajo de guardados
 async function toggleSaveJob(jobId, buttonElement) {
     if (!sesion()) {
-        avisar('Inicia sesión para guardar vacantes.', 'info');
-        setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+        pedirCuenta('Inicia sesión para guardar vacantes',
+            'Guarda las vacantes que te interesan para postularte después. Entra o crea tu perfil y vuelves a esta vacante.',
+            `oportunidades.html?jobId=${encodeURIComponent(jobId)}`);
         return;
     }
 

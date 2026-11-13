@@ -248,6 +248,85 @@
         }
     };
 
+    /* ---- Elegir cuenta: dos escenas pequenas que se arman UNA vez (revision 2026-11-13) ----
+       Mismas piezas y paleta de noche que la portada, sin recuadro. No se repiten: al terminar se
+       quedan quietas en su cuadro final (receta.unaVez). Con "reducir movimiento" ya estan armadas. */
+    CONSTRUCTORES['camino-persona'] = {
+        ciclo: 3300, unaVez: true,
+        dibujar: function () {
+            var I = Iso(232, 96), s = '';
+            s += '<defs><radialGradient id="e-luz-persona"><stop offset="0" stop-color="#5FD0DC" stop-opacity=".6"/><stop offset="1" stop-color="#5FD0DC" stop-opacity="0"/></radialGradient></defs>';
+            s += '<g data-t="0" data-dur="500">' + I.manzana(150, 112) + '</g>';
+            s += '<g class="e-brota" data-t="200">' + I.arbol(126, 14, .9) + '</g>';
+            // Tu casa brota apagada y se enciende
+            var ventana = [[64.1, 44, 16], [64.1, 58, 16], [64.1, 58, 30], [64.1, 44, 30]];
+            s += '<g class="e-brota" data-t="250">' + I.caja(20, 30, 0, 44, 44, 40, C.pared) + I.techo(20, 30, 40, 44, 44, 24, '#2BB6C6', '#1B8F9C') +
+                 I.poli([[36, 74.1, 0], [48, 74.1, 0], [48, 74.1, 20], [36, 74.1, 20]], '#081A2E') + I.poli(ventana, C.ventana[1]) + '</g>';
+            var vc = I.iso(64.1, 51, 23);
+            s += '<g data-t="900" data-dur="500"><circle cx="' + f1(vc[0]) + '" cy="' + f1(vc[1]) + '" r="18" fill="url(#e-luz-persona)"/>' + I.poli(ventana, C.ventanaLuz[0]) +
+                 I.poli([[36, 74.2, 0], [48, 74.2, 0], [48, 74.2, 3], [36, 74.2, 3]], '#7FE3EC') + '</g>';
+            // Tus habilidades: tres cubos de luz que brotan frente a la casa, uno tras otro (el ultimo naranja: la chispa)
+            [[84, 86, C.cian, 1250], [104, 86, C.cian, 1450], [124, 86, C.naranja, 1650]].forEach(function (h) {
+                s += '<g class="e-brota" data-t="' + h[3] + '" data-dur="700">' + I.caja(h[0], h[1], 0, 12, 12, 12, h[2]) + '</g>';
+            });
+            s += '<g class="e-crece" data-t="1100">' + pastilla(312, 84, 'Tu perfil', { vidrio: true, punto: '#5FD0DC' }) + '</g>';
+            var p = I.iso(130, 92, 14);
+            s += onda(1950, p[0], p[1], 14) + chispas(2050, p[0], p[1], 12, 8);
+            return s;
+        }
+    };
+    CONSTRUCTORES['camino-empresa'] = {
+        ciclo: 3800, unaVez: true,
+        dibujar: function () {
+            var I = Iso(232, 112), s = '';
+            s += '<g data-t="0" data-dur="500">' + I.manzana(150, 112) + '</g>';
+            s += '<g class="e-brota" data-t="200">' + I.arbol(12, 96, .8) + '</g>';
+            // El edificio de la empresa brota con las ventanas apagadas...
+            var edificio = I.caja(54, 20, 0, 56, 50, 104, C.hotel) + I.poli([[74, 70.1, 0], [90, 70.1, 0], [90, 70.1, 18], [74, 70.1, 18]], '#081A2E');
+            for (var k = 0; k < 4; k++) edificio += I.ventanas(54, 20, 56, 50, 28 + k * 20, 11, C.ventana, 4, 3);
+            s += '<g class="e-brota" data-t="250" data-dur="1000">' + edificio + '</g>';
+            // ...y enciende sus pisos de abajo hacia arriba: llegan personas
+            for (var j = 0; j < 4; j++) s += '<g data-t="' + (1000 + j * 220) + '" data-dur="380">' + I.ventanas(54, 20, 56, 50, 28 + j * 20, 11, C.ventanaLuz, 4, 3) + '</g>';
+            s += '<g class="e-crece" data-t="1250">' + pastilla(336, 96, 'Tu vacante', { vidrio: true, punto: '#FFA05C' }) + '</g>';
+            // Dos personas (cubos de luz) llegan hasta la puerta
+            [[0, 1600], [1, 1850]].forEach(function (q) {
+                s += '<g data-t="' + q[1] + '" data-dur="250"><g class="e-viaja" data-t="' + (q[1] + 80) + '" data-dur="520" data-dx="' + f1(52 * .866) + '" data-dy="' + f1(52 * .5) + '" data-salto="6">' +
+                     I.caja(10 + q[0] * 6, 74 + q[0] * 10, 0, 9, 9, 13, q[0] ? C.naranja : C.cian) + '</g></g>';
+            });
+            var puerta = I.iso(82, 72, 10);
+            s += onda(2450, puerta[0], puerta[1], 14) + chispas(2550, puerta[0], puerta[1], 12, 8);
+            return s;
+        }
+    };
+
+    CONSTRUCTORES['camino-mensajes'] = {
+        // Mensajes sin conversacion abierta: tu casa y la de la empresa, unidas por un camino; un mensaje
+        // (un sobre de luz) viaja de una a la otra y la otra se enciende. Se arma una vez.
+        ciclo: 3400, unaVez: true,
+        dibujar: function () {
+            var I = Iso(226, 92), s = '';
+            s += '<g data-t="0" data-dur="500">' + I.manzana(170, 100) + '</g>';
+            // El camino punteado entre las dos puertas
+            var a = I.iso(46, 74, .4), b = I.iso(124, 30, .4);
+            s += '<g data-t="500" data-dur="500"><line x1="' + f1(a[0]) + '" y1="' + f1(a[1]) + '" x2="' + f1(b[0]) + '" y2="' + f1(b[1]) + '" stroke="#5FD0DC" stroke-opacity=".55" stroke-width="1.6" stroke-dasharray="4 6"/></g>';
+            // Tu casa (izquierda, adelante) y el edificio de la empresa (derecha, atras)
+            s += '<g class="e-brota" data-t="150">' + I.caja(14, 50, 0, 32, 32, 30, C.pared) + I.techo(14, 50, 30, 32, 32, 18, '#2BB6C6', '#1B8F9C') +
+                 I.poli([[46.1, 60, 10], [46.1, 70, 10], [46.1, 70, 20], [46.1, 60, 20]], C.ventanaLuz[1]) + '</g>';
+            var edificio = I.caja(108, 10, 0, 40, 36, 74, C.hotel);
+            for (var k = 0; k < 3; k++) edificio += I.ventanas(108, 10, 40, 36, 16 + k * 18, 10, C.ventana, 3, 3);
+            s += '<g class="e-brota" data-t="300" data-dur="900">' + edificio + '</g>';
+            s += '<g class="e-brota" data-t="250">' + I.arbol(150, 84, .8) + '</g>';
+            // El mensaje: un sobre de luz que salta de tu puerta a la de la empresa
+            var sobre = I.caja(48, 70, 0, 9, 9, 6, C.naranja) + I.poli([[48, 79.1, 6], [57, 79.1, 6], [52.5, 79.1, 2.5]], '#FFE2C8');
+            s += '<g data-t="1100" data-dur="200"><g class="e-viaja" data-t="1200" data-dur="900" data-dx="' + f1((70 + 33) * .866) + '" data-dy="' + f1((70 - 33) * .5) + '" data-salto="16">' + sobre + '</g></g>';
+            // Al llegar, la empresa enciende sus ventanas: te leyeron
+            for (var j = 0; j < 3; j++) s += '<g data-t="' + (2150 + j * 140) + '" data-dur="320">' + I.ventanas(108, 10, 40, 36, 16 + j * 18, 10, C.ventanaLuz, 3, 3) + '</g>';
+            var p = I.iso(118, 46, 8);
+            s += onda(2300, p[0], p[1], 12, '#5FD0DC') + chispas(2400, p[0], p[1], 10, 6);
+            return s;
+        }
+    };
+
     /* ================= Motor: una linea de tiempo por escena =================
        Cada pieza con data-t entra en ese milisegundo con el efecto de su clase
        (e-sube, e-crece, e-viaja...); data-hasta la hace salir; data-dur cambia lo que tarda.
@@ -312,7 +391,9 @@
     function Escena(el, receta) {
         var self = this;
         var L = this.L = +el.dataset.ciclo || receta.ciclo;
-        this.el = el; this.final = L - 1000;
+        // unaVez: la escena se arma, llega a su final y se queda quieta ahi (no vuelve a empezar)
+        this.unaVez = !!receta.unaVez;
+        this.el = el; this.final = this.unaVez ? L : L - 1000;
         this.visible = false; this.congelada = false; this.corriendo = false;
         el.querySelector('.escena-raiz').innerHTML = receta.dibujar();
         this.anims = [];
@@ -380,7 +461,9 @@
             escenas.forEach(function (e) {
                 if (!e.corriendo) return;
                 alguna = true;
-                if (e.tiempo() >= e.L) e.reiniciar(); else e.contar(e.tiempo());
+                if (e.tiempo() >= e.L) {
+                    if (e.unaVez) { e.congelada = true; e.actualizar(); } else e.reiniciar();
+                } else e.contar(e.tiempo());
             });
             if (alguna) requestAnimationFrame(bucle); else bucleActivo = false;
         });

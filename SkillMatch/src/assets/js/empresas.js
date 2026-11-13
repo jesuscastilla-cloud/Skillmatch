@@ -156,6 +156,10 @@ function iniciarDirectorio() {
             }
             ultima = datos.last !== false;
             cuenta.textContent = plural(datos.totalElements || 0, 'empresa', 'empresas');
+            // Con pocas empresas, "Publicaron vacantes hace poco" repetia las mismas tarjetas de
+            // "Todas las empresas": solo se muestra si hay mas empresas que las que caben ahi
+            // (revision 2026-11-13)
+            if (pagina === 0 && (datos.totalElements || 0) <= RECIENTES) recientes.hidden = true;
             mas.hidden = ultima;
             pagina++;
         } catch (e) {
@@ -198,7 +202,7 @@ function iniciarDirectorio() {
     function volverATodas() {
         modo = 'todas';
         pagina = 0;
-        recientes.hidden = false;
+        recientes.hidden = false; // cargarPagina lo vuelve a ocultar si hay pocas empresas
         titulo.textContent = 'Todas las empresas';
         cargarPagina();
     }
@@ -257,6 +261,7 @@ async function cargarRecientes() {
 // ---- Perfil publico de una empresa ----
 
 function salarioDe(v) {
+    if (v.salaryMin && v.salaryMax && Number(v.salaryMin) === Number(v.salaryMax)) return `$${numero(v.salaryMin)}`;
     if (v.salaryMin && v.salaryMax) return `$${numero(v.salaryMin)} - $${numero(v.salaryMax)}`;
     if (v.salaryMin) return `Desde $${numero(v.salaryMin)}`;
     if (v.salaryMax) return `Hasta $${numero(v.salaryMax)}`;
@@ -355,6 +360,28 @@ function pintarPerfil(c, vacantes) {
 // Logo y portada que la empresa eligio en "Mi empresa". Se guardan en su cuenta
 // de usuario, y el backend solo la muestra a quien tiene sesion: los visitantes
 // ven las iniciales y la portada de la marca (docs/PENDIENTES-BACKEND.md, 2.2).
+// Si la empresa no eligio portada (o quien mira es visitante), va la ilustracion de su sector
+// (assets/img/portadas/empresa-*.svg, las mismas de la galeria de Mi empresa) en lugar del
+// degradado de la marca. Si eligio una, imagenesDeEmpresa la pone encima (revision 2026-11-13).
+const PORTADA_POR_SECTOR = [
+    [/turis|hotel|restaur|gastron|hosped/, 'empresa-turismo'],
+    [/tecnolog|software|digital|sistemas|informat|publicidad/, 'empresa-tecnologia'],
+    [/salud|clinic|medic|hospital|farmac|odont/, 'empresa-salud'],
+    [/puerto|logist|transporte|naviera|aduana|carga/, 'empresa-puerto'],
+    [/construc|obra|ingenier|arquitect|inmobili/, 'empresa-construccion'],
+    [/educa|colegio|universi|academ|formaci/, 'empresa-educacion'],
+    [/industri|manufact|petro|quimic|fabric|plant/, 'empresa-industria'],
+    [/comerc|venta|tienda|retail|almac|supermerc|distribu/, 'empresa-comercio']
+];
+function portadaDelSector(c) {
+    const portada = document.getElementById('empresaPortada');
+    if (!portada || !window.SkillMatchImagen) return;
+    const sector = String(c.industry || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const elegida = PORTADA_POR_SECTOR.find(([patron]) => patron.test(sector));
+    const url = elegida && SkillMatchImagen.rutaPortada('galeria:' + elegida[1]);
+    if (url) portada.style.backgroundImage = `url("${url}")`;
+}
+
 async function imagenesDeEmpresa(c) {
     if (!c.userId || !sesionActual() || typeof fetchWithAuth !== 'function') return;
     try {
@@ -399,6 +426,7 @@ async function iniciarPerfil() {
                 vacantesAbiertas(id).catch(() => null)
             ]);
             pintarPerfil(empresa, vacantes);
+            portadaDelSector(empresa);
             imagenesDeEmpresa(empresa);
         } catch (e) {
             // El backend responde 404 si no existe (y 400 si el id no tiene forma de id)

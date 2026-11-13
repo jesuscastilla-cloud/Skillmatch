@@ -4,6 +4,16 @@ const { test, expect, entrarComo } = require('../apoyo/prueba');
 
 const detalle = page => page.locator('#jobDetailModal');
 const postular = page => page.locator('#applyModal');
+// En el celular los filtros estan en una hoja que se abre con "Filtros" (revision 2026-11-13):
+// se abre, se marca y se cierra; en escritorio se marca directo
+const conLaHoja = async (page, accion) => {
+    const abrir = page.locator('#filtrosAbrir');
+    const enHoja = await abrir.isVisible();
+    if (enHoja) await abrir.click();
+    await accion();
+    if (enHoja) await page.locator('.filtros-ver').click();
+};
+const marcarFiltro = (page, selector) => conLaHoja(page, () => page.locator(selector).first().check());
 // "Ver detalle" de la tarjeta (.opportunity-card) que tiene ese titulo
 const abrirDetalleDe = async (page, titulo) => {
     await page.locator('.opportunity-card', { hasText: titulo }).locator('.btn-ver-detalle').click();
@@ -66,7 +76,7 @@ test.describe('el detalle en el historial', () => {
         await entrarComo(context, 'persona');
         await page.goto('empresas.html');
         await page.goto('oportunidades.html');
-        await page.locator('input[name="type"][value="empleo"]').check();
+        await marcarFiltro(page, 'input[name="type"][value="empleo"]');
         await abrirDetalleDe(page, 'Mesero o mesera');
         await expect(page).toHaveURL(/jobId=j-mesero/);
 
@@ -110,8 +120,8 @@ test.describe('filtros en la dirección', () => {
         await entrarComo(context, 'persona');
         await page.goto('oportunidades.html');
         await page.locator('.btn-ver-detalle').first().waitFor();
-        await page.locator('input[name="type"][value="empleo"]').check();
-        await page.locator('input[name="modality"][value="presencial"]').check();
+        await marcarFiltro(page, 'input[name="type"][value="empleo"]');
+        await marcarFiltro(page, 'input[name="modality"][value="presencial"]');
         await page.locator('#sortSelect').selectOption('salary');
         await expect(page).toHaveURL(/tipo=empleo/);
         await expect(page).toHaveURL(/modalidad=presencial/);
@@ -125,7 +135,7 @@ test.describe('filtros en la dirección', () => {
         await expect(page.locator('#sortSelect')).toHaveValue('salary');
         await expect(page.locator('.btn-ver-detalle')).toHaveCount(cuantas);
 
-        await page.locator('.btn-clear-filters').click();
+        await conLaHoja(page, () => page.locator('.btn-clear-filters').click());
         await expect(page).not.toHaveURL(/tipo=/);
         await expect(page).not.toHaveURL(/modalidad=/);
     });
@@ -212,7 +222,7 @@ test.describe('el trabajo del match', () => {
     test('con un filtro, las cifras siguen a lo que se ve', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('oportunidades.html');
-        await page.locator('input[name="type"][value="práctica"], input[name="type"][value="practica"]').first().check();
+        await marcarFiltro(page, 'input[name="type"][value="práctica"], input[name="type"][value="practica"]');
         await expect(page.locator('.match-resumen')).toContainText('De las 2 que ves, 1 pide alguna.');
     });
 
@@ -243,7 +253,7 @@ test.describe('etiquetas y conteos', () => {
         await expect(cuenta(page, 'type', 'practica')).toHaveText('2');
         await expect(cuenta(page, 'type', 'freelance')).toHaveText('1');
         // Con "Empleo" marcado, las modalidades cuentan solo entre los empleos
-        await page.locator('input[name="type"][value="empleo"]').check();
+        await marcarFiltro(page, 'input[name="type"][value="empleo"]');
         await expect(cuenta(page, 'modality', 'presencial')).toHaveText('3');
         await expect(cuenta(page, 'modality', 'remoto')).toHaveText('2');
         await expect(cuenta(page, 'modality', 'hibrido')).toHaveText('1');
@@ -252,7 +262,7 @@ test.describe('etiquetas y conteos', () => {
     test('las opciones que darían 0 se ven atenuadas', async ({ page, context, api }) => {
         await entrarComo(context, 'visitante');
         await page.goto('oportunidades.html');
-        await page.locator('input[name="type"][value="freelance"]').check();
+        await marcarFiltro(page, 'input[name="type"][value="freelance"]');
         // El unico independiente es presencial: remoto e hibrido quedan en 0
         await expect(cuenta(page, 'modality', 'remoto')).toHaveText('0');
         await expect(page.locator('input[name="modality"][value="remoto"]').locator('xpath=ancestor::label')).toHaveClass(/sin-resultados/);
@@ -313,5 +323,60 @@ test.describe('logo de la empresa', () => {
         await page.waitForTimeout(500);
         await expect(page.locator('.company-logo-opp img')).toHaveCount(0);
         expect(lista).toEqual([]);
+    });
+});
+
+test.describe('filtros en el celular (revisión 2026-11-13)', () => {
+    test.beforeEach(async ({}, info) => {
+        test.skip(info.project.name !== 'celular', 'la hoja de filtros es del celular');
+    });
+
+    test('las vacantes van primero y los filtros se abren en una hoja que se cierra con Escape', async ({ page, context, api }) => {
+        await entrarComo(context, 'visitante');
+        await page.goto('oportunidades.html');
+        await page.locator('.btn-ver-detalle').first().waitFor();
+        // La primera vacante se ve antes de bajar mucho (antes estaba ~700 px mas abajo, detras de los filtros)
+        const arriba = await page.locator('.opportunity-card').first().evaluate(c => c.getBoundingClientRect().top + scrollY);
+        expect(arriba).toBeLessThan(1000);
+        const abrir = page.locator('#filtrosAbrir');
+        await expect(page.locator('#panelFiltros')).toBeHidden();
+        await abrir.click();
+        await expect(page.locator('#panelFiltros')).toBeVisible();
+        await expect(page.locator('#panelFiltros')).toHaveAttribute('role', 'dialog');
+        await expect(abrir).toHaveAttribute('aria-expanded', 'true');
+        await expect(page.locator('.filtros-cerrar')).toBeFocused();
+        await page.locator('input[name="type"][value="empleo"]').check();
+        await expect(page.locator('.filtros-ver')).toHaveText('Ver 6 vacantes');
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#panelFiltros')).toBeHidden();
+        await expect(abrir).toBeFocused();
+        await expect(abrir).toHaveText('Filtros (1)');
+    });
+});
+
+test.describe('la chispa del match al postularse (revisión 2026-11-13)', () => {
+    const postularseA = async (page, titulo) => {
+        await page.locator('.opportunity-card', { hasText: titulo }).locator('.btn-apply').click();
+        await page.locator('#sendApplicationBtn').click();
+    };
+
+    test('sale una vez desde "Ya te postulaste" y no deja nada en la página', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('oportunidades.html');
+        await postularseA(page, 'Recepcionista bilingüe');
+        await expect(page.locator('.chispa-match')).toHaveCount(1);
+        await expect(page.locator('.chispa-match i')).toHaveCount(14);
+        await expect(page.locator('.opportunity-card', { hasText: 'Recepcionista bilingüe' }).locator('.btn-apply.applied')).toBeVisible();
+        await expect(page.locator('.chispa-match')).toHaveCount(0, { timeout: 4000 });
+    });
+
+    test('con "reducir movimiento" no sale', async ({ page, context, api }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await entrarComo(context, 'persona');
+        await page.goto('oportunidades.html');
+        await postularseA(page, 'Recepcionista bilingüe');
+        await expect(page.locator('.opportunity-card', { hasText: 'Recepcionista bilingüe' }).locator('.btn-apply.applied')).toBeVisible();
+        await page.waitForTimeout(300);
+        await expect(page.locator('.chispa-match')).toHaveCount(0);
     });
 });

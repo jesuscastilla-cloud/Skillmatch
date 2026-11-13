@@ -195,7 +195,8 @@ function formatSalaryRange(minValue, maxValue) {
     }
 
     if (min !== null && max !== null) {
-        return `${formatCurrency(min)} - ${formatCurrency(max)}`;
+        // Iguales: un solo valor (antes "$1.423.500 - $1.423.500")
+        return min === max ? formatCurrency(min) : `${formatCurrency(min)} - ${formatCurrency(max)}`;
     }
 
     const value = min !== null ? min : max;
@@ -477,8 +478,11 @@ function renderResults(oportunidades, criteria) {
             const id = this.getAttribute('data-id');
 
             if (!localStorage.getItem('userData')) {
-                if (window.SkillMatchUI) SkillMatchUI.aviso('Inicia sesión para guardar vacantes.', 'info');
-                setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+                const volver = `oportunidades.html?jobId=${encodeURIComponent(id)}`;
+                if (window.SkillMatchUI && SkillMatchUI.pedirCuenta) {
+                    SkillMatchUI.pedirCuenta({ titulo: 'Inicia sesión para guardar vacantes',
+                        texto: 'Guarda las vacantes que te interesan para postularte después. Entra o crea tu perfil y vuelves a esta vacante.', volver });
+                } else irAlLogin(volver);
                 return;
             }
 

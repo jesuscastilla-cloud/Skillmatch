@@ -327,12 +327,68 @@
                     </div>
                     <ul class="panel-cifras" aria-label="Tu resumen">${cifras.map(cifra).join('')}</ul>
                 </div>
+            </div>
+            <div class="container panel-cuerpo panel-cuerpo-empresa">
+                <section class="panel-bloque panel-postulaciones" aria-labelledby="panelNuevasTitulo">
+                    <div class="panel-bloque-titulo">
+                        <h2 id="panelNuevasTitulo">Postulaciones nuevas</h2>
+                        <a href="perfil-empresa.html?tab=applicants" id="panelVerNuevas" hidden>Ver todas <i data-ico="arrow"></i></a>
+                    </div>
+                    <ul class="panel-lista" id="panelNuevas">${cargandoFilas(3)}</ul>
+                </section>
+                <section class="panel-bloque panel-vacantes" aria-labelledby="panelTusVacTitulo">
+                    <div class="panel-bloque-titulo">
+                        <h2 id="panelTusVacTitulo">Tus vacantes</h2>
+                        <a href="perfil-empresa.html#ofertas">Administrarlas <i data-ico="arrow"></i></a>
+                    </div>
+                    <ul class="panel-vacantes-lista" id="panelTusVacantes">${cargandoFilas(2)}</ul>
+                </section>
             </div>`);
+        // Debajo del panel, la empresa no necesita el buscador de empleo ni "Vacantes cerca de ti"
+        // (son herramientas de quien busca trabajo): ve sus postulaciones y sus vacantes (revision 2026-11-13)
+        document.querySelectorAll('.search-section, .results-section, .cerca-section').forEach(s => { s.hidden = true; });
 
-        const [stats, noLeidos] = await Promise.all([
-            datos.companyId ? pedir(`/companies/${encodeURIComponent(datos.companyId)}/statistics`, null) : null,
-            pedir('/messages/unread-count', null)
+        const empresa = encodeURIComponent(datos.companyId || '');
+        const [stats, noLeidos, recibidas, vacantes] = await Promise.all([
+            datos.companyId ? pedir(`/companies/${empresa}/statistics`, null) : null,
+            pedir('/messages/unread-count', null),
+            datos.companyId ? pedir(`/applications/company/${empresa}`, null) : null,
+            datos.companyId ? pedir(`/jobs/company/${empresa}`, null) : null
         ]);
+
+        // Las 4 postulaciones mas recientes, con sus pasos (los mismos que ve la persona)
+        const apps = Array.isArray(recibidas) ? recibidas : (recibidas && recibidas.content) || [];
+        const nuevas = apps.slice().sort((a, b) => new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0)).slice(0, 4);
+        const listaNuevas = document.getElementById('panelNuevas');
+        if (!recibidas) listaNuevas.innerHTML = '<li class="panel-vacio">No pudimos cargar tus postulaciones. Intenta de nuevo en un momento.</li>';
+        else if (!nuevas.length) listaNuevas.innerHTML = '<li class="panel-vacio">Todavía nadie se ha postulado. <a href="perfil-empresa.html?nueva=1">Publica una vacante</a> y aquí verás a cada persona.</li>';
+        else {
+            listaNuevas.innerHTML = nuevas.map(app => `
+                <li class="panel-postulacion">
+                    <div class="panel-postulacion-datos">
+                        <h3><a href="perfil-empresa.html?tab=applicants&amp;postulacion=${encodeURIComponent(app.id)}">${escaparHtml(app.userName || 'Persona')}</a></h3>
+                        <p>${escaparHtml(app.jobTitle || 'Vacante')} · ${cuandoTePostulaste(app.appliedDate).replace('te postulaste', 'se postuló')}</p>
+                    </div>
+                    ${pasosPostulacion(app.status)}
+                </li>`).join('');
+            const ver = document.getElementById('panelVerNuevas');
+            ver.hidden = false;
+            if (apps.length > 4) ver.firstChild.textContent = `Ver las ${apps.length} `;
+        }
+
+        // Sus vacantes abiertas, con cuantas personas se postularon a cada una
+        const abiertas = (Array.isArray(vacantes) ? vacantes : []).filter(v => v.active !== false && String(v.status || 'abierta').toLowerCase() === 'abierta');
+        const porVacante = apps.reduce((m, a) => { m[a.jobId] = (m[a.jobId] || 0) + 1; return m; }, {});
+        const listaVac = document.getElementById('panelTusVacantes');
+        listaVac.innerHTML = abiertas.length ? abiertas.slice(0, 4).map(v => `
+            <li class="panel-vacante">
+                <div class="panel-vacante-datos">
+                    <h3><a href="perfil-empresa.html?candidatos=${encodeURIComponent(v.id)}">${escaparHtml(v.title || 'Vacante')}</a></h3>
+                    <p>${escaparHtml(v.location || '')}</p>
+                </div>
+                <span class="panel-vacante-cuenta"><strong>${numero(porVacante[v.id] || 0)}</strong> ${plural(porVacante[v.id] || 0, 'persona', 'personas')}</span>
+            </li>`).join('')
+            : '<li class="panel-vacio">No tienes vacantes abiertas. <a href="perfil-empresa.html?nueva=1">Publica la primera</a>.</li>';
         pintarCifra('panelActivas', stats ? stats.activeJobs || 0 : null, cifras[0].nombre);
         pintarCifra('panelPorRevisar', stats ? stats.pendingApplications || 0 : null, cifras[1].nombre, true);
         pintarCifra('panelRecibidas', stats ? stats.totalApplications || 0 : null, cifras[2].nombre);

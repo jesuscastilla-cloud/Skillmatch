@@ -11,7 +11,7 @@ function sanitize(text) {
 
 document.addEventListener('DOMContentLoaded', function() {
     if (!isAuthenticated()) {
-        window.location.href = 'login.html?tipo=empresa';
+        irAlLogin(undefined, 'tipo=empresa');
         return;
     }
     loadCompanyData();
@@ -41,7 +41,7 @@ function loadCompanyData() {
 
     if (!localStorage.getItem('userData')) {
         alert('Debes iniciar sesión para ver esta página');
-        window.location.href = 'login.html?tipo=empresa';
+        irAlLogin(undefined, 'tipo=empresa');
         return;
     }
 
@@ -426,6 +426,7 @@ function loadOffers() {
 
         // Obtener el conteo de candidatos para cada oferta
         const offersWithCandidates = await Promise.all(data.map(async job => {
+            habilidadesDeVacante.set(String(job.id), job.skills || []); // para la compatibilidad de quien se postula
             let candidateCount = 0;
             try {
                 const countResponse = await fetchWithAuth(`${API_BASE_URL}/applications/job/${job.id}/count`);
@@ -888,14 +889,14 @@ function openEditAboutModal() {
     `, () => {
         const newText = document.getElementById('editAboutText').value.trim();
         if (!newText) {
-            alert('La descripción no puede estar vacía');
+            alert('Escribe a qué se dedica tu empresa antes de guardar.');
             return;
         }
         
         const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
         if (!userData.companyId) {
-            alert('Error: No se encontró información de sesión');
+            alert('Tu sesión terminó. Vuelve a entrar para guardar los cambios.');
             return;
         }
         
@@ -932,7 +933,7 @@ function openEditAboutModal() {
             closeModal(true);
         })
         .catch(error => {
-            alert(`Error al guardar la descripción: ${error.message}`);
+            alert('No se pudo guardar la descripción. Revisa tu conexión e intenta de nuevo.');
         });
     });
 }
@@ -1426,7 +1427,7 @@ async function updateCandidateStatus(applicationId, newStatus, offerId) {
             throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        alert('Error al actualizar el estado del candidato: ' + error.message);
+        showNotification('No se pudo cambiar el estado de la postulación. Revisa tu conexión e intenta de nuevo.', 'error');
     }
 }
 
@@ -1558,6 +1559,7 @@ function displayApplications(applications) {
         </div>
         ${ordenadas.length > POSTULACIONES_VISIBLES ? `<button type="button" class="btn btn-secondary btn-ver-todas" onclick="showAllApplications(this)">Ver todas (${ordenadas.length})</button>` : ''}
     `;
+    pintarCompatibilidad(postulacionesEmpresa);
 }
 
 // La notificacion de una postulacion nueva llega con "?tab=applicants" (y
@@ -1774,6 +1776,10 @@ async function moverPostulacion(id, estado, conTeclado) {
         const response = await fetchWithAuth(`${API_BASE_URL}/applications/${encodeURIComponent(id)}/status?${params}`, { method: 'PATCH' });
         if (!response.ok) throw new Error(`Error ${response.status}`);
         showNotification(`${sanitize(app.userName || 'La postulación')} pasó a ${columna.titulo.toLowerCase()}.`);
+        if (estado === 'aceptada' && window.SkillMatchUI && SkillMatchUI.chispa) {
+            const tarjeta = [...document.querySelectorAll('#applications-board .tablero-tarjeta')].find(t => t.dataset.id === String(id));
+            if (tarjeta) SkillMatchUI.chispa(tarjeta);
+        }
         // La lista y las cifras de arriba tambien cambian
         displayApplications(postulacionesEmpresa);
         enfocar();
@@ -1825,7 +1831,7 @@ function createApplicationCard(application, oculta) {
                 <button class="btn btn-secondary btn-small" onclick="viewCandidateProfile('${application.userId}')">Ver perfil</button>
                 <a class="btn btn-secondary btn-small" href="mensajes.html?userId=${encodeURIComponent(application.userId)}"><i data-ico="chat"></i> Mensaje</a>
                 ${normalizedStatus === 'pending' || normalizedStatus === 'reviewed' ? `
-                    <button class="btn btn-primary btn-small" onclick="updateApplicationStatus('${application.id}', 'aceptada')"><i data-ico="check"></i> Aceptar</button>
+                    <button class="btn btn-primary btn-small" onclick="updateApplicationStatus('${application.id}', 'aceptada', this)"><i data-ico="check"></i> Aceptar</button>
                     <button class="btn btn-secondary btn-small" onclick="updateApplicationStatus('${application.id}', 'rechazada')"><i data-ico="close"></i> Rechazar</button>
                 ` : ''}
             </div>
@@ -1834,7 +1840,7 @@ function createApplicationCard(application, oculta) {
 }
 
 // Actualizar estado de aplicación
-async function updateApplicationStatus(applicationId, newStatus) {
+async function updateApplicationStatus(applicationId, newStatus, boton) {
     try {
         const params = new URLSearchParams({ status: newStatus });
         const response = await fetchWithAuth(
@@ -1844,6 +1850,8 @@ async function updateApplicationStatus(applicationId, newStatus) {
 
         if (response.ok) {
             showNotification(`Postulación ${newStatus === 'aceptada' ? 'aceptada' : 'rechazada'}`);
+            // Aceptar a alguien es el match: la chispa sale del boton (ui.js)
+            if (newStatus === 'aceptada' && boton && window.SkillMatchUI && SkillMatchUI.chispa) SkillMatchUI.chispa(boton);
             loadApplications();
             // Las cifras del resumen cambian (por revisar, respondidas)
             loadActivityStats();
@@ -1852,8 +1860,98 @@ async function updateApplicationStatus(applicationId, newStatus) {
             throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        alert('Error al actualizar el estado de la postulación: ' + error.message);
+        showNotification('No se pudo cambiar el estado de la postulación. Revisa tu conexión e intenta de nuevo.', 'error');
     }
+}
+
+// ---- La compatibilidad de cada persona que se postulo (revision 2026-11-13) ----
+// El login le promete a la empresa "las personas ordenadas por compatibilidad", pero
+// las postulaciones no la mostraban. Ahora cada una trae su anillo (el mismo de
+// Vacantes, ui.js lo dibuja), las habilidades que la persona ya tiene (con check) y
+// las que le faltan, y se pueden ordenar por "Más compatibles". Mismo calculo que
+// ve la persona: de las habilidades que pide la vacante, cuantas tiene.
+const habilidadesDeVacante = new Map();   // id de la vacante -> nombres de habilidades
+const habilidadesDePersona = new Map();   // id de la persona -> promesa de nombres
+const POSTULACIONES_CON_COMPATIBILIDAD = 40; // tope de consultas en una sola carga
+const sinTildesEmpresa = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+function pedirHabilidadesDePersona(userId) {
+    if (!habilidadesDePersona.has(userId)) {
+        habilidadesDePersona.set(userId, fetchWithAuth(`${API_BASE_URL}/users/${encodeURIComponent(userId)}/skills`)
+            .then(r => (r.ok ? r.json() : []))
+            .then(lista => (Array.isArray(lista) ? lista : []).map(h => h.name).filter(Boolean))
+            .catch(() => []));
+    }
+    return habilidadesDePersona.get(userId);
+}
+
+async function pedirHabilidadesDeVacante(jobId) {
+    const clave = String(jobId);
+    if (!habilidadesDeVacante.has(clave)) {
+        try {
+            const r = await fetchWithAuth(`${API_BASE_URL}/jobs/${encodeURIComponent(jobId)}`);
+            habilidadesDeVacante.set(clave, r.ok ? ((await r.json()).skills || []) : []);
+        } catch (e) { habilidadesDeVacante.set(clave, []); }
+    }
+    return habilidadesDeVacante.get(clave);
+}
+
+function compatibilidadDe(pedidas, tiene) {
+    const suyas = new Set(tiene.map(sinTildesEmpresa));
+    const unicas = [...new Map(pedidas.filter(Boolean).map(h => [sinTildesEmpresa(h), h])).entries()];
+    if (!unicas.length) return null;
+    const si = unicas.filter(([k]) => suyas.has(k)).map(([, h]) => h);
+    const no = unicas.filter(([k]) => !suyas.has(k)).map(([, h]) => h);
+    return { pct: Math.round(si.length / unicas.length * 100), si, no, total: unicas.length };
+}
+
+async function pintarCompatibilidad(postulaciones) {
+    if (ofertasCargadas && ofertasCargadas.then) await ofertasCargadas.catch(() => {});
+    const lista = postulaciones.slice(0, POSTULACIONES_CON_COMPATIBILIDAD);
+    await Promise.all(lista.map(async app => {
+        const [pedidas, tiene] = await Promise.all([pedirHabilidadesDeVacante(app.jobId), pedirHabilidadesDePersona(app.userId)]);
+        const c = compatibilidadDe(pedidas, tiene);
+        app.compatibilidad = c ? c.pct : -1;
+        const tarjeta = document.querySelector(`.application-card[data-application-id="${CSS.escape(String(app.id))}"]`);
+        if (!c || !tarjeta || tarjeta.querySelector('.match-ring')) return;
+        const nombre = app.userName || 'Esta persona';
+        tarjeta.querySelector('.application-header').insertAdjacentHTML('afterbegin',
+            `<div class="match-ring" data-pct="${c.pct}" role="img" title="Tiene ${c.si.length} de ${c.total} habilidades que pide la vacante"
+                  aria-label="${c.pct} por ciento: ${sanitize(nombre)} tiene ${c.si.length} de ${c.total} habilidades que pide la vacante"></div>`);
+        const chips = c.si.map(h => `<span class="skill is-common"><i data-ico="check"></i>${sanitize(h)}</span>`).join('') +
+            c.no.map(h => `<span class="skill skill-falta" title="Le falta">${sanitize(h)}</span>`).join('');
+        tarjeta.querySelector('.application-date').insertAdjacentHTML('beforebegin',
+            `<div class="card-skills postulacion-habilidades" aria-label="Habilidades que pide la vacante">${chips}</div>`);
+    }));
+    prepararOrdenPostulaciones();
+}
+
+// "Más recientes" o "Más compatibles": reordena las tarjetas que ya estan pintadas
+function prepararOrdenPostulaciones() {
+    const herramientas = document.querySelector('#candidatos .postulaciones-herramientas');
+    if (!herramientas || document.getElementById('ordenPostulaciones')) return;
+    if (!postulacionesEmpresa.some(a => a.compatibilidad >= 0)) return;
+    herramientas.insertAdjacentHTML('afterbegin',
+        `<label class="orden-postulaciones"><span>Ordenar</span>
+            <select id="ordenPostulaciones" class="sort-select">
+                <option value="recientes">Más recientes</option>
+                <option value="compatibilidad">Más compatibles</option>
+            </select></label>`);
+    document.getElementById('ordenPostulaciones').addEventListener('change', e => ordenarPostulaciones(e.target.value));
+}
+
+function ordenarPostulaciones(como) {
+    const contenedor = document.querySelector('#applications-list .applications-list');
+    if (!contenedor) return;
+    const orden = [...postulacionesEmpresa];
+    if (como === 'compatibilidad') orden.sort((a, b) => (b.compatibilidad ?? -1) - (a.compatibilidad ?? -1) || new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0));
+    const todasVisibles = !document.querySelector('#applications-list .btn-ver-todas');
+    orden.forEach((app, i) => {
+        const tarjeta = contenedor.querySelector(`.application-card[data-application-id="${CSS.escape(String(app.id))}"]`);
+        if (!tarjeta) return;
+        tarjeta.hidden = !todasVisibles && i >= POSTULACIONES_VISIBLES;
+        contenedor.appendChild(tarjeta);
+    });
 }
 
 // Ver perfil del candidato - IMPLEMENTADO

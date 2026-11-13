@@ -324,48 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 })();
 
-/* ---------------------------------------------------------------
- * Fase 2 — cifras de impacto
- *  4. "Como funciona" ya no es scroll-telling: es la rueda de rueda-pasos.js
- *  5. Las cifras de impacto cuentan cuando la seccion entra en pantalla
- * --------------------------------------------------------------- */
-(function () {
-    const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // 5. Cifras de impacto: search-handler.js las escribe ("3,0K+"); aqui
-    //    solo se animan desde 0 cuando la seccion se ve, conservando el formato.
-    const impacto = document.querySelector('.impact-stats');
-    if (!impacto || reducido || !('IntersectionObserver' in window)) return;
-    let visto = false;
-
-    function contar(el) {
-        const m = el.textContent.trim().match(/^([\d.,]+)(.*)$/);
-        if (!m || el.dataset.contado) return;
-        el.dataset.contado = '1';
-        const decimales = (m[1].split(',')[1] || '').length;
-        const valor = parseFloat(m[1].replace(/\./g, '').replace(',', '.'));
-        const sufijo = m[2];
-        const inicio = performance.now();
-        const paso = function (ahora) {
-            const t = Math.min(1, (ahora - inicio) / 1100);
-            const suave = 1 - Math.pow(1 - t, 3);
-            el.textContent = (valor * suave).toFixed(decimales).replace('.', ',') + sufijo;
-            if (t < 1) requestAnimationFrame(paso);
-        };
-        requestAnimationFrame(paso);
-    }
-    function contarTodas() { impacto.querySelectorAll('.stat-value').forEach(contar); }
-
-    new IntersectionObserver(function (entradas, obs) {
-        if (!entradas[0].isIntersecting) return;
-        visto = true;
-        contarTodas();
-        obs.disconnect();
-    }, { threshold: 0.4 }).observe(impacto);
-    // Si las cifras llegan de la API cuando la seccion ya esta en pantalla
-    new MutationObserver(function () { if (visto) contarTodas(); })
-        .observe(impacto, { childList: true, subtree: true, characterData: true });
-})();
+/* (Revision 2026-11-13) Aqui estaba "Fase 2 — cifras de impacto": contaba desde 0 las cifras de la seccion
+   .impact-stats, que se quito al pasar la portada a 5 bloques: el codigo ya nunca corria. */
 
 /* ---------- La isla de la barra se abre (app.css, seccion 49) ----------
    La primera vez que se abre la portada en la pestana, el guion del <head> pone html.isla-intro:
