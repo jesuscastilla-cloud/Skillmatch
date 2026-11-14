@@ -37,7 +37,7 @@ public class PublicController {
             // Las mismas que muestra el listado (activas y abiertas). Antes contaba tambien
             // las cerradas: la portada decia 97 y el listado mostraba 95
             "jobs", jobRepository.countByActiveTrueAndStatus(JobStatus.ABIERTA),
-            "applications", applicationRepository.count()
+            "applications", applicationRepository.countByEjemploNot(true)
         ));
     }
 }

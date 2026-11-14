@@ -9377,3 +9377,271 @@ html[data-theme="light"]:not(.isla-intro):not(.isla-abriendo) body > header:not(
     :root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-buscar .cmdk-boton .ico { color: #08203C; }
     :root body > header .cuenta-boton .cuenta-avatar { width: 34px; height: 34px; }
 }
+
+/* =====================================================================
+   Como aprende SkillMatch (como-aprende.html) y el recuadro del modelo
+   ---------------------------------------------------------------------
+   Solo usa los tokens --* del sistema de diseno, asi el modo oscuro sale solo.
+   Solo se animan transform y opacity, y nada sigue al mouse.
+   ===================================================================== */
+
+.mp-historia {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5);
+    padding: var(--s6) 0 var(--s9);
+}
+.mp-historia > .indicadores-error,
+.mp-ancha, .mp-detalles, .mp-cuidados { grid-column: 1 / -1; }
+.mp-parte { position: relative; }
+.mp-numero {
+    position: absolute; top: var(--s5); right: var(--s5);
+    width: 32px; height: 32px; display: grid; place-items: center;
+    border-radius: var(--r-pill);
+    background: var(--sea-light); color: var(--sea-deep);
+    font-family: var(--font-display); font-weight: 700;
+}
+.mp-subtitulo { margin-top: var(--s6); font-size: var(--t-md); }
+
+/* Demostracion */
+.mp-demo {
+    display: inline-flex; align-items: flex-start; gap: var(--s2);
+    margin-top: var(--s4); padding: var(--s3) var(--s4);
+    border-radius: var(--r-md);
+    background: var(--sol-soft); color: var(--sol-deep);
+    font-size: var(--t-sm);
+}
+.mp-demo i, .mp-estado i, .mp-veredicto i, .mp-nunca i { flex: none; width: 20px; height: 20px; }
+
+/* 1. Pregunta y estado */
+.mp-pregunta {
+    margin-top: var(--s4);
+    font-family: var(--font-display); font-size: var(--t-lg); line-height: 1.3; color: var(--ink);
+}
+.mp-estado { display: flex; gap: var(--s2); align-items: flex-start; margin-top: var(--s4); color: var(--ink-2); }
+.mp-estado i { color: var(--sea); }
+.mp-faltan { margin-top: var(--s4); }
+.mp-faltan .ib-barra > span { transform-origin: left center; }
+.mp-faltan p { margin-top: var(--s2); font-size: var(--t-sm); color: var(--ink-3); }
+
+/* 3. Lo que mira */
+.mp-variables { margin-top: var(--s4); display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--s4) var(--s5); }
+.mp-variables li { display: flex; gap: var(--s3); align-items: flex-start; }
+.mp-variables i {
+    flex: none; width: 34px; height: 34px; padding: 7px;
+    border-radius: var(--r-sm); background: var(--sea-light); color: var(--sea-deep);
+}
+.mp-variables strong { display: block; font-size: var(--t-sm); color: var(--ink); }
+.mp-variables span { display: block; font-size: var(--t-xs); color: var(--ink-3); line-height: 1.45; }
+.mp-nunca {
+    display: flex; gap: var(--s2); margin-top: var(--s5); padding: var(--s3) var(--s4);
+    border-radius: var(--r-md); background: var(--surface-sunk);
+    font-size: var(--t-sm); color: var(--ink-2);
+}
+
+/* Palabras tecnicas: se explican al tocarlas */
+.mp-termino {
+    padding: 0; font: inherit; font-weight: 600; color: var(--sea-deep);
+    text-decoration: underline dotted; text-underline-offset: 3px; cursor: help;
+}
+.mp-definicion {
+    display: block; margin: var(--s2) 0; padding: var(--s2) var(--s3);
+    border-left: 3px solid var(--sea); border-radius: var(--r-sm);
+    background: var(--sea-light); color: var(--ink-2);
+    font-size: var(--t-sm); font-weight: 400; text-align: left;
+}
+
+/* 4. El arbol */
+.mp-leyenda { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); margin-top: var(--s4); font-size: var(--t-xs); color: var(--ink-3); }
+.mp-leyenda li { display: inline-flex; align-items: center; gap: 6px; }
+.mp-punto { width: 12px; height: 12px; border-radius: var(--r-pill); background: var(--hairline); }
+.mp-punto.buenas { background: var(--verde); }
+.mp-punto.regulares { background: var(--sol); }
+.mp-punto.bajas { background: var(--rojo); }
+.mp-punto.arbol { background: var(--naranja); }
+.mp-punto.flojo { background: var(--ink-muted); }
+
+.mp-arbol-marco {
+    margin-top: var(--s4); padding: var(--s4);
+    overflow-x: auto; overscroll-behavior-x: contain;
+    border: 1px solid var(--hairline-soft); border-radius: var(--r-md);
+    background: var(--surface-sunk);
+}
+.mp-arbol-marco:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+.mp-arbol { position: relative; }
+.mp-lineas { position: absolute; inset: 0; overflow: visible; }
+.mp-lineas path { fill: none; stroke: var(--hairline); stroke-width: 2; }
+.mp-lineas path.en-camino { stroke: var(--naranja); stroke-width: 3; }
+.mp-rama {
+    position: absolute; top: 0; left: 0;
+    font-size: 11px; font-weight: 700; color: var(--ink-muted);
+}
+.mp-nodo {
+    position: absolute; top: 0; left: 0;
+    width: 178px; min-height: 44px; padding: 6px 10px;
+    border: 1px solid var(--hairline); border-radius: var(--r-sm);
+    background: var(--surface); color: var(--ink);
+    font-size: 12px; line-height: 1.3; text-align: left;
+    box-shadow: var(--sh-1);
+}
+.mp-nodo:hover, .mp-nodo.activo { border-color: var(--sea); }
+.mp-nodo:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+.mp-nodo.en-camino { border-color: var(--naranja); box-shadow: 0 0 0 2px var(--naranja-soft); }
+.mp-hoja { display: flex; flex-direction: column; justify-content: center; border-width: 0 0 0 6px; }
+.mp-hoja strong { font-size: 13px; }
+.mp-hoja small { color: var(--ink-3); }
+.mp-hoja.buenas { border-color: var(--verde); background: var(--verde-soft); }
+.mp-hoja.regulares { border-color: var(--sol); background: var(--sol-soft); }
+.mp-hoja.bajas { border-color: var(--rojo); background: var(--rojo-soft); }
+.mp-hoja.en-camino { box-shadow: 0 0 0 3px var(--naranja); }
+.mp-frase {
+    margin-top: var(--s4); padding: var(--s3) var(--s4); min-height: 3em;
+    border-radius: var(--r-md); background: var(--sea-light); color: var(--ink-2);
+}
+
+/* 5. Examen */
+.mp-matriz { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin-top: var(--s4); }
+.mp-cuadro { display: flex; flex-direction: column; padding: var(--s3) var(--s4); border-radius: var(--r-md); }
+.mp-cuadro-n { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 700; color: var(--ink); line-height: 1.1; }
+.mp-cuadro strong { font-size: var(--t-sm); color: var(--ink); }
+.mp-cuadro span:last-child { font-size: var(--t-xs); color: var(--ink-3); }
+.mp-cuadro.acerto-si { background: var(--verde-soft); }
+.mp-cuadro.acerto-no { background: var(--sea-light); }
+.mp-cuadro.falsa-alarma { background: var(--sol-soft); }
+.mp-cuadro.se-escapo { background: var(--rojo-soft); }
+.mp-veredicto {
+    display: flex; gap: var(--s2); align-items: flex-start;
+    margin-top: var(--s5); padding: var(--s3) var(--s4);
+    border-radius: var(--r-md); background: var(--sol-soft); color: var(--ink);
+    font-size: var(--t-sm);
+}
+.mp-veredicto i { color: var(--sol-deep); }
+.mp-veredicto.gana { background: var(--naranja-soft); }
+.mp-veredicto.gana i { color: var(--naranja-deep); }
+
+/* 7. Pruebalo */
+.mp-prueba { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--s6); margin-top: var(--s5); align-items: start; }
+.mp-controles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s5); }
+.mp-controles label { display: flex; flex-direction: column; gap: 6px; font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); }
+.mp-controles output { font-weight: 700; color: var(--sea-deep); font-variant-numeric: tabular-nums; }
+.mp-controles input[type="range"] { width: 100%; accent-color: var(--sea); }
+.mp-controles select {
+    padding: 8px 10px; border: 1px solid var(--hairline); border-radius: var(--r-sm);
+    background: var(--surface); color: var(--ink);
+}
+.mp-controles .mp-check { flex-direction: row; align-items: center; gap: var(--s2); grid-column: 1 / -1; }
+.mp-controles .mp-check input { width: 18px; height: 18px; accent-color: var(--sea); }
+.mp-resultado { position: sticky; top: calc(var(--app-bar-h) + var(--s4)); }
+.mp-ejemplo-titulo { margin-bottom: var(--s2); font-size: var(--t-xs); font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .06em; }
+
+/* El recuadro (lo usa tambien "Mis postulaciones") */
+.mp-recuadro {
+    display: flex; gap: var(--s3); align-items: flex-start;
+    padding: var(--s4); border-radius: var(--r-md);
+    border: 1px solid var(--hairline); border-left-width: 5px;
+    background: var(--surface); color: var(--ink-2); font-size: var(--t-sm);
+}
+.mp-recuadro > i { flex: none; width: 24px; height: 24px; }
+.mp-recuadro p + p { margin-top: 4px; }
+.mp-recuadro-titulo { font-weight: 700; color: var(--ink); font-size: var(--t-base); }
+.mp-recuadro-nota { font-size: var(--t-xs); color: var(--ink-muted); }
+.mp-recuadro.mp-buenas { border-left-color: var(--naranja); }
+.mp-recuadro.mp-buenas > i { color: var(--naranja-deep); }
+.mp-recuadro.mp-regulares { border-left-color: var(--sea); }
+.mp-recuadro.mp-regulares > i { color: var(--sea); }
+.mp-recuadro.mp-bajas { border-left-color: var(--ink-muted); }
+.mp-recuadro.mp-bajas > i { color: var(--ink-3); }
+.mp-recuadro.mp-esperando > i { color: var(--verde); }
+.mp-etiqueta {
+    display: inline-block; margin-left: 6px; padding: 1px 8px;
+    border-radius: var(--r-pill); background: var(--sol-soft); color: var(--sol-deep);
+    font-size: var(--t-xs); font-weight: 700; vertical-align: middle;
+}
+/* En la lista de "Mis postulaciones" (profile.js) ocupa todo el ancho de la fila */
+.postulacion-fila .mp-recuadro { grid-column: 1 / -1; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .mp-recuadro { animation: mp-aparece .35s var(--ease-out); }
+}
+@keyframes mp-aparece { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* 8. Historial */
+.mp-linea { margin-top: var(--s4); }
+.mp-linea svg { width: 100%; height: auto; max-height: 260px; }
+.mp-linea text { font-size: 11px; fill: var(--ink-muted); }
+.mp-guia { stroke: var(--hairline-soft); }
+.mp-l-arbol, .mp-l-flojo { fill: none; stroke-width: 2.5; }
+.mp-l-arbol { stroke: var(--naranja); }
+.mp-l-flojo { stroke: var(--ink-muted); stroke-dasharray: 5 5; }
+.mp-p-arbol { fill: var(--naranja); }
+.mp-p-flojo { fill: var(--ink-muted); }
+
+/* Detalles y cuidados */
+.mp-detalles {
+    padding: var(--s4) var(--s5);
+    border: 1px dashed var(--hairline); border-radius: var(--r-lg); background: var(--surface);
+}
+.mp-detalles summary { cursor: pointer; font-weight: 700; color: var(--sea-deep); }
+.mp-detalles[open] summary { margin-bottom: var(--s4); }
+.mp-cuidados { padding: var(--s5) var(--s6); border-radius: var(--r-lg); background: var(--surface-sunk); }
+.mp-cuidados h2 { font-size: var(--t-lg); }
+.mp-cuidados ul { margin-top: var(--s3); display: grid; gap: var(--s2); font-size: var(--t-sm); }
+
+@media (max-width: 900px) {
+    .mp-historia { grid-template-columns: minmax(0, 1fr); }
+    .mp-prueba { grid-template-columns: minmax(0, 1fr); }
+    .mp-resultado { position: static; }
+}
+@media (max-width: 560px) {
+    .mp-controles { grid-template-columns: minmax(0, 1fr); }
+    .mp-numero { top: var(--s4); right: var(--s4); }
+    .mp-cuidados { padding: var(--s4); }
+}
+
+/* Un dibujo en cada parte (SVG en linea, con los tokens: el modo oscuro sale solo) */
+.mp-dibujo { display: block; width: 80px; height: 56px; margin-bottom: var(--s3); overflow: visible; }
+.mp-dibujo .d-linea { fill: none; stroke: var(--ink-3); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.mp-dibujo .d-linea.gruesa { stroke-width: 4; }
+.mp-dibujo .d-linea.sea { stroke: var(--sea); }
+.mp-dibujo .d-blanco { fill: none; stroke: var(--surface); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.mp-dibujo .d-mar { fill: var(--sea-light); stroke: var(--sea); stroke-width: 2; }
+.mp-dibujo .d-hoja { fill: var(--surface); stroke: var(--hairline); stroke-width: 2; }
+.mp-dibujo .d-lupa { fill: var(--sea-glow, transparent); stroke: var(--sea-deep); stroke-width: 3; }
+.mp-dibujo .d-chispa { fill: var(--naranja); }
+.mp-dibujo .d-sol { fill: var(--sol); }
+.mp-dibujo .d-rojo { fill: var(--rojo-soft); stroke: var(--rojo); stroke-width: 2; }
+.mp-dibujo .d-tinta { fill: var(--ink-3); }
+.mp-dibujo .transparente { opacity: .55; }
+
+/* 9. Habilidades que suelen ir juntas */
+.mp-juntas { list-style: none; margin: var(--s4) 0 0; padding: 0; display: grid; gap: var(--s3); }
+.mp-juntas li {
+    display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2);
+    padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--surface-sunk);
+    opacity: 0; transform: translateY(6px);
+    animation: mp-entra var(--dur-2, .3s) var(--ease-out, ease-out) forwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
+}
+.mp-juntas li i { width: 18px; height: 18px; color: var(--ink-3); }
+.mp-hab {
+    padding: 2px var(--s3); border-radius: var(--r-pill);
+    background: var(--sea-light); color: var(--sea-deep); font-weight: 600; font-size: var(--t-sm);
+}
+.mp-hab.destacada { background: var(--naranja-soft); color: var(--naranja-texto); }
+.mp-juntas-dato { flex-basis: 100%; color: var(--ink-2); font-size: var(--t-sm); }
+.mp-juntas-dato small { color: var(--ink-3); }
+.mp-ojo { margin-top: var(--s3); }
+@keyframes mp-entra { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+    .mp-juntas li { animation: none; opacity: 1; transform: none; }
+}
+
+/* Ventana "Correos que recibo" (preferencias-correo.js) */
+.correos-lista { list-style: none; margin: var(--s4) 0; padding: 0; display: grid; gap: var(--s2); }
+.correos-opcion {
+    display: flex; gap: var(--s3); align-items: flex-start; cursor: pointer;
+    padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--surface-sunk);
+}
+.correos-opcion input { flex: none; width: 20px; height: 20px; margin-top: 2px; accent-color: var(--sea); }
+.correos-opcion strong { display: block; color: var(--ink); }
+.correos-opcion small { display: block; color: var(--ink-2); font-size: var(--t-sm); }
+.correos-nota { display: flex; gap: var(--s2); align-items: flex-start; color: var(--ink-3); font-size: var(--t-sm); }
+.correos-nota svg, .correos-nota i { flex: none; width: 18px; height: 18px; }

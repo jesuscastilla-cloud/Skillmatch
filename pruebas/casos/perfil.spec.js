@@ -29,7 +29,7 @@ test('"Más" abre un menú con las otras opciones, que se usa con el teclado', a
     await mas.click();
     await expect(menu).toBeVisible();
     await expect(mas).toHaveAttribute('aria-expanded', 'true');
-    await expect(menu.getByRole('menuitem')).toHaveText(['Cambiar contraseña', 'Cambiar correo', 'Llenar con mi hoja de vida', 'Descargar mis datos', 'Eliminar mi cuenta']);
+    await expect(menu.getByRole('menuitem')).toHaveText(['Cambiar contraseña', 'Cambiar correo', 'Correos que recibo', 'Llenar con mi hoja de vida', 'Descargar mis datos', 'Eliminar mi cuenta']);
     await expect(page.locator('#changePasswordBtn')).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(page.locator('#cambiarCorreoBtn')).toBeFocused();

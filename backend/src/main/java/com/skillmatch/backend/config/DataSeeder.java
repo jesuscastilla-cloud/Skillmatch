@@ -43,6 +43,7 @@ public class DataSeeder implements CommandLineRunner {
     private final JobRepository jobRepository;
     private final ApplicationRepository applicationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.beans.factory.ObjectProvider<com.skillmatch.backend.service.ModeloPredictivoService> modeloPredictivo;
 
     private final Random random = new Random();
 
@@ -138,6 +139,9 @@ public class DataSeeder implements CommandLineRunner {
             log.info("Creando aplicaciones...");
             createApplications(users, jobs, seedApplications);
 
+            // El servidor ya atendia visitas mientras se sembraba: que el modelo aprenda ahora con lo nuevo
+            modeloPredictivo.ifAvailable(com.skillmatch.backend.service.ModeloPredictivoService::aprender);
+
             log.info("✅ Seed completado exitosamente!");
             log.info("📊 Datos creados: {} usuarios, {} empresas, {} ofertas, {} aplicaciones",
                     seedUsers, seedCompanies, seedJobs, seedApplications);
@@ -166,6 +170,9 @@ public class DataSeeder implements CommandLineRunner {
             user.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(365)));
             user.setRoles(List.of("USER"));
             user.setSkills(generateEmbeddedSkills());
+            // Experiencia y estudios variados: sin ellos el modelo predictivo no tendria que comparar
+            user.setExperiences(DemostracionModelo.experiencias(random));
+            user.setEducations(DemostracionModelo.estudios(random));
 
             toSave.add(user);
 
@@ -320,7 +327,8 @@ public class DataSeeder implements CommandLineRunner {
 
         for (int i = 0; i < count; i++) {
             User user = users.get(random.nextInt(users.size()));
-            Job job = jobs.get(random.nextInt(jobs.size()));
+            // Casi siempre una vacante parecida a lo que la persona sabe hacer (ver DemostracionModelo)
+            Job job = DemostracionModelo.elegirVacante(user, jobs, random);
 
             String key = user.getId() + "-" + job.getId();
             if (uniqueApplications.contains(key)) {
@@ -333,16 +341,9 @@ public class DataSeeder implements CommandLineRunner {
             }
             intentosFallidos = 0;
 
-            Application application = new Application();
-            application.setUserId(user.getId());
-            application.setJobId(job.getId());
-            application.setStatus(new ApplicationStatus[]{
-                ApplicationStatus.PENDIENTE, ApplicationStatus.REVISADA,
-                ApplicationStatus.ACEPTADA, ApplicationStatus.RECHAZADA
-            }[random.nextInt(4)]);
-            application.setAppliedDate(LocalDateTime.now().minusDays(random.nextInt(60)));
-            application.setCoverLetter("Me interesa mucho la posición de " + job.getTitle() +
-                " y creo que mi experiencia se alinea perfectamente con los requisitos.");
+            // Las respuestas (aceptada / rechazada) NO son al azar: siguen la regla de demostracion,
+            // para que el modelo predictivo tenga algo que aprender. Quedan marcadas como ejemplo.
+            Application application = DemostracionModelo.postulacion(user, job, random, LocalDateTime.now());
 
             toSave.add(application);
             uniqueApplications.add(key);

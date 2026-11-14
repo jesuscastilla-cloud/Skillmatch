@@ -46,6 +46,15 @@ public class MongoIndexConfig implements ApplicationRunner {
                 .createIndex(new Index("googleId", Sort.Direction.ASC).unique()
                         .partial(PartialIndexFilter.of(Criteria.where("googleId").type(2)))));
 
+        // avisos_correo: se borran solos a los 30 dias (como auto-index-creation esta apagado, se crea aqui)
+        safe("avisos_correo", () -> mongoTemplate.indexOps("avisos_correo")
+                .createIndex(new Index("fecha", Sort.Direction.ASC).expire(Duration.ofDays(30))));
+        safe("avisos_correo", () -> mongoTemplate.indexOps("avisos_correo")
+                .createIndex(new CompoundIndexDefinition(new Document("userId", 1).append("tipo", 1).append("clave", 1))));
+        // modelo_versiones: la ultima version se busca por fecha
+        safe("modelo_versiones", () -> mongoTemplate.indexOps("modelo_versiones")
+                .createIndex(new Index("fecha", Sort.Direction.DESC)));
+
         // companies
         safe("companies", () -> mongoTemplate.indexOps("companies")
                 .createIndex(new Index("userId", Sort.Direction.ASC)));

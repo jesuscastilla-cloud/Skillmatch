@@ -1099,6 +1099,27 @@ function verPostulaciones() {
             retirarPostulacion(boton.dataset.confirmar, boton);
         }
     });
+    agregarRecuadrosModelo(ventanaPostulaciones.cuerpo);
+}
+
+// Modelo predictivo: "tus posibilidades son buenas, regulares o bajas" en cada postulacion
+// que sigue en proceso (modelo-predictivo.js). Solo la persona lo ve, nunca la empresa.
+// Si algo falla, la lista se ve como siempre.
+async function agregarRecuadrosModelo(cuerpo) {
+    if (!window.SkillMatchModelo || esPerfilAjeno()) return;
+    try {
+        const [modelo, respuesta] = await Promise.all([
+            SkillMatchModelo.cargar(),
+            fetchWithAuth(`${API_BASE_URL}/modelo/mis-postulaciones`)
+        ]);
+        if (!respuesta.ok) return;
+        (await respuesta.json()).forEach(p => {
+            const fila = [...cuerpo.querySelectorAll('.postulacion-fila')].find(f => f.dataset.id === p.applicationId);
+            if (!fila) return;
+            const x = Object.assign({}, p.caracteristicas, { _faltan: p.faltan });
+            fila.insertAdjacentHTML('beforeend', SkillMatchModelo.recuadroHtml(SkillMatchModelo.evaluar(x, modelo)));
+        });
+    } catch (e) { /* sin modelo: nada que mostrar */ }
 }
 
 // La notificacion de una postulacion llega con "?tab=applications" (y

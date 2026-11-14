@@ -39,6 +39,12 @@ function crearApi(opciones = {}) {
     const usuario = id => d.usuarios.find(u => u.id === id);
     const empresa = id => d.empresas.find(c => c.id === id);
     const vacante = id => d.vacantes.find(j => j.id === id);
+    // Lo que aprendio el modelo: el JSON que el script de Python deja en el sitio
+    const modeloDelSitio = () => JSON.parse(require('fs').readFileSync(
+        require('path').join(__dirname, '../../SkillMatch/src/assets/data/modelo-predictivo.json'), 'utf8'));
+    // Que correos recibe cada cuenta (como PreferenciasCorreo: vacantes apagado al empezar)
+    const preferenciasDe = {};
+    const preferencias = id => preferenciasDe[id] || (preferenciasDe[id] = { respuesta: true, mensajes: true, vacantes: false, postulaciones: true });
     const nombre = u => (u ? `${u.firstName} ${u.lastName}`.trim() : 'Usuario');
     const nuevoId = prefijo => `${prefijo}-${++d.siguiente}`;
 
@@ -94,6 +100,31 @@ function crearApi(opciones = {}) {
             return [200, autenticacion(u)];
         }],
         ['POST', /^\/auth\/logout$/, () => [200, { message: 'Sesión cerrada' }]],
+        // Modelo predictivo: por defecto, lo mismo que publica el script de Python en el sitio
+        // (las pruebas pueden cambiarlo con api.estado.modelo)
+        ['GET', /^\/public\/modelo$/, () => [200, estado.modelo || modeloDelSitio()]],
+        ['GET', /^\/modelo\/mis-postulaciones$/, (p, q, c, yo) => {
+            if (!yo) return [401, {}];
+            const u = usuario(yo);
+            const enProceso = d.postulaciones.filter(a => a.userId === yo && ['pendiente', 'revisada'].includes(String(a.status).toLowerCase()));
+            return [200, enProceso.map(a => {
+                const j = vacante(a.jobId) || {};
+                const suyas = new Set((u.skills || []).map(s => s.name.toLowerCase()));
+                const pedidas = j.skills || [];
+                const tiene = pedidas.filter(h => suyas.has(String(h).toLowerCase())).length;
+                return { applicationId: a.id, faltan: pedidas.filter(h => !suyas.has(String(h).toLowerCase())),
+                    caracteristicas: { pct_habilidades: pedidas.length ? Math.round(100 * tiene / pedidas.length) : 0,
+                        nivel_dominio: tiene ? 2 : 0, anos_experiencia: 0, alcanza_experiencia: 1, num_estudios: 0,
+                        perfil_completo: 60, tiene_carta: a.coverLetter ? 1 : 0, palabras_carta: String(a.coverLetter || '').split(/\s+/).filter(Boolean).length,
+                        misma_ciudad: 1, tipo_empleo: 1, tipo_practica: 0, tipo_freelance: 0, dias_para_postularse: 1, postulantes_previos: 0 } };
+            })];
+        }],
+        ['GET', /^\/correos\/preferencias$/, (p, q, c, yo) => yo ? [200, preferencias(yo)] : [401, {}]],
+        ['PUT', /^\/correos\/preferencias$/, (p, q, c, yo) => {
+            if (!yo) return [401, {}];
+            Object.assign(preferencias(yo), c);
+            return [200, preferencias(yo)];
+        }],
         ['GET', /^\/public\/stats$/, () => [200, { users: d.usuarios.filter(u => u.role === 'USER').length, companies: d.empresas.length, jobs: abiertas().length, applications: d.postulaciones.length }]],
 
         // Vacantes

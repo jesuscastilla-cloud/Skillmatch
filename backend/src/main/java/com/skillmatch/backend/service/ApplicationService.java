@@ -16,6 +16,8 @@ import com.skillmatch.backend.repository.JobRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +44,14 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
+
+    /** Correos y campanita cuando la empresa responde (opcional: sin el, todo sigue igual). */
+    private AvisosCorreoService avisosCorreo;
+
+    @Autowired(required = false)
+    public void setAvisosCorreo(@Lazy AvisosCorreoService avisosCorreo) {
+        this.avisosCorreo = avisosCorreo;
+    }
 
     public ApplicationResponse createApplication(String userId, ApplicationRequest request) {
         User user = userRepository.findById(userId)
@@ -167,6 +177,7 @@ public class ApplicationService {
         verifyJobOwnership(job, requesterId);
 
         ApplicationStatus appStatus = ApplicationStatus.fromValue(status);
+        ApplicationStatus antes = application.getStatus();
         application.setStatus(appStatus);
         if (notes != null) application.setNotes(notes);
         if (appStatus != ApplicationStatus.PENDIENTE && application.getReviewedDate() == null) {
@@ -176,6 +187,15 @@ public class ApplicationService {
 
         Application updated = applicationRepository.save(application);
         log.info("Estado de postulación {} cambiado a '{}'", id, status);
+        boolean respondida = appStatus == ApplicationStatus.ACEPTADA || appStatus == ApplicationStatus.RECHAZADA;
+        if (avisosCorreo != null && respondida && antes != appStatus) {
+            try {
+                avisosCorreo.postulacionRespondida(updated, job);
+            } catch (RuntimeException e) {
+                // Un correo que falla nunca debe impedir que la empresa responda
+                log.warn("No se pudo avisar la respuesta de la postulación {}: {}", id, e.getMessage());
+            }
+        }
         return loadAndMapSingle(updated);
     }
 
