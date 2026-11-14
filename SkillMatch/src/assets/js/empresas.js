@@ -44,17 +44,9 @@ function enFila(maximo) {
 }
 const enTurno = enFila(4);
 
-// Ninguna carga se queda esperando para siempre: a los 20 segundos se corta y la
-// pagina ofrece "Reintentar" (antes los esqueletos podian quedarse girando)
-const ESPERA_MAXIMA = 20000;
-
 function pedirJson(ruta) {
     return enTurno(async () => {
-        const corte = new AbortController();
-        const reloj = setTimeout(() => corte.abort(), ESPERA_MAXIMA);
-        let r;
-        try { r = await fetch(API_BASE_URL + ruta, { signal: corte.signal }); }
-        finally { clearTimeout(reloj); }
+        const r = await fetch(API_BASE_URL + ruta);
         if (!r.ok) {
             const error = new Error(`El servidor respondió ${r.status}`);
             error.status = r.status;
@@ -77,33 +69,13 @@ function vacantesAbiertas(id) {
 
 // ---- Tarjetas del directorio ----
 
-// Sector y ciudad: lo que la empresa no lleno ("No especificada") se dice como
-// pendiente, sin que parezca un dato
-function sectorYCiudad(c) {
-    const ui = window.SkillMatchUI;
-    const real = v => (ui ? ui.datoReal(v) : v);
-    const sector = real(c.industry), ciudad = real(c.location);
-    return [
-        sector ? escaparHtml(sector) : '<span class="dato-pendiente">Sector por confirmar</span>',
-        ciudad ? escaparHtml(ciudad) : '<span class="dato-pendiente">Ciudad por confirmar</span>'
-    ].join(' · ');
-}
-
-// Nombre sin "(ejemplo)" y la etiqueta "Ejemplo" si es una empresa de muestra
-function nombreEmpresa(c) {
-    const ui = window.SkillMatchUI;
-    const ejemplo = !!(ui && ui.esEjemplo(c.name));
-    return { texto: escaparHtml((ui ? ui.sinEjemplo(c.name) : c.name) || 'Empresa'), etiqueta: ejemplo ? ' ' + ui.etiquetaEjemplo() : '' };
-}
-
 function tarjetaEmpresa(c) {
-    const lugar = sectorYCiudad(c);
-    const nombre = nombreEmpresa(c);
+    const lugar = [c.industry, c.location].filter(Boolean).map(escaparHtml).join(' · ');
     return `
         <li class="empresa-tarjeta">
-            <span class="empresa-avatar" aria-hidden="true"${c.userId ? ` data-logo-cuenta="${escaparHtml(String(c.userId))}"` : ''}>${escaparHtml(iniciales(c.name))}</span>
+            <span class="empresa-avatar" aria-hidden="true" data-monograma="${escaparHtml(c.name || '')}"${c.userId ? ` data-logo-cuenta="${escaparHtml(String(c.userId))}"` : ''}>${escaparHtml(iniciales(c.name))}</span>
             <div class="empresa-datos">
-                <h3><a class="empresa-enlace" href="empresa.html?id=${encodeURIComponent(c.id)}">${nombre.texto}</a>${nombre.etiqueta}</h3>
+                <h3><a class="empresa-enlace" href="empresa.html?id=${encodeURIComponent(c.id)}">${escaparHtml(c.name || 'Empresa')}</a></h3>
                 ${lugar ? `<p>${lugar}</p>` : ''}
                 <p class="empresa-vacantes" data-empresa="${escaparHtml(c.id)}"><span class="skeleton skeleton-line w-60"></span></p>
             </div>
@@ -143,7 +115,7 @@ function pintarVacantes(el) {
                 ? `<i data-ico="briefcase"></i> ${plural(lista.length, 'vacante abierta', 'vacantes abiertas')}`
                 : 'Sin vacantes abiertas';
         })
-        .catch(() => { el.innerHTML = '<span class="dato-pendiente">No pudimos contar sus vacantes</span>'; });
+        .catch(() => { el.textContent = ''; });
 }
 
 // ---- Directorio ----
@@ -169,8 +141,6 @@ function iniciarDirectorio() {
         if (!agregar) lista.innerHTML = '';
         lista.insertAdjacentHTML('beforeend', empresas.map(tarjetaEmpresa).join(''));
         observarVacantes(lista);
-        const aviso = document.getElementById('empresasEjemplo');
-        if (aviso && window.SkillMatchUI && empresas.some(c => SkillMatchUI.esEjemplo(c.name))) aviso.hidden = false;
     }
 
     async function cargarPagina() {
@@ -186,14 +156,15 @@ function iniciarDirectorio() {
             }
             ultima = datos.last !== false;
             cuenta.textContent = plural(datos.totalElements || 0, 'empresa', 'empresas');
+            // Con pocas empresas, "Publicaron vacantes hace poco" repetia las mismas tarjetas de
+            // "Todas las empresas": solo se muestra si hay mas empresas que las que caben ahi
+            // (revision 2026-11-13)
+            if (pagina === 0 && (datos.totalElements || 0) <= RECIENTES) recientes.hidden = true;
             mas.hidden = ultima;
             pagina++;
         } catch (e) {
             if (mio !== turno) return;
-            lista.innerHTML = '<li class="directorio-vacio">No pudimos cargar las empresas. Revisa tu conexión e intenta de nuevo. ' +
-                '<button type="button" class="btn btn-secondary btn-small" data-reintentar-empresas>Reintentar</button></li>';
-            const reintentar = lista.querySelector('[data-reintentar-empresas]');
-            if (reintentar) reintentar.addEventListener('click', () => { pagina = 0; cargarPagina(); });
+            lista.innerHTML = '<li class="directorio-vacio">No pudimos cargar las empresas. Intenta de nuevo en un momento.</li>';
         }
     }
 
@@ -231,7 +202,7 @@ function iniciarDirectorio() {
     function volverATodas() {
         modo = 'todas';
         pagina = 0;
-        recientes.hidden = false;
+        recientes.hidden = false; // cargarPagina lo vuelve a ocultar si hay pocas empresas
         titulo.textContent = 'Todas las empresas';
         cargarPagina();
     }
@@ -290,6 +261,7 @@ async function cargarRecientes() {
 // ---- Perfil publico de una empresa ----
 
 function salarioDe(v) {
+    if (v.salaryMin && v.salaryMax && Number(v.salaryMin) === Number(v.salaryMax)) return `$${numero(v.salaryMin)}`;
     if (v.salaryMin && v.salaryMax) return `$${numero(v.salaryMin)} - $${numero(v.salaryMax)}`;
     if (v.salaryMin) return `Desde $${numero(v.salaryMin)}`;
     if (v.salaryMax) return `Hasta $${numero(v.salaryMax)}`;
@@ -325,8 +297,7 @@ function dato(nombre, valor) {
 function pintarPerfil(c, vacantes) {
     const contenedor = document.getElementById('empresaContenido');
     document.title = `${c.name || 'Empresa'} - SkillMatch Cartagena`;
-    const lugar = sectorYCiudad(c);
-    const nombre = nombreEmpresa(c);
+    const lugar = [c.industry, c.location].filter(Boolean).map(escaparHtml).join(' · ');
     const web = c.website ? urlSegura(c.website) : '';
     const dominio = web && web !== '#' ? escaparHtml(c.website.replace(/^https?:\/\//i, '').replace(/\/$/, '')) : '';
     const enlaceWeb = dominio ? `<a href="${web}" target="_blank" rel="noopener noreferrer">${dominio}</a>` : '';
@@ -350,9 +321,9 @@ function pintarPerfil(c, vacantes) {
     contenedor.innerHTML = `
         <div class="empresa-cabeza con-portada">
             <div class="empresa-portada" id="empresaPortada" aria-hidden="true"></div>
-            <span class="empresa-avatar grande" id="empresaLogo" aria-hidden="true">${escaparHtml(iniciales(c.name))}</span>
+            <span class="empresa-avatar grande" id="empresaLogo" aria-hidden="true" data-monograma="${escaparHtml(c.name || '')}">${escaparHtml(iniciales(c.name))}</span>
             <div class="empresa-cabeza-texto">
-                <h1>${nombre.texto}${nombre.etiqueta}</h1>
+                <h1>${escaparHtml(c.name || 'Empresa')}</h1>
                 ${lugar ? `<p>${lugar}</p>` : ''}
             </div>
             ${accion ? `<div class="empresa-cabeza-accion">${accion}</div>` : ''}
@@ -376,8 +347,8 @@ function pintarPerfil(c, vacantes) {
             <aside class="empresa-bloque empresa-ficha" aria-labelledby="empresaFichaTitulo">
                 <h2 id="empresaFichaTitulo">Datos</h2>
                 <dl>
-                    ${dato('Sector', window.SkillMatchUI && SkillMatchUI.datoReal(c.industry) ? escaparHtml(c.industry) : '<span class="dato-pendiente">Por confirmar</span>')}
-                    ${dato('Ciudad', window.SkillMatchUI && SkillMatchUI.datoReal(c.location) ? escaparHtml(c.location) : '<span class="dato-pendiente">Por confirmar</span>')}
+                    ${dato('Sector', escaparHtml(c.industry || ''))}
+                    ${dato('Ciudad', escaparHtml(c.location || ''))}
                     ${dato('Tamaño', TAMANOS[sinTildes(c.size)] || '')}
                     ${dato('Fundada en', c.foundedYear ? escaparHtml(String(c.foundedYear)) : '')}
                     ${dato('Sitio web', enlaceWeb)}
@@ -389,6 +360,28 @@ function pintarPerfil(c, vacantes) {
 // Logo y portada que la empresa eligio en "Mi empresa". Se guardan en su cuenta
 // de usuario, y el backend solo la muestra a quien tiene sesion: los visitantes
 // ven las iniciales y la portada de la marca (docs/PENDIENTES-BACKEND.md, 2.2).
+// Si la empresa no eligio portada (o quien mira es visitante), va la ilustracion de su sector
+// (assets/img/portadas/empresa-*.svg, las mismas de la galeria de Mi empresa) en lugar del
+// degradado de la marca. Si eligio una, imagenesDeEmpresa la pone encima (revision 2026-11-13).
+const PORTADA_POR_SECTOR = [
+    [/turis|hotel|restaur|gastron|hosped/, 'empresa-turismo'],
+    [/tecnolog|software|digital|sistemas|informat|publicidad/, 'empresa-tecnologia'],
+    [/salud|clinic|medic|hospital|farmac|odont/, 'empresa-salud'],
+    [/puerto|logist|transporte|naviera|aduana|carga/, 'empresa-puerto'],
+    [/construc|obra|ingenier|arquitect|inmobili/, 'empresa-construccion'],
+    [/educa|colegio|universi|academ|formaci/, 'empresa-educacion'],
+    [/industri|manufact|petro|quimic|fabric|plant/, 'empresa-industria'],
+    [/comerc|venta|tienda|retail|almac|supermerc|distribu/, 'empresa-comercio']
+];
+function portadaDelSector(c) {
+    const portada = document.getElementById('empresaPortada');
+    if (!portada || !window.SkillMatchImagen) return;
+    const sector = String(c.industry || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const elegida = PORTADA_POR_SECTOR.find(([patron]) => patron.test(sector));
+    const url = elegida && SkillMatchImagen.rutaPortada('galeria:' + elegida[1]);
+    if (url) portada.style.backgroundImage = `url("${url}")`;
+}
+
 async function imagenesDeEmpresa(c) {
     if (!c.userId || !sesionActual() || typeof fetchWithAuth !== 'function') return;
     try {
@@ -403,8 +396,9 @@ async function imagenesDeEmpresa(c) {
             const img = document.createElement('img');
             img.src = cuenta.profileImageUrl;
             img.alt = '';
-            img.onerror = () => { logo.textContent = iniciales(c.name); };
+            img.onerror = () => { logo.textContent = iniciales(c.name); logo.classList.remove('con-logo'); };
             logo.replaceChildren(img);
+            logo.classList.add('con-logo');   // con logo, sin el monograma detras (app.css, seccion 86)
         }
     } catch (e) { /* se quedan las iniciales y la portada de la marca */ }
 }
@@ -433,6 +427,7 @@ async function iniciarPerfil() {
                 vacantesAbiertas(id).catch(() => null)
             ]);
             pintarPerfil(empresa, vacantes);
+            portadaDelSector(empresa);
             imagenesDeEmpresa(empresa);
         } catch (e) {
             // El backend responde 404 si no existe (y 400 si el id no tiene forma de id)

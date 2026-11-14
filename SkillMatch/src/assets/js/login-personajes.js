@@ -18,6 +18,9 @@
 //  - En el login de empresas (data-variante="empresa") van de oficina:
 //    corbata, corbatin, carnet y lentes. La corbata y el carnet son
 //    pendulos: cuelgan, el aire los levanta al caer y se mecen al frenar.
+//    Si se cambia "Busco trabajo / Soy empresa" en el selector, la ropa
+//    aparece o se va en ese momento: con empresa dan un saltito de gusto y
+//    el azul se arregla la corbata; al volver a "Busco trabajo" asienten.
 // El movimiento sale de un motor de fisica pequeno: resortes (lo mismo que
 // usan Framer Motion o React Spring) y gravedad, calculados en cada cuadro.
 // No toca auth.js: solo observa el boton y los mensajes que auth.js ya usa.
@@ -50,7 +53,7 @@
     const demo = modoDemo();
     const reducido = !demo && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const conMouse = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    const empresa = contenedor.dataset.variante === 'empresa';
+    let empresa = contenedor.dataset.variante === 'empresa'; // cambia con el selector (ver vestir)
     function ahora() { return performance.now() / 1000; }
 
     /* ---------- 1. Dibujo ---------- */
@@ -106,7 +109,8 @@
             <path class="lp-boca lp-boca-risa" style="${origen(x, y + w * 0.2)}" d="M${x - m},${y - 1} Q${x},${y + w * 0.8} ${x + m},${y - 1}Z"/>`;
     }
 
-    // Ropa de oficina, solo en el login de empresas. "cuerpo" va sobre el
+    // Ropa de oficina. Se dibuja siempre dentro de .lp-ropa y el CSS solo la
+    // muestra en el login de empresas. "cuerpo" va sobre el
     // cuerpo y "cara" se mueve con la cara (los lentes siguen a los ojos).
     // Lo que cuelga es un pendulo: "pivote" es el punto del que cuelga,
     // "largo" la distancia hasta su centro (mas largo = se mece mas lento),
@@ -150,14 +154,15 @@
     }).join('');
 
     function personaje(d) {
-        const ropa = (empresa && ROPA[d.id]) || {};
+        const ropa = ROPA[d.id] || {};
         const craneo = d.cabeza ? `<circle class="lp-color" cx="${d.cabeza[0]}" cy="${d.cabeza[1]}" r="${d.cabeza[2]}"/>` : '';
-        const cara = d.ojos.map(function (o) { return ojo(o[0], o[1], o[2]); }).join('') + boca(d.boca[0], d.boca[1], d.boca[2]) + (ropa.cara || '');
+        const cara = d.ojos.map(function (o) { return ojo(o[0], o[1], o[2]); }).join('') + boca(d.boca[0], d.boca[1], d.boca[2]) +
+            (ropa.cara ? `<g class="lp-ropa">${ropa.cara}</g>` : '');
         // La cabeza se ladea desde el cuello; en la chispa, desde el centro de la cara
         const cuello = d.cabeza ? origen(d.cabeza[0], d.cabeza[1] + d.cabeza[2]) : origen(d.pie, PISO - 30);
         return `<g class="lp-pj" data-pj="${d.id}" style="${origen(d.pie, PISO)}">
             <path class="lp-color" d="${d.cuerpo}"/>
-            ${ropa.cuerpo || ''}
+            ${ropa.cuerpo ? `<g class="lp-ropa">${ropa.cuerpo}</g>` : ''}
             <g class="lp-cabeza" style="${cuello}">${craneo}<g class="lp-cara">${cara}</g>${d.id === 'azul' ? ZETAS : ''}</g>
         </g>`;
     }
@@ -334,7 +339,7 @@
             apoyo: -1, rebote: 0,                                   // instante en el piso tras un golpe
             cx: 0, cy: 0,                                           // centro de la cara en pantalla
             parpadeo: -1, sacudida: -1, asiente: -1, salto: -1, polvoDesde: -1, // momentos de cada reaccion
-            corbata: g.querySelector('.lp-corbata'),                // solo en el login de empresas
+            corbata: g.querySelector('.lp-corbata'),                // la del azul (se ve solo con empresa)
             colgante: null, cintas: [], ajuste: -1, ajustando: '',
             zetas: Array.from(g.querySelectorAll('.lp-z'))
         };
@@ -343,7 +348,7 @@
             .concat(p.ojos.map(function (o) { return o.cierre; }));
         // Pendulo de la corbata o del carnet: angulo (th, 0 = colgando derecho)
         // y velocidad de giro (w), mas lo que hace falta para medir su apoyo
-        const ropa = empresa && ROPA[d.id];
+        const ropa = ROPA[d.id];
         if (ropa && ropa.colgante) {
             p.colgante = Object.assign({ el: g.querySelector('.lp-colgante'), th: 0, w: 0, antes: null, vel: null }, ropa.colgante);
             p.cintas = Array.from(g.querySelectorAll('.lp-cinta'));
@@ -433,7 +438,7 @@
     // Ya en su sitio: vuelve a mirar al frente y, si lleva corbata, se la arregla
     function llego(p) {
         p.acomodando = false;
-        if (p.corbata) arreglarCorbata(p);
+        if (p.corbata && empresa) arreglarCorbata(p);
         actualizar();
     }
 
@@ -610,7 +615,8 @@
         const dx = (sinCabeza ? p.cuerpo.x * 6 : 0) + p.x + p.hondoX.x;
         const ty = p.y + p.hondoY.x;
         poner(p.g, `translate(${n2(dx)}px,${n2(ty)}px) rotate(${n2(giro)}deg) scale(${n2(sx, 3)},${n2(sy, 3)})`);
-        if (p.colgante) colgar(p, { dx: dx, y: ty, giro: giro * Math.PI / 180, sx: sx, sy: sy }, t, dt || 0);
+        // La ropa solo se ve con "Soy empresa": sin ella no se calculan los pendulos
+        if (p.colgante && empresa) colgar(p, { dx: dx, y: ty, giro: giro * Math.PI / 180, sx: sx, sy: sy }, t, dt || 0);
 
         // Al asentir la cara baja mas que la cabeza: asi se lee como un "si"
         const si = asentimiento(p, t);
@@ -898,6 +904,33 @@
     });
     clave.addEventListener('input', actualizar);
     window.addEventListener('resize', function () { centrosViejos = true; actualizar(); });
+
+    // El selector "Busco trabajo / Soy empresa" (auth.js) marca la eleccion en
+    // data-elegido; aqui solo se observa ese dato. Con empresa la ropa les cae
+    // encima (CSS), dan un saltito de gusto y el azul se arregla la corbata;
+    // al volver a "Busco trabajo" la ropa se va y asienten.
+    const selector = document.querySelector('.auth-selector');
+    function vestir(si) {
+        if (si === empresa) return;
+        empresa = si;
+        // El pendulo arranca de cero: lo calculado antes de vestirse ya no vale
+        pjs.forEach(function (p) { if (p.colgante) { p.colgante.antes = null; p.colgante.th = 0; p.colgante.w = 0; } });
+        if (si) contenedor.dataset.variante = 'empresa';
+        else delete contenedor.dataset.variante;
+        despertar();
+        // Si todavia estan cayendo o acomodandose, se visten igual pero sin celebrar
+        if (pjs.some(function (p) { return p.cayendo || p.acomodando; })) return;
+        if (si) {
+            saltar();
+            pjs.forEach(function (p) { if (p.corbata) setTimeout(function () { if (empresa) arreglarCorbata(p); }, 900); });
+        } else {
+            asentir();
+        }
+    }
+    if (selector && 'MutationObserver' in window) {
+        new MutationObserver(function () { vestir(selector.dataset.elegido === 'empresa'); })
+            .observe(selector, { attributes: true, attributeFilter: ['data-elegido'] });
+    }
     window.addEventListener('scroll', function () { centrosViejos = true; actualizar(); }, { passive: true });
 
     // Profundidad: como capas que siguen al mouse, todos se corren un poco

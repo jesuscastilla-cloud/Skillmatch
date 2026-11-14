@@ -317,14 +317,6 @@ function crearApi(opciones = {}) {
             u[p[2]].push(item);
             return [201, item];
         }],
-        // Editar una habilidad, experiencia o estudio (PUT, como el backend)
-        ['PUT', /^\/users\/([^/]+)\/(skills|experiences|educations|certifications)\/([^/]+)$/, (p, q, c) => {
-            const u = usuario(p[1]); if (!u) return [404, {}];
-            const i = u[p[2]].findIndex(x => x.id === p[3]);
-            if (i < 0) return [404, { message: 'No encontrado' }];
-            u[p[2]][i] = { ...u[p[2]][i], ...c, id: p[3] };
-            return [200, u[p[2]][i]];
-        }],
         ['DELETE', /^\/users\/([^/]+)\/(skills|experiences|educations|certifications)\/([^/]+)$/, p => {
             const u = usuario(p[1]); if (!u) return [404, {}];
             u[p[2]] = u[p[2]].filter(x => x.id !== p[3]);
@@ -368,10 +360,7 @@ function crearApi(opciones = {}) {
             if (estado.demora) await new Promise(r => setTimeout(r, estado.demora));
             // headers() no trae la cookie y allHeaders() se queda esperando en una ruta
             // interceptada: la cookie se lee del navegador, que es la que enviaría
-            // Si la prueba ya termino (la pagina se cerro con un pedido en camino), no hay a quien responder
-            let galletas;
-            try { galletas = await contexto.cookies(pedido.url()); } catch (e) { return; }
-            const sesion = galletas.find(k => k.name === 'auth_token' && k.value);
+            const sesion = (await contexto.cookies(pedido.url())).find(k => k.name === 'auth_token' && k.value);
             const cabecerasPedido = { ...pedido.headers(), cookie: sesion ? `auth_token=${sesion.value}` : '' };
             const [codigo, cuerpo] = responder(pedido.method(), pedido.url(), cabecerasPedido, pedido.postData());
             const cabeceras = { ...cors, 'Content-Type': 'application/json' };

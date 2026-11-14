@@ -11,7 +11,7 @@ function sanitize(text) {
 
 document.addEventListener('DOMContentLoaded', function() {
     if (!isAuthenticated()) {
-        window.location.href = 'login.html?tipo=empresa';
+        irAlLogin(undefined, 'tipo=empresa');
         return;
     }
     loadCompanyData();
@@ -41,7 +41,7 @@ function loadCompanyData() {
 
     if (!localStorage.getItem('userData')) {
         alert('Debes iniciar sesión para ver esta página');
-        window.location.href = 'login.html?tipo=empresa';
+        irAlLogin(undefined, 'tipo=empresa');
         return;
     }
 
@@ -426,6 +426,7 @@ function loadOffers() {
 
         // Obtener el conteo de candidatos para cada oferta
         const offersWithCandidates = await Promise.all(data.map(async job => {
+            habilidadesDeVacante.set(String(job.id), job.skills || []); // para la compatibilidad de quien se postula
             let candidateCount = 0;
             try {
                 const countResponse = await fetchWithAuth(`${API_BASE_URL}/applications/job/${job.id}/count`);
@@ -852,7 +853,8 @@ async function guardarDatosEmpresa() {
     problema('');
 
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    const listo = SkillMatchUI.guardando(document.getElementById('modalSaveBtn'));
+    const boton = document.getElementById('modalSaveBtn');
+    boton.disabled = true;
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/companies/${encodeURIComponent(userData.companyId)}`, {
             method: 'PATCH',
@@ -860,17 +862,17 @@ async function guardarDatosEmpresa() {
         });
         const cuerpo = await response.json().catch(() => ({}));
         if (!response.ok) {
-            listo();
-            return problema(cuerpo.message || 'No pudimos guardar los datos. Intenta de nuevo.');
+            boton.disabled = false;
+            return problema(cuerpo.message || 'No se pudieron guardar los datos. Intenta de nuevo.');
         }
         // El nombre de la cuenta (barra de arriba, mensajes) es el de la empresa
         saveUserData({ ...userData, firstName: cuerpo.name });
         closeModal(true);
-        SkillMatchUI.guardado('Datos de la empresa guardados');
+        showNotification('Listo: los datos de la empresa quedaron guardados.');
         loadCompanyData();
     } catch (e) {
-        listo();
-        problema('No pudimos guardar. Revisa tu conexión e intenta de nuevo.');
+        boton.disabled = false;
+        problema('No pudimos conectar con SkillMatch. Revisa tu conexión e intenta de nuevo.');
     }
 }
 
@@ -886,13 +888,17 @@ function openEditAboutModal() {
         </div>
     `, () => {
         const newText = document.getElementById('editAboutText').value.trim();
-        const ventana = document.getElementById('editAboutText').closest('.modal');
-        if (!newText) return SkillMatchUI.errorEnFormulario(ventana, 'Escribe la descripción de tu empresa.', 'editAboutText');
-
+        if (!newText) {
+            alert('Escribe a qué se dedica tu empresa antes de guardar.');
+            return;
+        }
+        
         const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
-        if (!userData.companyId) return SkillMatchUI.errorEnFormulario(ventana, 'Tu sesión se cerró. Vuelve a iniciar sesión.');
-        const listo = SkillMatchUI.guardando(document.getElementById('modalSaveBtn'));
+        if (!userData.companyId) {
+            alert('Tu sesión terminó. Vuelve a entrar para guardar los cambios.');
+            return;
+        }
         
         // Actualizar en el backend con PATCH para actualización parcial
         fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}/description`, {
@@ -923,13 +929,11 @@ function openEditAboutModal() {
             currentCompanyData.description = newText;
             actualizarPaso('descripcion', !!newText);
             
-            listo();
-            SkillMatchUI.guardado('Descripción guardada');
+            showNotification('Descripción actualizada correctamente');
             closeModal(true);
         })
         .catch(error => {
-            listo();
-            SkillMatchUI.errorEnFormulario(ventana, error instanceof TypeError ? 'No pudimos guardar. Revisa tu conexión e intenta de nuevo.' : error.message);
+            alert('No se pudo guardar la descripción. Revisa tu conexión e intenta de nuevo.');
         });
     });
 }
@@ -1044,7 +1048,7 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
             if (!respuesta.ok) throw new Error();
             oferta = await respuesta.json();
         } catch (error) {
-            SkillMatchUI.noSeGuardo('No pudimos abrir la vacante para editarla. Revisa tu conexión e intenta de nuevo.', () => openNewOfferModal(existingOffer, offerId));
+            alert('No pudimos cargar la oferta para editarla. Intenta de nuevo.');
             return;
         }
     }
@@ -1199,7 +1203,7 @@ function pintarVistaOferta(publicada) {
     destino.innerHTML = `
         <div class="opportunity-card" inert data-revelado="1">
             <div class="card-header-opp">
-                <div class="company-logo-opp">${sanitize(empresa.charAt(0))}</div>
+                <div class="company-logo-opp" data-monograma="${sanitize(empresa)}">${sanitize(empresa.charAt(0))}</div>
                 <div class="card-info">
                     <h3 class="job-title"><span class="job-title-link">${valor('offerTitle') ? sanitize(valor('offerTitle')) : falta('Título de la oferta')}</span></h3>
                     <p class="company-name">${sanitize(empresa)}</p>
@@ -1291,7 +1295,8 @@ async function guardarOferta(isEdit, offerId) {
         expirationDate: fecha + 'T23:59:59'
     };
 
-    const listo = SkillMatchUI.guardando(document.getElementById('modalSaveBtn'), isEdit ? 'Guardando…' : 'Publicando…');
+    const boton = document.getElementById('modalSaveBtn');
+    boton.disabled = true;
     try {
         const respuesta = await fetchWithAuth(isEdit ? `${API_BASE_URL}/jobs/${offerId}` : `${API_BASE_URL}/jobs`, {
             method: isEdit ? 'PUT' : 'POST',
@@ -1301,16 +1306,15 @@ async function guardarOferta(isEdit, offerId) {
             const cuerpo = await respuesta.json().catch(() => ({}));
             throw new Error(cuerpo.message || 'El servidor no aceptó la oferta.');
         }
-        listo();
         closeModal(true);
-        SkillMatchUI.guardado(isEdit ? 'Vacante guardada' : 'Vacante publicada');
+        showNotification(isEdit ? 'Oferta actualizada' : 'Oferta publicada');
         // La lista y las cifras se recargan del servidor (antes se armaba a mano
         // y salían fechas "1969" y el tipo en minúscula)
         loadOffers();
         loadActivityStats();
     } catch (e) {
-        error(e instanceof TypeError ? 'No pudimos guardar. Revisa tu conexión e intenta de nuevo.' : 'No pudimos guardar la vacante: ' + e.message);
-        listo();
+        error('No se pudo guardar la oferta: ' + e.message);
+        boton.disabled = false;
     }
 }
 
@@ -1364,7 +1368,7 @@ function createCandidateCard(application, offerId) {
     return `
         <article class="candidato-tarjeta">
             <div class="candidato-cabeza">
-                <div class="candidato-avatar">${avatar}</div>
+                <div class="candidato-avatar" data-monograma="${name}">${avatar}</div>
                 <div class="candidato-nombre">
                     <h3>${name}</h3>
                     <p>${sanitize(application.userHeadline) || 'Sin título en su perfil'}</p>
@@ -1413,7 +1417,7 @@ async function updateCandidateStatus(applicationId, newStatus, offerId) {
         );
 
         if (response.ok) {
-            SkillMatchUI.guardado(`Candidato ${newStatus === 'aceptada' ? 'aceptado' : 'rechazado'}`);
+            showNotification(`Candidato ${newStatus === 'aceptada' ? 'aceptado' : 'rechazado'} exitosamente`);
             const offer = currentOffers.find(o => o.id === offerId);
             if (offer) {
                 setTimeout(() => showCandidatesModal(offer), 500);
@@ -1423,7 +1427,7 @@ async function updateCandidateStatus(applicationId, newStatus, offerId) {
             throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        SkillMatchUI.noSeGuardo('No pudimos guardar tu respuesta al candidato. ' + (error instanceof TypeError ? 'Revisa tu conexión e intenta de nuevo.' : error.message), () => updateCandidateStatus(applicationId, newStatus, offerId));
+        showNotification('No se pudo cambiar el estado de la postulación. Revisa tu conexión e intenta de nuevo.', 'error');
     }
 }
 
@@ -1555,6 +1559,7 @@ function displayApplications(applications) {
         </div>
         ${ordenadas.length > POSTULACIONES_VISIBLES ? `<button type="button" class="btn btn-secondary btn-ver-todas" onclick="showAllApplications(this)">Ver todas (${ordenadas.length})</button>` : ''}
     `;
+    pintarCompatibilidad(postulacionesEmpresa);
 }
 
 // La notificacion de una postulacion nueva llega con "?tab=applicants" (y
@@ -1771,6 +1776,10 @@ async function moverPostulacion(id, estado, conTeclado) {
         const response = await fetchWithAuth(`${API_BASE_URL}/applications/${encodeURIComponent(id)}/status?${params}`, { method: 'PATCH' });
         if (!response.ok) throw new Error(`Error ${response.status}`);
         showNotification(`${sanitize(app.userName || 'La postulación')} pasó a ${columna.titulo.toLowerCase()}.`);
+        if (estado === 'aceptada' && window.SkillMatchUI && SkillMatchUI.chispa) {
+            const tarjeta = [...document.querySelectorAll('#applications-board .tablero-tarjeta')].find(t => t.dataset.id === String(id));
+            if (tarjeta) SkillMatchUI.chispa(tarjeta);
+        }
         // La lista y las cifras de arriba tambien cambian
         displayApplications(postulacionesEmpresa);
         enfocar();
@@ -1822,7 +1831,7 @@ function createApplicationCard(application, oculta) {
                 <button class="btn btn-secondary btn-small" onclick="viewCandidateProfile('${application.userId}')">Ver perfil</button>
                 <a class="btn btn-secondary btn-small" href="mensajes.html?userId=${encodeURIComponent(application.userId)}"><i data-ico="chat"></i> Mensaje</a>
                 ${normalizedStatus === 'pending' || normalizedStatus === 'reviewed' ? `
-                    <button class="btn btn-primary btn-small" onclick="updateApplicationStatus('${application.id}', 'aceptada')"><i data-ico="check"></i> Aceptar</button>
+                    <button class="btn btn-primary btn-small" onclick="updateApplicationStatus('${application.id}', 'aceptada', this)"><i data-ico="check"></i> Aceptar</button>
                     <button class="btn btn-secondary btn-small" onclick="updateApplicationStatus('${application.id}', 'rechazada')"><i data-ico="close"></i> Rechazar</button>
                 ` : ''}
             </div>
@@ -1831,7 +1840,7 @@ function createApplicationCard(application, oculta) {
 }
 
 // Actualizar estado de aplicación
-async function updateApplicationStatus(applicationId, newStatus) {
+async function updateApplicationStatus(applicationId, newStatus, boton) {
     try {
         const params = new URLSearchParams({ status: newStatus });
         const response = await fetchWithAuth(
@@ -1841,6 +1850,8 @@ async function updateApplicationStatus(applicationId, newStatus) {
 
         if (response.ok) {
             showNotification(`Postulación ${newStatus === 'aceptada' ? 'aceptada' : 'rechazada'}`);
+            // Aceptar a alguien es el match: la chispa sale del boton (ui.js)
+            if (newStatus === 'aceptada' && boton && window.SkillMatchUI && SkillMatchUI.chispa) SkillMatchUI.chispa(boton);
             loadApplications();
             // Las cifras del resumen cambian (por revisar, respondidas)
             loadActivityStats();
@@ -1849,8 +1860,98 @@ async function updateApplicationStatus(applicationId, newStatus) {
             throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        SkillMatchUI.noSeGuardo('No pudimos guardar el estado de la postulación. ' + (error instanceof TypeError ? 'Revisa tu conexión e intenta de nuevo.' : error.message), () => updateApplicationStatus(applicationId, newStatus));
+        showNotification('No se pudo cambiar el estado de la postulación. Revisa tu conexión e intenta de nuevo.', 'error');
     }
+}
+
+// ---- La compatibilidad de cada persona que se postulo (revision 2026-11-13) ----
+// El login le promete a la empresa "las personas ordenadas por compatibilidad", pero
+// las postulaciones no la mostraban. Ahora cada una trae su anillo (el mismo de
+// Vacantes, ui.js lo dibuja), las habilidades que la persona ya tiene (con check) y
+// las que le faltan, y se pueden ordenar por "Más compatibles". Mismo calculo que
+// ve la persona: de las habilidades que pide la vacante, cuantas tiene.
+const habilidadesDeVacante = new Map();   // id de la vacante -> nombres de habilidades
+const habilidadesDePersona = new Map();   // id de la persona -> promesa de nombres
+const POSTULACIONES_CON_COMPATIBILIDAD = 40; // tope de consultas en una sola carga
+const sinTildesEmpresa = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+function pedirHabilidadesDePersona(userId) {
+    if (!habilidadesDePersona.has(userId)) {
+        habilidadesDePersona.set(userId, fetchWithAuth(`${API_BASE_URL}/users/${encodeURIComponent(userId)}/skills`)
+            .then(r => (r.ok ? r.json() : []))
+            .then(lista => (Array.isArray(lista) ? lista : []).map(h => h.name).filter(Boolean))
+            .catch(() => []));
+    }
+    return habilidadesDePersona.get(userId);
+}
+
+async function pedirHabilidadesDeVacante(jobId) {
+    const clave = String(jobId);
+    if (!habilidadesDeVacante.has(clave)) {
+        try {
+            const r = await fetchWithAuth(`${API_BASE_URL}/jobs/${encodeURIComponent(jobId)}`);
+            habilidadesDeVacante.set(clave, r.ok ? ((await r.json()).skills || []) : []);
+        } catch (e) { habilidadesDeVacante.set(clave, []); }
+    }
+    return habilidadesDeVacante.get(clave);
+}
+
+function compatibilidadDe(pedidas, tiene) {
+    const suyas = new Set(tiene.map(sinTildesEmpresa));
+    const unicas = [...new Map(pedidas.filter(Boolean).map(h => [sinTildesEmpresa(h), h])).entries()];
+    if (!unicas.length) return null;
+    const si = unicas.filter(([k]) => suyas.has(k)).map(([, h]) => h);
+    const no = unicas.filter(([k]) => !suyas.has(k)).map(([, h]) => h);
+    return { pct: Math.round(si.length / unicas.length * 100), si, no, total: unicas.length };
+}
+
+async function pintarCompatibilidad(postulaciones) {
+    if (ofertasCargadas && ofertasCargadas.then) await ofertasCargadas.catch(() => {});
+    const lista = postulaciones.slice(0, POSTULACIONES_CON_COMPATIBILIDAD);
+    await Promise.all(lista.map(async app => {
+        const [pedidas, tiene] = await Promise.all([pedirHabilidadesDeVacante(app.jobId), pedirHabilidadesDePersona(app.userId)]);
+        const c = compatibilidadDe(pedidas, tiene);
+        app.compatibilidad = c ? c.pct : -1;
+        const tarjeta = document.querySelector(`.application-card[data-application-id="${CSS.escape(String(app.id))}"]`);
+        if (!c || !tarjeta || tarjeta.querySelector('.match-ring')) return;
+        const nombre = app.userName || 'Esta persona';
+        tarjeta.querySelector('.application-header').insertAdjacentHTML('afterbegin',
+            `<div class="match-ring" data-pct="${c.pct}" role="img" title="Tiene ${c.si.length} de ${c.total} habilidades que pide la vacante"
+                  aria-label="${c.pct} por ciento: ${sanitize(nombre)} tiene ${c.si.length} de ${c.total} habilidades que pide la vacante"></div>`);
+        const chips = c.si.map(h => `<span class="skill is-common"><i data-ico="check"></i>${sanitize(h)}</span>`).join('') +
+            c.no.map(h => `<span class="skill skill-falta" title="Le falta">${sanitize(h)}</span>`).join('');
+        tarjeta.querySelector('.application-date').insertAdjacentHTML('beforebegin',
+            `<div class="card-skills postulacion-habilidades" aria-label="Habilidades que pide la vacante">${chips}</div>`);
+    }));
+    prepararOrdenPostulaciones();
+}
+
+// "Más recientes" o "Más compatibles": reordena las tarjetas que ya estan pintadas
+function prepararOrdenPostulaciones() {
+    const herramientas = document.querySelector('#candidatos .postulaciones-herramientas');
+    if (!herramientas || document.getElementById('ordenPostulaciones')) return;
+    if (!postulacionesEmpresa.some(a => a.compatibilidad >= 0)) return;
+    herramientas.insertAdjacentHTML('afterbegin',
+        `<label class="orden-postulaciones"><span>Ordenar</span>
+            <select id="ordenPostulaciones" class="sort-select">
+                <option value="recientes">Más recientes</option>
+                <option value="compatibilidad">Más compatibles</option>
+            </select></label>`);
+    document.getElementById('ordenPostulaciones').addEventListener('change', e => ordenarPostulaciones(e.target.value));
+}
+
+function ordenarPostulaciones(como) {
+    const contenedor = document.querySelector('#applications-list .applications-list');
+    if (!contenedor) return;
+    const orden = [...postulacionesEmpresa];
+    if (como === 'compatibilidad') orden.sort((a, b) => (b.compatibilidad ?? -1) - (a.compatibilidad ?? -1) || new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0));
+    const todasVisibles = !document.querySelector('#applications-list .btn-ver-todas');
+    orden.forEach((app, i) => {
+        const tarjeta = contenedor.querySelector(`.application-card[data-application-id="${CSS.escape(String(app.id))}"]`);
+        if (!tarjeta) return;
+        tarjeta.hidden = !todasVisibles && i >= POSTULACIONES_VISIBLES;
+        contenedor.appendChild(tarjeta);
+    });
 }
 
 // Ver perfil del candidato - IMPLEMENTADO

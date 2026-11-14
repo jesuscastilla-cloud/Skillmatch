@@ -15,9 +15,9 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="SkillMatch: el trabajo que buscas ya está en Cartagena">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <!-- Fuentes guardadas en el proyecto (assets/fonts, app.css seccion 77): antes se esperaba ~1,5 s a Google Fonts -->
+    <link rel="preload" href="../assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../assets/css/app.css">
     <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
@@ -35,12 +35,11 @@
         <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo-oscuro.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
                 <ul class="nav-links nav-principales">
                     <li><a href="index.html">Inicio</a></li>
                     <li><a href="oportunidades.html">Vacantes</a></li>
-                    <li><a href="index.html#como-funciona">Cómo funciona</a></li>
                     <li><a href="empresas.html">Empresas</a></li>
                 </ul>
             </div>
@@ -61,6 +60,10 @@
             <div class="choice-split">
                 <section class="choice-panel usuario" aria-label="Registro para quien busca trabajo">
                     <div class="choice-card">
+                        <!-- Escena "El recorrido" (escenas.js, "camino-persona"): se arma una vez al verse -->
+                        <div class="escenario choice-escena" data-escena="camino-persona">
+                            <svg viewBox="0 40 480 250" role="img" aria-label="Tu perfil se enciende, tres vacantes aparecen ordenadas por compatibilidad (92, 74 y 51 %) y tus habilidades llegan a la que más encaja: postulación enviada"><g class="escena-raiz"></g></svg>
+                        </div>
                         <header class="choice-header">
                             <div class="choice-icon"><i data-ico="user"></i></div>
                             <div class="choice-title">
@@ -83,6 +86,10 @@
 
                 <section class="choice-panel empresa" aria-label="Registro de empresa">
                     <div class="choice-card">
+                        <!-- Escena "El recorrido" (escenas.js, "camino-empresa"): se arma una vez al verse -->
+                        <div class="escenario choice-escena" data-escena="camino-empresa">
+                            <svg viewBox="0 40 480 250" role="img" aria-label="Tu empresa publica una vacante de recepcionista, llegan tres personas a postularse y aceptas a una"><g class="escena-raiz"></g></svg>
+                        </div>
                         <header class="choice-header">
                             <div class="choice-icon"><i data-ico="building"></i></div>
                             <div class="choice-title">
@@ -114,6 +121,7 @@
             <p>Una bolsa de empleo para todos los sectores de Cartagena de Indias.</p>
         </div>
     </footer>
+    <script src="../assets/js/escenas.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>
 </html>

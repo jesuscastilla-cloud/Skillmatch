@@ -24,7 +24,7 @@ async function servidorListo() {
         servidor = spawn(process.execPath, ['servidor.mjs'], { cwd: __dirname, stdio: 'ignore', env: { ...process.env, PUERTO: String(PUERTO) } });
         for (let i = 0; i < 40 && !(await servidorListo()); i++) await new Promise(r => setTimeout(r, 150));
     }
-    const navegador = await chromium.launch({ channel: 'msedge', args: ['--disable-gpu'] });
+    const navegador = await chromium.launch({ channel: 'msedge' });
     const celular = Number(ancho) < 700;
     const contexto = await navegador.newContext({
         viewport: { width: Number(ancho), height: celular ? 844 : 800 },
@@ -37,13 +37,13 @@ async function servidorListo() {
     const datos = CUENTAS[quien] || null;
     if (datos) await cookieDeSesion(contexto, datos.id); // la sesión va en la cookie (F4)
     await contexto.addInitScript(({ token, datos, tema }) => {
-        if (token) { localStorage.setItem('skillmatch_sesion_vence', String(Date.now() + 864e5)); localStorage.setItem('userData', JSON.stringify(datos)); }
+        if (token) { localStorage.setItem('token', token); localStorage.setItem('userData', JSON.stringify(datos)); }
         localStorage.setItem('skillmatch_theme', tema === 'oscuro' ? 'dark' : 'light');
         ['inicio-persona', 'inicio-empresa', 'mi-empresa'].forEach(c => localStorage.setItem('skillmatch_recorrido_' + c, 'visto'));
     }, { token: datos ? tokenPara(datos.id) : null, datos, tema });
     const page = await contexto.newPage();
     const errores = [];
-    page.on('pageerror', e => errores.push(e.message + ' @ ' + String(e.stack).slice(0, 300)));
+    page.on('pageerror', e => errores.push(e.message));
     await page.goto(`http://localhost:${PUERTO}/pages/${pagina}`);
     await page.waitForLoadState('networkidle');
     if (process.env.CAPTURA_ANTES) { await page.evaluate(process.env.CAPTURA_ANTES); await page.waitForTimeout(600); }

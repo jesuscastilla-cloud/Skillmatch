@@ -86,7 +86,8 @@ self.addEventListener('fetch', function (evento) {
 
     if (peticion.mode === 'navigate') {
         evento.respondWith(primeroLaRed(peticion, true));
-    } else if (peticion.destination === 'image') {
+    } else if (peticion.destination === 'image' || peticion.destination === 'font') {
+        // Imagenes y fuentes (assets/fonts): primero la copia; casi nunca cambian (revision 2026-11-13)
         evento.respondWith(primeroLaCopia(peticion));
     } else if (peticion.destination === 'style' || peticion.destination === 'script' || peticion.destination === 'manifest') {
         evento.respondWith(primeroLaRed(peticion, false));

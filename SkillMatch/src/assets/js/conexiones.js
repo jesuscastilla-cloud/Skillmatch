@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     if (!isAuthenticated()) {
-        window.location.href = 'login.html';
+        irAlLogin();
         return;
     }
 
@@ -89,7 +89,8 @@ function showToast(message, type = 'success') {
 
 function avatarCircle(name) {
     const initial = name ? name.charAt(0).toUpperCase() : '?';
-    return `<div class="connection-avatar-circle">${escaparHtml(initial)}</div>`;
+    // «Monograma»: colores y patron propios de este nombre (ui.js)
+    return `<div class="connection-avatar-circle" data-monograma="${escaparHtml(name || '')}">${escaparHtml(initial)}</div>`;
 }
 
 // ─── Mis conexiones ───────────────────────────────────────────────────────────
@@ -196,7 +197,7 @@ function displayRequests(requests) {
                         <p class="connection-time">${date}</p>
                     </div>
                     <div class="connection-actions">
-                        <button class="btn btn-primary btn-small" onclick="acceptConnection('${req.id}')"><i data-ico="check"></i> Aceptar</button>
+                        <button class="btn btn-primary btn-small" onclick="acceptConnection('${req.id}', this)"><i data-ico="check"></i> Aceptar</button>
                         <button class="btn btn-secondary btn-small" onclick="rejectConnection('${req.id}')"><i data-ico="close"></i> Rechazar</button>
                     </div>
                 </div>
@@ -358,18 +359,21 @@ async function sendConnectionRequest(userId, boton) {
     }
 }
 
-async function acceptConnection(connectionId) {
+async function acceptConnection(connectionId, boton) {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/connections/${connectionId}/accept`, { method: 'PATCH' });
         if (response.ok) {
             showToast('<i data-ico="check"></i> Conexión aceptada');
+            // Una conexion nueva tambien es un match: la chispa sale de la tarjeta (ui.js)
+            const tarjeta = boton && boton.closest('.connection-card, li, article');
+            if (window.SkillMatchUI && SkillMatchUI.chispa) SkillMatchUI.chispa(tarjeta && tarjeta.querySelector('.connection-avatar, .connection-avatar-circle') || boton);
             loadPendingRequests();
             loadMyConnections();
         } else {
-            showToast('Error al aceptar conexión', 'error');
+            showToast('No se pudo aceptar la conexión. Intenta de nuevo.', 'error');
         }
     } catch (error) {
-        showToast('Error al aceptar conexión', 'error');
+        showToast('No se pudo aceptar la conexión. Revisa tu conexión a internet e intenta de nuevo.', 'error');
     }
 }
 

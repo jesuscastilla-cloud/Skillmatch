@@ -195,7 +195,8 @@ function formatSalaryRange(minValue, maxValue) {
     }
 
     if (min !== null && max !== null) {
-        return `${formatCurrency(min)} - ${formatCurrency(max)}`;
+        // Iguales: un solo valor (antes "$1.423.500 - $1.423.500")
+        return min === max ? formatCurrency(min) : `${formatCurrency(min)} - ${formatCurrency(max)}`;
     }
 
     const value = min !== null ? min : max;
@@ -380,10 +381,10 @@ function tarjetaCarrusel(opp, indice, total) {
         <article class="carrusel-tarjeta" role="group" aria-roledescription="vacante" aria-label="${indice + 1} de ${total}" data-resumen="${escapar(resumen)}">
             <div class="cv-tarjeta">
                 <div class="cv-cabeza">
-                    <span class="cv-logo" aria-hidden="true"${opp.empresaId ? ` data-logo-empresa="${escapar(String(opp.empresaId))}"` : ''}>${escapar(opp.empresa.charAt(0))}</span>
+                    <span class="cv-logo" aria-hidden="true" data-monograma="${escapar(opp.empresa)}"${opp.empresaId ? ` data-logo-empresa="${escapar(String(opp.empresaId))}"` : ''}>${escapar(opp.empresa.charAt(0))}</span>
                     <div class="cv-titulos">
                         <h3>${escapar(opp.titulo)}</h3>
-                        <p>${escapar(SkillMatchUI.sinEjemplo(opp.empresa))}${SkillMatchUI.esEjemplo(opp.empresa) ? ' ' + SkillMatchUI.etiquetaEjemplo() : ''}</p>
+                        <p>${escapar(opp.empresa)}</p>
                     </div>
                     ${anillo}
                 </div>
@@ -462,7 +463,7 @@ function renderResults(oportunidades, criteria) {
 
     soltarCarrusel();
     container.innerHTML =
-        `<div class="container"><div class="results-header"><h2>${habilidadesPersona && habilidadesPersona.size ? 'Vacantes para ti' : 'Resultados de tu búsqueda'}</h2><p class="results-summary">${escapar(resumen)}</p></div></div>` +
+        `<div class="container"><div class="results-header"><h2>Vacantes para ti</h2><p class="results-summary">${escapar(resumen)}</p></div></div>` +
         SkillMatchUI.carruselMarco(top.map((opp, i) => tarjetaCarrusel(opp, i, top.length)).join(''), top.length, 'Las vacantes que más encajan con tu búsqueda') +
         `<div class="container carrusel-ver-todas">
             <a class="btn btn-primary" href="oportunidades.html${criteria.q ? '?q=' + encodeURIComponent(criteria.q) : ''}">Ver todas en Vacantes</a>
@@ -477,8 +478,11 @@ function renderResults(oportunidades, criteria) {
             const id = this.getAttribute('data-id');
 
             if (!localStorage.getItem('userData')) {
-                if (window.SkillMatchUI) SkillMatchUI.aviso('Inicia sesión para guardar vacantes.', 'info');
-                setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+                const volver = `oportunidades.html?jobId=${encodeURIComponent(id)}`;
+                if (window.SkillMatchUI && SkillMatchUI.pedirCuenta) {
+                    SkillMatchUI.pedirCuenta({ titulo: 'Inicia sesión para guardar vacantes',
+                        texto: 'Guarda las vacantes que te interesan para postularte después. Entra o crea tu perfil y vuelves a esta vacante.', volver });
+                } else irAlLogin(volver);
                 return;
             }
 
@@ -536,14 +540,29 @@ async function performSearch(criteria) {
     renderResults(results, criteria);
 }
 
-// (Las cifras de la portada ya no se piden aqui: salian dos veces y con otro
-// formato, "97+". Ahora las pone index.js, una sola vez, en el hero.)
+async function loadStats() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/public/stats`);
+        if (!response.ok) return;
+        const stats = await response.json();
+
+        const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + 'K+' : n + '+';
+
+        const el = (id) => document.getElementById(id);
+        if (el('stat-users'))        el('stat-users').textContent        = fmt(stats.users        ?? 0);
+        if (el('stat-companies'))    el('stat-companies').textContent    = fmt(stats.companies    ?? 0);
+        if (el('stat-jobs'))         el('stat-jobs').textContent         = fmt(stats.jobs         ?? 0);
+        if (el('stat-applications')) el('stat-applications').textContent = fmt(stats.applications ?? 0);
+    } catch (_) {}
+}
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
+    loadStats();
+
     // Las vacantes se piden la primera vez que el visitante toca el buscador
     // o una lista; asi quien solo mira la portada no las descarga
-    const zona = document.querySelector('.hero-buscar');
+    const zona = document.querySelector('.search-section');
     if (zona) {
         const precargar = () => loadOportunidades();
         zona.addEventListener('focusin', precargar, { once: true });

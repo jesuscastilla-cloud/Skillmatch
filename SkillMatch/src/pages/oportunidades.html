@@ -20,9 +20,9 @@
     <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#EDF2F8">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <!-- Fuentes guardadas en el proyecto (assets/fonts, app.css seccion 77): antes se esperaba ~1,5 s a Google Fonts -->
+    <link rel="preload" href="../assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../assets/css/app.css">
     <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');document.documentElement.style.setProperty('--reloj',Date.now()%864e5+'ms');addEventListener('pagereveal',function(e){var v=e.viewTransition,d;try{d=JSON.parse(sessionStorage.getItem('skillmatch_deslizar'));sessionStorage.removeItem('skillmatch_deslizar');}catch(x){}if(d&&d.a===location.pathname&&Date.now()-d.t<15000){if(v&&v.types)v.types.add('ir-'+d.dir);var h=document.documentElement,c='entra-'+d.dir;h.classList.add(c);setTimeout(function(){h.classList.remove(c);},1400);}});})();</script>
 </head>
@@ -35,12 +35,11 @@
         <nav class="container" aria-label="Principal">
             <div class="nav-left">
                 <div class="logo">
-                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo-oscuro.png" alt="SkillMatch" width="300" height="100"></a>
                 </div>
                 <ul class="nav-links nav-principales">
                     <li><a href="index.html">Inicio</a></li>
                     <li><a href="oportunidades.html">Vacantes</a></li>
-                    <li><a href="index.html#como-funciona">Cómo funciona</a></li>
                     <li><a href="empresas.html">Empresas</a></li>
                 </ul>
             </div>
@@ -57,7 +56,7 @@
             <p>Empleos, prácticas y trabajos independientes de empresas de todos los sectores.</p>
             
             <div class="search-bar-main">
-                <input type="text" id="searchInput" placeholder="Cargo, empresa o habilidad" class="search-input-main" aria-label="Buscar vacantes por cargo, empresa o habilidad">
+                <input type="text" id="searchInput" placeholder="Busca por cargo, empresa o habilidad. Ej.: mesero, contador, bodega..." class="search-input-main" aria-label="Buscar vacantes por cargo, empresa o habilidad">
                 <button class="btn-search-main">Buscar</button>
             </div>
         </div>
@@ -74,20 +73,15 @@
                 <button type="button" class="tab-btn" data-vista="guardadas" aria-pressed="false"><i data-ico="heart"></i> Guardadas <span class="vista-cuenta" id="savedCount"></span></button>
                 <button type="button" class="tab-btn" data-vista="mias" aria-pressed="false" hidden><i data-ico="building"></i> Mis vacantes <span class="vista-cuenta" id="misVacantesCount"></span></button>
             </div>
-            <p class="aviso-ejemplo" id="vacantesEjemplo" hidden><i data-ico="bulb"></i> <span><strong>Vista de ejemplo.</strong> Las vacantes marcadas como «Ejemplo» son datos de muestra para ver cómo funciona SkillMatch: no son ofertas reales.</span></p>
-            <!-- En el celular: "Filtros (n)" abre el panel desde abajo y los elegidos quedan como etiquetas -->
-            <div class="filtros-movil">
-                <button type="button" class="btn btn-secondary btn-small" id="abrirFiltros" aria-controls="panelFiltros" aria-expanded="false"><i data-ico="filter"></i> Filtros <span id="filtrosCuenta"></span></button>
-                <ul class="filtros-chips" id="filtrosChips" aria-label="Filtros elegidos" hidden></ul>
-            </div>
-            <div class="filtros-fondo" id="filtrosFondo" hidden></div>
             <div class="opportunities-layout">
                 <!-- Sidebar de Filtros -->
-                <aside class="opportunities-sidebar" id="panelFiltros" aria-label="Filtros">
+                <!-- En el celular y la tableta los filtros son una hoja que sube desde abajo (oportunidades.js, prepararHojaDeFiltros) -->
+                <aside class="opportunities-sidebar" id="panelFiltros" aria-labelledby="filtrosTitulo">
                     <div class="filter-card">
                         <div class="filter-header">
-                            <h2><i data-ico="target"></i> Filtros</h2>
+                            <h2 id="filtrosTitulo"><i data-ico="target"></i> Filtros</h2>
                             <button class="btn-clear-filters">Limpiar todo</button>
+                            <button type="button" class="filtros-cerrar" aria-label="Cerrar filtros"><i data-ico="close"></i></button>
                         </div>
 
                         <details class="filter-section" open>
@@ -170,14 +164,17 @@
                             </div>
                         </details>
                         <!-- Sin boton "Aplicar filtros": cada cambio filtra al instante (oportunidades.js).
-                             En el celular, este boton cierra el panel y deja ver las vacantes -->
-                        <button type="button" class="btn btn-primary btn-full filtros-listo" id="cerrarFiltros">Ver vacantes</button>
+                             En la hoja del celular, este boton solo la cierra y dice cuantas quedaron -->
+                        <button type="button" class="btn btn-primary btn-full filtros-ver">Ver vacantes</button>
                     </div>
                 </aside>
 
                 <!-- Contenido Principal -->
                 <main class="opportunities-main">
+                    <!-- En el celular los filtros (con su h2) van en una hoja cerrada: este titulo mantiene el orden h1 > h2 > h3 -->
+                    <h2 class="sr-only">Resultados</h2>
                     <div class="opportunities-toolbar">
+                        <button type="button" class="btn btn-secondary btn-small filtros-abrir" id="filtrosAbrir" aria-controls="panelFiltros" aria-expanded="false"><i data-ico="filter"></i> <span>Filtros</span></button>
                         <div class="results-info">
                             <span id="resultsCount" class="results-count">Cargando vacantes…</span>
                         </div>

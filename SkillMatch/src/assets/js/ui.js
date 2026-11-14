@@ -188,6 +188,61 @@
         });
     }
 
+    /** Barra de arriba (2026-11-12, idea de Luis a partir de torre.ai): cada opcion lleva su icono encima
+     *  del texto, como la barra de pestanas del celular. El icono sale del destino del enlace; el boton
+     *  turquesa ("Unirse ahora") va sin icono. Se agrega despues de sesionEnBarra, que cambia textos y
+     *  enlaces (al cambiar el texto se borraria el icono). */
+    function iconoDeEnlace(a) {
+        if (a.hasAttribute('data-cerrar-sesion')) return 'logout';
+        if (a.classList.contains('btn-register')) return null;
+        const h = (a.getAttribute('href') || '').split('?')[0];
+        if (h === '#main' || /(^|\/)index\.html$/.test(h)) return 'home';
+        if (/oportunidades\.html$/.test(h) || h === '#ofertas') return 'briefcase';
+        if (/conexiones\.html$/.test(h) || h === '#candidatos') return 'users';
+        if (/mensajes\.html$/.test(h)) return 'chat';
+        if (/empresas?\.html$|perfil-empresa\.html$/.test(h)) return 'building';
+        if (/perfil-usuario\.html$|login(-usuario|-empresa)?\.html$/.test(h)) return 'user';
+        if (/#como-funciona$/.test(h)) return 'bulb';
+        return null;
+    }
+    // Los iconos del menu, dibujados igual que los de ICONS pero con sus piezas separadas: asi cada uno hace
+    // su propio gesto al pasar el mouse (app.css, seccion 56): el techo de la casa se levanta y se enciende la
+    // puerta, las ventanas del edificio se encienden una por una, en el globo de mensajes aparecen los tres
+    // puntos de "escribiendo"... Los que no estan aqui usan su dibujo de siempre
+    const ICONOS_MENU = {
+        home: '<path class="nv-casa" d="M5 10.4V19a1.5 1.5 0 0 0 1.5 1.5H9.5v-6h5v6h3a1.5 1.5 0 0 0 1.5-1.5v-8.6"/>' +
+              '<path class="nv-techo" d="m3 11 9-7 9 7"/>' +
+              '<rect class="nv-puerta" x="10.3" y="15.3" width="3.4" height="4.4" rx=".6"/>',
+        briefcase: '<g class="nv-maletin"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 12h18"/>' +
+                   '<path class="nv-asa" d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/></g>',
+        building: '<path d="M4 20V5.5A1.5 1.5 0 0 1 5.5 4h7A1.5 1.5 0 0 1 14 5.5V20M14 10h4.5A1.5 1.5 0 0 1 20 11.5V20M2.5 20h19"/>' +
+                  '<path d="M7 8h4M7 12h4M7 16h4M17 14h0M17 17h0"/>' +
+                  '<path class="nv-luz" style="--i:0" d="M7 16h4"/><path class="nv-luz" style="--i:1" d="M17 17h0"/>' +
+                  '<path class="nv-luz" style="--i:2" d="M7 12h4"/><path class="nv-luz" style="--i:3" d="M17 14h0"/><path class="nv-luz" style="--i:4" d="M7 8h4"/>',
+        users: '<g class="nv-uno"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 19.5a6.5 6.5 0 0 1 13 0"/></g>' +
+               '<g class="nv-otro"><path d="M16.5 5.2a3.2 3.2 0 0 1 0 5.6M18 19.5a6.5 6.5 0 0 0-2.2-4.9"/></g>',
+        chat: '<path class="nv-globo" d="M20 15a2 2 0 0 1-2 2H8l-4 3.5V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9Z"/>' +
+              '<circle class="nv-punto" style="--i:0" cx="8.5" cy="10.5" r="1"/><circle class="nv-punto" style="--i:1" cx="12" cy="10.5" r="1"/>' +
+              '<circle class="nv-punto" style="--i:2" cx="15.5" cy="10.5" r="1"/>',
+        user: '<circle class="nv-cabeza" cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+        logout: '<path d="M14 7V5.5A1.5 1.5 0 0 0 12.5 4h-6A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h6a1.5 1.5 0 0 0 1.5-1.5V17"/>' +
+                '<path class="nv-flecha" d="M10 12h10M17 8.5l3.5 3.5L17 15.5"/>'
+    };
+    function iconoDelMenu(nombre) {
+        if (!ICONOS_MENU[nombre]) return svgIcon(nombre, 'nav-ico');
+        // Sin la clase ico-<nombre>: su gesto es el de la seccion 56, no el saltito comun de la seccion 25d
+        return '<svg class="ico nav-ico nv-' + nombre + '" viewBox="0 0 24 24" aria-hidden="true">' + ICONOS_MENU[nombre] + '</svg>';
+    }
+    function iconosDeLaBarra() {
+        document.querySelectorAll('header .nav-links a').forEach(function (a) {
+            if (a.querySelector('.ico, [data-ico]')) return;
+            const nombre = iconoDeEnlace(a);
+            if (!nombre) return;
+            a.insertAdjacentHTML('afterbegin', iconoDelMenu(nombre));
+            a.classList.add('con-icono');
+        });
+    }
+
     /** Sesion en la barra superior.
      *  - Todo enlace con data-cerrar-sesion cierra la sesion de verdad. Antes,
      *    en Oportunidades y Conexiones "Cerrar sesion" solo llevaba al login y
@@ -231,7 +286,8 @@
                 a.className = clase || '';
                 a.removeAttribute('data-cerrar-sesion');
             };
-            cambiar(conexiones, 'index.html#como-funciona', 'Cómo funciona');
+            // "Cómo funciona" ya no va en el menú (está al bajar en la portada): Conexiones se quita
+            conexiones.parentElement.remove();
             cambiar(principales.querySelector('a[href="mensajes.html"]'), 'empresas.html', 'Empresas');
             cambiar(miPerfil, 'login.html', 'Iniciar sesión', 'btn-login');
             cambiar(document.querySelector('header .nav-links a[data-cerrar-sesion]'), 'seleccionar-registro.html', 'Unirse ahora', 'btn-register');
@@ -247,17 +303,19 @@
             }
         }
         // Paginas publicas (portada, Indicadores, politica...) escritas con la
-        // barra de visitante: con sesion se ve la misma barra del resto del sitio.
-        // Antes una persona veia "Como funciona" y "Empresas" en lugar de
-        // Conexiones y Mensajes (y el numero de mensajes sin leer no salia)
-        const comoFunciona = principales && principales.querySelector('a[href$="#como-funciona"]');
+        // barra de visitante (Inicio, Vacantes, Empresas): con sesion se ve la
+        // misma barra del resto del sitio. Una persona recibe Conexiones antes
+        // de Mensajes; una empresa no usa Conexiones. (Antes "Cómo funciona" se
+        // convertia en Conexiones; ese enlace ya no va en el menu)
         const enlaceEmpresas = principales && principales.querySelector('a[href="empresas.html"]');
-        if (comoFunciona && enlaceEmpresas) {
-            if (datos.userType === 'empresa') {
-                comoFunciona.parentElement.remove();
-            } else {
-                comoFunciona.setAttribute('href', 'conexiones.html');
-                comoFunciona.textContent = 'Conexiones';
+        if (enlaceEmpresas && !principales.querySelector('a[href="mensajes.html"]')) {
+            if (datos.userType !== 'empresa' && !principales.querySelector('a[href="conexiones.html"]')) {
+                const li = document.createElement('li');
+                const enlace = document.createElement('a');
+                enlace.setAttribute('href', 'conexiones.html');
+                enlace.textContent = 'Conexiones';
+                li.appendChild(enlace);
+                enlaceEmpresas.parentElement.before(li);
             }
             enlaceEmpresas.setAttribute('href', 'mensajes.html');
             enlaceEmpresas.textContent = 'Mensajes';
@@ -279,53 +337,258 @@
         }
     }
 
-    /** Con sesion, "Mi perfil" y "Cerrar sesion" ya no son dos botones grandes en la
-     *  barra: quedan en un menu que se abre al tocar las iniciales, como en la
-     *  mayoria de los sitios. Cerrar sesion va al final, separado y en rojo. */
+    /** «Titular» (video de moxen.studio, pedido de Luis 2026-11-13): con sesion, "Tema", "Mi perfil" y
+     *  "Cerrar sesion" se juntan en un boton "Tu cuenta" con tu inicial dentro de un anillo naranja (lo
+     *  completo que esta tu perfil). Abre un menu de vidrio ahumado con tu nombre, "Perfil al N %", tus
+     *  postulaciones con respuesta, las opciones de tu cuenta, "Cerrar sesion" y el tema Claro / Oscuro /
+     *  Auto. Los enlaces de antes quedan en la pagina, escondidos (otros guiones los buscan).
+     *  El menu vive en <body> (no dentro de la isla): asi su vidrio desenfoca la pagina de verdad y no le
+     *  llegan los estilos de las opciones de la barra. app.css, seccion 84. */
     function menuDeCuenta() {
         const datos = datosSesion();
-        const salir = document.querySelector('header nav > .nav-links a[data-cerrar-sesion]');
-        if (!datos || !salir || document.getElementById('menuCuenta')) return;
+        const lista = document.querySelector('header > nav > .nav-links');
+        if (!datos || !lista) return;
+        const salir = lista.querySelector('a[data-cerrar-sesion]');
+        if (!salir) return;
         const esEmpresa = datos.userType === 'empresa';
-        const perfil = esEmpresa ? 'perfil-empresa.html' : 'perfil-usuario.html';
-        const enlacePerfil = document.querySelector('header nav > .nav-links a[href="' + perfil + '"]');
-        const nombre = [datos.firstName, esEmpresa ? '' : datos.lastName].filter(Boolean).join(' ').trim();
-        const iniciales = (nombre || datos.email || '?').split(/\s+/).map(function (p) { return p.charAt(0); }).join('').slice(0, 2).toUpperCase();
-        const opciones = (esEmpresa ? [
-            [perfil, 'building', 'Mi empresa'],
-            ['perfil-empresa.html?nueva=1', 'plus', 'Publicar una vacante'],
-            ['perfil-empresa.html?tab=applicants', 'users', 'Candidatos']
-        ] : [
-            [perfil, 'user', 'Mi perfil'],
-            ['perfil-usuario.html?tab=applications', 'send', 'Mis postulaciones'],
-            ['oportunidades.html?guardadas=1', 'bookmark', 'Vacantes guardadas']
-        ]).map(function (o) {
-            return '<a role="menuitem" href="' + o[0] + '"><i data-ico="' + o[1] + '"></i><span>' + o[2] + '</span></a>';
-        }).join('');
+        const perfil = lista.querySelector('a[href="perfil-usuario.html"], a[href="perfil-empresa.html"]');
+        const tema = lista.querySelector('.theme-toggle');
+        [salir, perfil, tema].forEach(function (el) { if (el && el.closest('li')) el.closest('li').hidden = true; });
 
+        const nombre = esEmpresa ? String(datos.firstName || 'Tu empresa').trim()
+            : [datos.firstName, datos.lastName].filter(Boolean).join(' ').trim() || 'Tu cuenta';
+        const inicial = (nombre.charAt(0) || '?').toUpperCase();
+        const esc = function (t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+
+        // El boton: la inicial dentro del anillo (el trazo mide 100: pathLength) y "Tu cuenta" debajo
         const li = document.createElement('li');
-        li.className = 'menu-cuenta';
+        li.className = 'cuenta-li';
         li.innerHTML =
-            '<button type="button" class="cuenta-boton" data-menu="menuCuenta" aria-haspopup="menu" aria-expanded="false" aria-controls="menuCuenta">' +
-                '<span class="cuenta-iniciales" aria-hidden="true">' + escaparHtml(iniciales) + '</span>' +
-                '<span class="sr-only">Tu cuenta' + (nombre ? ': ' + escaparHtml(nombre) : '') + '</span>' +
-                svgIcon('chevron', 'cuenta-flecha') +
-            '</button>' +
-            '<div class="menu-acciones menu-cuenta-lista" id="menuCuenta" role="menu" aria-label="Tu cuenta" hidden>' +
-                '<p class="menu-cuenta-nombre">' + escaparHtml(nombre || datos.email || '') + '</p>' +
-                opciones +
-                '<button type="button" role="menuitem" data-cambiar-clave><i data-ico="lock"></i><span>Cambiar contraseña</span></button>' +
-                '<hr>' +
-                '<a role="menuitem" href="index.html" class="es-peligro" data-cerrar-sesion><i data-ico="logout"></i><span>Cerrar sesión</span></a>' +
+            '<button type="button" class="cuenta-boton" aria-expanded="false" aria-controls="menuCuenta" aria-label="Tu cuenta: ' + esc(nombre) + '">' +
+                '<span class="cuenta-avatar" aria-hidden="true">' +
+                    '<svg viewBox="0 0 36 36"><circle class="cuenta-pista" cx="18" cy="18" r="16.5" pathLength="100"/>' +
+                    '<circle class="cuenta-avance" cx="18" cy="18" r="16.5" pathLength="100" stroke-dasharray="0 100"/></svg>' +
+                    '<span class="cuenta-inicial" data-monograma="' + esc(nombre) + '">' + esc(inicial) + '</span>' +
+                '</span>' +
+                '<span class="cuenta-texto">Tu cuenta</span>' +
+            '</button>';
+        lista.appendChild(li);
+        const boton = li.querySelector('.cuenta-boton');
+
+        const opciones = esEmpresa ? [
+            { href: 'perfil-empresa.html', ico: 'building', texto: 'Mi empresa' },
+            { href: 'perfil-empresa.html#candidatos', ico: 'users', texto: 'Candidatos' },
+            { href: 'perfil-empresa.html?nueva=1', ico: 'plus', texto: 'Publicar una vacante' }
+        ] : [
+            { href: 'perfil-usuario.html', ico: 'user', texto: 'Mi perfil' },
+            { href: 'hoja-de-vida.html', ico: 'list', texto: 'Hoja de vida' },
+            { href: 'perfil-usuario.html?tab=applications', ico: 'send', texto: 'Mis postulaciones' },
+            { href: 'oportunidades.html?guardadas=1', ico: 'heart', texto: 'Vacantes guardadas' }
+        ];
+        const menu = document.createElement('div');
+        menu.className = 'cuenta-menu';
+        menu.id = 'menuCuenta';
+        menu.hidden = true;
+        menu.setAttribute('role', 'region');
+        menu.setAttribute('aria-label', 'Tu cuenta');
+        menu.innerHTML =
+            '<div class="cuenta-cabeza">' +
+                '<span class="cuenta-avatar cuenta-avatar-grande" aria-hidden="true">' +
+                    '<svg viewBox="0 0 36 36"><circle class="cuenta-pista" cx="18" cy="18" r="16.5" pathLength="100"/>' +
+                    '<circle class="cuenta-avance" cx="18" cy="18" r="16.5" pathLength="100" stroke-dasharray="0 100"/></svg>' +
+                    '<span class="cuenta-inicial" data-monograma="' + esc(nombre) + '">' + esc(inicial) + '</span>' +
+                '</span>' +
+                '<div class="cuenta-quien">' +
+                    '<p class="cuenta-nombre">' + esc(nombre) + '</p>' +
+                    '<p class="cuenta-tipo">' + (esEmpresa ? 'Cuenta de empresa' : 'Cuenta personal') + '<span class="cuenta-pct"></span></p>' +
+                '</div>' +
+            '</div>' +
+            (esEmpresa ? '' :
+            '<div class="cuenta-uso" hidden>' +
+                '<p class="cuenta-uso-fila"><span>Tus postulaciones</span><span class="cuenta-uso-cifra"></span></p>' +
+                '<div class="cuenta-barra" aria-hidden="true"><span></span></div>' +
+            '</div>') +
+            '<ul class="cuenta-opciones">' + opciones.map(function (o) {
+                return '<li><a href="' + o.href + '">' + svgIcon(o.ico) + '<span>' + o.texto + '</span></a></li>';
+            }).join('') +
+                '<li><button type="button" class="cuenta-clave">' + svgIcon('lock') + '<span>Cambiar contraseña</span></button></li>' +
+            '</ul>' +
+            '<a class="cuenta-salir" href="index.html" data-cerrar-sesion>' + svgIcon('logout') + '<span>Cerrar sesión</span></a>' +
+            '<div class="cuenta-tema" role="radiogroup" aria-label="Tema">' +
+                [['light', 'sun', 'Claro'], ['dark', 'moon', 'Oscuro'], ['auto', 'desktop', 'Auto']].map(function (t) {
+                    return '<button type="button" role="radio" data-tema="' + t[0] + '" aria-checked="false">' + svgIcon(t[1]) + '<span>' + t[2] + '</span></button>';
+                }).join('') +
             '</div>';
-        li.querySelector('[data-cambiar-clave]').addEventListener('click', function () { UI.cambiarContrasena(); });
-        // El menu toma el lugar de los dos botones; en la pagina del perfil el
-        // enlace sigue marcado como actual dentro del menu
-        const lugar = (enlacePerfil || salir).parentElement;
-        lugar.before(li);
-        if (enlacePerfil && enlacePerfil.parentElement !== salir.parentElement) enlacePerfil.parentElement.remove();
-        salir.parentElement.remove();
-        if (paginaActual() === perfil) li.querySelector('.cuenta-boton').classList.add('es-actual');
+        document.body.appendChild(menu);
+
+        // ----- El tema: Claro, Oscuro o Auto (sigue al sistema: no se guarda nada) -----
+        const sistemaOscuro = window.matchMedia('(prefers-color-scheme: dark)');
+        const temaElegido = function () {
+            try { const t = localStorage.getItem(TEMA_KEY); return t === 'dark' || t === 'light' ? t : 'auto'; } catch (e) { return 'auto'; }
+        };
+        const marcarTema = function () {
+            const elegido = temaElegido();
+            menu.querySelectorAll('.cuenta-tema [role="radio"]').forEach(function (b) {
+                const si = b.dataset.tema === elegido;
+                b.setAttribute('aria-checked', String(si));
+                b.tabIndex = si ? 0 : -1;
+            });
+        };
+        const ponerTema = function (valor, desde) {
+            try {
+                if (valor === 'auto') localStorage.removeItem(TEMA_KEY);
+                else localStorage.setItem(TEMA_KEY, valor);
+            } catch (e) { /* sin almacenamiento: solo por esta visita */ }
+            const nuevo = valor === 'auto' ? (sistemaOscuro.matches ? 'dark' : 'light') : valor;
+            marcarTema();
+            if (nuevo === document.documentElement.getAttribute('data-theme')) return;
+            cambiarTemaConEfecto(nuevo, desde, function () { aplicarTema(nuevo); });
+        };
+        // En "Auto", si el sistema cambia (el celular pasa a modo oscuro de noche), la pagina tambien
+        const alCambiarSistema = function () { if (temaElegido() === 'auto') aplicarTema(sistemaOscuro.matches ? 'dark' : 'light'); };
+        if (sistemaOscuro.addEventListener) sistemaOscuro.addEventListener('change', alCambiarSistema);
+        const grupoTema = menu.querySelector('.cuenta-tema');
+        grupoTema.addEventListener('click', function (e) {
+            const b = e.target.closest('[role="radio"]');
+            if (b) ponerTema(b.dataset.tema, b);
+        });
+        // Flechas dentro del grupo (como un grupo de radios del sistema)
+        grupoTema.addEventListener('keydown', function (e) {
+            if (!/^(ArrowLeft|ArrowRight|ArrowUp|ArrowDown)$/.test(e.key)) return;
+            e.preventDefault();
+            const botones = Array.from(grupoTema.querySelectorAll('[role="radio"]'));
+            const i = botones.indexOf(document.activeElement);
+            const paso = e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1;
+            const siguiente = botones[(i + paso + botones.length) % botones.length];
+            siguiente.focus();
+            ponerTema(siguiente.dataset.tema, siguiente);
+        });
+        menu.querySelector('.cuenta-clave').addEventListener('click', function () { cerrar(false); UI.cambiarContrasena(); });
+
+        // ----- Tu foto de perfil (en una empresa, su logo) dentro del anillo; sin foto, la inicial -----
+        // Solo imagenes de verdad (data:image o https, como los logos: imagenDeLogo). Si no carga, la inicial
+        const ponerFoto = function (url) {
+            const valida = imagenDeLogo(url);
+            document.querySelectorAll('.cuenta-inicial').forEach(function (c) {
+                const inicialOtraVez = function () { c.textContent = inicial; c.classList.remove('con-foto'); };
+                if (!valida) { inicialOtraVez(); return; }
+                const img = new Image();
+                img.alt = '';
+                img.decoding = 'async';
+                img.onerror = inicialOtraVez;
+                img.src = valida;
+                c.textContent = '';
+                c.appendChild(img);
+                c.classList.add('con-foto');
+            });
+        };
+        ponerFoto(datos.profileImageUrl);
+        // Al cambiarla en Mi perfil (profile.js avisa), el boton se actualiza en el momento
+        window.addEventListener('skillmatch:foto', function (e) { ponerFoto(e.detail && e.detail.url); });
+
+        // ----- Lo que cuenta el menu: lo completo de tu perfil y tus postulaciones (datos reales) -----
+        const ponerPorcentaje = function (pct) {
+            if (typeof pct !== 'number' || isNaN(pct)) return;
+            document.querySelectorAll('.cuenta-avance').forEach(function (c) { c.setAttribute('stroke-dasharray', pct + ' 100'); });
+            menu.querySelector('.cuenta-pct').textContent = ' · Perfil al ' + pct + ' %';
+            boton.setAttribute('aria-label', 'Tu cuenta: ' + nombre + ', perfil al ' + pct + ' por ciento');
+            li.classList.toggle('perfil-completo', pct >= 100);
+        };
+        let cargado = false;
+        const cargar = function () {
+            if (cargado || typeof fetchWithAuth !== 'function' || typeof API_BASE_URL === 'undefined') return;
+            cargado = true;
+            const base = API_BASE_URL + '/users/' + encodeURIComponent(datos.id);
+            const json = function (url) {
+                return fetchWithAuth(url).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+            };
+            // Tu cuenta (para la foto; a una persona tambien le sirve para el porcentaje)
+            const tuCuenta = json(base);
+            tuCuenta.then(function (u) { if (u && u.profileImageUrl !== undefined) ponerFoto(u.profileImageUrl); });
+            if (esEmpresa) return;
+            // Los mismos 5 puntos de "Mi perfil" (profile.js): datos, telefono, habilidades, experiencia, educacion
+            let guardado = null;
+            try { guardado = JSON.parse(sessionStorage.getItem('skillmatch_perfil_pct') || 'null'); } catch (e) { guardado = null; }
+            if (guardado && Date.now() - guardado.t < 5 * 60000) ponerPorcentaje(guardado.pct);
+            else {
+                Promise.all([tuCuenta, json(base + '/skills'), json(base + '/experiences'), json(base + '/educations')]).then(function (r) {
+                    const u = r[0];
+                    if (!u) return;
+                    const hechos = [!!(u.firstName && u.lastName && u.email), !!u.phone,
+                        !!(r[1] && r[1].length), !!(r[2] && r[2].length), !!(r[3] && r[3].length)].filter(Boolean).length;
+                    const pct = Math.round(hechos / 5 * 100);
+                    try { sessionStorage.setItem('skillmatch_perfil_pct', JSON.stringify({ pct: pct, t: Date.now() })); } catch (e) { /* nada */ }
+                    ponerPorcentaje(pct);
+                });
+            }
+            json(API_BASE_URL + '/applications/my-applications').then(function (apps) {
+                if (!Array.isArray(apps)) return;
+                const uso = menu.querySelector('.cuenta-uso');
+                const total = apps.length;
+                const respondidas = apps.filter(function (a) { return /^(ACEPTADA|RECHAZADA)$/i.test(String(a.status || '')); }).length;
+                uso.querySelector('.cuenta-uso-cifra').textContent = total
+                    ? 'te respondieron ' + respondidas + ' de ' + total : 'aún no te postulas';
+                uso.querySelector('.cuenta-barra span').style.setProperty('--avance', total ? respondidas / total : 0);
+                uso.hidden = false;
+            });
+        };
+        // El anillo del boton se llena apenas carga la pagina (cuando el navegador esta libre)
+        (window.requestIdleCallback || setTimeout)(cargar, { timeout: 2000 });
+
+        // ----- Abrir y cerrar -----
+        const ubicar = function () {
+            const r = boton.getBoundingClientRect();
+            const angosta = window.innerWidth <= 600;
+            menu.style.top = Math.round(r.bottom + 10) + 'px';
+            if (angosta) { menu.style.left = '8px'; menu.style.right = '8px'; }
+            else { menu.style.left = 'auto'; menu.style.right = Math.max(8, Math.round(window.innerWidth - r.right - 8)) + 'px'; }
+        };
+        const fuera = function (e) {
+            if (!menu.contains(e.target) && !boton.contains(e.target)) cerrar(false);
+        };
+        const teclas = function (e) {
+            if (e.key === 'Escape') { e.preventDefault(); cerrar(true); }
+        };
+        const abrir = function () {
+            if (!menu.hidden) return;
+            // La campana de avisos, si estaba abierta, se cierra (no van dos menus a la vez)
+            const campana = document.getElementById('notificationsBtn');
+            if (campana && campana.getAttribute('aria-expanded') === 'true') campana.click();
+            cargar();
+            marcarTema();
+            ubicar();
+            menu.hidden = false;
+            boton.setAttribute('aria-expanded', 'true');
+            menu.classList.remove('cerrando');
+            menu.classList.add('abriendo');
+            requestAnimationFrame(function () { requestAnimationFrame(function () { menu.classList.remove('abriendo'); }); });
+            document.addEventListener('pointerdown', fuera, true);
+            document.addEventListener('keydown', teclas);
+            window.addEventListener('resize', ubicar);
+            const primero = menu.querySelector('.cuenta-opciones a');
+            if (primero) primero.focus({ preventScroll: true });
+        };
+        const cerrar = function (devolverFoco) {
+            if (menu.hidden) return;
+            boton.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('pointerdown', fuera, true);
+            document.removeEventListener('keydown', teclas);
+            window.removeEventListener('resize', ubicar);
+            const quieto = reduceMotion || !menu.animate;
+            if (quieto) menu.hidden = true;
+            else {
+                menu.classList.add('cerrando');
+                setTimeout(function () { if (menu.classList.contains('cerrando')) { menu.hidden = true; menu.classList.remove('cerrando'); } }, 140);
+            }
+            if (devolverFoco) boton.focus({ preventScroll: true });
+        };
+        boton.addEventListener('click', function () { if (menu.hidden) abrir(); else cerrar(true); });
+        // Con el teclado: al salir del menu con Tab, se cierra
+        menu.addEventListener('focusout', function (e) {
+            if (e.relatedTarget && !menu.contains(e.relatedTarget) && e.relatedTarget !== boton) cerrar(false);
+        });
+        // Al ir a otra pagina o al volver con "atras", cerrado
+        window.addEventListener('pageshow', function (e) { if (e.persisted) cerrar(false); });
     }
 
     /** En las paginas para entrar o registrarse sobra el boton que lleva a esa
@@ -341,18 +604,35 @@
         if (boton && boton.parentElement) boton.parentElement.hidden = true;
     }
 
-    /** Barra inferior en movil: cinco destinos, siempre los mismos. */
+    // Sin sesion, "Red", "Mensajes" y "Perfil" solo llevaban al login: el visitante ve lo
+    // que si puede usar (revision 2026-11-13, hallazgo 9)
+    const DESTINOS_VISITANTE = [
+        { href: 'index.html',          ico: 'home',      label: 'Inicio' },
+        { href: 'oportunidades.html',  ico: 'briefcase', label: 'Vacantes' },
+        { href: 'empresas.html',       ico: 'building',  label: 'Empresas' },
+        { href: 'login.html',          ico: 'user',      label: 'Entrar' }
+    ];
+    // Paginas para terminar una sola tarea (entrar, registrarse): sin barra de abajo, que en
+    // el celular tapaba "¿Olvidaste tu contraseña?" y empujaba el boton de entrar
+    const SIN_TABBAR = /^(login|login-usuario|login-empresa|recuperar|registro-usuario|registro-empresa|seleccionar-registro)\.html$/;
+
+    /** Barra inferior en movil: los mismos destinos en todas las paginas (segun haya sesion). */
     function construirTabbar() {
         if (document.querySelector('.tabbar')) return;
         if (!document.querySelector('header nav')) return;
 
         const actual = paginaActual();
+        if (SIN_TABBAR.test(actual)) return;
         const esPerfilEmpresa = document.querySelector('a[href="perfil-empresa.html"]');
+        const destinos = sesionActiva() ? DESTINOS : DESTINOS_VISITANTE;
 
         const nav = document.createElement('nav');
         nav.className = 'tabbar';
         nav.setAttribute('aria-label', 'Navegacion principal');
-        nav.innerHTML = '<ul>' + DESTINOS.map(function (d) {
+        nav.innerHTML = '<ul>' + destinos.map(function (destino) {
+            // A una empresa "Red" (conexiones entre personas) no le sirve: va a sus candidatos
+            const d = destino.href === 'conexiones.html' && esPerfilEmpresa
+                ? { href: 'perfil-empresa.html#candidatos', ico: 'users', label: 'Candidatos' } : destino;
             let href = d.href;
             if (d.href === 'perfil-usuario.html' && esPerfilEmpresa) href = 'perfil-empresa.html';
             const activo = href === actual ? ' class="is-active" aria-current="page"' : '';
@@ -394,48 +674,65 @@
         if (reduceMotion) return;
         e.preventDefault();
         clearTimeout(viajePendiente);
-        // "0.36s, 0.2s": la primera es la de transform
-        const duracion = parseFloat(getComputedStyle(marca).transitionDuration) || 0;
+        // "0.36s, 0.2s": la primera es la de transform. La gota del menu se mueve con resortes
+        // (sin duracion fija en el CSS): ella misma anota en data-viaje cuanto tarda en llegar
+        const duracion = marca.dataset.viaje ? Number(marca.dataset.viaje) / 1000
+            : parseFloat(getComputedStyle(marca).transitionDuration) || 0;
         viajePendiente = setTimeout(function () { UI.irA(a.href); }, duracion * 1000);
     }
 
-    /** La pastilla de la pestana activa: al tocar otra se desliza hasta ella
-     *  mientras carga la pagina siguiente (que ya la trae en su sitio). */
+    /** El lente de la barra de abajo (celular), como el video «Lente»: una capsula de cristal que queda
+     *  sobre la pestana actual. Al tocar otra, viaja estirandose y la pagina cambia cuando llega; tambien
+     *  se puede arrastrar con el dedo y soltarlo sobre otra pestana (crearLente hace el movimiento). */
     function pastillaDeLaBarra(nav) {
         const enlaces = Array.from(nav.querySelectorAll('a'));
         const marca = document.createElement('span');
-        marca.className = 'tabbar-marca';
+        marca.className = 'lente lente-pestanas';
         marca.setAttribute('aria-hidden', 'true');
-        // Antes de la lista: asi las pestanas (position: relative) quedan encima
-        nav.insertBefore(marca, nav.firstChild);
-        nav.style.setProperty('--pestanas', enlaces.length);
+        // irCuandoLlegue espera esto antes de cambiar de pagina (lo que tarda el lente en llegar)
+        marca.dataset.viaje = '380';
+        nav.appendChild(marca);
         nav.classList.add('con-marca');
-        const ponerEn = function (a, sinAnimar) {
-            const i = enlaces.indexOf(a);
-            if (sinAnimar) marca.style.transition = 'none';
-            marca.style.setProperty('--i', Math.max(i, 0));
-            marca.style.opacity = i < 0 ? '0' : '1';
-            if (sinAnimar) { marca.getBoundingClientRect(); marca.style.transition = ''; }
+        const actual = function () { return nav.querySelector('a.is-active'); };
+        // Va hacia "a" y, si es otra pagina, la abre cuando el lente llega
+        const elegir = function (a, e) {
+            enlaces.forEach(function (x) { x.classList.toggle('es-destino', x === a); });
+            nav.classList.add('con-destino');
+            anotarDireccion(a, enlaces.indexOf(actual()), enlaces.indexOf(a));
+            // Si no habia ninguna activa, aparece en la tocada sin cruzar la barra: no hay viaje que esperar
+            const sinViaje = !lente.visible();
+            lente.ir(a, sinViaje);
+            if (sinViaje) return;
+            if (e) { irCuandoLlegue(e, a, marca); return; }
+            clearTimeout(viajePendiente);
+            viajePendiente = setTimeout(function () { UI.irA(a.href); }, 380);
         };
-        ponerEn(nav.querySelector('a.is-active'), true);
+        const lente = crearLente({
+            capa: nav,
+            elemento: marca,
+            enlaces: function () { return enlaces; },
+            alto: 58,          // 4 px mas que la pestana: la palabra queda lejos del borde que dobla
+            arrastre: true,
+            // Soltado sobre una pestana: si es la de esta pagina, vuelve a su sitio; si no, lleva alla
+            alSoltar: function (a) {
+                if (!a || a === actual()) { lente.ir(actual()); return; }
+                elegir(a, null);
+            }
+        });
+        lente.ir(actual(), true);
         nav.addEventListener('click', function (e) {
             const a = e.target instanceof Element && e.target.closest('a');
             if (!a || !vaAOtraPagina(e, a)) return;
-            enlaces.forEach(function (x) { x.classList.toggle('es-destino', x === a); });
-            anotarDireccion(a, enlaces.indexOf(nav.querySelector('a.is-active')), enlaces.indexOf(a));
-            // Si no habia ninguna activa, aparece en la tocada sin cruzar la
-            // barra: no hay viaje que esperar
-            const sinViaje = marca.style.opacity === '0';
-            ponerEn(a, sinViaje);
-            if (!sinViaje) irCuandoLlegue(e, a, marca);
+            elegir(a, e);
         });
-        // Justo antes de la foto de salida: la pastilla, ya en la pestana elegida
-        window.addEventListener('pageswap', function () { marca.style.transition = 'none'; });
+        // Justo antes de la foto de salida: el lente, ya en la pestana elegida
+        window.addEventListener('pageswap', function () { lente.saltar(); });
         // Al volver con "atras" (la pagina sale tal cual de la memoria): a su sitio
         window.addEventListener('pageshow', function (e) {
             if (!e.persisted) return;
             enlaces.forEach(function (x) { x.classList.remove('es-destino'); });
-            ponerEn(nav.querySelector('a.is-active'), true);
+            nav.classList.remove('con-destino');
+            lente.ir(actual(), true);
         });
     }
 
@@ -454,8 +751,12 @@
     /** "Skill" va en azul oscuro en el logo y no se lee sobre fondo oscuro:
      *  en modo oscuro se cambia por logo-oscuro.png (mismo logo, azul claro). */
     function logoSegunTema(tema) {
-        const archivo = tema === 'dark' ? 'logo-oscuro.png' : 'logo.png';
         document.querySelectorAll('.logo img').forEach(function (img) {
+            // En la barra manda su vidrio (vidrioSegunFondo): vidrio oscuro, logo claro; vidrio claro, el normal
+            const barra = img.closest('body > header');
+            const claro = barra && tema !== 'dark' && !barra.classList.contains('vidrio-oscuro');
+            const archivo = barra ? (claro ? 'logo.png' : 'logo-oscuro.png')
+                : tema === 'dark' ? 'logo-oscuro.png' : 'logo.png';
             const src = img.getAttribute('src');
             if (src) img.setAttribute('src', src.replace(/logo(-oscuro)?\.png$/, archivo));
         });
@@ -520,11 +821,586 @@
     function barraAlHacerScroll() {
         const header = document.querySelector('header');
         if (!header) return;
+        // La barra es una isla que no cambia al bajar (app.css, seccion 48). Las dos clases quedan
+        // como marcas del estado (bajo / sigue sobre la portada), pero ya no le cambian el aspecto
+        const hero = document.querySelector('body > .hero');
         const actualizar = function () {
             header.classList.toggle('is-scrolled', window.scrollY > 4);
+            const sobreHero = !!hero && !hero.hidden && hero.getBoundingClientRect().bottom > header.offsetHeight;
+            if (header.classList.contains('sobre-hero') !== sobreHero) header.classList.toggle('sobre-hero', sobreHero);
         };
         actualizar();
         window.addEventListener('scroll', actualizar, { passive: true });
+        // El hero se esconde cuando hay sesion (panel-inicio.js): se revisa de nuevo al cambiar
+        if (hero && 'MutationObserver' in window) new MutationObserver(actualizar).observe(hero, { attributes: true, attributeFilter: ['hidden'] });
+    }
+
+    /** Al bajar, la isla de arriba y la capsula de abajo se esconden; al subir un poco, vuelven
+     *  (como la barra de YouTube o Safari en el iPhone). Aqui solo se decide cuando: html.barras-escondidas
+     *  y el movimiento estan en app.css (seccion 78).
+     *  - Arriba del todo (menos de 96 px) y al llegar al final de la pagina, siempre se ven.
+     *  - Para esconderse hay que bajar de verdad (24 px seguidos), no rozar la pantalla; para volver
+     *    basta subir 8 px: cuando alguien sube, suele estar buscando la barra.
+     *  - No se esconden mientras se usan: foco dentro (teclado), la campana o un menu abiertos, o
+     *    mientras la isla de la portada se abre.
+     *  - Una sola lectura por cuadro (requestAnimationFrame) y la clase solo cambia cuando hace falta. */
+    function barrasQueSeEsconden() {
+        const header = document.querySelector('body > header');
+        if (!header) return;
+        const raiz = document.documentElement;
+        const ARRIBA = 96, BAJAR = 24, SUBIR = 8;
+        let ultimo = Math.max(0, window.scrollY);
+        let recorrido = 0;          // lo recorrido seguido en la misma direccion (+ baja, - sube)
+        let pendiente = false;
+        const poner = function (esconder) {
+            if (raiz.classList.contains('barras-escondidas') !== esconder) raiz.classList.toggle('barras-escondidas', esconder);
+        };
+        const enUso = function () {
+            const tabbar = document.querySelector('body > .tabbar');
+            return header.contains(document.activeElement) || (!!tabbar && tabbar.contains(document.activeElement)) ||
+                !!header.querySelector('[aria-expanded="true"]') ||
+                raiz.classList.contains('isla-intro') || raiz.classList.contains('isla-abriendo');
+        };
+        const revisar = function () {
+            pendiente = false;
+            const maximo = raiz.scrollHeight - window.innerHeight;
+            const y = Math.min(Math.max(0, window.scrollY), Math.max(0, maximo)); // sin el rebote del iPhone
+            const d = y - ultimo;
+            ultimo = y;
+            if (y < ARRIBA || y >= maximo - 4) { recorrido = 0; poner(false); return; }
+            if (d === 0) return;
+            if ((d > 0) !== (recorrido > 0)) recorrido = 0;   // cambio de direccion: se cuenta de nuevo
+            recorrido += d;
+            if (recorrido > BAJAR) { if (!enUso()) poner(true); }
+            else if (recorrido < -SUBIR) poner(false);
+        };
+        window.addEventListener('scroll', function () {
+            if (pendiente) return;
+            pendiente = true;
+            requestAnimationFrame(revisar);
+        }, { passive: true });
+        // El teclado (o el lector de pantalla) entra a una de las barras: vuelven las dos
+        document.addEventListener('focusin', function (e) {
+            const t = e.target;
+            if (t instanceof Element && t.closest('body > header, body > .tabbar')) poner(false);
+        });
+        // Al volver con "atras", la pagina sale de la memoria tal cual: se revisa desde donde quedo
+        window.addEventListener('pageshow', function (e) {
+            if (!e.persisted) return;
+            ultimo = Math.max(0, window.scrollY); recorrido = 0; poner(false);
+        });
+    }
+
+    /* ---------- Cristal: los mapas de refraccion que usan las barras y el lente ----------
+       Tecnica de kube.io ("Liquid Glass in the Browser: Refraction with CSS and SVG"):
+       1. Se dibuja un "mapa de desplazamiento" del tamano exacto de la pieza: en cada pixel, el rojo dice
+          cuanto correr lo de atras en horizontal y el verde en vertical (128 = no se mueve).
+       2. El mapa sale de un cristal de verdad: el borde de la capsula es curvo (perfil "squircle") y la luz
+          se dobla al entrar (ley de Snell, aire 1 y vidrio 1,5).
+       3. Un filtro SVG (feDisplacementMap) usa ese mapa y app.css lo pone en backdrop-filter.
+       Solo Chrome, Edge y los navegadores Chromium saben usar un filtro SVG en backdrop-filter; en Safari y
+       Firefox todo sigue con el vidrio de siempre. Tampoco se usa con "reducir transparencia", con colores
+       forzados ni en equipos con menos de 4 nucleos o 4 GB (el filtro cuesta).
+       Dos trampas medidas: (a) si a un filtro ya usado se le cambia la imagen, Chromium no se entera: cada
+       mapa nuevo va en un filtro nuevo, con otro nombre; (b) si lo de atras se desenfoca antes de doblarlo,
+       el doblez no se ve (doblar un color liso no cambia nada). */
+    const Cristal = (function () {
+        const SVG = 'http://www.w3.org/2000/svg';
+        let lienzoSvg = null, cuenta = 0, puede = null;
+        const disponible = function () {
+            if (puede !== null) return puede;
+            const ua = navigator.userAgentData;
+            const esChromium = !!(ua && ua.brands && ua.brands.some(function (b) { return /Chromium/i.test(b.brand); }));
+            puede = esChromium &&
+                !window.matchMedia('(prefers-reduced-transparency: reduce), (forced-colors: active)').matches &&
+                (navigator.hardwareConcurrency || 4) >= 4 && (navigator.deviceMemory || 4) >= 4;
+            return puede;
+        };
+        const svg = function () {
+            if (lienzoSvg) return lienzoSvg;
+            lienzoSvg = document.createElementNS(SVG, 'svg');
+            lienzoSvg.setAttribute('aria-hidden', 'true');
+            lienzoSvg.setAttribute('width', '0');
+            lienzoSvg.setAttribute('height', '0');
+            lienzoSvg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+            document.body.appendChild(lienzoSvg);
+            return lienzoSvg;
+        };
+        const nuevoId = function (base) { return base + '-' + (++cuenta); };
+
+        // Cuanto se dobla la luz segun que tan adentro del borde curvo cae (t: 0 en el filo, 1 donde el
+        // vidrio ya es plano). Se calcula una vez en 128 puntos y se normaliza: 1 = lo maximo
+        const PUNTOS = 128;
+        const perfil = function (t) { return Math.pow(1 - Math.pow(1 - t, 4), 0.25); };   // squircle convexo
+        const doblez = new Float32Array(PUNTOS);
+        (function () {
+            let maximo = 0;
+            for (let i = 0; i < PUNTOS; i++) {
+                const t = Math.min(0.999, (i + 0.5) / PUNTOS);
+                const pendiente = (perfil(Math.min(1, t + 0.001)) - perfil(Math.max(0, t - 0.001))) / 0.002;
+                const entrada = Math.atan(pendiente);                       // angulo con la normal del vidrio
+                const salida = Math.asin(Math.sin(entrada) / 1.5);          // Snell: aire 1, vidrio 1,5
+                doblez[i] = Math.tan(entrada - salida) * (0.35 + perfil(t)); // desvio x grosor del vidrio ahi
+                if (doblez[i] > maximo) maximo = doblez[i];
+            }
+            for (let i = 0; i < PUNTOS; i++) doblez[i] /= maximo || 1;
+        })();
+        const fuerzaEn = function (dentro, bisel) { return doblez[Math.min(PUNTOS - 1, Math.floor(dentro / bisel * PUNTOS))]; };
+
+        /** Donde cae un punto (px, py, medido desde el centro) respecto al borde de una capsula de medio
+         *  ancho mw y medio alto mh con radio r: que tan adentro esta y hacia donde queda el borde */
+        const capsula = function (px, py, mw, mh, r) {
+            const qx = Math.abs(px) - (mw - r), qy = Math.abs(py) - (mh - r);
+            if (qx > 0 && qy > 0) {                       // en una esquina redonda
+                const largo = Math.hypot(qx, qy) || 1;
+                return { dentro: r - largo, nx: Math.sign(px) * qx / largo, ny: Math.sign(py) * qy / largo };
+            }
+            if (qx > qy) return { dentro: r - qx, nx: Math.sign(px), ny: 0 };
+            return { dentro: r - qy, nx: 0, ny: Math.sign(py) };
+        };
+        const lienzo = function (w, h) {
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            return { c: c, ctx: ctx, img: ctx.createImageData(w, h) };
+        };
+
+        /** Las barras: el mapa del doblez del borde y la mascara del centro (blanca donde el vidrio es plano
+         *  y se esmerila, transparente en el borde curvo, con un paso suave entre las dos) */
+        const mapaDeBarra = function (w, h, r, bisel) {
+            const a = lienzo(w, h), b = lienzo(w, h);
+            const d = a.img.data, m = b.img.data;
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const p = capsula(x + 0.5 - w / 2, y + 0.5 - h / 2, w / 2, h / 2, r);
+                    let rr = 128, gg = 128;
+                    if (p.dentro >= 0 && p.dentro < bisel) {
+                        // Lo de atras se toma de mas adentro (hacia el centro): el borde se ve como una lente
+                        const f = fuerzaEn(p.dentro, bisel);
+                        rr = 128 - p.nx * f * 127;
+                        gg = 128 - p.ny * f * 127;
+                    }
+                    const i = (y * w + x) * 4;
+                    d[i] = rr; d[i + 1] = gg; d[i + 2] = 128; d[i + 3] = 255;
+                    const u = Math.max(0, Math.min(1, (p.dentro - bisel * 0.45) / (bisel * 0.55)));
+                    m[i] = m[i + 1] = m[i + 2] = 255; m[i + 3] = Math.round(u * u * (3 - 2 * u) * 255);
+                }
+            }
+            a.ctx.putImageData(a.img, 0, 0);
+            b.ctx.putImageData(b.img, 0, 0);
+            return { mapa: a.c.toDataURL('image/png'), centro: b.c.toDataURL('image/png') };
+        };
+        const armar = function (id, llenar) {
+            const filtro = document.createElementNS(SVG, 'filter');
+            filtro.setAttribute('id', id);
+            filtro.setAttribute('color-interpolation-filters', 'sRGB');
+            llenar(function (tipo, atributos) {
+                const el = document.createElementNS(SVG, tipo);
+                Object.keys(atributos).forEach(function (k) { el.setAttribute(k, atributos[k]); });
+                filtro.appendChild(el);
+            });
+            svg().appendChild(filtro);
+            return filtro;
+        };
+        // Las barras: borde curvo nitido y doblado; centro esmerilado (9 px; con 7 el texto de la pagina se
+        // alcanzaba a leer detras de las palabras de la barra del celular) para leer las palabras
+        const filtroDeBarra = function (id, w, h, imagenes, escala) {
+            return armar(id, function (pieza) {
+                const imagen = { x: 0, y: 0, width: w, height: h, preserveAspectRatio: 'none' };
+                pieza('feImage', Object.assign({ href: imagenes.mapa, result: 'mapa' }, imagen));
+                pieza('feImage', Object.assign({ href: imagenes.centro, result: 'centro' }, imagen));
+                pieza('feDisplacementMap', { in: 'SourceGraphic', in2: 'mapa', scale: escala, xChannelSelector: 'R', yChannelSelector: 'G', result: 'doblado' });
+                pieza('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: 9, edgeMode: 'duplicate', result: 'esmerilado' });
+                pieza('feComposite', { in: 'esmerilado', in2: 'centro', operator: 'in', result: 'centroEsmerilado' });
+                pieza('feComposite', { in: 'centroEsmerilado', in2: 'doblado', operator: 'over' });
+            });
+        };
+
+        /** El lente: una capsula entera de vidrio curvo. Agranda lo de adentro (como una lupa, x1,12) y en el
+         *  borde dobla mas. Se dibuja a la resolucion de la pantalla (si no, lo agrandado se ve pixelado).
+         *  maximo: el desvio mas grande, en px (el filtro usa escala = 2 x maximo) */
+        const mapaDeLente = function (w, h, maximo) {
+            const k = Math.min(3, window.devicePixelRatio || 1);
+            const W = Math.round(w * k), H = Math.round(h * k);
+            const a = lienzo(W, H), d = a.img.data;
+            // Medido: con un borde de 42 % del alto y toda la fuerza, las palabras bajo el lente se torcian
+            // 2026-11-13 (Luis): el aro del doblez tocaba la palabra y la torcia. Ahora el doblez va solo en un aro
+            // fino (16 % del alto) y por dentro apenas una lupa suave (x1,06), que no deforma letras
+            const r = h / 2, bisel = h * 0.16, aumento = 1.06, borde = maximo * 0.6;
+            for (let y = 0; y < H; y++) {
+                for (let x = 0; x < W; x++) {
+                    const px = (x + 0.5) / k - w / 2, py = (y + 0.5) / k - h / 2;
+                    const p = capsula(px, py, w / 2, h / 2, r);
+                    let dx = 0, dy = 0;
+                    if (p.dentro >= 0) {
+                        // Lupa: cada punto toma lo que esta un poco mas cerca del centro
+                        dx = -px * (1 - 1 / aumento);
+                        dy = -py * (1 - 1 / aumento);
+                        // Borde curvo: dobla hacia adentro, mucho en el filo y nada donde ya es plano
+                        if (p.dentro < bisel) {
+                            const f = fuerzaEn(p.dentro, bisel) * borde;
+                            dx -= p.nx * f; dy -= p.ny * f;
+                        }
+                    }
+                    const i = (y * W + x) * 4;
+                    d[i] = 128 + Math.max(-1, Math.min(1, dx / maximo)) * 127;
+                    d[i + 1] = 128 + Math.max(-1, Math.min(1, dy / maximo)) * 127;
+                    d[i + 2] = 128; d[i + 3] = 255;
+                }
+            }
+            a.ctx.putImageData(a.img, 0, 0);
+            return a.c.toDataURL('image/png');
+        };
+        // El lente: el doblez en tres pasadas, una por color y cada una un poco mas corta (rojo 1, verde
+        // 0,92, azul 0,84; el video usa 68/60/52, que aqui dejaba un arcoiris exagerado). Al juntarlas, el
+        // borde se separa en un arcoiris muy fino, como en un prisma
+        const filtroDeLente = function (id, w, h, mapa, escala) {
+            return armar(id, function (pieza) {
+                pieza('feImage', { href: mapa, x: 0, y: 0, width: w, height: h, preserveAspectRatio: 'none', result: 'mapa' });
+                [['r', 1, '1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'],
+                 ['g', 0.92, '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0'],
+                 ['b', 0.84, '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0']].forEach(function (c) {
+                    pieza('feDisplacementMap', { in: 'SourceGraphic', in2: 'mapa', scale: Math.round(escala * c[1]), xChannelSelector: 'R', yChannelSelector: 'G', result: 'd' + c[0] });
+                    pieza('feColorMatrix', { in: 'd' + c[0], type: 'matrix', values: c[2], result: c[0] });
+                });
+                pieza('feBlend', { in: 'r', in2: 'g', mode: 'screen', result: 'rg' });
+                pieza('feBlend', { in: 'rg', in2: 'b', mode: 'screen' });
+            });
+        };
+        /** Espera a que las imagenes esten listas antes de usar el filtro */
+        const cuandoCarguen = function (fuentes) {
+            return Promise.all(fuentes.map(function (src) {
+                const img = new Image(); img.src = src;
+                return img.decode ? img.decode().catch(function () {}) : Promise.resolve();
+            }));
+        };
+        return { disponible: disponible, nuevoId: nuevoId, mapaDeBarra: mapaDeBarra, filtroDeBarra: filtroDeBarra,
+                 mapaDeLente: mapaDeLente, filtroDeLente: filtroDeLente, cuandoCarguen: cuandoCarguen };
+    })();
+
+    /** Las barras refractan (como Liquid Glass de Apple): lo que pasa detras se dobla en su borde curvo y el
+     *  centro queda esmerilado para leer (app.css, seccion 80). */
+    function cristalQueRefracta() {
+        if (!Cristal.disponible()) return;
+        document.querySelectorAll('body > header, body > .tabbar').forEach(function (pieza) {
+            let medida = '', actual = null;
+            const preparar = function () {
+                const w = Math.round(pieza.offsetWidth), h = Math.round(pieza.offsetHeight);
+                if (!w || !h || medida === w + 'x' + h) return;
+                medida = w + 'x' + h;
+                const radio = Math.min(h / 2, parseFloat(getComputedStyle(pieza).borderTopLeftRadius) || h / 2);
+                // El borde curvo: un cuarto del alto (en la isla de 64 px, 16 px arriba y abajo). Con un tercio,
+                // lo nitido de abajo llegaba hasta las palabras del menu y se mezclaba con ellas
+                const bisel = Math.min(radio, Math.round(h * 0.25));
+                const imagenes = Cristal.mapaDeBarra(w, h, radio, bisel);
+                Cristal.cuandoCarguen([imagenes.mapa, imagenes.centro]).then(function () {
+                    if (medida !== w + 'x' + h) return;      // la barra cambio otra vez mientras tanto
+                    const id = Cristal.nuevoId('cristal-refracta');
+                    // El desvio mayor: algo mas que el bisel (en el filo, lo de atras se corre ~9 px)
+                    const filtro = Cristal.filtroDeBarra(id, w, h, imagenes, Math.round(bisel * 1.1));
+                    pieza.style.setProperty('--refraccion', 'url(#' + id + ')');
+                    pieza.classList.add('con-refraccion');
+                    const viejo = actual;
+                    actual = filtro;
+                    if (viejo) requestAnimationFrame(function () { viejo.remove(); });
+                });
+            };
+            // El mapa se dibuja cuando el navegador esta libre (son unos milisegundos) y otra vez si la barra
+            // cambia de tamano (al girar el celular, al iniciar sesion...)
+            let pendiente = 0;
+            const pedir = function () {
+                cancelAnimationFrame(pendiente);
+                pendiente = requestAnimationFrame(function () {
+                    (window.requestIdleCallback || setTimeout)(preparar, { timeout: 600 });
+                });
+            };
+            pedir();
+            if ('ResizeObserver' in window) new ResizeObserver(pedir).observe(pieza);
+        });
+    }
+
+    /** El lente de las barras (como el video «Lente»): una capsula de cristal que queda sobre la opcion
+     *  actual, agranda lo que tiene debajo y lo refracta (con un arcoiris finito en el borde).
+     *  - Viaja con resortes (como Apple: sin duracion fija, interrumpible, guarda la velocidad). Mientras
+     *    va rapido se estira a lo ancho y se aplasta un poco: sx = 1 + 0,22 tanh(v), sy = 1 - 0,12 tanh(v).
+     *  - Se agarra y se arrastra (mouse o dedo): crece un 7 %, sigue al puntero 1 a 1, ilumina la opcion
+     *    que queda debajo y al soltarlo llama a alSoltar con la opcion mas cercana.
+     *  - Solo se anima transform; la caja cambia de ancho una vez por viaje (no en cada cuadro).
+     *  opciones: capa (el contenedor donde vive, con position), elemento (el lente), enlaces() (las
+     *  opciones), margen (px de mas a lo ancho), alto (px; si no, el alto de la opcion), arrastre (bool),
+     *  alSoltar(a). */
+    function crearLente(opciones) {
+        const capa = opciones.capa, lente = opciones.elemento;
+        lente.innerHTML = '<span class="lente-filo"></span><span class="lente-brillo"></span>';
+        // Tres resortes: el centro, el ancho y "agarrado" (0 suelto, 1 en la mano)
+        const cen = { x: 0, v: 0, meta: 0 }, anc = { x: 0, v: 0, meta: 0 }, agarre = { x: 0, v: 0, meta: 0 };
+        const arrastre = { activo: false, v: 0 };
+        let caja = 0, alto = 0, y = 0, cuadro = 0, antes = 0, visible = false, actual = null;
+        const filtros = {};
+        const refracta = Cristal.disponible();
+
+        // Un filtro por tamano de caja (en la isla las opciones miden distinto); se preparan de antemano
+        const aplicarFiltro = function () {
+            const f = filtros[caja + 'x' + alto];
+            if (f) { lente.style.setProperty('--refraccion', f); lente.classList.add('con-refraccion'); }
+            else lente.classList.remove('con-refraccion');
+        };
+        const prepararFiltro = function (w, h) {
+            if (!w || !h) return;
+            if (!refracta) { if (!(w + 'x' + h in filtros)) { filtros[w + 'x' + h] = null; precalentar(w, h, ''); } return; }
+            const clave = w + 'x' + h;
+            if (clave in filtros) return;
+            filtros[clave] = null;
+            const maximo = Math.round(h * 0.16);
+            const mapa = Cristal.mapaDeLente(w, h, maximo);
+            Cristal.cuandoCarguen([mapa]).then(function () {
+                const id = Cristal.nuevoId('lente');
+                Cristal.filtroDeLente(id, w, h, mapa, maximo * 2);
+                filtros[clave] = 'url(#' + id + ')';
+                precalentar(w, h, filtros[clave]);
+                aplicarFiltro();
+            });
+        };
+        // La primera vez que el navegador usa un filtro lo prepara, y ese cuadro tardaba ~200 ms (medido, tambien
+        // con tarjeta de video): pasaba justo al hacer clic en una opcion de otro ancho. Por eso cada filtro se
+        // usa apenas se crea, en una copia invisible del lente, durante unos cuadros
+        const precalentar = function (w, h, url) {
+            const copia = document.createElement('span');
+            copia.className = 'lente lente-precalentar';
+            copia.setAttribute('aria-hidden', 'true');
+            // Igual al lente (filo y brillo) y estirada, como cuando viaja: asi la tarjeta de video prepara de una vez
+            // todo lo que necesita (medido: el primer viaje de la sesion tardaba ~200 ms en dibujarse)
+            copia.innerHTML = lente.innerHTML;
+            copia.style.cssText = 'width:' + w + 'px;height:' + h + 'px;opacity:.001;transition:none;transform:scale(1.2, .9);--refraccion:' + url;
+            if (url) copia.classList.add('con-refraccion');
+            capa.appendChild(copia);
+            let n = 0;
+            const esperar = function () { if (++n < 4) requestAnimationFrame(esperar); else copia.remove(); };
+            requestAnimationFrame(esperar);
+        };
+        const medidaDe = function (a) {
+            const c = capa.getBoundingClientRect(), r = a.getBoundingClientRect();
+            const h = opciones.alto || Math.round(r.height);
+            return { centro: r.left - c.left + r.width / 2, ancho: Math.round(r.width + (opciones.margen || 0)), alto: h, y: r.top - c.top + (r.height - h) / 2 };
+        };
+        const pintar = function () {
+            const g = Math.tanh(Math.abs(cen.v) / 900);          // 0 quieto ... 1 muy rapido
+            const k = 1 + 0.07 * agarre.x;                        // agarrado: un poco mas grande
+            const sx = (anc.x / caja) * (1 + 0.22 * g) * k;
+            const sy = (1 - 0.12 * g) * k;
+            lente.style.transform = 'translate(' + (cen.x - caja / 2).toFixed(2) + 'px, ' + y.toFixed(2) + 'px) scale(' + sx.toFixed(4) + ', ' + sy.toFixed(4) + ')';
+        };
+        const paso = function (b, k, z, dt) {
+            const a = k * (b.meta - b.x) - 2 * z * Math.sqrt(k) * b.v;
+            b.v += a * dt;
+            b.x += b.v * dt;
+        };
+        const quieto = function (b, e) { return Math.abs(b.meta - b.x) < e && Math.abs(b.v) < e * 10; };
+        const saltar = function () {
+            cancelAnimationFrame(cuadro); cuadro = 0;
+            cen.x = cen.meta; anc.x = anc.meta; agarre.x = agarre.meta;
+            cen.v = anc.v = agarre.v = 0;
+            if (caja) pintar();
+        };
+        const mover = function (t) {
+            const dt = Math.min(0.032, ((t - antes) / 1000) || 0.016);
+            antes = t;
+            // En dos medios pasos: los resortes rapidos no se desbocan si un cuadro llega tarde
+            for (let i = 0; i < 2; i++) {
+                if (!arrastre.activo) paso(cen, 420, 0.72, dt / 2);   // el centro: con un poco de rebote, como liquido
+                paso(anc, 320, 0.9, dt / 2);
+                paso(agarre, 500, 1, dt / 2);
+            }
+            if (arrastre.activo) { cen.v = arrastre.v; arrastre.v *= 0.82; }   // se estira con la velocidad del dedo
+            pintar();
+            if (!arrastre.activo && quieto(cen, 0.15) && quieto(anc, 0.15) && quieto(agarre, 0.002)) { saltar(); return; }
+            cuadro = requestAnimationFrame(mover);
+        };
+        const arrancar = function () {
+            if (cuadro) return;
+            antes = performance.now();
+            cuadro = requestAnimationFrame(mover);
+        };
+        /** Lleva el lente a la opcion "a" (sin viajar si sinViaje, o si aun no se veia) */
+        const ir = function (a, sinViaje) {
+            actual = a || null;
+            if (!a || !a.offsetWidth) { lente.style.opacity = '0'; visible = false; return; }
+            const m = medidaDe(a);
+            cen.meta = m.centro; anc.meta = m.ancho; y = m.y;
+            if (m.ancho !== caja || m.alto !== alto) {
+                caja = m.ancho; alto = m.alto;
+                lente.style.width = caja + 'px';
+                lente.style.height = alto + 'px';
+                prepararFiltro(caja, alto);
+                aplicarFiltro();
+            }
+            if (sinViaje || !visible || reduceMotion) {
+                saltar();
+                lente.style.opacity = '1';
+                visible = true;
+                return;
+            }
+            arrancar();
+        };
+        const enlaces = function () { return opciones.enlaces().filter(function (a) { return a.offsetWidth; }); };
+        const prepararTodos = function () {
+            (window.requestIdleCallback || setTimeout)(function () {
+                enlaces().forEach(function (a) { const m = medidaDe(a); prepararFiltro(m.ancho, m.alto); });
+            }, { timeout: 1500 });
+        };
+        prepararTodos();
+        // Si la capa o alguna opcion cambia de tamano (girar el celular, cargar las fuentes, aparece el globito
+        // de "Mensajes"...): a su sitio, sin viajar. Se vigila cada opcion: sus anchos pueden cambiar sin que
+        // cambie la barra
+        if ('ResizeObserver' in window) {
+            let primera = true, espera = 0;
+            const vigia = new ResizeObserver(function () {
+                if (primera) { primera = false; return; }
+                cancelAnimationFrame(espera);
+                espera = requestAnimationFrame(function () {
+                    if (actual && !arrastre.activo && !cuadro) ir(actual, true);
+                    prepararTodos();
+                });
+            });
+            vigia.observe(capa);
+            opciones.enlaces().forEach(function (a) { vigia.observe(a); });
+        }
+
+        // ----- Agarrar y arrastrar -----
+        const masCercano = function (x) {
+            let mejor = null, d = 1e9;
+            enlaces().forEach(function (a) { const e = Math.abs(medidaDe(a).centro - x); if (e < d) { d = e; mejor = a; } });
+            return mejor;
+        };
+        const marcarBajo = function (a) {
+            opciones.enlaces().forEach(function (x) { x.classList.toggle('bajo-lente', x === a); });
+        };
+        if (opciones.arrastre && !reduceMotion) {
+            let puntero = null, inicioX = 0, desfase = 0, ultimoT = 0, movido = false, ignorarClic = false;
+            const xEn = function (e) { return e.clientX - capa.getBoundingClientRect().left; };
+            // Los enlaces no se arrastran como enlaces (el navegador soltaba el lente para "llevarse" el link)
+            capa.addEventListener('dragstart', function (e) { if (arrastre.activo) e.preventDefault(); });
+            capa.addEventListener('pointerdown', function (e) {
+                if (e.button !== 0 || !visible) return;
+                const x = xEn(e);
+                if (Math.abs(x - cen.x) > anc.x / 2) return;      // solo si se agarra el lente
+                puntero = e.pointerId; inicioX = x; desfase = x - cen.x; ultimoT = e.timeStamp; movido = false;
+                arrastre.activo = true; arrastre.v = 0; agarre.meta = 1;
+                try { capa.setPointerCapture(e.pointerId); } catch (err) { /* sin captura: igual sigue */ }
+                capa.classList.add('lente-agarrado');
+                arrancar();
+            });
+            capa.addEventListener('pointermove', function (e) {
+                if (!arrastre.activo || e.pointerId !== puntero) return;
+                const x = xEn(e);
+                if (!movido && Math.abs(x - inicioX) < 6) return;   // un toque no es un arrastre
+                movido = true;
+                const lista = enlaces();
+                if (!lista.length) return;
+                const izq = medidaDe(lista[0]).centro, der = medidaDe(lista[lista.length - 1]).centro;
+                // Sigue al puntero 1 a 1; pasado el borde, con resistencia (como una goma)
+                let destino = x - desfase;
+                if (destino < izq) destino = izq - Math.sqrt(izq - destino) * 2;
+                if (destino > der) destino = der + Math.sqrt(destino - der) * 2;
+                const dt = Math.max(8, e.timeStamp - ultimoT);
+                arrastre.v = (destino - cen.x) / dt * 1000;
+                ultimoT = e.timeStamp;
+                cen.x = destino;
+                marcarBajo(masCercano(cen.x));
+                arrancar();
+            });
+            const soltar = function (e) {
+                if (!arrastre.activo || e.pointerId !== puntero) return;
+                arrastre.activo = false; agarre.meta = 0; puntero = null;
+                capa.classList.remove('lente-agarrado');
+                marcarBajo(null);
+                if (movido) {
+                    // El clic que el navegador manda al soltar no cuenta: ya decidio el lente
+                    ignorarClic = true;
+                    setTimeout(function () { ignorarClic = false; }, 0);
+                    cen.v = arrastre.v;          // sale con la velocidad que llevaba
+                    const a = masCercano(cen.x);
+                    if (opciones.alSoltar) opciones.alSoltar(a); else ir(a);
+                }
+                arrancar();
+            };
+            capa.addEventListener('pointerup', soltar);
+            capa.addEventListener('pointercancel', soltar);
+            capa.addEventListener('click', function (e) {
+                if (ignorarClic) { e.preventDefault(); e.stopPropagation(); }
+            }, true);
+        }
+
+        return { ir: ir, saltar: saltar, visible: function () { return visible; }, elemento: lente };
+    }
+
+    /** El vidrio toma el color del fondo (pedido de Luis, 2026-11-13; app.css seccion 87). En tema claro las
+     *  barras son de vidrio claro de fabrica (lo decide el CSS: sin parpadeo); en tema oscuro, oscuro. Y en tema
+     *  claro, si lo que pasa por detras es una zona oscura, aqui se les pone .vidrio-oscuro: asi las letras
+     *  siempre se leen.
+     *  Como se sabe que hay detras: document.elementsFromPoint en tres puntos de la barra (izquierda, centro y
+     *  derecha); manda la mayoria. Una zona es oscura si esta en ZONAS_OSCURAS (las que tienen foto o
+     *  degradado, cuyo color no se puede leer) o si su fondo es un color solido oscuro. Se revisa al bajar
+     *  (una vez por cuadro), al cambiar de tamano o de tema y cuando la portada se esconde. */
+    const ZONAS_OSCURAS = 'body > .hero:not([hidden]), footer.pie, .profile-cover, .company-cover-img, .empresa-portada, .cerca-mapa';
+    function vidrioSegunFondo() {
+        const barras = Array.from(document.querySelectorAll('body > header, body > .tabbar'));
+        if (!barras.length) return;
+        const raiz = document.documentElement;
+        const ajeno = '.cuenta-menu, .chispa-match, .toast-stack, .lente, .notifications-dropdown, .cmdk';
+        const oscuroEn = function (x, y, barra) {
+            const pila = document.elementsFromPoint(x, y);
+            for (let i = 0; i < pila.length; i++) {
+                const el = pila[i];
+                if (barra.contains(el) || el.closest(ajeno)) continue;
+                if (el.closest(ZONAS_OSCURAS)) return true;
+                const m = getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
+                if (m && (m.length < 4 || Number(m[3]) > 0.6)) {
+                    // El primer fondo solido decide: oscuro si su luminancia es baja
+                    const l = (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255;
+                    return l < 0.35;
+                }
+            }
+            return false;
+        };
+        const revisar = function () {
+            const claro = raiz.getAttribute('data-theme') !== 'dark';
+            barras.forEach(function (barra) {
+                let oscuro = false;
+                if (!claro) { if (barra.classList.contains('vidrio-oscuro')) { barra.classList.remove('vidrio-oscuro'); } }
+                if (claro) {
+                    const r = barra.getBoundingClientRect();
+                    // Escondida (al bajar) o sin tamano (la barra de abajo en el computador): se deja como estaba
+                    if (!r.width || r.bottom <= 0 || r.top >= window.innerHeight) return;
+                    const y = r.top + r.height / 2;
+                    const votos = [0.18, 0.5, 0.82].filter(function (f) { return oscuroEn(r.left + r.width * f, y, barra); }).length;
+                    oscuro = votos >= 2;
+                }
+                const quiere = claro && oscuro;
+                if (barra.classList.contains('vidrio-oscuro') !== quiere) {
+                    barra.classList.toggle('vidrio-oscuro', quiere);
+                    if (barra.matches('header')) logoSegunTema(raiz.getAttribute('data-theme'));
+                }
+            });
+        };
+        let pendiente = false;
+        const pedir = function () {
+            if (pendiente) return;
+            pendiente = true;
+            requestAnimationFrame(function () { pendiente = false; revisar(); });
+        };
+        revisar();
+        window.addEventListener('scroll', pedir, { passive: true });
+        window.addEventListener('resize', pedir);
+        window.addEventListener('load', pedir);
+        // El tema cambio (boton, menu "Tu cuenta" o el sistema en "Auto")
+        if ('MutationObserver' in window) {
+            new MutationObserver(pedir).observe(raiz, { attributes: true, attributeFilter: ['data-theme'] });
+            const hero = document.querySelector('body > .hero');
+            if (hero) new MutationObserver(pedir).observe(hero, { attributes: true, attributeFilter: ['hidden'] });
+        }
+        // Al terminar de esconderse o volver la barra (seccion 78), se revisa otra vez
+        barras.forEach(function (b) { b.addEventListener('transitionend', function (e) { if (e.propertyName === 'translate') pedir(); }); });
     }
 
     /** Barra de progreso al salir hacia otra pagina: quita la sensacion de cuelgue. */
@@ -564,12 +1440,10 @@
 
     /** Encabezados y tarjetas que aparecen al hacer scroll. Se marcan solos
      *  (tambien las vacantes que llegan despues desde la API), sin tocar el HTML. */
-    const REVELAR = '.reveal, .section-header-center, .innovation-header, .why-header, ' +
-                    '.feature-card, .benefit-item, .pathway-card, .roadmap-card, ' +
+    const REVELAR = '.reveal, .section-header-center, .why-header, ' +
+                    '.feature-card, .benefit-item, .pathway-card, ' +
                     '.opportunity-card, .connection-card, .suggestion-card, ' +
-                    '.offer-card, .candidate-mini-card, .application-card, ' +
-                    // Portada: cada bloque marcado y, en las listas, cada tarjeta por separado
-                    '[data-revelar], [data-revelar-hijos] > *';
+                    '.offer-card, .candidate-mini-card, .application-card';
     // Las vacantes no suben desde abajo: salen de debajo de la tarjeta de
     // arriba, una tras otra, como cartas que se reparten (idea de Luis)
     const BARAJA = '.opportunity-card';
@@ -581,6 +1455,8 @@
         if (raiz.matches && raiz.matches(REVELAR)) elementos.push(raiz);
         elementos.forEach(function (el) {
             if (el.dataset.revelado) return;
+            // Las secciones de la portada que se arman a su manera (index.js, "se construye al bajar")
+            if (el.closest('[data-construye]')) return;
             el.dataset.revelado = '1';
             if (observadorEntrada) {
                 el.classList.add('reveal');
@@ -656,67 +1532,6 @@
             if (destino) destino.removeAttribute('aria-busy');
         },
 
-        /** Boton de guardar mientras espera al servidor: se desactiva y dice
-         *  "Guardando…" con un indicador (en Render Free puede tardar y un segundo
-         *  clic creaba duplicados). Devuelve la funcion que lo deja como estaba. */
-        guardando: function (boton, texto) {
-            const el = typeof boton === 'string' ? document.querySelector(boton) : boton;
-            if (!el || el.dataset.ocupado) return function () {};
-            const antes = el.innerHTML;
-            el.dataset.ocupado = '1';
-            el.disabled = true;
-            el.setAttribute('aria-busy', 'true');
-            el.innerHTML = '<span class="girando" aria-hidden="true"></span>' + (texto || 'Guardando…');
-            return function () {
-                el.innerHTML = antes;
-                el.disabled = false;
-                el.removeAttribute('aria-busy');
-                delete el.dataset.ocupado;
-            };
-        },
-
-        /** Error de un formulario, debajo de el y no en un aviso flotante (como en
-         *  "Cambiar contraseña"). Si se dice el campo, se marca en rojo y recibe el foco. */
-        errorEnFormulario: function (form, texto, campo) {
-            if (!form) return;
-            let caja = form.querySelector('.form-error');
-            if (!caja) {
-                caja = document.createElement('p');
-                caja.className = 'error-text form-error';
-                caja.setAttribute('role', 'alert');
-                const acciones = form.querySelector('.modal-actions');
-                if (acciones) acciones.before(caja); else form.appendChild(caja);
-            }
-            form.querySelectorAll('[aria-invalid="true"]').forEach(function (c) {
-                c.removeAttribute('aria-invalid');
-                c.classList.remove('is-invalid');
-            });
-            caja.textContent = texto || '';
-            caja.hidden = !texto;
-            const el = typeof campo === 'string' ? form.querySelector('#' + campo) : campo;
-            if (texto && el) {
-                el.classList.add('is-invalid');
-                el.setAttribute('aria-invalid', 'true');
-                if (!caja.id) caja.id = (form.id || 'form') + 'Error';
-                el.setAttribute('aria-describedby', ((el.getAttribute('aria-describedby') || '').replace(caja.id, '') + ' ' + caja.id).trim());
-                el.focus();
-            }
-        },
-
-        /** Quien tiene datos de prueba: empresas y vacantes con "(ejemplo)" en el nombre. */
-        esEjemplo: function (texto) { return /\(ejemplo\)/i.test(String(texto || '')); },
-        /** El nombre sin "(ejemplo)": la etiqueta ya lo dice. */
-        sinEjemplo: function (texto) { return String(texto || '').replace(/\s*\(ejemplo\)\s*/ig, ' ').trim(); },
-        etiquetaEjemplo: function () {
-            return '<span class="etiqueta-ejemplo" title="Datos de muestra: no es una oferta real">Ejemplo</span>';
-        },
-        /** Un dato que la empresa no lleno ("No especificada", vacio): null, para
-         *  mostrar en su lugar un texto que no parezca definitivo. */
-        datoReal: function (valor) {
-            const t = String(valor == null ? '' : valor).trim();
-            return !t || /^(no especificad[oa]|sin especificar|n\/?a|null|undefined)$/i.test(t) ? null : t;
-        },
-
         /** Marca un boton como ocupado y devuelve la funcion que lo libera. */
         ocupado: function (boton) {
             const el = typeof boton === 'string' ? document.querySelector(boton) : boton;
@@ -734,10 +1549,8 @@
         /**
          * Aviso breve. El texto dice que paso, no pide disculpas.
          * tipo: 'ok' | 'error' | 'info'
-         * accion (opcional): { texto: 'Reintentar', alHacer: fn } pone un boton
-         * en el aviso; un error asi dice que paso y que hacer.
          */
-        aviso: function (mensaje, tipo, duracion, accion) {
+        aviso: function (mensaje, tipo, duracion) {
             let pila = document.querySelector('.toast-stack');
             if (!pila) {
                 pila = document.createElement('div');
@@ -758,26 +1571,9 @@
                 setTimeout(function () { toast.remove(); }, 240);
             };
             toast.querySelector('button').addEventListener('click', cerrar);
-            if (accion && typeof accion.alHacer === 'function') {
-                const boton = document.createElement('button');
-                boton.type = 'button';
-                boton.className = 'toast-accion';
-                boton.textContent = accion.texto || 'Reintentar';
-                boton.addEventListener('click', function () { cerrar(); accion.alHacer(); });
-                toast.insertBefore(boton, toast.lastElementChild);
-            }
             pila.appendChild(toast);
-            setTimeout(cerrar, duracion || (accion ? 9000 : 4200));
+            setTimeout(cerrar, duracion || 4200);
             return cerrar;
-        },
-
-        /** Exito corto, en el mismo tono en todo el sitio: "Experiencia guardada". */
-        guardado: function (texto) { return UI.aviso(escaparHtml(texto), 'ok', 3200); },
-
-        /** Error con salida: dice que hacer y, si se puede, ofrece "Reintentar". */
-        noSeGuardo: function (texto, reintentar) {
-            return UI.aviso(escaparHtml(texto || 'No pudimos guardar. Revisa tu conexión e intenta de nuevo.'), 'error', 0,
-                reintentar ? { texto: 'Reintentar', alHacer: reintentar } : null);
         },
 
         icono: svgIcon,
@@ -821,9 +1617,9 @@
         if (!ventana || !ventana.hasAttribute('data-confirmar-cierre') || ventana.dataset.cambios !== '1') return Promise.resolve(true);
         if (document.getElementById('ventanaConfirmar')) return Promise.resolve(false); // ya se esta preguntando
         return UI.confirmar({
-            titulo: '¿Descartar cambios?',
-            texto: 'Lo que escribiste en esta ventana todavía no se ha guardado.',
-            aceptar: 'Descartar cambios',
+            titulo: '¿Cerrar sin guardar?',
+            texto: 'Se perderá lo que escribiste en esta ventana.',
+            aceptar: 'Cerrar sin guardar',
             cancelar: 'Seguir editando',
             peligro: true
         }).then(function (si) {
@@ -845,14 +1641,50 @@
             }
             campo.classList.toggle('is-invalid', !campo.checkValidity());
             campo.classList.toggle('is-valid', campo.checkValidity() && !!campo.value);
+            // El lector de pantalla tambien sabe que el campo esta mal (WCAG 3.3.1)
+            if (!campo.checkValidity()) campo.setAttribute('aria-invalid', 'true');
+            else if (!campo.dataset.errorDe) campo.removeAttribute('aria-invalid');
         }, true);
 
         document.addEventListener('input', function (e) {
-            if (e.target.classList && e.target.classList.contains('is-invalid') && e.target.checkValidity()) {
-                e.target.classList.remove('is-invalid');
+            const campo = e.target;
+            if (campo.classList && campo.classList.contains('is-invalid') && campo.checkValidity()) {
+                campo.classList.remove('is-invalid');
+                if (!campo.dataset.errorDe) campo.removeAttribute('aria-invalid');
             }
+            // Un error marcado con UI.marcarCampo se quita apenas la persona corrige
+            if (campo.dataset && campo.dataset.errorDe) UI.desmarcarCampo(campo);
         });
     }
+
+    /** Un error que vino de revisar el formulario queda unido a SU campo: aria-invalid,
+     *  el texto del error como descripcion (aria-describedby) y el borde de error.
+     *  idMensaje: el elemento donde ya se escribio el error. Se quita al escribir. */
+    UI.marcarCampo = function (campo, idMensaje) {
+        if (!campo) return;
+        campo.setAttribute('aria-invalid', 'true');
+        campo.classList.add('is-invalid');
+        if (idMensaje) {
+            const antes = (campo.getAttribute('aria-describedby') || '').split(/\s+/).filter(function (x) { return x && x !== idMensaje; });
+            campo.dataset.describiaAntes = antes.join(' ');
+            campo.setAttribute('aria-describedby', antes.concat(idMensaje).join(' '));
+        }
+        campo.dataset.errorDe = idMensaje || '1';
+    };
+    UI.desmarcarCampo = function (campo) {
+        if (!campo || !campo.dataset.errorDe) return;
+        campo.removeAttribute('aria-invalid');
+        campo.classList.remove('is-invalid');
+        if (campo.dataset.describiaAntes) campo.setAttribute('aria-describedby', campo.dataset.describiaAntes);
+        else campo.removeAttribute('aria-describedby');
+        delete campo.dataset.errorDe;
+        delete campo.dataset.describiaAntes;
+    };
+    /** Quita todas las marcas de error de un formulario (o de un paso). */
+    UI.desmarcarCampos = function (raiz) {
+        if (!raiz) return;
+        raiz.querySelectorAll('[data-error-de]').forEach(UI.desmarcarCampo);
+    };
 
     /* ---------- 8. Anillos de compatibilidad ---------- */
 
@@ -876,6 +1708,9 @@
                 if (actual < pct) requestAnimationFrame(paso);
             };
             requestAnimationFrame(paso);
+            // Respaldo: si los cuadros se frenan (la pestana deja de verse, el equipo va muy ocupado), el anillo
+            // quedaba a medio llenar (visto en las pruebas: 42,9 % en vez de 50 %). A los 1,5 s, su valor final
+            setTimeout(function () { actual = pct; anillo.style.setProperty('--pct', pct); }, 1500);
         });
     }
 
@@ -918,6 +1753,7 @@
                 revelar(node);
                 hidratarLottie(node);
                 pintarLogos(node);
+                pintarMonogramas(node);
             }
         }
     });
@@ -1204,11 +2040,21 @@
         boton.setAttribute('aria-label', 'Buscar vacantes y navegar (' + (ES_MAC ? 'Cmd' : 'Ctrl') + ' + K)');
         // En la barra se ve solo la lupa: el texto de ayuda sale al pasar el mouse
         boton.setAttribute('title', 'Buscar (' + (ES_MAC ? '⌘' : 'Ctrl') + ' + K)');
-        boton.innerHTML = svgIcon('search') + '<span class="cmdk-texto">Buscar</span><kbd class="cmdk-atajo">' + (ES_MAC ? '⌘K' : 'Ctrl K') + '</kbd>';
+        boton.innerHTML = '<span class="cmdk-texto">Buscar vacantes</span>' + svgIcon('search') + '<kbd class="cmdk-atajo">' + (ES_MAC ? '⌘K' : 'Ctrl K') + '</kbd>';
         boton.addEventListener('click', abrirPaleta);
-        const li = document.createElement('li');
-        li.appendChild(boton);
-        toggle.parentElement.parentElement.insertBefore(li, toggle.parentElement);
+        // Al lado del logo, como el buscador de torre.ai: buscar es lo primero que hace quien busca empleo.
+        // (Si la pagina no tiene logo en la barra, va donde iba antes: junto al tema)
+        const logo = document.querySelector('header .nav-left > .logo');
+        if (logo) {
+            const caja = document.createElement('div');
+            caja.className = 'nav-buscar';
+            caja.appendChild(boton);
+            logo.after(caja);
+        } else {
+            const li = document.createElement('li');
+            li.appendChild(boton);
+            toggle.parentElement.parentElement.insertBefore(li, toggle.parentElement);
+        }
     }
 
     /* ---------- 13. Tooltips animados ---------- */
@@ -1334,59 +2180,64 @@
         pendientes.forEach(function (a) { mostrarAviso(a.texto, a.tipo); });
     }
 
-    /* ---------- 15. Pie de pagina (el mismo en todas las paginas) ---------- */
+    /* ---------- 15. Pie de pagina grande (el mismo en todas las paginas) ---------- */
 
-    // Una sola fuente para todas las paginas: aqui se dibuja dentro del <footer>
+    // Una sola fuente para las 13 paginas: aqui se dibuja dentro del <footer>
     // que trae cada HTML (si el JS fallara, queda el texto corto de siempre).
     // Solo enlaces reales; nada de redes ni datos de contacto inventados.
-    // Con sesion ofrece lo de la cuenta; sin sesion, crear una o entrar.
-    const PIE_SKILLMATCH = { titulo: 'SkillMatch', enlaces: [
-        ['oportunidades.html', 'Vacantes'],
-        ['empresas.html', 'Empresas'],
-        ['index.html#como-funciona', 'Cómo funciona'],
-        ['dashboard.html', 'Indicadores del mercado'],
-        ['como-aprende.html', 'Cómo aprende SkillMatch'],
-        // La Ley 1581 pide que la politica de datos este siempre a la mano
-        ['politica-datos.html', 'Política de datos']
-    ] };
+    const PIE_COLUMNAS = [
+        { titulo: 'Busco trabajo', enlaces: [
+            ['seleccionar-registro.html', 'Crear mi perfil'],
+            ['oportunidades.html', 'Ver vacantes'],
+            ['empresas.html', 'Conocer las empresas'],
+            ['login.html', 'Iniciar sesión']
+        ] },
+        { titulo: 'Empresas', enlaces: [
+            ['registro-empresa.html', 'Registrar mi empresa'],
+            ['login.html?tipo=empresa', 'Acceso empresas']
+        ] },
+        { titulo: 'SkillMatch', enlaces: [
+            ['index.html#como-funciona', 'Cómo funciona'],
+            ['index.html#cerca', 'Vacantes cerca de ti'],
+            ['dashboard.html', 'Indicadores del mercado'],
+            ['como-aprende.html', 'Cómo aprende SkillMatch'],   // la pagina nueva del modelo predictivo (main, PR #27)
+            // La Ley 1581 pide que la politica de datos este siempre a la mano
+            ['politica-datos.html', 'Política de datos']
+        ] }
+    ];
 
+    // Con sesion, el pie ya no ofrece "Crear mi perfil" ni "Iniciar sesion": lleva a lo
+    // de la cuenta (revision 2026-11-13). La columna "SkillMatch" es la misma para todos.
+    const PIE_PERSONA = [
+        { titulo: 'Tu cuenta', enlaces: [
+            ['perfil-usuario.html', 'Mi perfil'],
+            ['oportunidades.html?guardadas=1', 'Vacantes guardadas'],
+            ['hoja-de-vida.html', 'Hoja de vida en PDF'],
+            ['mensajes.html', 'Mensajes']
+        ] },
+        { titulo: 'Explora', enlaces: [
+            ['oportunidades.html', 'Ver vacantes'],
+            ['empresas.html', 'Conocer las empresas'],
+            ['conexiones.html', 'Tu red de contactos']
+        ] }
+    ];
+    const PIE_EMPRESA = [
+        { titulo: 'Tu empresa', enlaces: [
+            ['perfil-empresa.html', 'Mi empresa'],
+            ['perfil-empresa.html#candidatos', 'Postulaciones recibidas'],
+            ['perfil-empresa.html#ofertas', 'Tus vacantes'],
+            ['mensajes.html', 'Mensajes']
+        ] },
+        { titulo: 'Explora', enlaces: [
+            ['oportunidades.html', 'Ver vacantes'],
+            ['empresas.html', 'Otras empresas']
+        ] }
+    ];
     function columnasDelPie() {
         const datos = datosSesion();
-        if (datos && datos.userType === 'empresa') {
-            return [{ titulo: 'Mi empresa', enlaces: [
-                ['perfil-empresa.html', 'Mi empresa'],
-                ['perfil-empresa.html?nueva=1', 'Publicar una vacante'],
-                ['perfil-empresa.html?tab=applicants', 'Candidatos'],
-                ['mensajes.html', 'Mensajes'],
-                ['index.html', 'Cerrar sesión', 'data-cerrar-sesion']
-            ] }, PIE_SKILLMATCH];
-        }
-        if (datos) {
-            return [{ titulo: 'Mi cuenta', enlaces: [
-                ['perfil-usuario.html', 'Mi perfil'],
-                ['perfil-usuario.html?tab=applications', 'Mis postulaciones'],
-                ['oportunidades.html?guardadas=1', 'Vacantes guardadas'],
-                ['mensajes.html', 'Mensajes'],
-                ['index.html', 'Cerrar sesión', 'data-cerrar-sesion']
-            ] }, PIE_SKILLMATCH];
-        }
-        return [
-            { titulo: 'Busco trabajo', enlaces: [
-                ['registro-usuario.html', 'Crear mi perfil'],
-                ['oportunidades.html', 'Ver vacantes'],
-                ['login.html', 'Iniciar sesión']
-            ] },
-            { titulo: 'Soy empresa', enlaces: [
-                ['registro-empresa.html', 'Crear cuenta de empresa'],
-                ['login.html?tipo=empresa', 'Ya tengo cuenta']
-            ] },
-            PIE_SKILLMATCH
-        ];
+        if (!datos) return PIE_COLUMNAS;
+        return (datos.userType === 'empresa' ? PIE_EMPRESA : PIE_PERSONA).concat(PIE_COLUMNAS.slice(-1));
     }
-
-    // En el celular las columnas son acordeones (cerrados al llegar): antes el
-    // pie media casi 1.000 px. En pantallas grandes se ven todas abiertas.
-    const PIE_CELULAR = window.matchMedia('(max-width: 640px)');
 
     function construirPie() {
         const pie = document.querySelector('body > footer');
@@ -1398,21 +2249,18 @@
                 '<div class="pie-grid">' +
                     '<div class="pie-marca">' +
                         '<a href="index.html" class="pie-logo"><img src="../assets/img/logo-oscuro.png" alt="SkillMatch, ir al inicio" width="531" height="160" loading="lazy"></a>' +
-                        '<p>La bolsa de empleo de Cartagena: compara tus habilidades con cada vacante antes de postularte.</p>' +
+                        '<p>La bolsa de empleo de Cartagena para todos los sectores: compara tus habilidades con cada vacante de la ciudad antes de postularte.</p>' +
                     '</div>' +
                     '<nav class="pie-columnas" aria-label="Enlaces del pie de página">' +
                         columnasDelPie().map(function (col) {
-                            return '<details class="pie-col" open><summary><h2 class="pie-titulo">' + col.titulo + '</h2>' +
-                                svgIcon('chevron', 'pie-flecha') + '</summary><ul>' +
-                                col.enlaces.map(function (e) {
-                                    return '<li><a href="' + e[0] + '"' + (e[2] ? ' ' + e[2] : '') + '>' + e[1] + '</a></li>';
-                                }).join('') +
-                                '</ul></details>';
+                            return '<div><h2 class="pie-titulo">' + col.titulo + '</h2><ul>' +
+                                col.enlaces.map(function (e) { return '<li><a href="' + e[0] + '">' + e[1] + '</a></li>'; }).join('') +
+                                '</ul></div>';
                         }).join('') +
                     '</nav>' +
                 '</div>' +
                 '<div class="pie-base">' +
-                    '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias.</p>' +
+                    '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias para conectar a las personas y las empresas de la ciudad.</p>' +
                     // Tamano de letra (seccion 22): tres botones, el elegido marcado
                     '<div class="pie-letra" role="group" aria-label="Tamaño de letra">' +
                         '<span>Letra</span>' +
@@ -1426,22 +2274,8 @@
                         '<button type="button" class="pie-arriba"><i data-ico="arrow"></i>Volver arriba</button>' +
                     '</div>' +
                 '</div>' +
-            '</div>';
-        // (La palabra "SkillMatch" gigante con degradado se quito: quedaba cortada
-        // y parecia un error. La marca va una sola vez, con el logo.)
-
-        // Acordeones: cerrados en el celular; en pantalla grande siempre abiertos
-        const columnas = Array.from(pie.querySelectorAll('.pie-col'));
-        const ajustar = function () {
-            columnas.forEach(function (d) { d.open = !PIE_CELULAR.matches; });
-        };
-        ajustar();
-        if (PIE_CELULAR.addEventListener) PIE_CELULAR.addEventListener('change', ajustar);
-        columnas.forEach(function (d) {
-            d.querySelector('summary').addEventListener('click', function (e) {
-                if (!PIE_CELULAR.matches) e.preventDefault();
-            });
-        });
+            '</div>' +
+            '<div class="pie-gigante" aria-hidden="true"><span>Skill</span><span>Match</span></div>';
 
         pie.querySelectorAll('.pie-letra-btn').forEach(function (b) {
             b.addEventListener('click', function () { ponerTamanoLetra(b.dataset.letra); });
@@ -1455,6 +2289,19 @@
             const inicio = document.querySelector('header a');
             if (inicio) inicio.focus({ preventScroll: true });
         });
+
+        // La palabra gigante sube al entrar en pantalla
+        const gigante = pie.querySelector('.pie-gigante');
+        if (reduceMotion || !('IntersectionObserver' in window)) {
+            gigante.classList.add('is-visible');
+        } else {
+            const obs = new IntersectionObserver(function (entradas) {
+                if (!entradas[0].isIntersecting) return;
+                gigante.classList.add('is-visible');
+                obs.disconnect();
+            }, { threshold: 0.2 });
+            obs.observe(gigante);
+        }
     }
 
     /* ---------- 16. Listas desplegables ---------- */
@@ -2385,6 +3232,111 @@
         return { raiz: raiz, cuerpo: raiz.querySelector('.modal-body'), cerrar: cerrar };
     };
 
+    /** «Pastilla» (2026-11-13): chispitas, la version chica de la chispa del match, para momentos
+     *  pequenos (guardar una vacante). 8 puntos que salen poco (22 a 32 px) y se apagan en ~450 ms.
+     *  Solo transform y opacity; nada con "reducir movimiento". */
+    UI.chispitas = function (el) {
+        if (!el || reduceMotion || !Element.prototype.animate) return;
+        const r = el.getBoundingClientRect();
+        if (!r.width) return;
+        const capa = document.createElement('div');
+        capa.className = 'chispa-match chispitas';
+        capa.setAttribute('aria-hidden', 'true');
+        capa.style.transform = 'translate(' + (r.left + r.width / 2) + 'px, ' + (r.top + r.height / 2) + 'px)';
+        const colores = ['var(--naranja)', 'var(--naranja)', 'var(--personaje-turquesa, #00B4CC)'];
+        const animaciones = [];
+        for (let i = 0; i < 8; i++) {
+            const p = document.createElement('i');
+            const angulo = (i / 8) * Math.PI * 2 + Math.random() * .4;
+            const lejos = Math.max(r.width, r.height) / 2 + 10 + Math.random() * 12;
+            p.style.width = p.style.height = (4 + Math.round(Math.random() * 2)) + 'px';
+            p.style.background = colores[i % colores.length];
+            capa.appendChild(p);
+            animaciones.push(p.animate([
+                { transform: 'translate(-50%, -50%) scale(.5)', opacity: 1 },
+                { transform: 'translate(calc(-50% + ' + Math.cos(angulo) * lejos + 'px), calc(-50% + ' + Math.sin(angulo) * lejos * .7 + 'px)) scale(1)', opacity: 0 }
+            ], { duration: 420 + Math.random() * 80, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'forwards' }));
+        }
+        document.body.appendChild(capa);
+        Promise.all(animaciones.map(function (a) { return a.finished; })).then(function () { capa.remove(); }, function () { capa.remove(); });
+    };
+
+    /** La chispa del match (el naranja del logo, con turquesa y azul): un estallido corto de
+     *  puntos que salen de un elemento. Para los momentos que valen la pena: postularse,
+     *  aceptar a alguien. Solo transform y opacity, ~700 ms, y nada con "reducir movimiento".
+     *  (revision 2026-11-13) */
+    UI.chispa = function (el) {
+        if (!el || reduceMotion || !Element.prototype.animate) return;
+        const r = el.getBoundingClientRect();
+        if (!r.width) return;
+        const capa = document.createElement('div');
+        capa.className = 'chispa-match';
+        capa.setAttribute('aria-hidden', 'true');
+        // La capa sigue al elemento mientras dura (si la lista se reacomoda, la chispa no se queda atras)
+        let siguiendo = true;
+        const seguir = function () {
+            // Si el elemento ya no esta (la lista se volvio a pintar), la chispa termina donde iba
+            if (!el.isConnected) { if (siguiendo) requestAnimationFrame(seguir); return; }
+            const q = el.getBoundingClientRect();
+            capa.style.transform = 'translate(' + (q.left + q.width / 2) + 'px, ' + (q.top + q.height / 2) + 'px)';
+            if (siguiendo) requestAnimationFrame(seguir);
+        };
+        seguir();
+        const colores = ['var(--naranja)', 'var(--naranja)', 'var(--personaje-turquesa, #00B4CC)', '#2F6FE4'];
+        const n = 14;
+        const animaciones = [];
+        for (let i = 0; i < n; i++) {
+            const p = document.createElement('i');
+            const angulo = (i / n) * Math.PI * 2 + Math.random() * .35;
+            const lejos = 46 + Math.random() * 34;
+            const tam = 7 + Math.round(Math.random() * 5);
+            p.style.width = p.style.height = tam + 'px';
+            p.style.background = colores[i % colores.length];
+            capa.appendChild(p);
+            animaciones.push(p.animate([
+                { transform: 'translate(-50%, -50%) scale(.4)', opacity: 1 },
+                { transform: 'translate(calc(-50% + ' + Math.cos(angulo) * lejos + 'px), calc(-50% + ' + Math.sin(angulo) * lejos + 'px)) scale(1)', opacity: 1, offset: .55 },
+                { transform: 'translate(calc(-50% + ' + Math.cos(angulo) * lejos * 1.25 + 'px), calc(-50% + ' + (Math.sin(angulo) * lejos * 1.25 + 10) + 'px)) scale(.2)', opacity: 0 }
+            ], { duration: 640 + Math.random() * 160, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'forwards' }));
+        }
+        // Un aro que se abre, como el anillo de compatibilidad
+        const aro = document.createElement('b');
+        capa.appendChild(aro);
+        animaciones.push(aro.animate([{ transform: 'translate(-50%, -50%) scale(.3)', opacity: .9 }, { transform: 'translate(-50%, -50%) scale(1.6)', opacity: 0 }],
+            { duration: 560, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'forwards' }));
+        document.body.appendChild(capa);
+        // Se quita cuando termina la ultima pieza (no con un reloj aparte)
+        const quitar = function () { siguiendo = false; capa.remove(); };
+        Promise.all(animaciones.map(function (a) { return a.finished; })).then(quitar, quitar);
+    };
+
+    /** Algo pide sesion (postularse, guardar): en lugar de mandar sola a la persona al
+     *  login a los 1,2 s, se le pregunta con dos caminos, y los dos recuerdan a donde
+     *  volver (?volver=, ver api-config.js): al entrar o al terminar el registro sigue
+     *  donde iba. opciones: { titulo, texto, volver, tipo: 'empresa' } */
+    UI.pedirCuenta = function (opciones) {
+        const volver = opciones.volver;
+        const conVuelta = function (pagina) {
+            if (typeof direccionDeEntrada === 'function') return direccionDeEntrada(pagina, volver);
+            return pagina;
+        };
+        const registro = opciones.tipo === 'empresa' ? 'registro-empresa.html' : 'registro-usuario.html';
+        const v = UI.ventana({
+            id: 'ventanaPedirCuenta',
+            titulo: opciones.titulo || 'Entra para seguir',
+            icono: 'user',
+            cuerpo:
+                '<p class="confirmar-texto">' + escaparHtml(opciones.texto || '') + '</p>' +
+                '<div class="modal-actions">' +
+                  '<a class="btn-secondary-modal" href="' + escaparHtml(conVuelta(registro)) + '">' +
+                    escaparHtml(opciones.tipo === 'empresa' ? 'Crear cuenta de empresa' : 'Crear mi perfil') + '</a>' +
+                  '<a class="btn-primary-modal" href="' + escaparHtml(conVuelta('login.html')) + '" data-entrar>Entrar</a>' +
+                '</div>'
+        });
+        v.cuerpo.querySelector('[data-entrar]').focus();
+        return v;
+    };
+
     /** Pregunta de la marca en lugar de confirm() del navegador. Devuelve una
      *  promesa: true si la persona acepta. Escape o un clic afuera cuentan como
      *  "no", y en lo que borra el foco empieza en "Cancelar" (lo seguro). */
@@ -3167,77 +4119,83 @@
         enlaces.forEach(function (a) { observador.observe(document.getElementById(a.getAttribute('href').slice(1))); });
     }
 
-    // Una sola linea bajo el menu que se desliza (transform) hasta el enlace
-    // activo, o hasta el que tiene el mouse encima. Sigue al mouse: solo con
-    // mouse y sin "reducir movimiento"; si no, queda la linea fija de cada enlace.
+    // El lente del menu (como el video «Lente», app.css seccion 81): una capsula de cristal que queda sobre
+    // la pagina actual y agranda lo que tiene debajo. Al hacer clic en otra opcion viaja hasta ella
+    // estirandose, y la pagina cambia cuando llega; tambien se puede agarrar y arrastrar hasta otra.
+    // Pasar el mouse no lo mueve (como en el video): solo hace el gesto de cada icono.
+    // Solo con mouse y sin "reducir movimiento"; si no, la opcion activa lleva su subrayado fijo (seccion 38).
     function lineaDelMenu() {
         const lista = document.querySelector('header .nav-left .nav-links');
         const marco = lista && lista.closest('.nav-left');
         if (!marco || reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        // Va en el contenedor del menu y no en la lista: un <ul> solo lleva <li>
-        const linea = document.createElement('span');
-        linea.className = 'nav-linea';
-        linea.setAttribute('aria-hidden', 'true');
-        marco.appendChild(linea);
+        // Va dentro de la lista (un <li>, lo unico que lleva un <ul>)
+        const li = document.createElement('li');
+        li.className = 'lente lente-menu';
+        li.setAttribute('aria-hidden', 'true');
+        li.setAttribute('role', 'presentation');
+        // irCuandoLlegue espera esto antes de cambiar de pagina (lo que tarda el lente en llegar)
+        li.dataset.viaje = '380';
+        lista.appendChild(li);
         lista.classList.add('con-linea');
-        let sobre = null;
         // La pagina a la que se va tras un clic: manda mientras carga la siguiente
         let elegido = null;
-        // Mide sin animar la primera vez, para que no entre volando desde la izquierda
-        let primera = true;
-        const ubicar = function () {
-            const destino = elegido || sobre || lista.querySelector('a.active-nav, a.active');
-            if (!destino || !destino.offsetWidth) { linea.style.opacity = '0'; return; }
-            const caja = marco.getBoundingClientRect();
-            const r = destino.getBoundingClientRect();
-            const margen = parseFloat(getComputedStyle(destino).paddingLeft) || 0;
-            // Igual que la linea fija: debajo del enlace, sin su relleno a los lados
-            const x = r.left - caja.left + margen;
-            const y = r.bottom - caja.top + 18 - 2.5;
-            const ancho = Math.max(r.width - margen * 2, 0);
-            if (primera) linea.style.transition = 'none';
-            linea.style.transform = 'translate(' + x + 'px, ' + y + 'px) scaleX(' + (ancho / 100) + ')';
-            linea.style.opacity = '1';
-            if (primera) { linea.getBoundingClientRect(); linea.style.transition = ''; primera = false; }
-        };
+        const delMenu = function () { return Array.from(lista.querySelectorAll('a')); };
+        const activo = function () { return lista.querySelector('a.active-nav, a.active'); };
+        const lente = crearLente({
+            capa: lista,
+            elemento: li,
+            enlaces: delMenu,
+            margen: 12,
+            alto: 56,          // 6 px mas que la opcion: la palabra queda lejos del borde que dobla
+            arrastre: true,
+            // Soltado sobre una opcion: si es la pagina actual, vuelve a su sitio; si no, lleva alla
+            alSoltar: function (a) {
+                if (!a || a === (elegido || activo())) { lente.ir(elegido || activo()); return; }
+                anotarDireccion(a, delMenu().indexOf(activo()), delMenu().indexOf(a));
+                elegido = a;
+                lente.ir(a);
+                clearTimeout(viajePendiente);
+                viajePendiente = setTimeout(function () { UI.irA(a.href); }, 380);
+            }
+        });
+        const ubicar = function (sinViaje) { lente.ir(elegido || activo(), sinViaje); };
+        // Con el mouse en el menu, el icono bajo el mouse crece un poco (seccion 56)
         lista.addEventListener('mouseover', function (e) {
             const a = e.target instanceof Element && e.target.closest('a');
-            if (a && lista.contains(a) && a !== sobre) { sobre = a; ubicar(); }
+            if (a && lista.contains(a)) lista.classList.add('con-sobre');
         });
-        lista.addEventListener('mouseleave', function () { sobre = null; ubicar(); });
-        // Un clic que lleva a una pagina del menu, este en el menu o en cualquier
-        // parte ("Ver vacantes" en la portada): la linea se va de una vez hasta
-        // ella. Gana el enlace identico ("Como funciona" lleva ancla) y si no,
+        lista.addEventListener('mouseleave', function () { lista.classList.remove('con-sobre'); });
+        // Un clic que lleva a una pagina del menu, este en el menu o en cualquier parte ("Ver vacantes" en la
+        // portada): el lente se va hasta ella. Gana el enlace identico ("Como funciona" lleva ancla) y si no,
         // el de la misma pagina sin ancla (una busqueda en Vacantes cuenta).
         document.addEventListener('click', function (e) {
             const a = e.target instanceof Element && e.target.closest('a[href]');
             if (!a || !vaAOtraPagina(e, a)) return;
-            const delMenu = Array.from(lista.querySelectorAll('a'));
-            const destino = delMenu.find(function (n) { return n.href === a.href; }) ||
-                delMenu.find(function (n) { return !n.hash && n.pathname === a.pathname; });
+            const lista2 = delMenu();
+            const destino = lista2.find(function (n) { return n.href === a.href; }) ||
+                lista2.find(function (n) { return !n.hash && n.pathname === a.pathname; });
             if (!destino) return;
-            const activo = lista.querySelector('a.active-nav, a.active');
-            // Con el mouse encima, la linea ya llego al enlace: nada que esperar
-            const sinViaje = linea.style.opacity !== '1' || (elegido || sobre || activo) === destino;
+            const antes = elegido || activo();
+            // Si el lente no se veia, aparece alla sin viajar: nada que esperar
+            const sinViaje = !lente.visible() || antes === destino;
             elegido = destino;
             ubicar();
-            anotarDireccion(a, delMenu.indexOf(activo), delMenu.indexOf(destino));
-            if (!sinViaje) irCuandoLlegue(e, a, linea);
+            anotarDireccion(a, lista2.indexOf(activo()), lista2.indexOf(destino));
+            if (!sinViaje) irCuandoLlegue(e, a, li);
         });
-        // Justo antes de la foto de salida: la linea, ya en su destino
-        window.addEventListener('pageswap', function () { linea.style.transition = 'none'; });
+        // Justo antes de la foto de salida: el lente, ya en su destino
+        window.addEventListener('pageswap', function () { lente.saltar(); });
         // Al volver con "atras" (la pagina sale tal cual de la memoria): a su sitio
         window.addEventListener('pageshow', function (e) {
             if (!e.persisted) return;
             elegido = null;
-            primera = true;
-            ubicar();
+            ubicar(true);
         });
-        document.addEventListener('skillmatch:menu', ubicar);
+        document.addEventListener('skillmatch:menu', function () { ubicar(); });
         let espera = 0;
-        window.addEventListener('resize', function () { clearTimeout(espera); espera = setTimeout(ubicar, 120); });
-        if (document.fonts && document.fonts.ready) document.fonts.ready.then(ubicar);
-        ubicar();
+        window.addEventListener('resize', function () { clearTimeout(espera); espera = setTimeout(function () { ubicar(true); }, 120); });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { ubicar(true); });
+        ubicar(true);
     }
 
     /* ---------- 28. Logos de las empresas ---------- */
@@ -3318,6 +4276,55 @@
         return logosPedidos.get(clave);
     };
 
+    /* ---------- «Monograma» (video de moxen.studio, pedido de Luis 2026-11-13) ----------
+       Los cuadritos con la inicial (empresas, personas, conversaciones...) eran todos el mismo turquesa:
+       "Hotel Puerta del Mar" y "Hotel Caribe" se veian iguales. Ahora cada nombre tiene su monograma:
+       dos colores y un patron sacados de una huella del nombre (siempre el mismo para el mismo nombre) y,
+       donde cabe, dos iniciales. Cada pagina solo pone data-monograma="<nombre>"; si llega el logo
+       (pintarLogos), el logo lo reemplaza. Los colores son oscuros a proposito: la letra blanca se lee
+       sobre todos (app.css, seccion 86). */
+    const PALETA_MONOGRAMA = [
+        ['#0B5F68', '#0E7C86'],   // turquesa hondo
+        ['#123A63', '#2A62CC'],   // azul de mar
+        ['#8C3A0A', '#C2570C'],   // naranja quemado (el del logo, oscuro para la letra blanca)
+        ['#4B2A7A', '#7046C2'],   // morado
+        ['#0B5A4A', '#13806A'],   // verde manglar
+        ['#7A1F4A', '#A8346A'],   // buganvilla
+        ['#24384F', '#3E5B7C']    // pizarra
+    ];
+    const FORMAS_MONOGRAMA = ['luz', 'anillos', 'rayas', 'puntos'];
+    const PALABRAS_MENORES = /^(de|del|la|las|el|los|y|e|en|s\.?a\.?s?\.?|ltda\.?|sas)$/i;
+    /** Una huella del nombre (FNV-1a): el mismo nombre, el mismo numero */
+    function huellaDe(texto) {
+        let h = 2166136261;
+        const limpio = String(texto).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+        for (let i = 0; i < limpio.length; i++) { h ^= limpio.charCodeAt(i); h = Math.imul(h, 16777619); }
+        return h >>> 0;
+    }
+    function inicialesDe(nombre) {
+        const palabras = String(nombre).split(/\s+/).filter(function (w) { return w && !PALABRAS_MENORES.test(w); });
+        return ((palabras[0] || '').charAt(0) + (palabras[1] || '').charAt(0)).toUpperCase() || '?';
+    }
+    function monograma(el) {
+        const nombre = (el.dataset.monograma || '').trim();
+        if (!nombre) return;
+        const h = huellaDe(nombre);
+        const par = PALETA_MONOGRAMA[h % PALETA_MONOGRAMA.length];
+        el.style.setProperty('--mono-a', par[0]);
+        el.style.setProperty('--mono-b', par[1]);
+        el.style.setProperty('--mono-giro', (110 + ((h >>> 16) % 6) * 15) + 'deg');
+        el.dataset.monoForma = FORMAS_MONOGRAMA[(h >>> 8) % FORMAS_MONOGRAMA.length];
+        el.classList.add('monograma');
+        // Dos iniciales si el cuadro solo traia su letra (sin logo, foto ni icono adentro) y es de 36 px o mas
+        if (!el.children.length && el.textContent.trim().length <= 2 && el.offsetWidth >= 36) el.textContent = inicialesDe(nombre);
+    }
+    function pintarMonogramas(raiz) {
+        if (!raiz || !raiz.querySelectorAll) return;
+        if (raiz.matches && raiz.matches('[data-monograma]')) monograma(raiz);
+        raiz.querySelectorAll('[data-monograma]').forEach(monograma);
+    }
+    UI.monograma = monograma;
+
     function pintarLogos(raiz) {
         if (!raiz.querySelectorAll) return;
         const cuadros = Array.from(raiz.querySelectorAll('[data-logo-empresa], [data-logo-cuenta]'));
@@ -3392,11 +4399,25 @@
         window.addEventListener('pageshow', function () { cerrar(false); });
     }
 
+    /* ---------- 30. Lo que no se ve no se mueve (revision 2026-11-13) ----------
+     * Los brillos que se mueven lento detras de la portada azul, del cierre y del pie
+     * (mesh-drift, las olas) son animaciones infinitas. Medido en Edge: quieta en el pie,
+     * la portada seguia moviendo los de arriba y gastaba ~0,9 s de trabajo cada 2 s.
+     * Ahora cada seccion pausa los suyos mientras no esta en pantalla (app.css seccion 60). */
+    function pausarFueraDeVista() {
+        if (!('IntersectionObserver' in window)) return;
+        const observador = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (e) { e.target.classList.toggle('fuera-de-vista', !e.isIntersecting); });
+        }, { rootMargin: '120px 0px' });
+        document.querySelectorAll('.hero, .cta-final, footer.pie, .panel-inicio').forEach(function (s) { observador.observe(s); });
+    }
+
     /* ---------- 9. Arranque ---------- */
 
     function iniciar() {
         avisoServidorDormido();
         construirPie();
+        pausarFueraDeVista();
         registrarApp();
         botonInstalar();
         hydrateIcons(document);
@@ -3404,25 +4425,30 @@
         // Primero la barra segun la sesion: para un visitante cambia enlaces (por
         // ejemplo "Mensajes" pasa a "Empresas") y despues se marca el actual
         sesionEnBarra();
-        menuDeCuenta();
         sinBotonDeEstaPagina();
         marcarNavegacionActiva();
+        iconosDeLaBarra();
         seccionEnMenu();
         lineaDelMenu();
         construirTabbar();
         actualizarNoLeidos();
         document.addEventListener('visibilitychange', function () { if (!document.hidden) actualizarNoLeidos(); });
         construirInterruptorTema();
+        menuDeCuenta();
         paletaDeComandos();
         tooltips();
         avisosPendientes();
         logoSegunTema(document.documentElement.getAttribute('data-theme'));
         barraAlHacerScroll();
+        barrasQueSeEsconden();
+        cristalQueRefracta();
+        vidrioSegunFondo();
         progresoDeNavegacion();
         movimientoDeEntrada();
         movimientoConMouse();
         hidratarLottie(document.body);
         pintarLogos(document.body);
+        pintarMonogramas(document.body);
         observadorNuevos.observe(document.body, { childList: true, subtree: true });
         modalesAccesibles();
         validacionVisible();

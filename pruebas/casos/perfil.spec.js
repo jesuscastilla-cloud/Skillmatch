@@ -58,16 +58,16 @@ test('un clic afuera cierra el menú, y en el perfil de otra persona no aparece 
 });
 
 test.describe('panel del perfil', () => {
-    test('arriba va la guía del progreso; postulaciones y guardadas se cuentan una sola vez, en su tarjeta', async ({ page, context, api }) => {
+    test('las cifras de arriba resumen el perfil: progreso, postulaciones, guardadas y habilidades', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('perfil-usuario.html');
-        await expect(page.locator('#userSkills .skill-tag')).toHaveCount(3);
-        await expect(page.locator('#savedJobsCount')).toHaveText('(1)');
-        // Las postulaciones se cuentan igual que en el resumen de la tarjeta
+        await expect(page.locator('#cifraHabilidades')).toHaveText('3');
+        await expect(page.locator('#cifraGuardadas')).toHaveText('1');
+        // Las postulaciones se cuentan igual que en la tarjeta "Tus postulaciones"
         const enviadas = page.locator('#interestedCompanies .apps-summary strong').first();
         await expect(enviadas).toBeVisible();
-        await expect(page.locator('#applicationsCount')).toHaveText('(' + (await enviadas.textContent()) + ')');
-        await expect(page.locator('#cifraHabilidades, #cifraGuardadas, #cifraPostulaciones')).toHaveCount(0);
+        await expect(page.locator('#cifraPostulaciones')).toHaveText(await enviadas.textContent());
+        await expect(page.locator('#cifraPostulacionesNota')).toContainText('en proceso');
         // Sin experiencia ni estudios: 60 %, y lo que falta como acciones
         await expect(page.locator('#progressPercentage')).toHaveText('60');
         await expect(page.locator('#profileProgress')).toHaveAttribute('stroke-dasharray', '60 100');
@@ -76,7 +76,7 @@ test.describe('panel del perfil', () => {
         await expect(page.locator('#addEducationModal')).toBeVisible();
         await page.locator('#addEducationModal .btn-close-modal').click();
         await expect(page.locator('#addEducationModal')).toBeHidden();
-        await page.locator('#addSkillBtn').click();
+        await page.locator('#cifraAgregarHabilidad').click();
         await expect(page.locator('#addSkillModal')).toBeVisible();
     });
 
@@ -158,10 +158,11 @@ test.describe('vidrio', () => {
     test('tarjetas de vidrio de tinte (sin desenfoque, sobre las manchas no se nota) y vidrio real en la barra y el menú "Más"', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('perfil-usuario.html');
-        await expect(page.locator('#userSkills .skill-tag')).toHaveCount(3);
+        await expect(page.locator('#cifraHabilidades')).toHaveText('3');
         const filtro = s => page.locator(s).first().evaluate(el => getComputedStyle(el).backdropFilter);
         for (const s of ['.profile-header-card', '.perfil-cifra', '.profile-section', '#applicationsCard']) expect(await filtro(s), s).toBe('none');
-        expect(await filtro('body > header')).toContain('blur');
+        // La barra desenfoca: con blur() o, con la refraccion (2026-11-13), dentro de su filtro SVG (url(#...))
+        expect(await filtro('body > header')).toMatch(/blur|url\(/);
         await page.locator('#perfilMasBtn').click();
         await expect(page.locator('#perfilMasMenu')).toBeVisible();
         expect(await filtro('#perfilMasMenu')).toContain('blur');

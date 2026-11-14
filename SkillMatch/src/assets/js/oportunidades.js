@@ -23,6 +23,10 @@ let vacanteAbierta = null;   // la del detalle o la de la postulación
 // sabe (sin sesion, empresa o fallo la carga): entonces no se muestra %.
 let userSkills = null;
 let nombresHabilidades = []; // como las escribio la persona (para mostrarlas)
+// «Vacante»: habilidades sumadas de prueba (clave normalizada -> nombre; no se guardan) y la que se dejo
+// resaltada en las ofertas (clave normalizada o null)
+let habilidadesDePrueba = new Map();
+let resaltada = null;
 let userSkillsReady = Promise.resolve();
 
 function debounce(fn, delay) {
@@ -45,6 +49,12 @@ function esEmpresa() {
 function avisar(texto, tipo) {
     if (window.SkillMatchUI) SkillMatchUI.aviso(texto, tipo);
     else alert(texto.replace(/<[^>]+>/g, ''));
+}
+
+// Sin sesion: ventana con "Entrar" y "Crear mi perfil" que recuerdan a donde volver (ui.js)
+function pedirCuenta(titulo, texto, volver) {
+    if (window.SkillMatchUI && SkillMatchUI.pedirCuenta) SkillMatchUI.pedirCuenta({ titulo, texto, volver });
+    else irAlLogin(volver);
 }
 
 // Cargar oportunidades al iniciar
@@ -80,6 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     loadJobs();
     setupEventListeners();
+    prepararHojaDeFiltros();
     updateFilterBadges();
 
     // Un aviso, la portada, la paleta o un enlace compartido traen ?jobId=: se
@@ -88,10 +99,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // recargar un detalle (ya tiene su paso en el historial) solo se abre.
     vigilarVentanasEnHistorial();
     const pedida = new URLSearchParams(window.location.search).get('jobId');
+    // Al volver del login con ?accion=postular (ver postularme), se abre la postulacion sola
+    const accion = new URLSearchParams(window.location.search).get('accion');
+    if (accion) {
+        const sinAccion = new URL(window.location.href);
+        sinAccion.searchParams.delete('accion');
+        history.replaceState(history.state, '', sinAccion);
+    }
     if (pedida) {
         const recarga = history.state && history.state.vacante === String(pedida);
         if (!recarga) history.replaceState(null, '', direccionConVacante(null));
-        abrirDetallePorId(pedida, { sinHistorial: recarga });
+        abrirDetallePorId(pedida, { sinHistorial: recarga }).then(async () => {
+            if (accion !== 'postular' || !sesion() || esEmpresa()) return;
+            await userSkillsReady; // asi ya se sabe si se habia postulado
+            if (appliedJobIds.has(String(pedida))) avisar('Ya te habías postulado a esta vacante.', 'info');
+            else postularme(pedida);
+        });
     }
 });
 
@@ -275,11 +298,12 @@ function uniqueJobSkills(job) {
 }
 
 // Compatibilidad real: que parte de las habilidades que pide la vacante tienes.
-function getSkillMatch(job) {
+// soloTuyas: sin las sumadas de prueba (el detalle habla solo de tu perfil de verdad)
+function getSkillMatch(job, soloTuyas) {
     const pedidas = uniqueJobSkills(job);
     // Sin habilidades tuyas todo daria 0 %: no se muestra (sale el aviso)
     if (!userSkills || userSkills.size === 0 || pedidas.size === 0) return null;
-    const tiene = [...pedidas.keys()].filter(s => userSkills.has(s)).length;
+    const tiene = [...pedidas.keys()].filter(s => soloTuyas ? userSkills.has(s) : tieneHabilidad(s)).length;
     return { pct: Math.round(tiene / pedidas.size * 100), tiene, pedidas: pedidas.size };
 }
 
@@ -320,22 +344,281 @@ function matchHint() {
     if (datos.userType !== 'empresa' && userSkills && userSkills.size === 0) {
         return '<p class="recommend-hint"><i data-ico="bulb"></i> <span><a href="perfil-usuario.html">Agrega tus habilidades</a> y te mostramos qué tanto encajas con cada vacante.</span></p>';
     }
-    if (datos.userType !== 'empresa' && userSkills && userSkills.size) return resumenDelMatch();
+    if (datos.userType !== 'empresa' && userSkills && userSkills.size) return panelPerfil();
     return '';
 }
 
-// "Mostrar el trabajo": que se comparo y que salio, con cifras reales (la gente
-// confia mas cuando ve lo que hizo el sistema). Nada de esperas ni barras falsas.
-function resumenDelMatch() {
-    const n = nombresHabilidades.length;
-    const nombres = nombresHabilidades.slice(0, 3).map(escaparHtml);
-    const lista = nombres.length > 1 ? `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}` : nombres[0];
-    const resto = n > 3 ? ` y ${n - 3} más` : '';
+// "Mostrar el trabajo" (que se comparo y que salio, con cifras reales) ahora vive en el panel «Vacante»
+// ---- «Vacante» (idea del video de moxen.studio, 2026-11-13): tu perfil frente a las vacantes ----
+// 1. Un panel arriba de la lista con tus habilidades: cada una dice en cuantas de las vacantes que ves
+//    aparece. Al pasar el mouse (o tocarla) se resalta en todas las ofertas que la piden: en su etiqueta
+//    y en las palabras del titulo y la descripcion. Y al pasar por una oferta se encienden en el panel las
+//    habilidades tuyas que pide: "subraya en ambos lados las palabras que comparten".
+// 2. "¿Y si aprendes...?": las habilidades mas pedidas que te faltan. Al tocar una se suma DE PRUEBA (no se
+//    guarda en tu perfil): los porcentajes se recalculan y la lista se reordena en vivo.
+// 3. La lista se reordena con animacion (FLIP: cada tarjeta se desliza desde donde estaba; solo transform).
+
+/** Si tienes esa habilidad (clave normalizada): en tu perfil o sumada de prueba */
+function tieneHabilidad(clave) {
+    return !!((userSkills && userSkills.has(clave)) || habilidadesDePrueba.has(clave));
+}
+
+/** Texto escapado con las habilidades que tienes marcadas (<mark>), sin importar mayusculas ni tildes.
+ *  Solo palabras completas: "Java" no se marca dentro de "JavaScript" */
+function marcarCoincidencias(texto) {
+    const crudo = String(texto || '');
+    const claves = [...(userSkills || []), ...habilidadesDePrueba.keys()].filter(k => k && k.length >= 3);
+    if (!claves.length) return escaparHtml(crudo);
+    // Una version normalizada letra por letra, para saber donde cae cada hallazgo en el texto original
+    const normal = [...crudo].map(c => normalizeStr(c) || ' ').map(c => c.charAt(0)).join('');
+    const esLetra = c => /[\p{L}\p{N}]/u.test(c || '');
+    const tramos = [];
+    claves.forEach(clave => {
+        let desde = 0, i;
+        while ((i = normal.indexOf(clave, desde)) !== -1) {
+            const fin = i + clave.length;
+            if (!esLetra(normal[i - 1]) && !esLetra(normal[fin]) && !tramos.some(t => i < t.fin && fin > t.ini)) {
+                tramos.push({ ini: i, fin, clave });
+            }
+            desde = fin;
+        }
+    });
+    if (!tramos.length) return escaparHtml(crudo);
+    tramos.sort((a, b) => a.ini - b.ini);
+    const letras = [...crudo];
+    let html = '', pos = 0;
+    tramos.forEach(t => {
+        html += escaparHtml(letras.slice(pos, t.ini).join(''));
+        html += `<mark class="coincide" data-habilidad="${escaparHtml(t.clave)}">${escaparHtml(letras.slice(t.ini, t.fin).join(''))}</mark>`;
+        pos = t.fin;
+    });
+    return html + escaparHtml(letras.slice(pos).join(''));
+}
+
+/** El panel: tus habilidades (con en cuantas vacantes aparecen) y las mas pedidas que te faltan */
+function panelPerfil() {
+    const cuenta = new Map();     // clave -> en cuantas de las que ves aparece
+    const nombres = new Map();    // clave -> como se escribe
+    shownJobs.forEach(job => uniqueJobSkills(job).forEach((nombre, clave) => {
+        cuenta.set(clave, (cuenta.get(clave) || 0) + 1);
+        if (!nombres.has(clave)) nombres.set(clave, nombre);
+    }));
+    const tuyas = nombresHabilidades.map(n => ({ nombre: n, clave: normalizeStr(n).trim() }))
+        .filter((h, i, todas) => h.clave && todas.findIndex(x => x.clave === h.clave) === i)
+        .sort((a, b) => (cuenta.get(b.clave) || 0) - (cuenta.get(a.clave) || 0));
+    // Las que te faltan, de la mas pedida a la menos (y las que estas probando, siempre)
+    const faltan = [...cuenta.keys()]
+        .filter(k => !(userSkills && userSkills.has(k)))
+        .sort((a, b) => (habilidadesDePrueba.has(b) - habilidadesDePrueba.has(a)) || (cuenta.get(b) - cuenta.get(a)))
+        .slice(0, Math.max(4, habilidadesDePrueba.size));
     const vistas = shownJobs.length;
     const conAlguna = shownJobs.filter(j => { const m = getSkillMatch(j); return m && m.tiene > 0; }).length;
     const orden = document.getElementById('sortSelect')?.value === 'match' ? ' Las que más encajan van primero.' : '';
-    return `<p class="match-resumen"><i data-ico="target"></i> <span>Comparamos ${n === 1 ? 'tu habilidad' : `tus ${n} habilidades`} (${lista}${resto}) con cada vacante.
-        De ${vistas === 1 ? 'la que ves' : `las ${vistas.toLocaleString('es-CO')} que ves`}, <strong>${conAlguna.toLocaleString('es-CO')}</strong> ${conAlguna === 1 ? 'pide' : 'piden'} alguna.${orden}</span></p>`;
+    const veces = n => `${n} ${n === 1 ? 'vacante' : 'vacantes'}`;
+    const chipTuya = h => {
+        const n = cuenta.get(h.clave) || 0;
+        return `<button type="button" class="chip-habilidad es-tuya${n ? '' : ' sin-vacantes'}" data-habilidad="${escaparHtml(h.clave)}" aria-pressed="${resaltada === h.clave}"
+            aria-label="${escaparHtml(h.nombre)}: la piden ${veces(n)} de las que ves. Resaltarla en las ofertas">${escaparHtml(h.nombre)}<span class="chip-cuenta" aria-hidden="true">${n}</span></button>`;
+    };
+    const chipPrueba = k => {
+        const activa = habilidadesDePrueba.has(k);
+        const nombre = nombres.get(k) || habilidadesDePrueba.get(k) || k;
+        return `<button type="button" class="chip-habilidad es-prueba${activa ? ' activa' : ''}" data-probar="${escaparHtml(k)}" aria-pressed="${activa}"
+            aria-label="${activa ? 'Quitar' : 'Probar con'} ${escaparHtml(nombre)} (la piden ${veces(cuenta.get(k) || 0)})"><i data-ico="${activa ? 'check' : 'plus'}"></i>${escaparHtml(nombre)}<span class="chip-cuenta" aria-hidden="true">${cuenta.get(k) || 0}</span></button>`;
+    };
+    return `<section class="perfil-frente" aria-label="Tu perfil frente a estas vacantes">
+        <p class="perfil-frente-resumen"><i data-ico="target"></i> <span><strong>Tu perfil frente a estas vacantes.</strong>
+            De ${vistas === 1 ? 'la que ves' : `las ${vistas.toLocaleString('es-CO')} que ves`}, <strong>${conAlguna.toLocaleString('es-CO')}</strong> ${conAlguna === 1 ? 'pide' : 'piden'} alguna de tus habilidades.${orden}</span></p>
+        <div class="perfil-frente-fila">
+            <p class="perfil-frente-titulo" id="tusHabilidadesTitulo">Tus habilidades</p>
+            <div class="perfil-frente-chips" role="group" aria-labelledby="tusHabilidadesTitulo">${tuyas.map(chipTuya).join('')}</div>
+        </div>
+        ${faltan.length ? `<div class="perfil-frente-fila">
+            <p class="perfil-frente-titulo" id="probarTitulo">¿Y si aprendes…? <span>Las más pedidas que te faltan</span></p>
+            <div class="perfil-frente-chips" role="group" aria-labelledby="probarTitulo">${faltan.map(chipPrueba).join('')}</div>
+        </div>` : ''}
+        ${habilidadesDePrueba.size ? `<p class="perfil-frente-nota" role="status">Las habilidades de prueba no se guardan. ¿Ya sabes alguna? <a href="perfil-usuario.html">Agrégala a tu perfil</a>.</p>` : ''}
+    </section>`;
+}
+
+/** Resalta una habilidad en las ofertas (null = ninguna). Las tarjetas que no la piden se apagan un poco */
+function aplicarResalte(clave) {
+    const lista = document.querySelector('.opportunities-list');
+    if (!lista) return;
+    lista.querySelectorAll('.resaltada').forEach(el => el.classList.remove('resaltada'));
+    lista.classList.toggle('con-resalte', !!clave);
+    lista.querySelectorAll('.opportunity-card').forEach(c => c.classList.remove('la-pide'));
+    if (!clave) return;
+    const sel = `[data-habilidad="${CSS.escape(clave)}"]`;
+    lista.querySelectorAll(`.opportunity-card ${sel}`).forEach(el => {
+        el.classList.add('resaltada');
+        el.closest('.opportunity-card')?.classList.add('la-pide');
+    });
+    // Tambien las que la piden pero no la muestran (solo caben 4 etiquetas)
+    lista.querySelectorAll('.opportunity-card[data-job-id]').forEach(c => {
+        const job = shownJobs.find(j => String(j.id) === c.dataset.jobId);
+        if (job && uniqueJobSkills(job).has(clave)) c.classList.add('la-pide');
+    });
+    lista.querySelectorAll(`.chip-habilidad${sel}`).forEach(el => el.classList.add('resaltada'));
+}
+
+/** Los oyentes del panel y de las tarjetas (una sola vez: la lista se vuelve a pintar, ellos quedan) */
+function prepararPanelPerfil() {
+    const lista = document.querySelector('.opportunities-list');
+    if (!lista || lista.dataset.panelListo) return;
+    lista.dataset.panelListo = '1';
+    const conMouse = window.matchMedia('(hover: hover) and (pointer: fine)');
+    lista.addEventListener('click', e => {
+        const tuya = e.target.closest('.chip-habilidad.es-tuya');
+        if (tuya) {
+            // Tocarla la deja resaltada (en el celular no hay mouse que pase por encima); otra vez, la suelta
+            resaltada = resaltada === tuya.dataset.habilidad ? null : tuya.dataset.habilidad;
+            lista.querySelectorAll('.chip-habilidad.es-tuya').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.habilidad === resaltada)));
+            aplicarResalte(resaltada);
+            return;
+        }
+        const probar = e.target.closest('.chip-habilidad.es-prueba');
+        if (probar) {
+            const k = probar.dataset.probar;
+            if (habilidadesDePrueba.has(k)) habilidadesDePrueba.delete(k);
+            else {
+                const job = shownJobs.find(j => uniqueJobSkills(j).has(k));
+                habilidadesDePrueba.set(k, job ? uniqueJobSkills(job).get(k) : k);
+            }
+            actualizarEnSitio();
+            // El foco vuelve al mismo boton (el panel se pinto de nuevo)
+            lista.querySelector(`.chip-habilidad.es-prueba[data-probar="${CSS.escape(k)}"]`)?.focus({ preventScroll: true });
+        }
+    });
+    // Pasar el mouse o llegar con el teclado a una habilidad: vista previa del resalte
+    const previa = e => {
+        const tuya = e.target.closest?.('.chip-habilidad.es-tuya');
+        if (tuya) aplicarResalte(tuya.dataset.habilidad);
+    };
+    const soltarPrevia = e => {
+        if (e.target.closest?.('.chip-habilidad.es-tuya')) aplicarResalte(resaltada);
+    };
+    lista.addEventListener('focusin', previa);
+    lista.addEventListener('focusout', soltarPrevia);
+    lista.addEventListener('mouseover', e => { if (conMouse.matches) previa(e); });
+    lista.addEventListener('mouseout', e => { if (conMouse.matches) soltarPrevia(e); });
+    // Pasar por una oferta: en el panel se encienden tus habilidades que pide
+    let tarjeta = null;
+    lista.addEventListener('mouseover', e => {
+        if (!conMouse.matches) return;
+        const c = e.target.closest('.opportunity-card[data-job-id]');
+        if (c === tarjeta) return;
+        tarjeta = c;
+        lista.querySelectorAll('.chip-habilidad.en-oferta').forEach(x => x.classList.remove('en-oferta'));
+        if (!c) return;
+        const job = shownJobs.find(j => String(j.id) === c.dataset.jobId);
+        if (!job) return;
+        uniqueJobSkills(job).forEach((_, k) => {
+            lista.querySelectorAll(`.chip-habilidad[data-habilidad="${CSS.escape(k)}"], .chip-habilidad[data-probar="${CSS.escape(k)}"]`)
+                .forEach(x => x.classList.add('en-oferta'));
+        });
+    });
+    lista.addEventListener('mouseleave', () => {
+        tarjeta = null;
+        lista.querySelectorAll('.chip-habilidad.en-oferta').forEach(x => x.classList.remove('en-oferta'));
+    });
+}
+
+/** Cambio el orden o una habilidad de prueba: las mismas vacantes. En vez de construir la lista de nuevo
+ *  (medido: cada vez dejaba un cuadro de 70 a 125 ms, porque volvian a nacer las tarjetas con sus iconos,
+ *  anillos, logos y su entrada), se actualizan las tarjetas que ya estan y se mueven a su nuevo lugar */
+function actualizarEnSitio() {
+    const container = document.querySelector('.opportunities-list');
+    if (!container) return;
+    const tarjetas = new Map([...container.querySelectorAll('.opportunity-card[data-job-id]')].map(c => [c.dataset.jobId, c]));
+    const nueva = sortList(shownJobs);
+    if (tarjetas.size !== nueva.length || nueva.some(j => !tarjetas.has(String(j.id)))) { displayJobs(shownJobs); return; }
+    shownJobs = nueva;
+    pintarConAnimacion(container, () => {
+        const molde = document.createElement('div');
+        molde.innerHTML = matchHint();
+        const panel = container.querySelector('.perfil-frente, .match-resumen, .recommend-hint');
+        if (panel && molde.firstElementChild) panel.replaceWith(molde.firstElementChild);
+        // Solo se mueven las que cambian de lugar (medido: mover las 9 recalculaba los estilos de todas)
+        let actual = container.querySelector('.opportunity-card[data-job-id]');
+        nueva.forEach(job => {
+            const c = tarjetas.get(String(job.id));
+            actualizarTarjeta(c, job);
+            if (c === actual) actual = siguienteTarjeta(c);
+            else container.insertBefore(c, actual || container.querySelector('.cargar-mas'));
+        });
+    });
+    aplicarResalte(resaltada);
+}
+
+function siguienteTarjeta(c) {
+    let n = c.nextElementSibling;
+    while (n && !n.matches('.opportunity-card[data-job-id]')) n = n.nextElementSibling;
+    return n;
+}
+
+/** Lo que cambia en una tarjeta con tus habilidades: subrayados, etiquetas y el anillo. Solo se reescribe
+ *  lo que de verdad cambio (cada cambio en la pagina cuesta recalcular estilos) */
+function actualizarTarjeta(c, job) {
+    const poner = (el, html) => {
+        if (!el) return;
+        if (el.dataset.html === html) return;
+        el.innerHTML = html;
+        el.dataset.html = html;
+    };
+    poner(c.querySelector('.job-title-link'), marcarCoincidencias(job.title));
+    poner(c.querySelector('.card-description'), marcarCoincidencias(truncateText(job.description, 150)));
+    poner(c.querySelector('.card-skills'), etiquetasHabilidades(job, 4));
+    const viejo = c.querySelector('.match-ring');
+    const m = getSkillMatch(job);
+    if (!m) { if (viejo) viejo.remove(); return; }
+    if (!viejo) { c.querySelector('.card-header-opp')?.insertAdjacentHTML('beforeend', anilloCompatibilidad(job)); return; }
+    const antes = parseInt(viejo.dataset.pct, 10) || 0;
+    if (antes === m.pct) return;
+    const texto = `Tienes ${m.tiene} de ${m.pedidas} habilidades que pide`;
+    viejo.dataset.pct = m.pct;
+    viejo.title = texto;
+    viejo.setAttribute('aria-label', `${m.pct} por ciento: ${texto.charAt(0).toLowerCase() + texto.slice(1)}`);
+    viejo.setAttribute('data-level', m.pct >= 80 ? 'alto' : (m.pct >= 55 ? 'medio' : 'bajo'));
+    // El anillo cambia de una vez y da un pulso corto (solo transform). Antes contaba de un % al otro
+    // reescribiendo --pct en cada cuadro: eso recalculaba estilos todo el tiempo mientras la lista se movia
+    viejo.style.setProperty('--pct', m.pct);
+    const cifra = viejo.querySelector('span');
+    if (cifra) cifra.textContent = m.pct + '%';
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && viejo.animate) {
+        viejo.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.14)', offset: .4 }, { transform: 'scale(1)' }],
+            { duration: 280, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+    }
+}
+
+/** Pinta la lista de nuevo y, si ya habia tarjetas, cada una se desliza desde donde estaba (FLIP:
+ *  se mide antes, se pinta, se mide despues y se anima la diferencia con transform). Las que llegan
+ *  nuevas aparecen suaves, en fila corta. Solo las que se ven: las de mas abajo cambian sin animar. */
+function pintarConAnimacion(container, pintar) {
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const antes = new Map();
+    if (!quieto) container.querySelectorAll('.opportunity-card[data-job-id]').forEach(c => antes.set(c.dataset.jobId, c.getBoundingClientRect()));
+    pintar();
+    if (quieto || !antes.size || !Element.prototype.animate) return;
+    const alto = window.innerHeight;
+    const seVe = r => r.bottom > -100 && r.top < alto + 100;
+    let nuevas = 0;
+    container.querySelectorAll('.opportunity-card[data-job-id]').forEach(c => {
+        const r1 = c.getBoundingClientRect();
+        const r0 = antes.get(c.dataset.jobId);
+        if (r0) {
+            const dy = r0.top - r1.top;
+            if (Math.abs(dy) < 1 || (!seVe(r0) && !seVe(r1))) return;
+            // Desde lejos (fuera de la pantalla) no cruza todo: entra desde un poco mas alla del borde
+            const limite = alto * 0.6;
+            const desde = Math.max(-limite, Math.min(limite, dy));
+            c.animate([{ transform: `translateY(${desde}px)` }, { transform: 'none' }],
+                { duration: 380, easing: 'cubic-bezier(.32, .72, 0, 1)' });
+        } else if (seVe(r1)) {
+            c.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
+                { duration: 240, delay: Math.min(nuevas++, 4) * 40, easing: 'cubic-bezier(.23, 1, .32, 1)', fill: 'backwards' });
+        }
+    });
 }
 
 function hayFiltros() {
@@ -355,9 +638,6 @@ function bloqueCargarMas() {
 // Mostrar trabajos en el DOM
 function displayJobs(jobs) {
     const container = document.querySelector('.opportunities-list');
-    // "Vista de ejemplo": si hay vacantes de muestra en la lista, la pagina lo dice arriba
-    const aviso = document.getElementById('vacantesEjemplo');
-    if (aviso && window.SkillMatchUI) aviso.hidden = !(jobs || []).some(j => SkillMatchUI.esEjemplo(j.companyName));
 
     if (!jobs || jobs.length === 0) {
         shownJobs = [];
@@ -402,12 +682,19 @@ function displayJobs(jobs) {
 
     // Siempre en el orden elegido (antes los filtros y la busqueda lo ignoraban)
     shownJobs = sortList(jobs);
-    container.innerHTML = matchHint() + shownJobs.map(job => createJobCard(job)).join('') + bloqueCargarMas();
+    // Si ya habia tarjetas, cada una se desliza a su nuevo lugar («Vacante»)
+    pintarConAnimacion(container, () => {
+        container.innerHTML = matchHint() + shownJobs.map(job => createJobCard(job)).join('') + bloqueCargarMas();
+    });
+    prepararPanelPerfil();
+    aplicarResalte(resaltada);
     updateResultsCount(jobs.length);
 }
 
 function textoSalario(job) {
-    return job.salaryMin && job.salaryMax
+    // Si el minimo y el maximo son iguales, un solo valor (antes "$1.423.500 - $1.423.500")
+    return job.salaryMin && job.salaryMax && Number(job.salaryMin) === Number(job.salaryMax) ? formatCurrency(job.salaryMin)
+        : job.salaryMin && job.salaryMax
         ? `${formatCurrency(job.salaryMin)} - ${formatCurrency(job.salaryMax)}`
         : job.salaryMin ? `Desde ${formatCurrency(job.salaryMin)}`
         : job.salaryMax ? `Hasta ${formatCurrency(job.salaryMax)}`
@@ -418,19 +705,20 @@ function textoSalario(job) {
 // palomita (asi se ve de donde sale el %)
 function etiquetasHabilidades(job, maximo) {
     const pedidas = uniqueJobSkills(job);
-    const tuyas = [...pedidas.keys()].filter(k => userSkills && userSkills.has(k));
+    const tuyas = [...pedidas.keys()].filter(k => tieneHabilidad(k));
     const orden = [...tuyas, ...[...pedidas.keys()].filter(k => !tuyas.includes(k))];
     if (!orden.length) return '<span class="skill">Sin especificar</span>';
     const visibles = maximo ? orden.slice(0, maximo) : orden;
+    // data-habilidad: el panel «Vacante» la resalta desde aqui. Las sumadas de prueba van punteadas
     return visibles.map(k => tuyas.includes(k)
-        ? `<span class="skill is-common"><i data-ico="check"></i>${escaparHtml(pedidas.get(k))}</span>`
-        : `<span class="skill">${escaparHtml(pedidas.get(k))}</span>`).join('') +
+        ? `<span class="skill is-common${habilidadesDePrueba.has(k) && !(userSkills && userSkills.has(k)) ? ' is-prueba' : ''}" data-habilidad="${escaparHtml(k)}"><i data-ico="check"></i>${escaparHtml(pedidas.get(k))}</span>`
+        : `<span class="skill" data-habilidad="${escaparHtml(k)}">${escaparHtml(pedidas.get(k))}</span>`).join('') +
         (maximo && orden.length > maximo ? `<span class="skill skill-mas">+${orden.length - maximo}</span>` : '');
 }
 
-function anilloCompatibilidad(job) {
+function anilloCompatibilidad(job, soloTuyas) {
     // Sin habilidades tuyas o de la vacante no hay con que comparar: sin anillo
-    const match = getSkillMatch(job);
+    const match = getSkillMatch(job, soloTuyas);
     return match
         ? `<div class="match-ring" data-pct="${match.pct}" role="img"
                 title="Tienes ${match.tiene} de ${match.pedidas} habilidades que pide"
@@ -463,14 +751,10 @@ function vacanteCerrada(job) {
 // Nombre de la empresa como enlace a su perfil publico (empresa.html). Antes
 // era solo texto y no habia donde conocer a la empresa antes de postularse
 function enlaceEmpresa(job) {
-    // Empresa de muestra: el nombre sin "(ejemplo)" y la etiqueta "Ejemplo" al lado
-    const ui = window.SkillMatchUI;
-    const ejemplo = !!(ui && ui.esEjemplo(job.companyName));
-    const nombre = escaparHtml((ui ? ui.sinEjemplo(job.companyName) : job.companyName) || 'Empresa confidencial');
-    const etiqueta = ejemplo ? ' ' + ui.etiquetaEjemplo() : '';
+    const nombre = escaparHtml(job.companyName || 'Empresa confidencial');
     return job.companyId && job.companyName
-        ? `<a class="enlace-empresa" href="empresa.html?id=${encodeURIComponent(job.companyId)}">${nombre}</a>${etiqueta}`
-        : nombre + etiqueta;
+        ? `<a class="enlace-empresa" href="empresa.html?id=${encodeURIComponent(job.companyId)}">${nombre}</a>`
+        : nombre;
 }
 
 // "Nueva" (publicada en los ultimos 3 dias) y "Cierra en N dias" (cierra en una
@@ -502,9 +786,9 @@ function createJobCard(job) {
     return `
         <div class="opportunity-card" data-job-id="${id}">
             <div class="card-header-opp">
-                <div class="company-logo-opp"${job.companyId ? ` data-logo-empresa="${escaparHtml(String(job.companyId))}"` : ''}>${job.companyName ? escaparHtml(job.companyName.charAt(0)) : '<i data-ico="building"></i>'}</div>
+                <div class="company-logo-opp" data-monograma="${escaparHtml(job.companyName || '')}"${job.companyId ? ` data-logo-empresa="${escaparHtml(String(job.companyId))}"` : ''}>${job.companyName ? escaparHtml(job.companyName.charAt(0)) : '<i data-ico="building"></i>'}</div>
                 <div class="card-info">
-                    <h3 class="job-title"><button type="button" class="job-title-link" data-job-id="${id}" onclick="abrirDetallePorId(this.dataset.jobId)">${escaparHtml(job.title)}</button></h3>
+                    <h3 class="job-title"><button type="button" class="job-title-link" data-job-id="${id}" onclick="abrirDetallePorId(this.dataset.jobId)">${marcarCoincidencias(job.title)}</button></h3>
                     <p class="company-name">${enlaceEmpresa(job)}</p>
                     ${etiquetasVacante(job)}
                 </div>
@@ -519,7 +803,7 @@ function createJobCard(job) {
                 <span class="meta-item"><i data-ico="money"></i> ${textoSalario(job)}</span>
             </div>
 
-            <p class="card-description">${escaparHtml(truncateText(job.description, 150))}</p>
+            <p class="card-description">${marcarCoincidencias(truncateText(job.description, 150))}</p>
 
             <div class="card-skills">
                 ${etiquetasHabilidades(job, 4)}
@@ -581,7 +865,7 @@ function porQueEsteMatch(job) {
 function abrirDetalle(job, { sinHistorial = false } = {}) {
     vacanteAbierta = job;
     const modal = document.getElementById('jobDetailModal');
-    const match = getSkillMatch(job);
+    const match = getSkillMatch(job, true);
     const publicada = formatDate(job.postedDate);
     const fechaLimite = job.expirationDate
         ? new Date(job.expirationDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -590,7 +874,7 @@ function abrirDetalle(job, { sinHistorial = false } = {}) {
     document.getElementById('jobDetailTitle').textContent = job.title || 'Vacante';
     document.getElementById('jobDetailCompany').innerHTML = enlaceEmpresa(job);
     document.getElementById('jobDetailBody').innerHTML = `
-        ${match ? `<div class="detalle-match">${anilloCompatibilidad(job)}<p>Tienes <strong>${match.tiene} de ${match.pedidas}</strong> habilidades que pide esta vacante.</p></div>` : ''}
+        ${match ? `<div class="detalle-match">${anilloCompatibilidad(job, true)}<p>Tienes <strong>${match.tiene} de ${match.pedidas}</strong> habilidades que pide esta vacante.</p></div>` : ''}
         <ul class="detalle-datos">
             <li><i data-ico="pin"></i> ${escaparHtml(job.location || 'Sin ciudad')}</li>
             <li><i data-ico="briefcase"></i> ${translateJobType(job.type)}</li>
@@ -645,8 +929,11 @@ function repintar() {
 function postularme(jobId) {
     const datos = sesion();
     if (!datos) {
-        avisar('Inicia sesión para postularte a esta vacante.', 'info');
-        setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+        // Se pregunta (entrar o crear perfil) y, al entrar, vuelve aqui con la postulacion abierta
+        const vacante = allJobs.find(j => String(j.id) === String(jobId)) || vacanteAbierta;
+        pedirCuenta('Inicia sesión para postularte',
+            `Para postularte${vacante && vacante.title ? ' a ' + vacante.title : ''}, entra con tu cuenta o crea tu perfil: es gratis y al terminar vuelves a esta vacante.`,
+            `oportunidades.html?jobId=${encodeURIComponent(jobId)}&accion=postular`);
         return;
     }
     if (datos.userType === 'empresa') {
@@ -682,8 +969,12 @@ async function enviarPostulacion() {
     const carta = document.getElementById('coverLetter').value.trim();
     const boton = document.getElementById('sendApplicationBtn');
     const error = document.getElementById('applyError');
+    // «Pastilla»: el boton dice que esta pasando (un circulo que gira mientras se envia y "✓ Enviada" al
+    // llegar) sin cambiar de tamano: se fija el ancho que tenia
+    boton.style.width = boton.offsetWidth + 'px';
     boton.disabled = true;
-    boton.textContent = 'Enviando…';
+    boton.classList.add('enviando');
+    boton.innerHTML = '<span class="boton-giro" aria-hidden="true"></span>Enviando…';
     error.hidden = true;
 
     try {
@@ -705,14 +996,118 @@ async function enviarPostulacion() {
             throw new Error(mensaje || 'El servidor no aceptó la postulación.');
         }
         appliedJobIds.add(String(job.id));
+        // Medio segundo con "✓ Enviada" en el mismo boton, y despues se cierra la ventana
+        boton.classList.remove('enviando');
+        boton.classList.add('listo');
+        boton.innerHTML = '<i data-ico="check"></i> Enviada';
+        await new Promise(r => setTimeout(r, 550));
         cerrarVentana('applyModal');
+        boton.classList.remove('listo');
+        boton.disabled = false;
+        boton.style.width = '';
+        boton.textContent = 'Enviar postulación';
         repintar();
+        // El momento del match: la chispa sale del "Ya te postulaste" de su tarjeta (ui.js)
+        const sello = document.querySelector(`.opportunity-card[data-job-id="${CSS.escape(String(job.id))}"] .btn-apply.applied`);
+        if (sello && window.SkillMatchUI && SkillMatchUI.chispa) {
+            sello.classList.add('recien-postulado');
+            setTimeout(() => SkillMatchUI.chispa(sello), 120);
+        }
         avisar(`Postulación enviada a <strong>${escaparHtml(job.companyName || 'la empresa')}</strong>. Puedes seguirla en tu perfil.`, 'ok');
     } catch (e) {
         error.textContent = 'No se pudo enviar la postulación: ' + e.message;
         error.hidden = false;
         boton.disabled = false;
+        boton.classList.remove('enviando', 'listo');
+        boton.style.width = '';
         boton.textContent = 'Enviar postulación';
+    }
+}
+
+// ---- Filtros en una hoja que sube desde abajo (celular y tableta) ----
+// Antes, en el celular la columna de filtros iba antes que la lista: habia que bajar
+// ~700 px para ver la primera vacante. Ahora un boton "Filtros (2)" la abre como hoja;
+// cada cambio filtra al instante, como siempre, y "Ver N vacantes" la cierra.
+// En escritorio no cambia nada: la columna sigue al lado y sigue al bajar (sticky).
+function prepararHojaDeFiltros() {
+    const hoja = document.getElementById('panelFiltros');
+    const abrir = document.getElementById('filtrosAbrir');
+    if (!hoja || !abrir) return;
+    const angosta = window.matchMedia('(max-width: 1080px)');
+    const fondo = document.createElement('div');
+    fondo.className = 'filtros-fondo';
+    document.body.appendChild(fondo); // fuera de la cuadricula de la lista
+    let volverA = null;
+
+    const abierta = () => hoja.classList.contains('abierta');
+    function abrirHoja() {
+        volverA = document.activeElement;
+        hoja.classList.add('abierta');
+        fondo.classList.add('abierta');
+        document.documentElement.classList.add('hoja-filtros-abierta');
+        abrir.setAttribute('aria-expanded', 'true');
+        const primero = hoja.querySelector('.filtros-cerrar');
+        if (primero) primero.focus({ preventScroll: true });
+    }
+    function cerrarHoja() {
+        if (!abierta()) return;
+        hoja.classList.remove('abierta');
+        fondo.classList.remove('abierta');
+        document.documentElement.classList.remove('hoja-filtros-abierta');
+        abrir.setAttribute('aria-expanded', 'false');
+        if (volverA && volverA.focus) volverA.focus({ preventScroll: true });
+    }
+    // En la hoja es una ventana (role="dialog"); en la columna de escritorio, un "aside" normal
+    function segunAncho() {
+        if (angosta.matches) {
+            hoja.setAttribute('role', 'dialog');
+            hoja.setAttribute('aria-modal', 'true');
+        } else {
+            hoja.removeAttribute('role');
+            hoja.removeAttribute('aria-modal');
+            cerrarHoja();
+        }
+    }
+    segunAncho();
+    if (angosta.addEventListener) angosta.addEventListener('change', segunAncho);
+
+    abrir.addEventListener('click', abrirHoja);
+    fondo.addEventListener('click', cerrarHoja);
+    hoja.querySelector('.filtros-cerrar').addEventListener('click', cerrarHoja);
+    hoja.querySelector('.filtros-ver').addEventListener('click', cerrarHoja);
+    document.addEventListener('keydown', e => {
+        if (!abierta()) return;
+        if (e.key === 'Escape') { e.preventDefault(); cerrarHoja(); return; }
+        // El foco no sale de la hoja mientras esta abierta
+        if (e.key === 'Tab') {
+            const enfocables = [...hoja.querySelectorAll('button, input, select, summary, a[href]')]
+                .filter(el => el.offsetParent !== null && !el.disabled);
+            if (!enfocables.length) return;
+            const [primero, ultimo] = [enfocables[0], enfocables[enfocables.length - 1]];
+            if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+            else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+        }
+    });
+
+    // El boton dice cuantos filtros hay puestos, y el de la hoja cuantas vacantes quedan
+    const texto = abrir.querySelector('span');
+    function contarFiltros() {
+        const n = hoja.querySelectorAll('input[type="checkbox"]:checked, input[type="radio"]:checked:not([value=""])').length;
+        texto.textContent = n ? `Filtros (${n})` : 'Filtros';
+        abrir.classList.toggle('con-filtros', n > 0);
+    }
+    hoja.addEventListener('change', contarFiltros);
+    hoja.querySelector('.btn-clear-filters').addEventListener('click', () => setTimeout(contarFiltros, 0));
+    contarFiltros();
+    const cuenta = document.getElementById('resultsCount');
+    const ver = hoja.querySelector('.filtros-ver');
+    if (cuenta && ver) {
+        const ponerTexto = () => {
+            const m = cuenta.textContent.match(/^\s*([\d.]+)/);
+            ver.textContent = m ? `Ver ${m[1]} ${m[1] === '1' ? 'vacante' : 'vacantes'}` : 'Ver vacantes';
+        };
+        new MutationObserver(ponerTexto).observe(cuenta, { childList: true, characterData: true, subtree: true });
+        ponerTexto();
     }
 }
 
@@ -742,7 +1137,6 @@ function setupEventListeners() {
     if (clearFilterBtn) {
         clearFilterBtn.addEventListener('click', clearFilters);
     }
-    prepararFiltrosMovil();
 
     // Filtros: se aplican al instante
     document.querySelectorAll('.filter-card input[type="checkbox"]').forEach(cb => {
@@ -967,7 +1361,8 @@ function clearFilters() {
 
 // Ordenar trabajos: reordena lo que se esta viendo
 function sortJobs() {
-    displayJobs(shownJobs);
+    // Las mismas vacantes en otro orden: se deslizan a su lugar («Vacante»)
+    actualizarEnSitio();
     guardarFiltrosEnDireccion();
 }
 
@@ -985,69 +1380,6 @@ function updateFilterBadges() {
             badge.classList.remove('active');
         }
     });
-    pintarFiltrosMovil();
-}
-
-// ---- Filtros en el celular ----
-// El panel grande de filtros empujaba las vacantes muy abajo. En el celular se
-// cambia por un boton "Filtros (n)" que abre el mismo panel desde abajo, y los
-// filtros elegidos quedan a la vista como etiquetas que se quitan con un toque.
-// (En pantallas grandes el panel sigue al lado, como siempre.)
-function filtrosEnEtiquetas() {
-    const elegidos = Array.from(document.querySelectorAll('.filter-card input[type="checkbox"]:checked')).map(c => ({
-        texto: c.closest('label').textContent.trim(),
-        quitar: () => { c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }
-    }));
-    const salario = document.getElementById('salaryRange');
-    if (salario && Number(salario.value) < Number(salario.max)) {
-        elegidos.push({
-            texto: 'Hasta ' + formatCurrency(Number(salario.value)),
-            quitar: () => { salario.value = salario.max; salario.dispatchEvent(new Event('input', { bubbles: true })); }
-        });
-    }
-    return elegidos;
-}
-
-function pintarFiltrosMovil() {
-    const cuenta = document.getElementById('filtrosCuenta');
-    const chips = document.getElementById('filtrosChips');
-    if (!cuenta || !chips) return;
-    const elegidos = filtrosEnEtiquetas();
-    cuenta.textContent = elegidos.length ? `(${elegidos.length})` : '';
-    chips.innerHTML = elegidos.map((f, i) =>
-        `<li><button type="button" class="filtro-chip" data-quitar-filtro="${i}" aria-label="Quitar el filtro ${escaparHtml(f.texto)}">${escaparHtml(f.texto)} <i data-ico="close"></i></button></li>`).join('');
-    chips.hidden = !elegidos.length;
-    chips.quitar = i => { const f = filtrosEnEtiquetas()[i]; if (f) f.quitar(); };
-}
-
-function prepararFiltrosMovil() {
-    const abrir = document.getElementById('abrirFiltros');
-    const panel = document.querySelector('.opportunities-sidebar');
-    const fondo = document.getElementById('filtrosFondo');
-    const chips = document.getElementById('filtrosChips');
-    if (!abrir || !panel) return;
-    const listo = document.getElementById('cerrarFiltros');
-    const abierto = si => {
-        document.body.classList.toggle('filtros-abiertos', si);
-        abrir.setAttribute('aria-expanded', String(si));
-        if (fondo) fondo.hidden = !si;
-        if (si) { const primero = panel.querySelector('input, button'); if (primero) primero.focus(); }
-        else abrir.focus();
-    };
-    abrir.addEventListener('click', () => abierto(true));
-    if (listo) listo.addEventListener('click', () => abierto(false));
-    if (fondo) fondo.addEventListener('click', () => abierto(false));
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && document.body.classList.contains('filtros-abiertos')) abierto(false);
-    });
-    if (chips) chips.addEventListener('click', e => {
-        const boton = e.target.closest('[data-quitar-filtro]');
-        if (boton) chips.quitar(Number(boton.dataset.quitarFiltro));
-    });
-    // El salario tambien cuenta como filtro elegido
-    const salario = document.getElementById('salaryRange');
-    if (salario) salario.addEventListener('input', debounce(pintarFiltrosMovil, 150));
-    pintarFiltrosMovil();
 }
 
 // Utilidades
@@ -1120,8 +1452,9 @@ async function loadSavedJobs() {
 // Guardar o quitar trabajo de guardados
 async function toggleSaveJob(jobId, buttonElement) {
     if (!sesion()) {
-        avisar('Inicia sesión para guardar vacantes.', 'info');
-        setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+        pedirCuenta('Inicia sesión para guardar vacantes',
+            'Guarda las vacantes que te interesan para postularte después. Entra o crea tu perfil y vuelves a esta vacante.',
+            `oportunidades.html?jobId=${encodeURIComponent(jobId)}`);
         return;
     }
 
@@ -1141,6 +1474,14 @@ async function toggleSaveJob(jobId, buttonElement) {
             avisar('Vacante guardada. La encuentras en "Guardadas", arriba de la lista.', 'ok');
         }
         repintar();
+        // «Pastilla»: el "Guardada" recien puesto da un salto corto y suelta chispitas (solo al guardar)
+        if (!isSaved) {
+            document.querySelectorAll(`.btn-save[data-job-id="${CSS.escape(String(jobId))}"]`).forEach(b => {
+                b.classList.add('recien-guardada');
+                b.addEventListener('animationend', () => b.classList.remove('recien-guardada'), { once: true });
+                if (window.SkillMatchUI && SkillMatchUI.chispitas && b.getBoundingClientRect().width) SkillMatchUI.chispitas(b);
+            });
+        }
     } catch (error) {
         avisar('No se pudo actualizar la vacante guardada. Intenta de nuevo.', 'error');
         buttonElement.disabled = false;

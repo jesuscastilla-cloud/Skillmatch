@@ -63,14 +63,10 @@
             heroe.hidden = true;
             if (heroe.id === 'main') heroe.removeAttribute('id');
         }
-        document.querySelectorAll('.publicos-section, .cta-final').forEach(s => { s.hidden = true; });
+        document.querySelectorAll('.usuarios-empresas, .cta-final').forEach(s => { s.hidden = true; });
         panel.innerHTML = html;
         panel.id = 'main';
         panel.hidden = false;
-        // La busqueda vive en el hero, que con sesion se esconde: pasa al panel
-        const buscar = document.querySelector('.hero-buscar');
-        const franja = panel.querySelector('.panel-franja .container');
-        if (buscar && franja) franja.appendChild(buscar);
     }
 
     function cifra(c) {
@@ -137,14 +133,12 @@
             ? `<div class="match-ring" data-pct="${v.coincidencia.pct}" role="img" title="Tienes ${v.coincidencia.tiene} de ${v.coincidencia.pedidas} habilidades que pide"
                     aria-label="${v.coincidencia.pct} por ciento: tienes ${v.coincidencia.tiene} de ${v.coincidencia.pedidas} habilidades que pide"></div>`
             : '';
-        const ui = window.SkillMatchUI;
-        const ejemplo = !!(ui && ui.esEjemplo(v.companyName));
-        const lugar = [ui ? ui.sinEjemplo(v.companyName) : v.companyName, v.location].filter(Boolean).map(escaparHtml).join(' · ');
+        const lugar = [v.companyName, v.location].filter(Boolean).map(escaparHtml).join(' · ');
         return `
             <li class="panel-vacante">
                 <div class="panel-vacante-datos">
                     <h3><a href="oportunidades.html?jobId=${encodeURIComponent(v.id)}">${escaparHtml(v.title || 'Vacante')}</a></h3>
-                    ${lugar || ejemplo ? `<p>${lugar}${ejemplo ? ' ' + ui.etiquetaEjemplo() : ''}</p>` : ''}
+                    ${lugar ? `<p>${lugar}</p>` : ''}
                 </div>
                 ${anillo}
             </li>`;
@@ -266,8 +260,6 @@
                     `${conPct.length} ${conPct.length === 1 ? 'pide' : 'piden'} alguna. Estas son las que más coinciden.`;
                 vacantes.innerHTML = conPct.slice(0, 3).map(tarjetaVacante).join('');
             } else {
-                // Sin coincidencias no es "para ti": el titulo dice lo que son
-                document.getElementById('panelVacTitulo').textContent = 'Vacantes recientes';
                 nota.innerHTML = habilidades.length
                     ? 'Las vacantes más recientes todavía no piden tus habilidades. Estas son las más nuevas:'
                     : 'Agrega tus habilidades en <a href="perfil-usuario.html">tu perfil</a> y aquí verás las vacantes que mejor encajan contigo. Por ahora, las más nuevas:';
@@ -288,7 +280,7 @@
             { objetivo: '.panel-postulaciones', titulo: 'Tus postulaciones, paso a paso', texto: 'Mira si la empresa ya revisó tu postulación y cuál fue su respuesta.' },
             { objetivo: '.panel-perfil', titulo: 'Tu perfil', texto: 'Completa lo que falta. Con tus habilidades, SkillMatch calcula qué tanto encajas en cada vacante.' },
             { objetivo: '.panel-vacantes', titulo: 'Vacantes para ti', texto: 'Las vacantes más recientes que más coinciden con lo que sabes hacer.' },
-            { objetivo: '.hero-buscar', titulo: 'Busca lo que quieras', texto: 'Escribe un cargo, una habilidad o una empresa. Para volver a ver este recorrido, toca "Cómo funciona" arriba.' }
+            { objetivo: '.search-section .search-box', titulo: 'Busca lo que quieras', texto: 'Escribe un cargo, una habilidad o una empresa. Para volver a ver este recorrido, toca "Cómo funciona" arriba.' }
         ] });
     }
 
@@ -298,7 +290,7 @@
             { objetivo: '#panelSaludo', titulo: 'Este es el inicio de tu empresa', texto: 'Cada vez que entres verás aquí cómo van tus vacantes y tus candidatos.' },
             { objetivo: '.panel-cifras', titulo: 'Tu resumen', texto: 'Ofertas activas, postulaciones por revisar y recibidas, y mensajes sin leer. Toca cualquiera para ir directo; el punto naranja avisa lo que espera respuesta.' },
             { objetivo: '.panel-acciones', titulo: 'Publica y revisa', texto: 'Publica una vacante nueva o mira a tus candidatos. "Cómo funciona" vuelve a mostrar este recorrido.' },
-            { objetivo: '.hero-buscar', titulo: 'Así buscan las personas', texto: 'Este es el buscador que usan para encontrar vacantes. Prueba con el cargo de una de tus ofertas.' }
+            { objetivo: '.search-section .search-box', titulo: 'Así buscan las personas', texto: 'Este es el buscador que usan para encontrar vacantes. Prueba con el cargo de una de tus ofertas.' }
         ] });
     }
 
@@ -335,12 +327,68 @@
                     </div>
                     <ul class="panel-cifras" aria-label="Tu resumen">${cifras.map(cifra).join('')}</ul>
                 </div>
+            </div>
+            <div class="container panel-cuerpo panel-cuerpo-empresa">
+                <section class="panel-bloque panel-postulaciones" aria-labelledby="panelNuevasTitulo">
+                    <div class="panel-bloque-titulo">
+                        <h2 id="panelNuevasTitulo">Postulaciones nuevas</h2>
+                        <a href="perfil-empresa.html?tab=applicants" id="panelVerNuevas" hidden>Ver todas <i data-ico="arrow"></i></a>
+                    </div>
+                    <ul class="panel-lista" id="panelNuevas">${cargandoFilas(3)}</ul>
+                </section>
+                <section class="panel-bloque panel-vacantes" aria-labelledby="panelTusVacTitulo">
+                    <div class="panel-bloque-titulo">
+                        <h2 id="panelTusVacTitulo">Tus vacantes</h2>
+                        <a href="perfil-empresa.html#ofertas">Administrarlas <i data-ico="arrow"></i></a>
+                    </div>
+                    <ul class="panel-vacantes-lista" id="panelTusVacantes">${cargandoFilas(2)}</ul>
+                </section>
             </div>`);
+        // Debajo del panel, la empresa no necesita el buscador de empleo ni "Vacantes cerca de ti"
+        // (son herramientas de quien busca trabajo): ve sus postulaciones y sus vacantes (revision 2026-11-13)
+        document.querySelectorAll('.search-section, .results-section, .cerca-section').forEach(s => { s.hidden = true; });
 
-        const [stats, noLeidos] = await Promise.all([
-            datos.companyId ? pedir(`/companies/${encodeURIComponent(datos.companyId)}/statistics`, null) : null,
-            pedir('/messages/unread-count', null)
+        const empresa = encodeURIComponent(datos.companyId || '');
+        const [stats, noLeidos, recibidas, vacantes] = await Promise.all([
+            datos.companyId ? pedir(`/companies/${empresa}/statistics`, null) : null,
+            pedir('/messages/unread-count', null),
+            datos.companyId ? pedir(`/applications/company/${empresa}`, null) : null,
+            datos.companyId ? pedir(`/jobs/company/${empresa}`, null) : null
         ]);
+
+        // Las 4 postulaciones mas recientes, con sus pasos (los mismos que ve la persona)
+        const apps = Array.isArray(recibidas) ? recibidas : (recibidas && recibidas.content) || [];
+        const nuevas = apps.slice().sort((a, b) => new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0)).slice(0, 4);
+        const listaNuevas = document.getElementById('panelNuevas');
+        if (!recibidas) listaNuevas.innerHTML = '<li class="panel-vacio">No pudimos cargar tus postulaciones. Intenta de nuevo en un momento.</li>';
+        else if (!nuevas.length) listaNuevas.innerHTML = '<li class="panel-vacio">Todavía nadie se ha postulado. <a href="perfil-empresa.html?nueva=1">Publica una vacante</a> y aquí verás a cada persona.</li>';
+        else {
+            listaNuevas.innerHTML = nuevas.map(app => `
+                <li class="panel-postulacion">
+                    <div class="panel-postulacion-datos">
+                        <h3><a href="perfil-empresa.html?tab=applicants&amp;postulacion=${encodeURIComponent(app.id)}">${escaparHtml(app.userName || 'Persona')}</a></h3>
+                        <p>${escaparHtml(app.jobTitle || 'Vacante')} · ${cuandoTePostulaste(app.appliedDate).replace('te postulaste', 'se postuló')}</p>
+                    </div>
+                    ${pasosPostulacion(app.status)}
+                </li>`).join('');
+            const ver = document.getElementById('panelVerNuevas');
+            ver.hidden = false;
+            if (apps.length > 4) ver.firstChild.textContent = `Ver las ${apps.length} `;
+        }
+
+        // Sus vacantes abiertas, con cuantas personas se postularon a cada una
+        const abiertas = (Array.isArray(vacantes) ? vacantes : []).filter(v => v.active !== false && String(v.status || 'abierta').toLowerCase() === 'abierta');
+        const porVacante = apps.reduce((m, a) => { m[a.jobId] = (m[a.jobId] || 0) + 1; return m; }, {});
+        const listaVac = document.getElementById('panelTusVacantes');
+        listaVac.innerHTML = abiertas.length ? abiertas.slice(0, 4).map(v => `
+            <li class="panel-vacante">
+                <div class="panel-vacante-datos">
+                    <h3><a href="perfil-empresa.html?candidatos=${encodeURIComponent(v.id)}">${escaparHtml(v.title || 'Vacante')}</a></h3>
+                    <p>${escaparHtml(v.location || '')}</p>
+                </div>
+                <span class="panel-vacante-cuenta"><strong>${numero(porVacante[v.id] || 0)}</strong> ${plural(porVacante[v.id] || 0, 'persona', 'personas')}</span>
+            </li>`).join('')
+            : '<li class="panel-vacio">No tienes vacantes abiertas. <a href="perfil-empresa.html?nueva=1">Publica la primera</a>.</li>';
         pintarCifra('panelActivas', stats ? stats.activeJobs || 0 : null, cifras[0].nombre);
         pintarCifra('panelPorRevisar', stats ? stats.pendingApplications || 0 : null, cifras[1].nombre, true);
         pintarCifra('panelRecibidas', stats ? stats.totalApplications || 0 : null, cifras[2].nombre);

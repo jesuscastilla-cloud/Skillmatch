@@ -1,8 +1,8 @@
 // Indicadores del mercado laboral (dashboard.html)
 //
-// Antes la pagina mostraba un informe de Power BI que pedia iniciar sesion con
-// una cuenta de la organizacion: un visitante no veia nada. Ahora todo sale de
-// los datos publicos del sitio y se calcula al abrir la pagina.
+// Todo sale de los datos publicos del sitio y se calcula al abrir la pagina
+// (el enlace al informe de Power BI del equipo se quito: pedia una cuenta de la
+// organizacion y un visitante no veia nada).
 //
 // Las cifras son exactas sobre todas las vacantes abiertas: /jobs/filter
 // devuelve el total de cada consulta (totalElements), asi que se pide una sola
