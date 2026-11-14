@@ -161,7 +161,8 @@ test.describe('vidrio', () => {
         await expect(page.locator('#cifraHabilidades')).toHaveText('3');
         const filtro = s => page.locator(s).first().evaluate(el => getComputedStyle(el).backdropFilter);
         for (const s of ['.profile-header-card', '.perfil-cifra', '.profile-section', '#applicationsCard']) expect(await filtro(s), s).toBe('none');
-        expect(await filtro('body > header')).toContain('blur');
+        // La barra desenfoca: con blur() o, con la refraccion (2026-11-13), dentro de su filtro SVG (url(#...))
+        expect(await filtro('body > header')).toMatch(/blur|url\(/);
         await page.locator('#perfilMasBtn').click();
         await expect(page.locator('#perfilMasMenu')).toBeVisible();
         expect(await filtro('#perfilMasMenu')).toContain('blur');

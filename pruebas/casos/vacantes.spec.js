@@ -210,27 +210,121 @@ test('las tarjetas entran en baraja sin rebote', async ({ page, context, api }, 
     expect(curva).not.toContain('1.15');
 });
 
-test.describe('el trabajo del match', () => {
-    test('a una persona le dice qué se comparó y cuántas piden alguna de sus habilidades', async ({ page, context, api }) => {
+// «Pastilla» (2026-11-13): los botones dicen lo que pasa
+test.describe('botones que responden («Pastilla»)', () => {
+    test('al guardar, solo esa vacante da su salto, suelta chispitas y su corazón late', async ({ page, context, api }, info) => {
         await entrarComo(context, 'persona');
         await page.goto('oportunidades.html');
-        const resumen = page.locator('.match-resumen');
-        await expect(resumen).toContainText('Comparamos tus 3 habilidades (Atención al cliente, Inglés básico y Manejo de bandeja) con cada vacante.');
-        await expect(resumen).toContainText('De las 9 que ves, 3 piden alguna. Las que más encajan van primero.');
+        const tarjeta = page.locator('.opportunity-card', { has: page.locator('.btn-save:not(.saved)') }).first();
+        const id = await tarjeta.getAttribute('data-job-id');
+        await tarjeta.locator('.btn-save').click();
+        const boton = page.locator(`.opportunity-card[data-job-id="${id}"] .btn-save`);
+        await expect(boton).toHaveClass(/recien-guardada/);
+        await expect(page.locator('.chispitas')).toHaveCount(1);
+        // Las que ya estaban guardadas no vuelven a latir al pintarse la lista
+        expect(await page.locator('.btn-save.saved:not(.recien-guardada) .ico-heart').evaluateAll(hs => hs.filter(h => getComputedStyle(h).animationName !== 'none').length)).toBe(0);
+        // Al terminar, la clase se va y las chispitas tambien
+        await expect(boton).not.toHaveClass(/recien-guardada/);
+        await expect(page.locator('.chispitas')).toHaveCount(0);
+    });
+
+    test('enviar una postulación muestra "Enviando…" y "Enviada" en el mismo botón antes de cerrar', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('oportunidades.html');
+        // El servidor tarda un poco: se alcanza a ver el estado de envio
+        await page.route('**/applications', async r => { if (r.request().method() === 'POST') await new Promise(x => setTimeout(x, 400)); await r.fallback(); });
+        await page.locator('.opportunity-card', { has: page.locator('.btn-apply:not(.applied)') }).first().locator('.btn-apply').click();
+        await expect(postular(page)).toHaveClass(/active/);
+        const enviar = page.locator('#sendApplicationBtn');
+        const ancho = await enviar.evaluate(b => b.offsetWidth);
+        await enviar.click();
+        await expect(enviar).toHaveClass(/enviando/);
+        await expect(enviar).toHaveText('Enviando…');
+        expect(await enviar.evaluate(b => b.offsetWidth), 'el botón no cambia de tamaño').toBe(ancho);
+        await expect(enviar).toHaveClass(/listo/);
+        await expect(enviar).toHaveText('Enviada');
+        await expect(postular(page)).not.toHaveClass(/active/);
+        // Queda listo para la próxima
+        await expect(enviar).toHaveText('Enviar postulación');
+        await expect(enviar).toBeEnabled();
+    });
+});
+
+test.describe('el trabajo del match: tu perfil frente a las vacantes («Vacante», 2026-11-13)', () => {
+    test('a una persona le muestra sus habilidades, en cuántas vacantes aparece cada una y cuántas piden alguna', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('oportunidades.html');
+        const panel = page.locator('.perfil-frente');
+        await expect(panel).toContainText('De las 9 que ves, 3 piden alguna de tus habilidades. Las que más encajan van primero.');
+        const tuyas = panel.locator('.chip-habilidad.es-tuya');
+        await expect(tuyas).toHaveCount(3);
+        // De la más pedida a la menos, con su cuenta
+        await expect(tuyas.first()).toContainText('Atención al cliente');
+        await expect(tuyas.first().locator('.chip-cuenta')).toHaveText('3');
+        // Las que te faltan, para probar
+        await expect(panel.locator('.chip-habilidad.es-prueba').first()).toContainText('JavaScript');
     });
 
     test('con un filtro, las cifras siguen a lo que se ve', async ({ page, context, api }) => {
         await entrarComo(context, 'persona');
         await page.goto('oportunidades.html');
         await marcarFiltro(page, 'input[name="type"][value="práctica"], input[name="type"][value="practica"]');
-        await expect(page.locator('.match-resumen')).toContainText('De las 2 que ves, 1 pide alguna.');
+        await expect(page.locator('.perfil-frente')).toContainText('De las 2 que ves, 1 pide alguna de tus habilidades.');
     });
 
     test('a un visitante no se le muestra (no hay habilidades con qué comparar)', async ({ page, context, api }) => {
         await entrarComo(context, 'visitante');
         await page.goto('oportunidades.html');
         await page.locator('.btn-ver-detalle').first().waitFor();
-        await expect(page.locator('.match-resumen')).toHaveCount(0);
+        await expect(page.locator('.perfil-frente')).toHaveCount(0);
+    });
+
+    test('tocar una habilidad la resalta en las ofertas que la piden (y otra vez, la suelta)', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('oportunidades.html');
+        const chip = page.locator('.chip-habilidad.es-tuya', { hasText: 'Atención al cliente' });
+        await chip.click();
+        await expect(chip).toHaveAttribute('aria-pressed', 'true');
+        await expect(page.locator('.opportunities-list')).toHaveClass(/con-resalte/);
+        await expect(page.locator('.opportunity-card.la-pide')).toHaveCount(3);
+        await expect(page.locator('.opportunity-card.la-pide .skill.resaltada')).toHaveCount(3);
+        await chip.click();
+        await expect(chip).toHaveAttribute('aria-pressed', 'false');
+        await expect(page.locator('.opportunities-list')).not.toHaveClass(/con-resalte/);
+        await expect(page.locator('.opportunity-card.la-pide')).toHaveCount(0);
+    });
+
+    test('probar una habilidad que te falta recalcula y reordena, sin tocar tu perfil ni el detalle', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('oportunidades.html');
+        const tarjeta = page.locator('.opportunity-card', { hasText: 'Práctica en desarrollo' });
+        await expect(tarjeta.locator('.match-ring')).toHaveAttribute('data-pct', '0');
+        const probar = page.locator('.chip-habilidad.es-prueba', { hasText: 'JavaScript' });
+        await probar.click();
+        await expect(page.locator('.chip-habilidad.es-prueba', { hasText: 'JavaScript' })).toHaveAttribute('aria-pressed', 'true');
+        await expect(tarjeta.locator('.match-ring')).toHaveAttribute('data-pct', '50');
+        await expect(tarjeta.locator('.skill.is-prueba')).toContainText('JavaScript');
+        await expect(page.locator('.perfil-frente-nota')).toContainText('no se guardan');
+        // Sube en la lista: ahora va antes de una de 33 %
+        const titulos = await page.locator('.opportunity-card .job-title').allTextContents();
+        expect(titulos.findIndex(t => t.includes('Práctica en desarrollo'))).toBeLessThan(titulos.findIndex(t => t.includes('Recepcionista')));
+        // El detalle habla solo de tu perfil de verdad
+        await tarjeta.locator('.btn-ver-detalle').click();
+        await expect(detalle(page)).toContainText('Tienes 0 de 2');
+        await page.keyboard.press('Escape');
+        // Quitarla deja todo como estaba
+        await page.locator('.chip-habilidad.es-prueba', { hasText: 'JavaScript' }).click();
+        await expect(tarjeta.locator('.match-ring')).toHaveAttribute('data-pct', '0');
+        await expect(page.locator('.perfil-frente-nota')).toHaveCount(0);
+    });
+
+    test('cambiar el orden mueve las mismas tarjetas (no las construye de nuevo)', async ({ page, context, api }) => {
+        await entrarComo(context, 'persona');
+        await page.goto('oportunidades.html');
+        await page.locator('.opportunity-card').first().waitFor();
+        await page.evaluate(() => document.querySelectorAll('.opportunity-card').forEach(c => { c.__original = true; }));
+        await page.locator('#sortSelect').selectOption('recent');
+        await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('.opportunity-card')].every(c => c.__original))).toBe(true);
     });
 });
 

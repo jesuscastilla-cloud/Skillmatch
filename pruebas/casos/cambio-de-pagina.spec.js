@@ -29,19 +29,28 @@ const ida = page => page.evaluate(() => window.__ida);
 // Lo que queda anotado para que la página nueva se deslice de ese lado
 const direccion = page => page.evaluate(() => JSON.parse(sessionStorage.getItem('skillmatch_deslizar') || 'null'));
 
-// La pastilla del menú cubre justo el enlace (mismo inicio y mismo ancho)
+// El lente del menú (2026-11-13, video «Lente») queda centrado sobre el enlace, un poco más ancho que él
 const lineaDebajoDe = async (page, texto) => {
-    const [l, a] = await Promise.all([page.locator('.nav-pastilla').boundingBox(), enlace(page, texto).boundingBox()]);
-    return !!(l && a && Math.abs(l.x - a.x) < 1.5 && Math.abs(l.width - a.width) < 1.5);
+    const [l, a] = await Promise.all([page.locator('.lente-menu').boundingBox(), enlace(page, texto).boundingBox()]);
+    return !!(l && a && Math.abs((l.x + l.width / 2) - (a.x + a.width / 2)) < 1.5 && Math.abs(l.width - (a.width + 12)) < 2);
 };
 
-// La pastilla cubre justo la pestaña
+// El lente de la barra de abajo cubre la pestaña (mismo centro y mismo ancho)
 const pastillaEn = async (page, texto) => {
     const [m, a] = await Promise.all([
-        page.locator('.tabbar-marca').boundingBox(),
+        page.locator('.lente-pestanas').boundingBox(),
         page.locator('.tabbar a', { hasText: texto }).boundingBox()
     ]);
-    return !!(m && a && Math.abs(m.x - a.x) < 1.5 && Math.abs(m.width - a.width) < 1.5);
+    return !!(m && a && Math.abs((m.x + m.width / 2) - (a.x + a.width / 2)) < 1.5 && Math.abs(m.width - a.width) < 2);
+};
+// Quieto: ya cargada la página (fuentes y globitos, que mueven un poco las pestañas y el lente se reacomoda
+// sin viajar), en 300 ms no se mueve más de 1 px
+const lenteQuieto = async (page, sel) => {
+    await page.waitForTimeout(1000);
+    const a = await page.locator(sel).boundingBox();
+    await page.waitForTimeout(300);
+    const b = await page.locator(sel).boundingBox();
+    return Math.abs(a.x - b.x) < 1 && Math.abs(a.width - b.width) < 1;
 };
 
 test.describe('en el computador', () => {
@@ -68,18 +77,42 @@ test.describe('en el computador', () => {
         await expect.poll(() => lineaDebajoDe(page, 'Vacantes')).toBe(true);
     });
 
-    test('tras el clic, el mouse ya no la devuelve a la página actual', async ({ page, api }) => {
+    // Como en el video «Lente»: pasar el mouse no mueve el lente (solo el clic o arrastrarlo)
+    test('pasar el mouse no mueve el lente; tras el clic se queda en el destino', async ({ page, api }) => {
         await page.goto('index.html');
         await sinCambiarDePagina(page);
         await enlace(page, 'Vacantes').hover();
-        await expect.poll(() => lineaDebajoDe(page, 'Vacantes')).toBe(true);
+        await page.waitForTimeout(400);
+        expect(await lineaDebajoDe(page, 'Inicio'), 'sigue en la página actual').toBe(true);
         await enlace(page, 'Vacantes').click();
         await page.mouse.move(900, 500);
-        await page.waitForTimeout(500);
+        await expect.poll(() => lineaDebajoDe(page, 'Vacantes')).toBe(true);
+        await page.waitForTimeout(300);
         expect(await lineaDebajoDe(page, 'Vacantes'), 'sigue en el destino').toBe(true);
-        // Con el mouse encima la línea ya había llegado: el enlace sigue enseguida
-        expect(await ida(page), 'no espera').toBeNull();
+        // La página cambia cuando el lente llega
+        await expect.poll(() => ida(page)).not.toBeNull();
+        expect((await ida(page)).ms).toBeGreaterThanOrEqual(300);
         expect(await direccion(page)).toMatchObject({ dir: 'derecha' });
+    });
+
+    test('el lente se agarra y se arrastra: al soltarlo sobre otra opción lleva a esa página', async ({ page, api }) => {
+        await page.goto('oportunidades.html');
+        await sinCambiarDePagina(page);
+        await expect.poll(() => lineaDebajoDe(page, 'Vacantes')).toBe(true);
+        const lente = await page.locator('.lente-menu').boundingBox();
+        const inicio = await enlace(page, 'Inicio').boundingBox();
+        await page.mouse.move(lente.x + lente.width / 2, lente.y + lente.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(inicio.x + inicio.width / 2, lente.y + lente.height / 2, { steps: 8 });
+        // Mientras se arrastra: la mano cerrada y la opción de abajo iluminada
+        await expect(page.locator('header .nav-principales')).toHaveClass(/lente-agarrado/);
+        await expect(enlace(page, 'Inicio')).toHaveClass(/bajo-lente/);
+        await page.mouse.up();
+        await expect.poll(() => lineaDebajoDe(page, 'Inicio')).toBe(true);
+        await expect.poll(() => ida(page)).not.toBeNull();
+        expect((await ida(page)).url).toMatch(/index\.html$/);
+        expect(await direccion(page)).toMatchObject({ dir: 'izquierda' });
+        await expect(enlace(page, 'Inicio')).not.toHaveClass(/bajo-lente/);
     });
 
     // Si la página nueva tarda en pintarse (el computador ocupado con otras
@@ -133,8 +166,8 @@ test.describe('en el celular', () => {
         expect(await direccion(page)).toMatchObject({ dir: 'derecha' });
         await page.goto('oportunidades.html');
         await expect.poll(() => pastillaEn(page, 'Vacantes')).toBe(true);
-        // Llega quieta: no cruza la barra otra vez
-        expect(await page.locator('.tabbar-marca').evaluate(m => m.getAnimations().length)).toBe(0);
+        // Llega quieto: no cruza la barra otra vez
+        expect(await lenteQuieto(page, '.lente-pestanas')).toBe(true);
         // Hacia una pestaña de la izquierda, la dirección es la otra
         await sinCambiarDePagina(page);
         await page.locator('.tabbar a', { hasText: 'Inicio' }).click();
@@ -144,9 +177,9 @@ test.describe('en el celular', () => {
     test('en una página fuera de la barra no hay pastilla hasta tocar una', async ({ page, api }) => {
         await page.goto('empresas.html');
         await sinCambiarDePagina(page);
-        await expect(page.locator('.tabbar-marca')).toHaveCSS('opacity', '0');
+        await expect(page.locator('.lente-pestanas')).toHaveCSS('opacity', '0');
         await page.locator('.tabbar a', { hasText: 'Vacantes' }).click();
-        await expect(page.locator('.tabbar-marca')).toHaveCSS('opacity', '1');
+        await expect(page.locator('.lente-pestanas')).toHaveCSS('opacity', '1');
         await expect.poll(() => pastillaEn(page, 'Vacantes')).toBe(true);
         // Aparece sin cruzar la barra: no hay viaje que esperar
         await page.waitForTimeout(500);

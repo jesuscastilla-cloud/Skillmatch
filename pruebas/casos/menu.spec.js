@@ -1,4 +1,4 @@
-// El menú marca la sección en la que se está y su línea se desliza con el mouse.
+// El menú marca la sección en la que se está con un lente de cristal (2026-11-13).
 // En el celular el menú de arriba se esconde (va la barra de pestañas).
 const { test, expect, entrarComo } = require('../apoyo/prueba');
 
@@ -31,22 +31,28 @@ test('en Mi empresa se marcan "Mis ofertas" y "Candidatos" al llegar', async ({ 
     await expect(enlace(page, 'Mis ofertas')).not.toHaveClass(/active-nav/);
 });
 
-test('la pastilla se desliza hasta el enlace bajo el mouse y vuelve a la página', async ({ page, context, api }) => {
+// El lente (2026-11-13, video «Lente»): una cápsula de cristal sobre la página actual, centrada en su opción y
+// un poco más ancha y alta que ella. Pasar el mouse no la mueve
+test('el lente de cristal queda sobre la página actual y el mouse no lo mueve', async ({ page, context, api }) => {
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
-    const pastilla = page.locator('.nav-pastilla');
-    // La pastilla cubre justo el enlace (mismo inicio y mismo ancho)
+    const lente = page.locator('.lente-menu');
     const sobre = async texto => {
-        const [p, a] = await Promise.all([pastilla.boundingBox(), enlace(page, texto).boundingBox()]);
-        return !!(p && a && Math.abs(p.x - a.x) < 1.5 && Math.abs(p.width - a.width) < 1.5 && Math.abs(p.y - a.y) < 1.5);
+        const [p, a] = await Promise.all([lente.boundingBox(), enlace(page, texto).boundingBox()]);
+        return !!(p && a && Math.abs((p.x + p.width / 2) - (a.x + a.width / 2)) < 1.5 && Math.abs((p.y + p.height / 2) - (a.y + a.height / 2)) < 1.5 && p.width > a.width && p.height > a.height);
     };
     await expect.poll(() => sobre('Inicio')).toBe(true);
+    await expect(lente).toHaveCSS('opacity', '1');
+    // Lleva su filo de luz y su brillo, y es redondo del todo
+    await expect(lente.locator('.lente-filo')).toHaveCount(1);
+    await expect(lente.locator('.lente-brillo')).toHaveCount(1);
+    expect(parseFloat(await lente.evaluate(l => getComputedStyle(l).borderTopLeftRadius))).toBeGreaterThanOrEqual(28);
     await enlace(page, 'Vacantes').hover();
-    await expect.poll(() => sobre('Vacantes')).toBe(true);
-    await page.mouse.move(900, 500);
-    await expect.poll(() => sobre('Inicio')).toBe(true);
-    // Con ella, el enlace activo no lleva su pastilla fija (no salen dos)
+    await page.waitForTimeout(400);
+    expect(await sobre('Inicio')).toBe(true);
+    // Con él, el enlace activo no lleva su subrayado ni su fondo fijo (no salen dos marcas)
     expect(await enlace(page, 'Inicio').evaluate(a => getComputedStyle(a).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+    expect(await enlace(page, 'Inicio').evaluate(a => getComputedStyle(a).boxShadow)).toBe('none');
 });
 
 // La barra es una isla flotante (app.css, sección 48): una cápsula azul noche separada de los bordes,
@@ -61,8 +67,11 @@ test('la barra es una isla flotante de vidrio: compacta, centrada, con buscador 
     await entrarComo(context, 'visitante');
     await page.goto('empresas.html');
     const isla = await aspecto(page);
-    expect(isla.fondo).toBe('rgba(9, 24, 44, 0.64)');          // vidrio ahumado azul noche, aunque la página sea clara
-    expect(await page.locator('body > header').evaluate(h => getComputedStyle(h).backdropFilter)).toContain('blur');
+    // Tema claro: vidrio claro que deja pasar el color de atras (2026-11-13, seccion 87)
+    await expect(page.locator('body > header')).not.toHaveClass(/vidrio-oscuro/);
+    expect(isla.fondo).toBe('rgba(255, 255, 255, 0.5)');
+    // Desenfoca: con blur() o, con la refraccion (2026-11-13), dentro de su filtro SVG (url(#...))
+    expect(await page.locator('body > header').evaluate(h => getComputedStyle(h).backdropFilter)).toMatch(/blur|url\(/);
     expect(isla.radio).toBeGreaterThanOrEqual(20);            // puntas redondas
     expect(isla.arriba).toBeGreaterThanOrEqual(6);            // separada del borde de arriba...
     expect(isla.izquierda).toBeGreaterThanOrEqual(10);        // ...y de los lados
@@ -87,22 +96,30 @@ test('la barra es una isla flotante de vidrio: compacta, centrada, con buscador 
     await expect(page.locator('header .nav-buscar .cmdk-texto')).toHaveText('Buscar vacantes');
     // "Tema" es solo la palabra de abajo: el lector de pantalla oye el nombre del botón, una vez
     await expect(page.getByRole('button', { name: /^Cambiar a modo (claro|oscuro)$/ })).toHaveCount(1);
-    // Adentro, todo va en claro: el logo, la opción activa en blanco con su línea turquesa debajo, y
-    // "Iniciar sesión" como enlace de texto (sin borde ni fondo) junto al botón turquesa
-    await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo-oscuro\.png$/);
-    expect(await enlace(page, 'Empresas').evaluate(a => getComputedStyle(a).color)).toBe('rgb(255, 255, 255)');
+    // Sobre vidrio claro: el logo normal, la opción activa en azul marino sobre su cápsula clara, y
+    // "Iniciar sesión" como enlace de texto (sin borde ni fondo) junto al botón turquesa con letra blanca
+    await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo\.png$/);
+    expect(await enlace(page, 'Empresas').evaluate(a => getComputedStyle(a).color)).toBe('rgb(8, 32, 60)');
     const entrar = await page.locator('.btn-login').evaluate(a => { const c = getComputedStyle(a); return { color: c.color, fondo: c.backgroundColor, borde: c.borderTopWidth }; });
-    expect(entrar).toEqual({ color: 'rgb(255, 255, 255)', fondo: 'rgba(0, 0, 0, 0)', borde: '0px' });
-    // La línea de la opción activa queda debajo de la palabra, separada de ella
-    const [linea, palabra] = await Promise.all([
-        page.locator('.nav-pastilla').evaluate(p => { const r = p.getBoundingClientRect(), d = getComputedStyle(p, '::after'); return r.bottom - parseFloat(d.bottom) - parseFloat(d.height); }),
-        enlace(page, 'Empresas').evaluate(a => { const r = document.createRange(); r.selectNodeContents(a); return r.getBoundingClientRect().bottom; })
-    ]);
-    expect(linea - palabra).toBeGreaterThanOrEqual(3);
+    expect(entrar).toEqual({ color: 'rgb(8, 32, 60)', fondo: 'rgba(0, 0, 0, 0)', borde: '0px' });
+    expect(await page.locator('header a.btn-register').evaluate(a => getComputedStyle(a).color)).toBe('rgb(255, 255, 255)');
+    // El lente de la opción activa la cubre entera (icono y palabra), con aire alrededor
+    const [lente, opcion] = await Promise.all([page.locator('.lente-menu').boundingBox(), enlace(page, 'Empresas').boundingBox()]);
+    expect(lente.x).toBeLessThan(opcion.x);
+    expect(lente.x + lente.width).toBeGreaterThan(opcion.x + opcion.width);
+    expect(lente.y).toBeLessThan(opcion.y);
+    expect(lente.y + lente.height).toBeGreaterThan(opcion.y + opcion.height);
     expect(await page.locator('header .nav-principales').evaluate(u => getComputedStyle(u).backgroundImage)).toBe('none');
+    // En tema oscuro, el vidrio oscuro de siempre con letras claras y el logo claro
+    await page.evaluate(() => localStorage.setItem('skillmatch_theme', 'dark'));
+    await page.reload();
+    expect((await aspecto(page)).fondo).toBe('rgba(9, 24, 44, 0.34)');
+    await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo-oscuro\.png$/);
+    // (espera a que termine el fundido del color)
+    await expect(enlace(page, 'Empresas')).toHaveCSS('color', 'rgb(255, 255, 255)');
 });
 
-test('la isla no cambia al bajar por el inicio ni al pasar a otra página', async ({ page, context, api }, info) => {
+test('la isla no cambia de forma ni de lugar al bajar; su vidrio toma el color de lo que tiene detrás', async ({ page, context, api }, info) => {
     test.skip(info.project.name !== 'escritorio', 'en celular el menú va en la barra de abajo');
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
@@ -115,14 +132,24 @@ test('la isla no cambia al bajar por el inicio ni al pasar a otra página', asyn
     // Ya fuera de la portada, sobre las secciones claras: la misma isla, en el mismo sitio
     await page.evaluate(() => window.scrollTo(0, document.querySelector('.hero').offsetHeight + 400));
     await expect(page.locator('body > header')).not.toHaveClass(/sobre-hero/);
-    // Solo cambia el tinte (sobre la portada casi transparente, sobre lo claro al 64 %): ni forma ni lugar
+    // Al bajar la isla se esconde (seccion 78) y al subir un poco vuelve: se compara ya de vuelta
+    await page.mouse.wheel(0, -60);
+    await expect(page.locator('html')).not.toHaveClass(/barras-escondidas/);
+    await page.waitForTimeout(400);
+    // Solo cambia el vidrio: sobre la ciudad de noche, oscuro y casi transparente; sobre lo claro, vidrio claro
+    // con letras oscuras (seccion 87). Ni la forma ni el lugar
     const abajo = await aspecto(page);
     expect(arriba.fondo).toBe('rgba(9, 24, 44, 0.08)');
-    expect(abajo.fondo).toBe('rgba(9, 24, 44, 0.64)');
+    await expect(page.locator('body > header')).not.toHaveClass(/vidrio-oscuro/);
+    expect(abajo.fondo).toBe('rgba(255, 255, 255, 0.5)');
     delete arriba.fondo; delete abajo.fondo;
     expect(abajo).toEqual(arriba);
+    await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo\.png$/);
+    expect(await page.locator('.btn-login').evaluate(a => getComputedStyle(a).color)).toBe('rgb(8, 32, 60)');
+    // Al volver arriba, sobre la portada oscura, vuelve el vidrio oscuro
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await expect(page.locator('body > header')).toHaveClass(/vidrio-oscuro/);
     await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo-oscuro\.png$/);
-    expect(await page.locator('.btn-login').evaluate(a => getComputedStyle(a).color)).toBe('rgb(255, 255, 255)');
     // Y en otra página, igual
     await page.goto('oportunidades.html');
     const otra = await aspecto(page); delete otra.fondo;
@@ -132,33 +159,33 @@ test('la isla no cambia al bajar por el inicio ni al pasar a otra página', asyn
     expect(otra).toEqual(arriba);
 });
 
-test('con movimiento reducido no hay pastilla que se deslice: el enlace activo lleva su subrayado fijo', async ({ page, context, api }) => {
+test('con movimiento reducido no hay lente que viaje: el enlace activo lleva su subrayado fijo', async ({ page, context, api }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await entrarComo(context, 'visitante');
     await page.goto('empresas.html');
     await expect(enlace(page, 'Empresas')).toHaveClass(/active-nav/);
-    await expect(page.locator('.nav-pastilla')).toHaveCount(0);
+    await expect(page.locator('.lente-menu')).toHaveCount(0);
     expect(await enlace(page, 'Empresas').evaluate(a => getComputedStyle(a).boxShadow)).not.toBe('none');
 });
 
-// Al pasar por el menu (2026-11-12): la gota de vidrio aparece solo con el mouse encima y cada icono hace su
-// gesto (el edificio enciende sus ventanas); en reposo queda solo la linea bajo la pagina actual
-test('al pasar el mouse: la gota de vidrio viaja y cada icono hace su gesto; en reposo, solo la línea', async ({ page, context, api }, info) => {
+// Al pasar por el menu: cada icono hace su gesto (el edificio enciende sus ventanas) y crece un poco; el lente
+// no se mueve (2026-11-13, video «Lente»: se mueve con el clic o arrastrándolo)
+test('al pasar el mouse cada icono hace su gesto y el lente se queda en la página actual', async ({ page, context, api }, info) => {
     test.skip(info.project.name !== 'escritorio', 'el mouse se prueba en el computador');
     await entrarComo(context, 'visitante');
     await page.goto('oportunidades.html');
-    const cristal = () => page.locator('header .nav-pastilla').evaluate(p => +getComputedStyle(p, '::before').opacity);
-    await expect.poll(cristal).toBe(0);
+    const lenteEn = () => page.locator('.lente-menu').evaluate(l => l.style.transform);
+    await expect(page.locator('.lente-menu')).toHaveCSS('opacity', '1');
+    const antes = await lenteEn();
     // Los iconos del menu traen sus piezas: el edificio, sus 5 ventanas que se encienden
     await expect(enlace(page, 'Empresas').locator('.nv-luz')).toHaveCount(5);
     await enlace(page, 'Empresas').hover();
     await expect(page.locator('header .nav-principales')).toHaveClass(/con-sobre/);
-    await expect.poll(cristal).toBe(1);
     await expect.poll(() => enlace(page, 'Empresas').locator('.nv-luz').last().evaluate(v => +getComputedStyle(v).opacity)).toBe(1);
-    // Al salir del menu el cristal se va y la linea vuelve a la pagina actual
+    expect(await lenteEn()).toBe(antes);
     await page.mouse.move(5, 400);
     await expect(page.locator('header .nav-principales')).not.toHaveClass(/con-sobre/);
-    await expect.poll(cristal).toBe(0);
+    expect(await lenteEn()).toBe(antes);
 });
 
 test('con "reducir movimiento" los iconos del menú no hacen gestos', async ({ page, context, api }, info) => {

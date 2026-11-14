@@ -2,12 +2,13 @@
 // seccion 30): barra de arriba, pestanas, menus, ventanas, paleta, avisos y recorrido
 const { test, expect, entrarComo } = require('../apoyo/prueba');
 
-// Translucido (alfa del color de fondo menor que 1) y con desenfoque de verdad
+// Translucido (alfa del color de fondo menor que 1) y con desenfoque de verdad. Con la refraccion (app.css,
+// secciones 80 y 81; 2026-11-13) el desenfoque va dentro del filtro SVG (url(#...)): tambien cuenta
 async function deVidrio(locator) {
     return locator.evaluate(el => {
         const cs = getComputedStyle(el);
         const partes = cs.backgroundColor.match(/[\d.]+/g).map(Number);
-        return { translucido: (partes.length > 3 ? partes[3] : 1) < 1, desenfoca: cs.backdropFilter.includes('blur') };
+        return { translucido: (partes.length > 3 ? partes[3] : 1) < 1, desenfoca: /blur|url\(/.test(cs.backdropFilter) };
     });
 }
 
