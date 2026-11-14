@@ -275,7 +275,7 @@ function displayConversations(conversationsList, numArchivadas = 0, archivadas =
 
         return `
             <div class="conversation-item ${unreadClass}${activa}" data-user-id="${escaparHtml(conv.otherUserId)}">
-                <div class="conversation-avatar" aria-hidden="true">${conv.otherUserName ? escaparHtml(conv.otherUserName.charAt(0)) : '<i data-ico="user"></i>'}</div>
+                <div class="conversation-avatar" aria-hidden="true" data-monograma="${escaparHtml(conv.otherUserName || '')}">${conv.otherUserName ? escaparHtml(conv.otherUserName.charAt(0)) : '<i data-ico="user"></i>'}</div>
                 <div class="conversation-info">
                     <div class="conversation-header">
                         <h2><button type="button" class="conv-abrir"${activa ? ' aria-current="true"' : ''}${isUnread ? ` aria-describedby="sinLeer${i}"` : ''}>${nombre}</button></h2>
@@ -342,6 +342,9 @@ async function pintarCabecera(userId) {
         if (String(userId) !== String(currentConversationUserId)) return;
         nombreEl.textContent = nombre || 'Usuario';
         avatarEl.textContent = (nombre || '?').charAt(0).toUpperCase();
+        // «Monograma»: el de esta persona (el mismo que en la lista de conversaciones)
+        avatarEl.dataset.monograma = nombre || '';
+        if (window.SkillMatchUI && SkillMatchUI.monograma) SkillMatchUI.monograma(avatarEl);
         titularEl.textContent = titular || '';
     };
     poner(conv ? conv.otherUserName : 'Cargando…', '');
@@ -491,6 +494,16 @@ async function sendMessage() {
 
     enviando = true;
     boton.disabled = true;
+    // «Pastilla»: el avion de papel del boton sale volando y vuelve a entrar (solo transform y opacity)
+    const avion = boton.querySelector('.ico');
+    if (avion && avion.animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        avion.animate([
+            { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+            { transform: 'translate(14px, -14px) rotate(-12deg)', opacity: 0, offset: .45 },
+            { transform: 'translate(-12px, 12px) rotate(0deg)', opacity: 0, offset: .46 },
+            { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 }
+        ], { duration: 520, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+    }
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/messages`, {
             method: 'POST',
@@ -861,7 +874,7 @@ function pintarPersonas(texto) {
     lista.innerHTML = filtradas.map(p => `
         <li>
             <button type="button" class="persona" data-id="${escaparHtml(p.id)}">
-                <span class="connection-avatar-circle">${escaparHtml(p.nombre.charAt(0).toUpperCase())}</span>
+                <span class="connection-avatar-circle" data-monograma="${escaparHtml(p.nombre)}">${escaparHtml(p.nombre.charAt(0).toUpperCase())}</span>
                 <span class="persona-texto">
                     <strong>${escaparHtml(p.nombre)}</strong>
                     ${p.titular ? `<small>${escaparHtml(p.titular)}</small>` : ''}

@@ -73,7 +73,7 @@ function tarjetaEmpresa(c) {
     const lugar = [c.industry, c.location].filter(Boolean).map(escaparHtml).join(' · ');
     return `
         <li class="empresa-tarjeta">
-            <span class="empresa-avatar" aria-hidden="true"${c.userId ? ` data-logo-cuenta="${escaparHtml(String(c.userId))}"` : ''}>${escaparHtml(iniciales(c.name))}</span>
+            <span class="empresa-avatar" aria-hidden="true" data-monograma="${escaparHtml(c.name || '')}"${c.userId ? ` data-logo-cuenta="${escaparHtml(String(c.userId))}"` : ''}>${escaparHtml(iniciales(c.name))}</span>
             <div class="empresa-datos">
                 <h3><a class="empresa-enlace" href="empresa.html?id=${encodeURIComponent(c.id)}">${escaparHtml(c.name || 'Empresa')}</a></h3>
                 ${lugar ? `<p>${lugar}</p>` : ''}
@@ -321,7 +321,7 @@ function pintarPerfil(c, vacantes) {
     contenedor.innerHTML = `
         <div class="empresa-cabeza con-portada">
             <div class="empresa-portada" id="empresaPortada" aria-hidden="true"></div>
-            <span class="empresa-avatar grande" id="empresaLogo" aria-hidden="true">${escaparHtml(iniciales(c.name))}</span>
+            <span class="empresa-avatar grande" id="empresaLogo" aria-hidden="true" data-monograma="${escaparHtml(c.name || '')}">${escaparHtml(iniciales(c.name))}</span>
             <div class="empresa-cabeza-texto">
                 <h1>${escaparHtml(c.name || 'Empresa')}</h1>
                 ${lugar ? `<p>${lugar}</p>` : ''}
@@ -396,8 +396,9 @@ async function imagenesDeEmpresa(c) {
             const img = document.createElement('img');
             img.src = cuenta.profileImageUrl;
             img.alt = '';
-            img.onerror = () => { logo.textContent = iniciales(c.name); };
+            img.onerror = () => { logo.textContent = iniciales(c.name); logo.classList.remove('con-logo'); };
             logo.replaceChildren(img);
+            logo.classList.add('con-logo');   // con logo, sin el monograma detras (app.css, seccion 86)
         }
     } catch (e) { /* se quedan las iniciales y la portada de la marca */ }
 }

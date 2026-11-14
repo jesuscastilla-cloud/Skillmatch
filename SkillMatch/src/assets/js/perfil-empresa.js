@@ -1203,7 +1203,7 @@ function pintarVistaOferta(publicada) {
     destino.innerHTML = `
         <div class="opportunity-card" inert data-revelado="1">
             <div class="card-header-opp">
-                <div class="company-logo-opp">${sanitize(empresa.charAt(0))}</div>
+                <div class="company-logo-opp" data-monograma="${sanitize(empresa)}">${sanitize(empresa.charAt(0))}</div>
                 <div class="card-info">
                     <h3 class="job-title"><span class="job-title-link">${valor('offerTitle') ? sanitize(valor('offerTitle')) : falta('Título de la oferta')}</span></h3>
                     <p class="company-name">${sanitize(empresa)}</p>
@@ -1368,7 +1368,7 @@ function createCandidateCard(application, offerId) {
     return `
         <article class="candidato-tarjeta">
             <div class="candidato-cabeza">
-                <div class="candidato-avatar">${avatar}</div>
+                <div class="candidato-avatar" data-monograma="${name}">${avatar}</div>
                 <div class="candidato-nombre">
                     <h3>${name}</h3>
                     <p>${sanitize(application.userHeadline) || 'Sin título en su perfil'}</p>

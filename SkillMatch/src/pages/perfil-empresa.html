@@ -6,9 +6,9 @@
     <title>Perfil de empresa - SkillMatch Cartagena</title>
     <meta name="description" content="El panel de tu empresa en SkillMatch: vacantes publicadas, postulaciones recibidas y mensajes.">
     <meta name="robots" content="noindex">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    <!-- Fuentes guardadas en el proyecto (assets/fonts, app.css seccion 77): antes se esperaba ~1,5 s a Google Fonts -->
+    <link rel="preload" href="../assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../assets/css/app.css">
     <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
@@ -134,28 +134,8 @@
                         </div>
                     </section>
 
-                    <div class="content-section-card">
-                        <div class="section-card-header">
-                            <h2>Acerca de nosotros</h2>
-                            <button class="btn-icon-action" id="btnEditAbout" type="button" aria-label="Editar descripción" title="Editar descripción"><i data-ico="pencil"></i></button>
-                        </div>
-                        <div class="section-card-body" id="companyAbout">
-                            <p class="loading-text">Cargando información de la empresa...</p>
-                        </div>
-                    </div>
-
-                    <div class="content-section-card" id="ofertas">
-                        <div class="section-card-header">
-                            <h2>Ofertas publicadas</h2>
-                            <button class="btn-new-offer" id="btnNewOffer" type="button"><i data-ico="plus"></i> Nueva oferta</button>
-                        </div>
-                        <div class="section-card-body">
-                            <div class="offers-list" id="offersList">
-                                <p class="loading-text">Cargando ofertas...</p>
-                            </div>
-                        </div>
-                    </div>
-
+                    <!-- Orden por importancia (revision 2026-11-13): primero quien se postulo, despues las vacantes
+                         y al final "Acerca de nosotros". Antes las postulaciones quedaban a ~4.000 px de arriba. -->
                     <!-- Postulaciones reales. Antes: "Candidatos recomendados" inventados
                          (Juan Rodriguez 98 %, Maria Garcia 94 %) y las reales nunca se
                          mostraban porque el codigo buscaba un contenedor que no existia. -->
@@ -179,6 +159,28 @@
                             <div id="applications-board" class="tablero" hidden></div>
                         </div>
                     </div>
+                    <div class="content-section-card" id="ofertas">
+                        <div class="section-card-header">
+                            <h2>Ofertas publicadas</h2>
+                            <button class="btn-new-offer" id="btnNewOffer" type="button"><i data-ico="plus"></i> Nueva oferta</button>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="offers-list" id="offersList">
+                                <p class="loading-text">Cargando ofertas...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-section-card">
+                        <div class="section-card-header">
+                            <h2>Acerca de nosotros</h2>
+                            <button class="btn-icon-action" id="btnEditAbout" type="button" aria-label="Editar descripción" title="Editar descripción"><i data-ico="pencil"></i></button>
+                        </div>
+                        <div class="section-card-body" id="companyAbout">
+                            <p class="loading-text">Cargando información de la empresa...</p>
+                        </div>
+                    </div>
+
                 </main>
             </div>
         </div>

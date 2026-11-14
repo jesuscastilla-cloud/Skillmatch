@@ -381,7 +381,7 @@ function tarjetaCarrusel(opp, indice, total) {
         <article class="carrusel-tarjeta" role="group" aria-roledescription="vacante" aria-label="${indice + 1} de ${total}" data-resumen="${escapar(resumen)}">
             <div class="cv-tarjeta">
                 <div class="cv-cabeza">
-                    <span class="cv-logo" aria-hidden="true"${opp.empresaId ? ` data-logo-empresa="${escapar(String(opp.empresaId))}"` : ''}>${escapar(opp.empresa.charAt(0))}</span>
+                    <span class="cv-logo" aria-hidden="true" data-monograma="${escapar(opp.empresa)}"${opp.empresaId ? ` data-logo-empresa="${escapar(String(opp.empresaId))}"` : ''}>${escapar(opp.empresa.charAt(0))}</span>
                     <div class="cv-titulos">
                         <h3>${escapar(opp.titulo)}</h3>
                         <p>${escapar(opp.empresa)}</p>

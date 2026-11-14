@@ -343,6 +343,11 @@ function renderProfileChecklist() {
     const total = Object.keys(profileChecks).length;
     const hechos = Object.values(profileChecks).filter(Boolean).length;
     const porcentaje = Math.round(hechos / total * 100);
+    // El menu "Tu cuenta" (ui.js) muestra el mismo numero: se le deja anotado para no volver a pedirlo
+    // (solo el tuyo: en un perfil ajeno no se anota)
+    if (typeof esPerfilAjeno !== 'function' || !esPerfilAjeno()) {
+        try { sessionStorage.setItem('skillmatch_perfil_pct', JSON.stringify({ pct: porcentaje, t: Date.now() })); } catch (e) { /* sin almacenamiento */ }
+    }
     // El anillo de la cifra: el trazo del circulo mide 100 (pathLength)
     const anillo = document.getElementById('profileProgress');
     const texto = document.getElementById('progressPercentage');
@@ -1000,7 +1005,7 @@ async function loadInterestedCompanies() {
 
                 return `
                     <div class="company-item-compact">
-                        <div class="company-logo-compact">${escaparHtml((company.name || '?').charAt(0))}</div>
+                        <div class="company-logo-compact" data-monograma="${escaparHtml(company.name || '')}">${escaparHtml((company.name || '?').charAt(0))}</div>
                         <div class="company-info-compact">
                             <h3>${company.jobId ? `<a href="oportunidades.html?jobId=${encodeURIComponent(company.jobId)}">${escaparHtml(company.job || company.name)}</a>` : escaparHtml(company.job || company.name)}</h3>
                             <p>${company.job ? escaparHtml(company.name) + ' · ' : ''}${cuando}</p>
@@ -1302,6 +1307,8 @@ async function updateProfileImage(imageUrl) {
             currentUserProfile.profileImageUrl = data.profileImageUrl;
             const nombre = `${currentUserProfile.firstName || ''} ${currentUserProfile.lastName || ''}`.trim();
             setProfileAvatar(data.profileImageUrl, nombre);
+            // El boton "Tu cuenta" de la barra (ui.js) la cambia en el momento
+            window.dispatchEvent(new CustomEvent('skillmatch:foto', { detail: { url: data.profileImageUrl } }));
             notify('Foto de perfil actualizada');
             closePhotoModal();
             return true;

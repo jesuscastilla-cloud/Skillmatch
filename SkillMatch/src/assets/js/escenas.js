@@ -248,53 +248,92 @@
         }
     };
 
-    /* ---- Elegir cuenta: dos escenas pequenas que se arman UNA vez (revision 2026-11-13) ----
-       Mismas piezas y paleta de noche que la portada, sin recuadro. No se repiten: al terminar se
-       quedan quietas en su cuadro final (receta.unaVez). Con "reducir movimiento" ya estan armadas. */
+    /* ---- Elegir cuenta: "El recorrido" (elegido por Luis el 2026-11-13 entre 3 direcciones) ----
+       Cada escena cuenta lo que dice su tarjeta y se arma UNA vez (unaVez), luego queda quieta.
+       - Persona: tu casa se enciende; tres vacantes brotan mas altas mientras mas encajan (92, 74, 51 %);
+         tus habilidades saltan a la mejor, cada una enciende su piso, chispa y "Postulacion enviada".
+       - Empresa: el edificio publica "Se busca"; llegan tres personas; una se descarta, otra se acepta.
+       Coreografia (skills choreograph y review-animations): el suelo ya esta, un protagonista por escena,
+       letreros que solo aparecen y suben 6 px, esperas que se acortan, causa y efecto en el mismo
+       instante, ~3 s en total y salidas mas cortas que las entradas. */
+    var AZUL = { arriba: '#7FA8FF', izq: '#2F6FE4', der: '#2457B8' };
+    var NARANJA_PUNTO = '#FFA05C', CIAN_PUNTO = '#5FD0DC';
+
+    // Un desplazamiento del mundo (x, y, z) llevado a la pantalla
+    function pant(dx, dy, dz) { return [(dx - dy) * 0.866, (dx + dy) * 0.5 - (dz || 0)]; }
+    function viaje(t, dur, d, salto, contenido) {
+        return '<g class="e-viaja" data-t="' + t + '" data-dur="' + dur + '" data-dx="' + f1(d[0]) + '" data-dy="' + f1(d[1]) + '" data-salto="' + (salto || 0) + '">' + contenido + '</g>';
+    }
+    // Aparece (fundido) en t; si trae "hasta", se va a esa hora
+    function aparece(t, dur, contenido, hasta) {
+        // review-animations: una salida es mas corta que su entrada (260 ms; la persona ya decidio)
+        return '<g data-t="' + t + '" data-dur="' + dur + '"' + (hasta ? ' data-hasta="' + hasta + '" data-salida="260"' : '') + '>' + contenido + '</g>';
+    }
+    // Los letreros son apoyo, no protagonistas: aparecen y suben 6 px
+    function etiqueta(t, contenido) { return '<g class="e-etiqueta" data-t="' + t + '">' + contenido + '</g>'; }
+    // La onda acompana el impacto: corta (750 ms), no se queda flotando despues de la chispa
+    function ondaCorta(t, cx, cy, r, color) { return onda(t, cx, cy, r, color).replace('class="e-onda"', 'class="e-onda" data-dur="750"'); }
+    function brota(t, contenido, dur) { return '<g class="e-brota" data-t="' + t + '"' + (dur ? ' data-dur="' + dur + '"' : '') + '>' + contenido + '</g>'; }
+    function persona(I, x, y, c) { return I.caja(x, y, 0, 7, 7, 10, c) + I.caja(x + 1, y + 1, 10.5, 5, 5, 5, c); }
+
+    // Persona. Protagonista: la vacante que mas encaja (la torre de atras).
     CONSTRUCTORES['camino-persona'] = {
-        ciclo: 3300, unaVez: true,
+        ciclo: 3500, unaVez: true,
         dibujar: function () {
-            var I = Iso(232, 96), s = '';
-            s += '<defs><radialGradient id="e-luz-persona"><stop offset="0" stop-color="#5FD0DC" stop-opacity=".6"/><stop offset="1" stop-color="#5FD0DC" stop-opacity="0"/></radialGradient></defs>';
-            s += '<g data-t="0" data-dur="500">' + I.manzana(150, 112) + '</g>';
-            s += '<g class="e-brota" data-t="200">' + I.arbol(126, 14, .9) + '</g>';
-            // Tu casa brota apagada y se enciende
-            var ventana = [[64.1, 44, 16], [64.1, 58, 16], [64.1, 58, 30], [64.1, 44, 30]];
-            s += '<g class="e-brota" data-t="250">' + I.caja(20, 30, 0, 44, 44, 40, C.pared) + I.techo(20, 30, 40, 44, 44, 24, '#2BB6C6', '#1B8F9C') +
-                 I.poli([[36, 74.1, 0], [48, 74.1, 0], [48, 74.1, 20], [36, 74.1, 20]], '#081A2E') + I.poli(ventana, C.ventana[1]) + '</g>';
-            var vc = I.iso(64.1, 51, 23);
-            s += '<g data-t="900" data-dur="500"><circle cx="' + f1(vc[0]) + '" cy="' + f1(vc[1]) + '" r="18" fill="url(#e-luz-persona)"/>' + I.poli(ventana, C.ventanaLuz[0]) +
-                 I.poli([[36, 74.2, 0], [48, 74.2, 0], [48, 74.2, 3], [36, 74.2, 3]], '#7FE3EC') + '</g>';
-            // Tus habilidades: tres cubos de luz que brotan frente a la casa, uno tras otro (el ultimo naranja: la chispa)
-            [[84, 86, C.cian, 1250], [104, 86, C.cian, 1450], [124, 86, C.naranja, 1650]].forEach(function (h) {
-                s += '<g class="e-brota" data-t="' + h[3] + '" data-dur="700">' + I.caja(h[0], h[1], 0, 12, 12, 12, h[2]) + '</g>';
+            var I = Iso(190, 92), s = '';
+            s += I.manzana(230, 110) + I.arbol(214, 96, .8);
+            var ventana = [[48.1, 48, 12], [48.1, 58, 12], [48.1, 58, 22], [48.1, 48, 22]];
+            s += brota(0, I.caja(14, 40, 0, 34, 34, 28, C.pared) + I.techo(14, 40, 28, 34, 34, 18, '#2BB6C6', '#1B8F9C') +
+                I.poli([[26, 74.1, 0], [36, 74.1, 0], [36, 74.1, 16], [26, 74.1, 16]], '#081A2E') + I.poli(ventana, C.ventana[1]), 700);
+            // La ventana se enciende cuando la casa se asienta, y su letrero con ella (un solo golpe)
+            s += aparece(450, 300, I.poli(ventana, C.ventanaLuz[0]));
+            s += etiqueta(480, pastilla(110, 96, 'Tu perfil', { vidrio: true, punto: CIAN_PUNTO }));
+            // Las vacantes brotan como una ola (130 y 90 ms) y cada letrero llega cuando su torre se asienta
+            [[104, 76, '92 %', NARANJA_PUNTO, 650], [138, 54, '74 %', CIAN_PUNTO, 780], [172, 34, '51 %', CIAN_PUNTO, 870]].forEach(function (b, i) {
+                var x = b[0], h = b[1], edificio = I.caja(x, 8, 0, 22, 22, h, C.hotel);
+                for (var z = 12; z + 8 < h - 2; z += 16) edificio += I.ventanas(x, 8, 22, 22, z, 8, C.ventana, 2, 2);
+                if (i === 0) edificio += I.poli([[x + 7, 30.1, 0], [x + 15, 30.1, 0], [x + 15, 30.1, 14], [x + 7, 30.1, 14]], '#081A2E');
+                s += brota(b[4], edificio, 700);
+                var arriba = I.iso(x + 11, 19, h);
+                s += etiqueta(b[4] + 480, pastilla(arriba[0] + 46 + i * 2, arriba[1], b[2], { vidrio: true, punto: b[3] }));
             });
-            s += '<g class="e-crece" data-t="1100">' + pastilla(312, 84, 'Tu perfil', { vidrio: true, punto: '#5FD0DC' }) + '</g>';
-            var p = I.iso(130, 92, 14);
-            s += onda(1950, p[0], p[1], 14) + chispas(2050, p[0], p[1], 12, 8);
+            // Causa -> efecto: cada habilidad que aterriza enciende un piso de la torre en ese instante
+            var pisos = [12, 28, 44];
+            [[1500, C.cian], [1640, C.cian], [1740, C.naranja]].forEach(function (q, i) {
+                var llega = q[0] + 100 + 560;
+                s += aparece(q[0], 200, viaje(q[0] + 100, 560, pant(56, -24), 20, I.caja(54, 56, 0, 9, 9, 9, q[1])), llega + 60);
+                s += aparece(llega, 240, I.ventanas(104, 8, 22, 22, pisos[i], 8, C.ventanaLuz, 2, 2));
+            });
+            // Con la ultima se enciende la cima y sale la chispa, en el mismo instante
+            s += aparece(2420, 240, I.ventanas(104, 8, 22, 22, 60, 8, C.ventanaLuz, 2, 2));
+            var puerta = I.iso(114, 30, 7);
+            s += ondaCorta(2400, puerta[0], puerta[1], 12) + chispas(2420, puerta[0], puerta[1], 10, 8);
+            s += etiqueta(2500, pastilla(150, 252, 'Postulación enviada', { vidrio: true, punto: NARANJA_PUNTO, tam: 12 }));
             return s;
         }
     };
+
+    // Empresa. Protagonista: la persona aceptada (la primera de la fila).
     CONSTRUCTORES['camino-empresa'] = {
-        ciclo: 3800, unaVez: true,
+        ciclo: 3300, unaVez: true,
         dibujar: function () {
-            var I = Iso(232, 112), s = '';
-            s += '<g data-t="0" data-dur="500">' + I.manzana(150, 112) + '</g>';
-            s += '<g class="e-brota" data-t="200">' + I.arbol(12, 96, .8) + '</g>';
-            // El edificio de la empresa brota con las ventanas apagadas...
-            var edificio = I.caja(54, 20, 0, 56, 50, 104, C.hotel) + I.poli([[74, 70.1, 0], [90, 70.1, 0], [90, 70.1, 18], [74, 70.1, 18]], '#081A2E');
-            for (var k = 0; k < 4; k++) edificio += I.ventanas(54, 20, 56, 50, 28 + k * 20, 11, C.ventana, 4, 3);
-            s += '<g class="e-brota" data-t="250" data-dur="1000">' + edificio + '</g>';
-            // ...y enciende sus pisos de abajo hacia arriba: llegan personas
-            for (var j = 0; j < 4; j++) s += '<g data-t="' + (1000 + j * 220) + '" data-dur="380">' + I.ventanas(54, 20, 56, 50, 28 + j * 20, 11, C.ventanaLuz, 4, 3) + '</g>';
-            s += '<g class="e-crece" data-t="1250">' + pastilla(336, 96, 'Tu vacante', { vidrio: true, punto: '#FFA05C' }) + '</g>';
-            // Dos personas (cubos de luz) llegan hasta la puerta
-            [[0, 1600], [1, 1850]].forEach(function (q) {
-                s += '<g data-t="' + q[1] + '" data-dur="250"><g class="e-viaja" data-t="' + (q[1] + 80) + '" data-dur="520" data-dx="' + f1(52 * .866) + '" data-dy="' + f1(52 * .5) + '" data-salto="6">' +
-                     I.caja(10 + q[0] * 6, 74 + q[0] * 10, 0, 9, 9, 13, q[0] ? C.naranja : C.cian) + '</g></g>';
+            var I = Iso(200, 96), s = '';
+            s += I.manzana(210, 110) + I.arbol(20, 20, .8);
+            var edificio = I.caja(120, 10, 0, 52, 44, 96, C.hotel) + I.poli([[138, 54.1, 0], [152, 54.1, 0], [152, 54.1, 18], [138, 54.1, 18]], '#081A2E');
+            for (var k = 0; k < 4; k++) edificio += I.ventanas(120, 10, 52, 44, 24 + k * 18, 10, C.ventana, 4, 3);
+            s += brota(0, edificio, 800);
+            // Publicar: el aviso sale del techo cuando el edificio se asienta
+            var techo = I.iso(146, 32, 96);
+            s += ondaCorta(560, techo[0], techo[1], 14);
+            s += etiqueta(600, pastilla(techo[0], 56, 'Se busca: Recepcionista', { vidrio: true, punto: NARANJA_PUNTO, tam: 12 }));
+            // Llegan como una ola: 180 y despues 120 ms entre una y otra
+            [[120, C.cian, 1000, 0], [134, C.naranja, 1180, 0], [148, AZUL, 1300, 2100]].forEach(function (p) {
+                s += aparece(p[2] - 150, 150, viaje(p[2], 600, pant(p[0] - 6, -30), 10, persona(I, 6, 96, p[1])), p[3] || null);
             });
-            var puerta = I.iso(82, 72, 10);
-            s += onda(2450, puerta[0], puerta[1], 14) + chispas(2550, puerta[0], puerta[1], 12, 8);
+            // Primero se descarta una (2100) y despues se acepta otra: el orden cuenta "acepta o rechaza"
+            var cabeza = I.iso(124, 70, 16);
+            s += ondaCorta(2350, cabeza[0], cabeza[1], 12) + chispas(2370, cabeza[0], cabeza[1], 10, 8);
+            s += etiqueta(2400, pastilla(178, 214, 'Aceptada', { vidrio: true, punto: CIAN_PUNTO, tam: 12 }));
             return s;
         }
     };
@@ -350,6 +389,8 @@
         if (c.contains('e-brota')) return { dur: 900, k: [{ o: 0, op: 0, tf: 'scale(1, 0)', e: CURVA.salida }, { o: .12, op: op }, { o: .7, op: op, tf: 'scale(1, 1.04)', e: CURVA.viaje }, { o: 1, op: op, tf: 'scale(1, 1)' }], sale: 'scale(1, 1)' };
         // Chispa: sale disparada hacia (dx, dy), se achica y se apaga
         if (c.contains('e-chispa')) return { dur: 700, k: [{ o: 0, op: 0, tf: 'translate(0px, 0px) scale(1)', e: CURVA.salida }, { o: .08, op: 1 }, { o: 1, op: 0, tf: 'translate(' + (+d.dx || 0).toFixed(1) + 'px, ' + (+d.dy || 0).toFixed(1) + 'px) scale(0.3)' }] };
+        // Letrero (2026-11-13): aparece y sube 6 px, sin crecer ni rebotar; sale mas rapido de lo que entra
+        if (c.contains('e-etiqueta')) return { dur: 420, k: [{ o: 0, op: 0, tf: 'translate(0px, 6px)', e: CURVA.salida }, { o: 1, op: op, tf: 'translate(0px, 0px)' }], sale: 'translate(0px, -4px)', durSale: 240 };
         if (c.contains('e-sube')) return { dur: 950, k: [{ o: 0, op: 0, tf: 'translate(0px, 18px)', e: CURVA.salida }, { o: 1, op: op, tf: 'translate(0px, 0px)' }], sale: 'translate(0px, -6px)' };
         if (c.contains('e-leyenda')) return { dur: 820, k: [{ o: 0, op: 0, tf: 'translate(0px, 9px)' }, { o: .22, op: 0, tf: 'translate(0px, 9px)', e: CURVA.salida }, { o: 1, op: op, tf: 'translate(0px, 0px)' }], sale: 'translate(0px, -9px)', durSale: 360 };
         if (c.contains('e-crece')) return { dur: 850, k: [{ o: 0, op: 0, tf: 'scale(0.5)', e: CURVA.salida }, { o: .6, op: op, tf: 'scale(1.05)', e: CURVA.viaje }, { o: 1, op: op, tf: 'scale(1)' }], sale: 'scale(0.9)' };
@@ -377,7 +418,7 @@
             var tfFuera = ef.sale !== undefined ? ef.sale : z.tf;
             if (z.tf !== undefined) desde.transform = z.tf;
             if (tfFuera !== undefined) fuera.transform = tfFuera;
-            lista.push(p.animate([desde, fuera], { delay: Math.max(hasta, t + dur), duration: ef.durSale || 420, fill: 'forwards' }));
+            lista.push(p.animate([desde, fuera], { delay: Math.max(hasta, t + dur), duration: +d.salida || ef.durSale || 420, fill: 'forwards' }));
         }
         return lista;
     }

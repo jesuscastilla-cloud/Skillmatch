@@ -89,7 +89,8 @@ function showToast(message, type = 'success') {
 
 function avatarCircle(name) {
     const initial = name ? name.charAt(0).toUpperCase() : '?';
-    return `<div class="connection-avatar-circle">${escaparHtml(initial)}</div>`;
+    // «Monograma»: colores y patron propios de este nombre (ui.js)
+    return `<div class="connection-avatar-circle" data-monograma="${escaparHtml(name || '')}">${escaparHtml(initial)}</div>`;
 }
 
 // ─── Mis conexiones ───────────────────────────────────────────────────────────
