@@ -1680,6 +1680,31 @@
         delete campo.dataset.errorDe;
         delete campo.dataset.describiaAntes;
     };
+    /** Un campo que solo recibe enteros (salarios, anos). No es type="number": ese deja escribir
+     *  e, +, - y puntos, y al pegar texto raro el valor se vuelve "" sin avisar. Aqui:
+     *  - las teclas que no son numeros no escriben nada;
+     *  - lo pegado se limpia (se quedan solo los digitos);
+     *  - nunca pasa de "digitos" cifras (con 8, el tope de 50.000.000 no se puede pasar por mucho).
+     *  opciones.digitos: cuantas cifras como maximo. Deja inputmode="numeric" y maxlength puestos. */
+    UI.soloEnteros = function (campo, opciones) {
+        if (!campo) return;
+        var digitos = (opciones && opciones.digitos) || 8;
+        campo.setAttribute('inputmode', 'numeric');
+        campo.setAttribute('autocomplete', 'off');
+        campo.setAttribute('maxlength', String(digitos));
+        var limpiar = function () {
+            var limpio = campo.value.replace(/\D+/g, '').replace(/^0+(?=\d)/, '').slice(0, digitos);
+            if (limpio !== campo.value) campo.value = limpio;
+        };
+        campo.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey || e.altKey || e.key.length > 1) return; // flechas, borrar, Tab, atajos
+            if (!/^\d$/.test(e.key)) e.preventDefault();
+        });
+        campo.addEventListener('input', limpiar);
+        campo.addEventListener('paste', function () { setTimeout(limpiar, 0); });
+        limpiar();
+    };
+
     /** Quita todas las marcas de error de un formulario (o de un paso). */
     UI.desmarcarCampos = function (raiz) {
         if (!raiz) return;

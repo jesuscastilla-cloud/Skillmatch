@@ -813,7 +813,7 @@ function abrirDatosEmpresa() {
         </div>
         <div class="form-group">
             <label for="datoAnio">Año de fundación (opcional)</label>
-            <input type="number" id="datoAnio" min="1800" max="${new Date().getFullYear()}" inputmode="numeric" value="${c.foundedYear || ''}">
+            <input type="text" id="datoAnio" inputmode="numeric" placeholder="Ej.: 2010" value="${c.foundedYear || ''}">
         </div>
         <div class="form-group">
             <label for="datoBeneficios">Beneficios para quienes trabajan ahí (opcional)</label>
@@ -821,6 +821,7 @@ function abrirDatosEmpresa() {
         </div>
         <p class="error-text" id="datosEmpresaError" role="alert" hidden></p>
     `, guardarDatosEmpresa);
+    SkillMatchUI.soloEnteros(document.getElementById('datoAnio'), { digitos: 4 });
 }
 
 async function guardarDatosEmpresa() {
@@ -961,6 +962,20 @@ function sinTildesOferta(texto) {
 
 // Resolución 2605 de 2014: una vacante puede estar publicada máximo 6 meses
 const MESES_MAXIMOS_VACANTE = 6;
+// Los mismos limites del servidor (Montos.java): enteros, de $1 a $50.000.000 al mes. Debajo de
+// 50.000 se avisa aparte: quien escribe "2" pensando en millones publicaria un salario de 2 pesos.
+const SALARIO_MAXIMO = 50000000;
+const SALARIO_COMPLETO = 50000;
+// Lo que se dice de un salario escrito, o '' si esta bien (vacio tambien esta bien: "a convenir")
+function problemaDeSalario(texto) {
+    if (texto === '') return '';
+    const n = Number(texto);
+    if (!Number.isInteger(n) || n < 0) return 'Escribe el salario en pesos, solo números, sin puntos ni comas.';
+    if (n === 0) return 'El salario no puede ser $0. Si no quieres mostrarlo, déjalo vacío.';
+    if (n < SALARIO_COMPLETO) return 'Escribe el salario completo en pesos, por ejemplo 1800000.';
+    if (n > SALARIO_MAXIMO) return 'El salario no puede pasar de $50.000.000 al mes.';
+    return '';
+}
 
 // Fecha AAAA-MM-DD en la hora de Colombia (con toISOString salía la fecha de
 // mañana después de las 7 de la noche)
@@ -1090,11 +1105,11 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
             </div>
             <div class="form-group">
                 <label for="offerSalaryMin">Salario mínimo (pesos al mes)</label>
-                <input type="number" id="offerSalaryMin" min="0" step="50000" inputmode="numeric" placeholder="Ej.: 1800000" value="${oferta.salaryMin ?? ''}">
+                <input type="text" id="offerSalaryMin" inputmode="numeric" placeholder="Ej.: 1800000" value="${oferta.salaryMin ?? ''}">
             </div>
             <div class="form-group">
                 <label for="offerSalaryMax">Salario máximo (pesos al mes)</label>
-                <input type="number" id="offerSalaryMax" min="0" step="50000" inputmode="numeric" placeholder="Ej.: 2500000" value="${oferta.salaryMax ?? ''}">
+                <input type="text" id="offerSalaryMax" inputmode="numeric" placeholder="Ej.: 2500000" value="${oferta.salaryMax ?? ''}">
             </div>
             <p class="field-help span-full oferta-salario-vista" id="offerSalaryPreview" aria-live="polite"></p>
             <div class="form-group">
@@ -1147,13 +1162,19 @@ async function openNewOfferModal(existingOffer = null, offerId = null) {
         const min = document.getElementById('offerSalaryMin').value;
         const max = document.getElementById('offerSalaryMax').value;
         const pesos = v => '$' + Number(v).toLocaleString('es-CO');
-        document.getElementById('offerSalaryPreview').textContent =
+        const problema = problemaDeSalario(min) || problemaDeSalario(max)
+            || (min && max && Number(min) > Number(max) ? 'El salario mínimo no puede ser mayor que el máximo.' : '');
+        document.getElementById('offerSalaryPreview').classList.toggle('es-aviso', !!problema);
+        document.getElementById('offerSalaryPreview').textContent = problema ? problema :
             min && max ? `Se publicará como ${pesos(min)} - ${pesos(max)} al mes.`
             : min ? `Se publicará como "desde ${pesos(min)}" al mes.`
             : max ? `Se publicará como "hasta ${pesos(max)}" al mes.`
             : 'Déjalo vacío si prefieres no publicar el salario.';
     };
-    ['offerSalaryMin', 'offerSalaryMax'].forEach(id => document.getElementById(id).addEventListener('input', vista));
+    ['offerSalaryMin', 'offerSalaryMax'].forEach(id => {
+        SkillMatchUI.soloEnteros(document.getElementById(id), { digitos: 8 });
+        document.getElementById(id).addEventListener('input', vista);
+    });
     // El aviso de error se va en cuanto se corrige algo
     document.querySelector('.oferta-form').addEventListener('input', () => { document.getElementById('offerError').hidden = true; });
     vista();
@@ -1249,9 +1270,8 @@ async function guardarOferta(isEdit, offerId) {
 
     if (!title || !location || !description) return error('Completa el título, la ciudad y la descripción.');
     if (!skills.length) return error('Agrega al menos una habilidad: con ellas se calcula la compatibilidad de cada persona.');
-    if ([salaryMin, salaryMax].some(s => s !== null && (Number.isNaN(s) || s < 0))) return error('El salario debe ser un número en pesos.');
-    // Quien escribe "2" pensando en millones publicaría un salario de 2 pesos
-    if ([salaryMin, salaryMax].some(s => s !== null && s > 0 && s < 50000)) return error('Escribe el salario completo en pesos, por ejemplo 1800000.');
+    const problemaSalario = problemaDeSalario(valor('offerSalaryMin')) || problemaDeSalario(valor('offerSalaryMax'));
+    if (problemaSalario) return error(problemaSalario);
     if (salaryMin !== null && salaryMax !== null && salaryMin > salaryMax) return error('El salario mínimo no puede ser mayor que el máximo.');
 
     const fecha = valor('offerDeadline');

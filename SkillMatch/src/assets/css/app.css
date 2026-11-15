@@ -776,6 +776,7 @@ input.is-valid, select.is-valid, textarea.is-valid { border-color: var(--verde);
 .chip .ico { width: 14px; height: 14px; }
 @media (pointer: coarse) { .chip button::after { content: ""; position: absolute; inset: -10px; } }
 .oferta-salario-vista { margin: -6px 0 var(--s4); }
+.oferta-salario-vista.es-aviso { color: var(--rojo); font-weight: 600; }
 @media (max-width: 600px) { .oferta-form { grid-template-columns: 1fr; } }
 
 .form-section {
