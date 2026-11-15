@@ -87,7 +87,9 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
 - **Frontend:** cuando esté, se agrega el formulario en el perfil de empresa y se vuelven a pedir esos datos en el
   registro.
 
-### 2.3 Retirar una postulación la borra
+### 2.3 Retirar una postulación la borra — HECHO (14 de noviembre de 2026)
+- **Hecho:** `RETIRADA` en `ApplicationStatus`. Retirar (`DELETE /api/applications/{id}`) marca la postulación y deja de verse para la persona y la empresa; no cuenta en los totales. Solo se puede retirar mientras está Pendiente o Revisada. Si la persona vuelve a postularse, se reactiva la misma. «Descargar mis datos» sí la incluye. Un ADMIN sigue pudiendo borrarla de verdad.
+- **Lo que había (antes):**
 - **Qué pasa:** `DELETE /api/applications/{id}` elimina el registro y la empresa no sabe que la persona se retiró.
 - **Dónde:** `controller/ApplicationController.java:133` y `service/ApplicationService.java:148`.
 - **Arreglo:** agregar el estado `RETIRADA` a `model/ApplicationStatus.java` y marcarla en vez de borrarla. El frontend
@@ -141,7 +143,9 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
        `@skillmatch.test`, sus vacantes y postulaciones).
   5. El backend permite 20 entradas o registros por minuto por IP (`RateLimitingFilter`); el script espera solo.
 
-### 2.10 Las horas en Render salen 5 horas corridas
+### 2.10 Las horas en Render salen 5 horas corridas — HECHO (14 de noviembre de 2026)
+- **Hecho:** `-Duser.timezone=America/Bogota` en el `Dockerfile`. Mongo guarda el instante exacto, así que lo ya guardado también sale bien, sin migrar.
+- **Lo que había (antes):**
 - **Qué pasa:** el servidor de Render guarda las fechas en hora UTC, sin decir la zona
   (`LocalDateTime.now()` en un contenedor UTC). El navegador las lee como hora de Colombia. Comprobado el 15 de
   octubre de 2026: las vacantes de ejemplo se crearon a las 10:53 p. m. y la base dice `03:53`. Por eso un mensaje
@@ -165,7 +169,9 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
 - **Arreglo gratis:** programar en cron-job.org una visita a `https://skillmatch-yz37.onrender.com/api/health` cada
   10 minutos. Las 750 horas gratis al mes alcanzan para un servicio encendido todo el tiempo.
 
-### 2.12 (Opcional) Que la persona sepa que la vacante se cerró
+### 2.12 (Opcional) Que la persona sepa que la vacante se cerró — HECHO en parte (14 de noviembre de 2026)
+- **Hecho:** `ApplicationResponse` trae `jobStatus` y `jobActive`; «Mis postulaciones» dice «Vacante cerrada» en las que siguen en proceso. Falta el motivo del cierre (opcional).
+- **Lo que había (antes):**
 - **Hoy:** al cerrar una vacante (`JobService.changeStatus`), sus postulaciones no cambian y nadie recibe aviso: la
   persona sigue viendo su postulación en proceso en "Mis postulaciones". En "Mi empresa", la ventana de cerrar lo
   explica y deja responder a quienes esperan (pasan a «Rechazada» con `PATCH /api/applications/{id}/status`).
@@ -198,7 +204,9 @@ Ordenado por urgencia. Las rutas de archivo son relativas a `backend/src/main/ja
 
 ---
 
-## 4. Configuración (`config/SecurityConfig.java`)
+## 4. Configuración (`config/SecurityConfig.java`) — HECHO
+
+Ya corregido: `connect-src` es solo `'self'` y no queda el Power BI. Lo que sigue es lo que había antes.
 
 - **Power BI:** `frame-src https://app.powerbi.com` (línea 123) ya no hace falta: Indicadores ya no inserta el Power BI.
 - **`connect-src`:** hoy es `'self' https:` (línea 122). Cuando el frontend va dentro del jar, conviene dejar solo

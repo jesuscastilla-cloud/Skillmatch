@@ -966,7 +966,9 @@ async function loadInterestedCompanies() {
                             name: app.companyName,
                             job: app.jobTitle,
                             appliedDate: new Date(app.appliedDate),
-                            status: app.status
+                            status: app.status,
+                            // La vacante se cerro mientras la persona esperaba
+                            vacanteCerrada: app.jobActive === false || String(app.jobStatus || '').toUpperCase() === 'CERRADA'
                         });
                     }
                 }
@@ -1065,7 +1067,7 @@ function filaPostulacion(c) {
         <li class="postulacion-fila" data-id="${escaparHtml(c.id || '')}">
             <div class="postulacion-datos">
                 <h3>${enlace}</h3>
-                <p>${escaparHtml(c.name || 'Empresa confidencial')} · ${cuandoTePostulaste(c.appliedDate)}</p>
+                <p>${escaparHtml(c.name || 'Empresa confidencial')} · ${cuandoTePostulaste(c.appliedDate)}${c.vacanteCerrada && SE_PUEDE_RETIRAR.includes(clave) ? ' · <strong class="vacante-cerrada">Vacante cerrada</strong>' : ''}</p>
             </div>
             <p class="status-badge ${clave.toLowerCase()}"><i data-ico="${estado.ico}"></i> ${estado.texto}</p>
             <div class="postulacion-accion">${accion}</div>

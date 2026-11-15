@@ -24,6 +24,9 @@ public class ApplicationResponse {
     private String jobId;
     private String jobTitle;
     private String companyName;
+    /** Si la vacante sigue abierta: "Mis postulaciones" puede decir "Vacante cerrada". */
+    private String jobStatus;
+    private Boolean jobActive;
 
     private String status;
     private String resume;

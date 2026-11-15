@@ -94,3 +94,13 @@ test('«Correos que recibo» guarda lo que la persona elige', async ({ page, con
     await expect.poll(() => api.estado.llamadas.filter(l => l === 'PUT /correos/preferencias').length).toBe(1);
     expect(errores).toEqual([]);
 });
+
+test('«Mis postulaciones» avisa cuando la vacante ya cerró', async ({ page, context, api }) => {
+    await entrarComo(context, 'persona');
+    // La vacante de eventos esta cerrada: una postulacion en proceso a ella debe decirlo
+    api.estado.datos.postulaciones.push({ id: 'a-cerrada', userId: 'u-valentina', jobId: 'j-eventos', status: 'pendiente', coverLetter: '', appliedDate: new Date().toISOString() });
+    await page.goto('perfil-usuario.html');
+    await page.locator('#interestedCompanies .btn-view-all').click();
+    const fila = page.locator('.postulacion-fila[data-id="a-cerrada"]');
+    await expect(fila).toContainText('Vacante cerrada');
+});

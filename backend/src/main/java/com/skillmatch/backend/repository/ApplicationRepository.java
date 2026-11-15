@@ -24,6 +24,11 @@ public interface ApplicationRepository extends MongoRepository<Application, Stri
 
     boolean existsByUserIdAndJobId(String userId, String jobId);
 
+    /** Para saber si "ya se postulo": una retirada no cuenta. */
+    boolean existsByUserIdAndJobIdAndStatusNot(String userId, String jobId, ApplicationStatus status);
+
+    long countByJobIdAndStatusNot(String jobId, ApplicationStatus status);
+
     Optional<Application> findByUserIdAndJobId(String userId, String jobId);
 
     long countByUserId(String userId);
