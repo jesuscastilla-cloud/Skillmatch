@@ -136,7 +136,7 @@ public class SecurityConfig {
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)
                     .maxAgeInSeconds(31536000))
-                .frameOptions(frame -> frame.disable())
+                .frameOptions(frame -> frame.sameOrigin())
                 .contentTypeOptions(Customizer.withDefaults())
                 // Al salir por un enlace externo, el otro sitio solo ve el dominio, no la URL
                 .referrerPolicy(referrer -> referrer.policy(

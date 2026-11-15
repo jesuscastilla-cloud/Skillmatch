@@ -20,10 +20,12 @@ public class ExperienceRequest {
 
     @NotBlank(message = "La empresa es obligatoria")
     @Size(max = 150, message = "La empresa no puede tener más de 150 caracteres")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String company;
 
     @NotBlank(message = "El cargo es obligatorio")
     @Size(max = 150, message = "El cargo no puede tener más de 150 caracteres")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String position;
 
     @NotNull(message = "La fecha de inicio es obligatoria")

@@ -102,6 +102,8 @@ public class CompanyController {
             @RequestParam(required = false) String status,
             @PageableDefault(size = 10, sort = "name") Pageable pageable,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        pageable = com.skillmatch.backend.validation.Paginas.segura(pageable,
+                java.util.Set.of("name", "industry", "location", "createdAt"), org.springframework.data.domain.Sort.by("name"));
         Page<CompanyResponse> companies = "active".equals(status)
                 ? companyService.getActiveCompanies(pageable)
                 : companyService.getAllCompanies(pageable);

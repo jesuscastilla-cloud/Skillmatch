@@ -147,6 +147,27 @@ public class GlobalExceptionHandler {
                 .body(new MessageResponse("Los datos enviados no tienen el formato esperado"));
     }
 
+    // Cuerpo de un tipo que no aceptamos (XML, texto...): 415, no 500
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<?> handleMediaType(org.springframework.web.HttpMediaTypeNotSupportedException ex) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(new MessageResponse("Tipo de contenido no soportado. Usa application/json."));
+    }
+
+    // GET donde va POST, etc.: 405
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<?> handleMethod(org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(new MessageResponse("Método no permitido en esta ruta"));
+    }
+
+    // Falta un parametro obligatorio de la URL: 400
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<?> handleMissingParam(org.springframework.web.bind.MissingServletRequestParameterException ex) {
+        return ResponseEntity.badRequest()
+                .body(new MessageResponse("Falta el dato obligatorio: " + ex.getParameterName()));
+    }
+
     // Ruta o archivo que no existe: 404 (antes salía 500)
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<?> handleNoResource(NoResourceFoundException ex) {

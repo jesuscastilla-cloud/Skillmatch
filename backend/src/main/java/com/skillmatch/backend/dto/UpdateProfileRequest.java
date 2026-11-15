@@ -28,6 +28,7 @@ public class UpdateProfileRequest {
     private String phone;
 
     @Size(max = 200, message = "El headline no puede tener más de 200 caracteres")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String headline;
 
     @Size(max = 100, message = "La ubicación no puede tener más de 100 caracteres")

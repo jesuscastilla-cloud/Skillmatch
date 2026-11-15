@@ -29,6 +29,10 @@ public final class EntradaSegura {
     public static final String MENSAJE_HABILIDAD = "La habilidad solo puede tener letras, números, espacios y + # . / & ( ) -";
 
     /** Solo enlaces web, para usar en @Pattern (vacío también vale). */
+    /** Textos cortos (empresa, cargo, titulo...): sin < ni >, para que nadie guarde etiquetas HTML. */
+    public static final String REGEX_SIN_ETIQUETAS = "^[^<>]*$";
+    public static final String MENSAJE_SIN_ETIQUETAS = "No uses los símbolos < ni > en este campo.";
+
     public static final String REGEX_ENLACE = "^$|^https?://\\S{1,490}$";
 
     private static final Pattern IMAGEN = Pattern.compile(

@@ -21,6 +21,7 @@ public class JobRequest {
 
     @NotBlank(message = "{validation.job.title.required}")
     @Size(max = 200, message = "{validation.job.title.max}")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String title;
 
     @Size(max = 5000, message = "{validation.job.description.max}")
@@ -45,6 +46,7 @@ public class JobRequest {
     private String modality;
 
     @Size(max = 100, message = "{validation.job.duration.max}")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String duration;
     
     @Size(max = 50, message = "Máximo 50 elementos por lista")
