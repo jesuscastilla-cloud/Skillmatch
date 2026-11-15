@@ -2,6 +2,7 @@ package com.skillmatch.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.skillmatch.backend.validation.EntradaSegura;
+import com.skillmatch.backend.validation.Montos;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,10 +33,8 @@ public class JobRequest {
     @Pattern(regexp = "junior|semi-senior|senior|sin-experiencia", message = "{validation.job.level.pattern}")
     private String experienceLevel;
 
-    @Min(value = 0, message = "{validation.job.salary.min}")
     private Double salaryMin;
 
-    @Min(value = 0, message = "{validation.job.salary.min}")
     private Double salaryMax;
 
     @Size(max = 100, message = "{validation.job.location.max}")
@@ -62,6 +61,18 @@ public class JobRequest {
     
     @FutureOrPresent(message = "{validation.job.expiration.future}")
     private LocalDateTime expirationDate;
+
+    @JsonIgnore
+    @AssertTrue(message = Montos.MENSAJE_SALARIO)
+    public boolean isSalarioMinimoValido() {
+        return Montos.esSalarioValido(salaryMin);
+    }
+
+    @JsonIgnore
+    @AssertTrue(message = Montos.MENSAJE_SALARIO)
+    public boolean isSalarioMaximoValido() {
+        return Montos.esSalarioValido(salaryMax);
+    }
 
     @JsonIgnore
     @AssertTrue(message = "El salario máximo no puede ser menor que el mínimo.")

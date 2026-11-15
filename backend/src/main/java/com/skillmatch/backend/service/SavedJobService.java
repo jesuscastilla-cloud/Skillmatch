@@ -1,6 +1,7 @@
 package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.SavedJobRequest;
+import com.skillmatch.backend.validation.Montos;
 import com.skillmatch.backend.dto.SavedJobResponse;
 import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
@@ -122,7 +123,7 @@ public class SavedJobService {
             response.setJobType(job.getType());
             response.setLocation(job.getLocation());
             if (job.getSalaryMin() != null && job.getSalaryMax() != null) {
-                response.setSalaryRange("$" + job.getSalaryMin() + " - $" + job.getSalaryMax());
+                response.setSalaryRange(Montos.pesos(job.getSalaryMin()) + " - " + Montos.pesos(job.getSalaryMax()));
             }
         }
         if (company != null) {

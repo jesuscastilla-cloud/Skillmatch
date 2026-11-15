@@ -1,6 +1,7 @@
 package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.JobRequest;
+import com.skillmatch.backend.validation.Montos;
 import com.skillmatch.backend.dto.JobResponse;
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.security.UserDetailsImpl;
@@ -109,6 +110,8 @@ public class JobController {
             @RequestParam(defaultValue = "postedDate") String sortBy,
             @RequestParam(defaultValue = "desc")       String direction) {
         size = Math.min(size, 50);
+        Montos.exigirSalarioDeFiltro("de salario mínimo", minSalary);
+        Montos.exigirSalarioDeFiltro("de salario máximo", maxSalary);
         return ResponseEntity.ok(jobService.getJobsByFilters(
                 type, modality, experienceLevel, location, minSalary, maxSalary,
                 buildPageable(page, size, sortBy, direction)));
