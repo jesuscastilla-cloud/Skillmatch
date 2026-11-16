@@ -87,10 +87,13 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 3000);
 }
 
-function avatarCircle(name) {
+function avatarCircle(name, cuentaId, foto) {
     const initial = name ? name.charAt(0).toUpperCase() : '?';
-    // «Monograma»: colores y patron propios de este nombre (ui.js)
-    return `<div class="connection-avatar-circle" data-monograma="${escaparHtml(name || '')}">${escaparHtml(initial)}</div>`;
+    // «Monograma»: colores y patron propios de este nombre (ui.js). Con la cuenta, ui.js pone su foto de perfil si
+    // tiene (y si ya viene en los datos, data-foto: no se pide nada)
+    const cuenta = cuentaId ? ` data-logo-cuenta="${escaparHtml(String(cuentaId))}"` : '';
+    const directa = foto ? ` data-foto="${escaparHtml(foto)}"` : '';
+    return `<div class="connection-avatar-circle" data-monograma="${escaparHtml(name || '')}"${cuenta}${directa}>${escaparHtml(initial)}</div>`;
 }
 
 // ─── Mis conexiones ───────────────────────────────────────────────────────────
@@ -136,7 +139,7 @@ function displayConnections(connections) {
         return `
             <div class="connection-card">
                 <div class="connection-header">
-                    ${avatarCircle(name)}
+                    ${avatarCircle(name, otherId)}
                     <div class="connection-info">
                         <h2>${escaparHtml(name || 'Usuario')}</h2>
                         <p class="connection-type">${escaparHtml(headline)}</p>
@@ -190,7 +193,7 @@ function displayRequests(requests) {
         return `
             <div class="connection-card" data-solicitud="${escaparHtml(req.id)}">
                 <div class="connection-header">
-                    ${avatarCircle(req.userName)}
+                    ${avatarCircle(req.userName, req.userId)}
                     <div class="connection-info">
                         <h2>${escaparHtml(req.userName || 'Usuario')}</h2>
                         <p class="connection-type">${escaparHtml(req.userHeadline)}</p>
@@ -314,7 +317,7 @@ function displaySuggestions(suggestions, yo = { ciudad: '', habilidades: new Set
         return `
             <div class="suggestion-card">
                 <div class="suggestion-header">
-                    ${avatarCircle(user.firstName)}
+                    ${avatarCircle(user.firstName, user.id, user.profileImageUrl)}
                     <div class="suggestion-info">
                         <h2>${escaparHtml(name || 'Usuario')}</h2>
                         ${user.headline ? `<p class="suggestion-headline">${escaparHtml(user.headline)}</p>` : ''}

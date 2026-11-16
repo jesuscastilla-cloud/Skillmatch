@@ -31,8 +31,9 @@ test('en Mi empresa se marcan "Mis ofertas" y "Candidatos" al llegar', async ({ 
     await expect(enlace(page, 'Mis ofertas')).not.toHaveClass(/active-nav/);
 });
 
-// El lente (2026-11-13, video «Lente»): una cápsula de cristal sobre la página actual, centrada en su opción y
-// un poco más ancha y alta que ella. Pasar el mouse no la mueve
+// El lente (2026-11-13, video «Lente»): una cápsula sobre la página actual, centrada en su opción y un poco más
+// ancha y alta que ella. Pasar el mouse no la mueve. Desde 2026-11-14, como la burbuja de Apple: quieta es
+// un tinte casi transparente detrás de la palabra, y la gota de cristal solo se ve al tocarla o cuando viaja
 test('el lente de cristal queda sobre la página actual y el mouse no lo mueve', async ({ page, context, api }) => {
     await entrarComo(context, 'visitante');
     await page.goto('index.html');
@@ -46,6 +47,13 @@ test('el lente de cristal queda sobre la página actual y el mouse no lo mueve',
     // Lleva su filo de luz y su brillo, y es redondo del todo
     await expect(lente.locator('.lente-filo')).toHaveCount(1);
     await expect(lente.locator('.lente-brillo')).toHaveCount(1);
+    // Quieto: se ve el tinte y no la gota; no lleva filtro (no tuerce las letras) y va detrás de la palabra
+    await expect(lente).not.toHaveClass(/levantado/);
+    await expect(lente.locator('.lente-reposo')).toHaveCSS('opacity', '1');
+    expect(parseFloat(await lente.locator('.lente-cristal').evaluate(c => getComputedStyle(c).opacity))).toBeLessThan(0.01);
+    expect(await lente.locator('.lente-cristal').evaluate(c => getComputedStyle(c).backdropFilter)).toBe('none');
+    expect(await lente.evaluate(l => getComputedStyle(l).backdropFilter)).toBe('none');
+    expect(Number(await lente.evaluate(l => getComputedStyle(l).zIndex))).toBeLessThan(Number(await enlace(page, 'Inicio').evaluate(a => getComputedStyle(a).zIndex)));
     expect(parseFloat(await lente.evaluate(l => getComputedStyle(l).borderTopLeftRadius))).toBeGreaterThanOrEqual(28);
     await enlace(page, 'Vacantes').hover();
     await page.waitForTimeout(400);
@@ -69,7 +77,7 @@ test('la barra es una isla flotante de vidrio: compacta, centrada, con buscador 
     const isla = await aspecto(page);
     // Tema claro: vidrio claro que deja pasar el color de atras (2026-11-13, seccion 87)
     await expect(page.locator('body > header')).not.toHaveClass(/vidrio-oscuro/);
-    expect(isla.fondo).toBe('rgba(255, 255, 255, 0.5)');
+    expect(isla.fondo).toBe('rgba(255, 255, 255, 0.4)');
     // Desenfoca: con blur() o, con la refraccion (2026-11-13), dentro de su filtro SVG (url(#...))
     expect(await page.locator('body > header').evaluate(h => getComputedStyle(h).backdropFilter)).toMatch(/blur|url\(/);
     expect(isla.radio).toBeGreaterThanOrEqual(20);            // puntas redondas
@@ -96,10 +104,13 @@ test('la barra es una isla flotante de vidrio: compacta, centrada, con buscador 
     await expect(page.locator('header .nav-buscar .cmdk-texto')).toHaveText('Buscar vacantes');
     // "Tema" es solo la palabra de abajo: el lector de pantalla oye el nombre del botón, una vez
     await expect(page.getByRole('button', { name: /^Cambiar a modo (claro|oscuro)$/ })).toHaveCount(1);
-    // Sobre vidrio claro: el logo normal, la opción activa en azul marino sobre su cápsula clara, y
+    // Sobre vidrio claro: el logo normal, la opción activa en el turquesa de la marca (icono y palabra, como la
+    // barra de Apple) sobre su tinte, y
     // "Iniciar sesión" como enlace de texto (sin borde ni fondo) junto al botón turquesa con letra blanca
     await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo\.png$/);
-    expect(await enlace(page, 'Empresas').evaluate(a => getComputedStyle(a).color)).toBe('rgb(8, 32, 60)');
+    await expect(enlace(page, 'Empresas')).toHaveCSS('color', 'rgb(7, 90, 98)');
+    await expect(enlace(page, 'Empresas').locator('.ico')).toHaveCSS('color', 'rgb(7, 90, 98)');
+    await expect(enlace(page, 'Vacantes')).toHaveCSS('color', 'rgb(18, 54, 94)');
     const entrar = await page.locator('.btn-login').evaluate(a => { const c = getComputedStyle(a); return { color: c.color, fondo: c.backgroundColor, borde: c.borderTopWidth }; });
     expect(entrar).toEqual({ color: 'rgb(8, 32, 60)', fondo: 'rgba(0, 0, 0, 0)', borde: '0px' });
     expect(await page.locator('header a.btn-register').evaluate(a => getComputedStyle(a).color)).toBe('rgb(255, 255, 255)');
@@ -113,10 +124,10 @@ test('la barra es una isla flotante de vidrio: compacta, centrada, con buscador 
     // En tema oscuro, el vidrio oscuro de siempre con letras claras y el logo claro
     await page.evaluate(() => localStorage.setItem('skillmatch_theme', 'dark'));
     await page.reload();
-    expect((await aspecto(page)).fondo).toBe('rgba(9, 24, 44, 0.34)');
+    expect((await aspecto(page)).fondo).toBe('rgba(9, 24, 44, 0.26)');
     await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo-oscuro\.png$/);
     // (espera a que termine el fundido del color)
-    await expect(enlace(page, 'Empresas')).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(enlace(page, 'Empresas')).toHaveCSS('color', 'rgb(95, 208, 220)');
 });
 
 test('la isla no cambia de forma ni de lugar al bajar; su vidrio toma el color de lo que tiene detrás', async ({ page, context, api }, info) => {
@@ -127,7 +138,9 @@ test('la isla no cambia de forma ni de lugar al bajar; su vidrio toma el color d
     // El azul de la portada llega hasta arriba, detrás de la isla
     expect(await page.locator('.hero').evaluate(h => Math.round(h.getBoundingClientRect().top))).toBeLessThanOrEqual(1);
     const arriba = await aspecto(page);
-    expect(await enlace(page, 'Inicio').evaluate(a => getComputedStyle(a).color)).toBe('rgb(255, 255, 255)');
+    // La opción actual, en el turquesa claro de la marca (icono y palabra); las demás, casi blancas
+    await expect(enlace(page, 'Inicio')).toHaveCSS('color', 'rgb(95, 208, 220)');
+    await expect(enlace(page, 'Vacantes')).toHaveCSS('color', 'rgb(238, 243, 250)');
     await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo-oscuro\.png$/);
     // Ya fuera de la portada, sobre las secciones claras: la misma isla, en el mismo sitio
     await page.evaluate(() => window.scrollTo(0, document.querySelector('.hero').offsetHeight + 400));
@@ -141,7 +154,7 @@ test('la isla no cambia de forma ni de lugar al bajar; su vidrio toma el color d
     const abajo = await aspecto(page);
     expect(arriba.fondo).toBe('rgba(9, 24, 44, 0.08)');
     await expect(page.locator('body > header')).not.toHaveClass(/vidrio-oscuro/);
-    expect(abajo.fondo).toBe('rgba(255, 255, 255, 0.5)');
+    expect(abajo.fondo).toBe('rgba(255, 255, 255, 0.4)');
     delete arriba.fondo; delete abajo.fondo;
     expect(abajo).toEqual(arriba);
     await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo\.png$/);
@@ -195,4 +208,38 @@ test('con "reducir movimiento" los iconos del menú no hacen gestos', async ({ p
     await page.goto('oportunidades.html');
     await enlace(page, 'Inicio').hover();
     expect(await enlace(page, 'Inicio').locator('.nv-techo').evaluate(t => getComputedStyle(t).animationName)).toBe('none');
+});
+
+// 2026-11-15 (Luis): en la portada, al pasar a tema claro la barra quedaba de vidrio claro (letras oscuras) sobre la
+// ciudad de noche. El tema cambia con un efecto (View Transition) y, mientras dura, elementsFromPoint no ve la página
+test('en la portada, al pasar a tema claro la barra sigue de vidrio oscuro sobre la ciudad', async ({ page, context, api }) => {
+    await entrarComo(context, 'visitante');
+    await page.addInitScript(() => { try { localStorage.setItem('skillmatch_theme', 'dark'); } catch (e) { /* sin almacenamiento */ } });
+    await page.goto('index.html');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(page.locator('html')).not.toHaveClass(/isla-(intro|abriendo)/);
+    // Como lo hace el botón de tema; se mira a mitad del efecto (la "foto" del tema nuevo) y al final
+    // (El cambio empieza un cuadro despues del toque, para que el boton responda al instante: con la maquina
+    // ocupada eso puede tardar mas de 150 ms. Se espera a que el tema cambie de verdad y se mira ahi mismo)
+    const aMitad = await page.evaluate(async () => {
+        const html = document.documentElement;
+        const cambio = new Promise(listo => {
+            const vigia = new MutationObserver(() => { if (html.dataset.theme === 'light') { vigia.disconnect(); listo(); } });
+            vigia.observe(html, { attributes: true, attributeFilter: ['data-theme'] });
+            setTimeout(listo, 3000);
+        });
+        document.querySelector('.theme-toggle').click();
+        await cambio;
+        await new Promise(listo => setTimeout(listo, 60));
+        return { tema: html.dataset.theme, oscuro: document.querySelector('body > header').classList.contains('vidrio-oscuro') };
+    });
+    expect(aMitad).toEqual({ tema: 'light', oscuro: true });
+    await expect(page.locator('html')).not.toHaveClass(/tema-cambiando/);
+    await expect(page.locator('body > header')).toHaveClass(/vidrio-oscuro/);
+    await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo-oscuro\.png$/);
+    // Y de vuelta a tema oscuro: el vidrio oscuro de siempre, sin la marca
+    await page.evaluate(() => document.querySelector('.theme-toggle').click());
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(page.locator('html')).not.toHaveClass(/tema-cambiando/);
+    await expect(page.locator('body > header')).not.toHaveClass(/vidrio-oscuro/);
 });

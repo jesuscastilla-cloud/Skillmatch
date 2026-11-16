@@ -1,24 +1,35 @@
-// La ola del pie en las paginas de vidrio: antes pintaba el color liso de la pagina sobre el pie y
-// dejaba una franja clara de borde recto entre el vidrio y la ola. Ahora el pie mismo termina en curva
-// (mascara) y encima se ve el vidrio; donde lo ultimo es una repisa de vidrio, la repisa sigue debajo.
+// La ola del pie en las paginas de vidrio. Primero pintaba el color liso de la pagina sobre el pie (franja
+// clara de borde recto); despues el pie terminaba en curva con una mascara, pero quieta. Ahora (2026-11-15,
+// Luis: "ya tampoco se mueve") el pie no pinta sus primeros 47 px y la ola es el azul del pie con forma de
+// ola, que se desliza como la del inicio. Donde lo ultimo es una repisa de vidrio, la repisa sigue debajo.
 const { test, expect, entrarComo } = require('../apoyo/prueba');
 
 const leerPie = page => page.locator('body > footer.pie').evaluate(f => {
     const cs = getComputedStyle(f);
+    const ola = f.querySelector('.pie-ola');
+    const co = getComputedStyle(ola);
     return {
         mascara: cs.maskImage && cs.maskImage !== 'none' ? cs.maskImage : (cs.webkitMaskImage || 'none'),
-        ola: getComputedStyle(f.querySelector('.pie-ola')).display
+        ola: co.display,
+        formaOla: co.maskImage && co.maskImage !== 'none' ? co.maskImage : (co.webkitMaskImage || 'none'),
+        animacion: co.animationName,
+        colorDesde: getComputedStyle(f, '::after').top
     };
 });
 
-test('en las páginas de vidrio el pie termina en curva y no pinta la franja lisa', async ({ page, context, api }) => {
+test('en las páginas de vidrio el pie termina en una ola que se desliza, sin franja lisa', async ({ page, context, api }) => {
     await entrarComo(context, 'visitante');
     for (const pagina of ['dashboard.html', 'empresas.html', 'oportunidades.html', 'registro-usuario.html']) {
         await page.goto(pagina);
         await expect(page.locator('body > footer.pie')).toHaveCount(1);
         const pie = await leerPie(page);
-        expect(pie.mascara, pagina).toContain('svg');
-        expect(pie.ola, pagina).toBe('none');
+        // El pie no se recorta (una mascara no se puede deslizar solo con transform): la ola va encima
+        expect(pie.mascara, pagina).toBe('none');
+        expect(pie.ola, pagina).toBe('block');
+        expect(pie.formaOla, pagina).toContain('svg');
+        expect(pie.animacion, pagina).toBe('ola-desliza');
+        // El azul del pie empieza debajo de la ola: sobre la curva se ve el fondo de la pagina
+        expect(pie.colorDesde, pagina).toBe('47px');
     }
 });
 

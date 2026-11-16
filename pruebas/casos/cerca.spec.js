@@ -409,3 +409,45 @@ test('al arrastrar el planeta en plena entrada, ninguna etiqueta tapa un pin ni 
     await expect(page.locator('#cercaMapa .cm-pin-vacante')).toHaveCount(4);
     expect(errores).toEqual([]);
 });
+
+// 2026-11-15 (Luis): con un alcance grande (100 km), al agrandar el mapa el anillo crecía con él y se salía del
+// planeta, encima del título, la leyenda y los botones. Ahora va recortado al borde del planeta
+test('al agrandar el mapa, el anillo de tu alcance no se sale del planeta', async ({ page, context, api, errores }) => {
+    await entrarComo(context, 'visitante');
+    await page.goto('index.html');
+    await expect(cargos(page)).toHaveCount(4);
+    await page.locator('#cercaAlcance [role="radio"]', { hasText: '100 km' }).click();
+    await expect(alcanceElegido(page)).toHaveText('100 km');
+    await mapaListo(page);
+    await expect(page.locator('#cercaMapa .cm-alcance-recorte')).toHaveAttribute('clip-path', 'url(#cmDisco)');
+    // El anillo (su caja) y el circulo del recorte, en la pantalla
+    const medidas = () => page.evaluate(() => {
+        const svg = document.querySelector('#cercaMapa .cm-rutas-svg').getBoundingClientRect();
+        const c = document.querySelector('#cercaMapa .cm-disco-recorte');
+        const cx = svg.left + +c.getAttribute('cx'), cy = svg.top + +c.getAttribute('cy'), r = +c.getAttribute('r');
+        const a = document.querySelector('#cercaMapa .cm-alcance-borde').getBoundingClientRect();
+        // Que tanto se aleja del centro del planeta la esquina mas lejana de la caja del anillo
+        const lejos = Math.max(Math.abs(a.left - cx), Math.abs(a.right - cx), Math.abs(a.top - cy), Math.abs(a.bottom - cy));
+        return { r: r, lejos: lejos };
+    });
+    const etiqueta = page.locator('#cercaMapa .cm-alcance-km');
+    // De entrada el anillo cabe en el planeta y lleva su etiqueta
+    const antes = await medidas();
+    expect(antes.r).toBeGreaterThan(100);
+    expect(antes.lejos).toBeLessThan(antes.r);
+    await expect(etiqueta).not.toHaveClass(/cm-fuera/);
+    // Agrandado: el anillo es mas grande que el planeta, pero el recorte lo deja adentro y la etiqueta se esconde
+    await page.getByRole('button', { name: 'Acercar el mapa' }).click();
+    await mapaListo(page);
+    const agrandado = await medidas();
+    expect(agrandado.r).toBeCloseTo(antes.r, 0);
+    expect(agrandado.lejos).toBeGreaterThan(agrandado.r);
+    await expect(page.locator('#cercaMapa .cm-alcance-recorte')).toHaveAttribute('clip-path', 'url(#cmDisco)');
+    await expect(etiqueta).toHaveClass(/cm-fuera/);
+    // Al alejar vuelve a verse entero, con su etiqueta
+    await page.getByRole('button', { name: 'Alejar el mapa' }).click();
+    await mapaListo(page);
+    expect((await medidas()).lejos).toBeLessThan(antes.r);
+    await expect(etiqueta).not.toHaveClass(/cm-fuera/);
+    expect(errores).toEqual([]);
+});

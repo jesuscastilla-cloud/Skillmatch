@@ -114,4 +114,29 @@ test.describe('escena del inicio', () => {
         await page.waitForTimeout(400);
         expect(await escenario.evaluate(e => e.style.transform)).toBe('');
     });
+
+    // 2026-11-15 (Luis): desde la segunda vuelta las frases de abajo salían montadas (la naranja sobre la blanca) y
+    // los puntos del edificio aparecían antes de tiempo. El navegador descartaba las animaciones de entrada ya
+    // terminadas de las piezas que salen, y al repetirse la historia esas piezas ya no esperaban su momento
+    test('al repetirse la historia, cada frase vuelve a esperar su momento (no se montan)', async ({ page, context, api }) => {
+        await entrarComo(context, 'visitante');
+        await page.goto('index.html');
+        const escenario = page.locator(ESCENARIO);
+        await escenario.scrollIntoViewIfNeeded();
+        await expect.poll(async () => (await lineaDeTiempo(page)).filter(e => e === 'running').length).toBeGreaterThan(20);
+        // Se adelanta casi al final de la primera vuelta y se deja correr hasta que la historia vuelve a empezar
+        await escenario.evaluate(el => { const e = window.SkillMatchEscenas.de(el); e.ir(e.L - 1300); e.reproducir(); });
+        await expect.poll(() => escenario.evaluate(el => window.SkillMatchEscenas.de(el).tiempo()), { timeout: 8000 }).toBeLessThan(1200);
+        // Ya en la segunda vuelta: que frases se ven en cada momento (1 = se ve)
+        const frases = ms => escenario.evaluate((el, ms) => {
+            window.SkillMatchEscenas.verCuadro(el, ms);
+            return Array.from(el.querySelectorAll('.e-leyenda')).map(t => Math.round(+getComputedStyle(t).opacity));
+        }, ms);
+        expect(await frases(300)).toEqual([0, 0, 0]);
+        expect(await frases(3000)).toEqual([1, 0, 0]);
+        expect(await frases(6500)).toEqual([0, 1, 0]);
+        expect(await frases(8600)).toEqual([0, 0, 1]);
+        // Ninguna animación descartada por el navegador
+        expect(await escenario.evaluate(el => window.SkillMatchEscenas.de(el).anims.filter(a => a.replaceState === 'removed').length)).toBe(0);
+    });
 });

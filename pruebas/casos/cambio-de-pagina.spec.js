@@ -70,7 +70,8 @@ test.describe('en el computador', () => {
         await expect.poll(() => ida(page)).not.toBeNull();
         const viaje = await ida(page);
         expect(viaje.url).toMatch(/oportunidades\.html$/);
-        expect(viaje.ms, 'espera a que la línea llegue').toBeGreaterThanOrEqual(300);
+        // El lente llega al 99 % a los 155 ms: la pagina cambia a los 200 (antes esperaba 380 y se sentia trabado)
+        expect(viaje.ms, 'espera a que la línea llegue').toBeGreaterThanOrEqual(180);
         expect(await direccion(page)).toMatchObject({ dir: 'derecha' });
         // Y en la página nueva está ahí desde el principio
         await page.goto('oportunidades.html');
@@ -91,7 +92,7 @@ test.describe('en el computador', () => {
         expect(await lineaDebajoDe(page, 'Vacantes'), 'sigue en el destino').toBe(true);
         // La página cambia cuando el lente llega
         await expect.poll(() => ida(page)).not.toBeNull();
-        expect((await ida(page)).ms).toBeGreaterThanOrEqual(300);
+        expect((await ida(page)).ms).toBeGreaterThanOrEqual(180);
         expect(await direccion(page)).toMatchObject({ dir: 'derecha' });
     });
 
@@ -107,12 +108,36 @@ test.describe('en el computador', () => {
         // Mientras se arrastra: la mano cerrada y la opción de abajo iluminada
         await expect(page.locator('header .nav-principales')).toHaveClass(/lente-agarrado/);
         await expect(enlace(page, 'Inicio')).toHaveClass(/bajo-lente/);
+        // Como la burbuja de Apple: en la mano se levanta (crece, mas a lo alto) y el color de "actual" va con ella
+        await expect(page.locator('.lente-menu')).toHaveClass(/levantado/);
+        // Lo que se ve es la lupa: un lente de verdad, fuera de la barra, que agranda y dobla lo de abajo
+        // (en navegadores sin ese filtro se ve la gota .lente-cristal). Va justo sobre el lente
+        const lupa = page.locator('.lente-lupa.visible:not(.lente-precalentar)');
+        await expect(lupa).toHaveCount(1);
+        await expect(lupa).toHaveCSS('opacity', '1');
+        expect(await lupa.evaluate(l => getComputedStyle(l).backdropFilter)).toMatch(/url\(/);
+        expect(await lupa.evaluate(l => l.parentElement.tagName)).toBe('BODY');
+        const [cajaLupa, cajaLente] = await Promise.all([lupa.boundingBox(), page.locator('.lente-menu').boundingBox()]);
+        expect(Math.abs((cajaLupa.x + cajaLupa.width / 2) - (cajaLente.x + cajaLente.width / 2))).toBeLessThan(2);
+        expect(Math.abs((cajaLupa.y + cajaLupa.height / 2) - (cajaLente.y + cajaLente.height / 2))).toBeLessThan(2);
+        await expect(page.locator('header .nav-principales')).toHaveClass(/lente-arriba/);
+        await expect(enlace(page, 'Inicio')).toHaveClass(/con-lente/);
+        await expect(enlace(page, 'Vacantes')).not.toHaveClass(/con-lente/);
+        expect((await page.locator('.lente-menu').boundingBox()).height).toBeGreaterThan(lente.height + 4);
         await page.mouse.up();
         await expect.poll(() => lineaDebajoDe(page, 'Inicio')).toBe(true);
         await expect.poll(() => ida(page)).not.toBeNull();
         expect((await ida(page)).url).toMatch(/index\.html$/);
         expect(await direccion(page)).toMatchObject({ dir: 'izquierda' });
         await expect(enlace(page, 'Inicio')).not.toHaveClass(/bajo-lente/);
+        // Al llegar se asienta: vuelve a ser el tinte, de su tamaño, y la lupa se va
+        await expect(page.locator('.lente-menu')).not.toHaveClass(/levantado/);
+        await expect(page.locator('.lente-lupa.visible')).toHaveCount(0);
+        // Una sola lupa en la pagina (la barra de abajo, que aqui no se ve, no crea la suya)
+        await expect(page.locator('.lente-lupa')).toHaveCount(1);
+        await expect(page.locator('.lente-lupa')).toHaveCSS('opacity', '0');
+        await expect(page.locator('header .nav-principales')).not.toHaveClass(/lente-arriba/);
+        await expect.poll(async () => Math.round((await page.locator('.lente-menu').boundingBox()).height)).toBe(Math.round(lente.height));
     });
 
     // Si la página nueva tarda en pintarse (el computador ocupado con otras
@@ -162,7 +187,8 @@ test.describe('en el celular', () => {
         await expect.poll(() => ida(page)).not.toBeNull();
         const viaje = await ida(page);
         expect(viaje.url).toMatch(/oportunidades\.html$/);
-        expect(viaje.ms, 'espera a que la pastilla llegue').toBeGreaterThanOrEqual(300);
+        // La pastilla llega al 99 % a los 155 ms: la pagina cambia a los 200
+        expect(viaje.ms, 'espera a que la pastilla llegue').toBeGreaterThanOrEqual(180);
         expect(await direccion(page)).toMatchObject({ dir: 'derecha' });
         await page.goto('oportunidades.html');
         await expect.poll(() => pastillaEn(page, 'Vacantes')).toBe(true);
@@ -184,6 +210,60 @@ test.describe('en el celular', () => {
         // Aparece sin cruzar la barra: no hay viaje que esperar
         await page.waitForTimeout(500);
         expect(await ida(page)).toBeNull();
+    });
+
+    // 2026-11-14: el movimiento se midió cuadro a cuadro en un video de la barra de WhatsApp (iOS 26). Al agarrar la
+    // burbuja se levanta un lente de verdad (la lupa, fuera de la barra) que crece más a lo alto que a lo ancho
+    test('la burbuja se agarra: se levanta como lente sobre la barra, sigue al dedo y al soltarla lleva a esa pestaña', async ({ page, api }) => {
+        await page.goto('index.html');
+        await sinCambiarDePagina(page);
+        await expect.poll(() => pastillaEn(page, 'Inicio')).toBe(true);
+        const quieta = await page.locator('.lente-pestanas').boundingBox();
+        const barra = await page.locator('.tabbar').boundingBox();
+        const destino = await page.locator('.tabbar a', { hasText: 'Vacantes' }).boundingBox();
+        await page.mouse.move(quieta.x + quieta.width / 2, quieta.y + quieta.height / 2);
+        await page.mouse.down();
+        const lupa = page.locator('.lente-lupa.visible:not(.lente-precalentar)');
+        await expect(lupa).toHaveCount(1);
+        expect(await lupa.evaluate(l => getComputedStyle(l).backdropFilter)).toMatch(/url\(/);
+        // Se sale de la barra por arriba y por abajo, y crece más a lo alto que a lo ancho
+        await expect.poll(async () => (await lupa.boundingBox()).height).toBeGreaterThan(barra.height);
+        await expect.poll(async () => { const b = await lupa.boundingBox(); return b.height / quieta.height > b.width / quieta.width; }).toBe(true);
+        // En Chromium la barra no crece (su filtro dejaría de calzar con el borde)
+        await expect(page.locator('.tabbar')).toHaveCSS('scale', 'none');
+        // Sigue al dedo, y el color de "actual" va con ella
+        await page.mouse.move(destino.x + destino.width / 2, quieta.y + quieta.height / 2, { steps: 8 });
+        await expect(page.locator('.tabbar a', { hasText: 'Vacantes' })).toHaveClass(/con-lente/);
+        await expect.poll(async () => { const b = await lupa.boundingBox(); return Math.abs((b.x + b.width / 2) - (destino.x + destino.width / 2)) < 3; }).toBe(true);
+        await page.mouse.up();
+        // Al soltarla lleva a esa pestaña y vuelve a ser el tinte
+        await expect.poll(() => pastillaEn(page, 'Vacantes')).toBe(true);
+        await expect.poll(() => ida(page)).not.toBeNull();
+        expect((await ida(page)).url).toMatch(/oportunidades\.html$/);
+        await expect(page.locator('.lente-lupa.visible')).toHaveCount(0);
+        await expect(page.locator('.lente-pestanas')).not.toHaveClass(/levantado/);
+    });
+
+    test('sin el filtro que refracta (Safari, Firefox) se levanta la gota sin doblez y la barra crece un poco', async ({ page, api }) => {
+        // Como un navegador que no es Chromium
+        await page.addInitScript(() => Object.defineProperty(navigator, 'userAgentData', { get: () => undefined }));
+        await page.goto('index.html');
+        await sinCambiarDePagina(page);
+        await expect.poll(() => pastillaEn(page, 'Inicio')).toBe(true);
+        await expect(page.locator('.tabbar')).not.toHaveClass(/con-refraccion/);
+        const quieta = await page.locator('.lente-pestanas').boundingBox();
+        await page.mouse.move(quieta.x + quieta.width / 2, quieta.y + quieta.height / 2);
+        await page.mouse.down();
+        await expect(page.locator('.lente-lupa')).toHaveCount(0);
+        await expect(page.locator('.lente-pestanas .lente-cristal')).toHaveCSS('opacity', '1');
+        // La barra crece un 3,5 % y el icono de debajo crece (la lupa "de mentira")
+        await expect(page.locator('.tabbar')).toHaveCSS('scale', '1.035');
+        await expect(page.locator('.tabbar a.con-lente .ico')).toHaveCSS('scale', '1.18');
+        await page.mouse.up();
+        await expect(page.locator('.tabbar')).toHaveCSS('scale', 'none');
+        await expect(page.locator('.tabbar a.con-lente .ico')).toHaveCSS('scale', 'none');
+        await expect.poll(() => pastillaEn(page, 'Inicio')).toBe(true);
+        expect(await ida(page), 'soltada en su sitio, no cambia de página').toBeNull();
     });
 
     test('con movimiento reducido la pastilla no viaja y la página cambia enseguida', async ({ page, api }) => {

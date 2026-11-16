@@ -127,9 +127,15 @@
 
     const ancla = function () { return angosto.matches ? 180 : 90; };
 
+    // El ancho de la rueda llega por el ResizeObserver de abajo (el navegador avisa cuando ya hizo sus cuentas).
+    // Antes se leia con clientWidth al cargar la pagina: con la portada a medio armar, eso obligaba a calcularla
+    // entera (revision 2026-11-15: ~75 ms en un celular lento al llegar al Inicio desde otra pestana). Mientras
+    // tanto se supone el tamano del dibujo: solo cambia cuanto se separa la pieza elegida, y se corrige antes
+    // del primer dibujo
+    let anchoRueda = 0;
     /** Escribe el giro de la rueda y endereza cada icono. */
     function colocar() {
-        const px = rueda.clientWidth / LADO;   // cuanto mide una unidad del dibujo en la pantalla
+        const px = (anchoRueda || LADO) / LADO;   // cuanto mide una unidad del dibujo en la pantalla
         elGiro.style.transform = 'rotate(' + giro + 'deg)';
         marcas.forEach(function (marca, i) {
             const angulo = i * ANGULO, elegido = i === actual;
@@ -140,11 +146,14 @@
     }
 
     /** Hace algo sin transiciones (primer dibujo, cambio de tamano de pantalla). */
+    let quietaHasta = 0;
     function sinAnimar(hacer) {
         rueda.classList.add('quieta');
         hacer();
-        void rueda.offsetWidth;                // obliga a aplicar el estilo antes de devolver las transiciones
-        rueda.classList.remove('quieta');
+        // Las transiciones vuelven cuando ya se dibujo asi (dos cuadros). Antes se forzaba con offsetWidth, que
+        // obligaba a calcular la pagina en ese momento
+        const turno = ++quietaHasta;
+        requestAnimationFrame(function () { requestAnimationFrame(function () { if (turno === quietaHasta) rueda.classList.remove('quieta'); }); });
     }
 
     /** Elige el paso i: gira la rueda y muestra su texto y su escena. */
@@ -286,7 +295,14 @@
     // Al cambiar de ancho, el ancla pasa de la derecha a abajo (o al reves) y el salto cambia de tamano
     const reacomodar = function () { sinAnimar(function () { ir(actual); }); };
     if (angosto.addEventListener) angosto.addEventListener('change', reacomodar);
-    if ('ResizeObserver' in window) new ResizeObserver(function () { sinAnimar(colocar); }).observe(rueda);
+    if ('ResizeObserver' in window) new ResizeObserver(function (entradas) {
+        const e = entradas[entradas.length - 1], caja = e.borderBoxSize && e.borderBoxSize[0];
+        const ancho = caja ? caja.inlineSize : e.contentRect.width;
+        if (!ancho || ancho === anchoRueda) return;
+        anchoRueda = ancho;
+        sinAnimar(colocar);
+    }).observe(rueda);
+    else { anchoRueda = rueda.clientWidth; sinAnimar(colocar); }
 
     // Para las pruebas y para quien quiera moverla desde fuera
     window.SkillMatchRueda = { ir: function (i) { soltar(); ir(i); }, actual: function () { return actual; } };

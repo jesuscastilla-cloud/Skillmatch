@@ -34,7 +34,7 @@
     <script>(function(){var h=document.documentElement;try{if(sessionStorage.getItem('skillmatch_isla_vista'))return;sessionStorage.setItem('skillmatch_isla_vista','1');if(matchMedia('(prefers-reduced-motion: reduce)').matches&&localStorage.getItem('skillmatch_animar')!=='1')return;if(document.referrer&&new URL(document.referrer).origin===location.origin)return;}catch(e){return;}h.classList.add('isla-intro');setTimeout(function(){h.classList.remove('isla-intro');},3000);})();</script>
 </head>
 
-<body class="pagina-vidrio">
+<body class="pagina-vidrio con-portada">
     <!-- Fondo vivo del vidrio (app.css, seccion 30): manchas de la marca que se mueven lento.
          Va en el HTML para estar desde el primer cuadro; el guion del <head> pone --reloj. -->
     <div class="fondo-vivo" aria-hidden="true"><span class="mancha-1"></span><span class="mancha-2"></span><span class="mancha-3"></span><span class="mancha-4"></span><span class="mancha-5"></span></div>
@@ -388,14 +388,13 @@
 
 
     <!-- Dos caminos: la llamada final y "Elige como quieres usar SkillMatch" eran la misma decision, una tras
-         otra. Ahora es un solo cierre: persona a la izquierda, empresa a la derecha (index.js las junta al bajar) -->
+         otra. Ahora es un solo cierre: persona a la izquierda, empresa a la derecha. index.js las vuelve diplomas que
+         se desenrollan, se firman y se sellan al bajar (app.css, seccion 90) -->
     <section class="cta-final" id="usuarios-empresas" aria-labelledby="cta-final-titulo">
         <div class="container">
             <h2 id="cta-final-titulo">Tu próximo paso en Cartagena empieza hoy</h2>
             <p>Elige cómo quieres usar SkillMatch: para encontrar trabajo o para encontrar a quién contratar.</p>
             <div class="pathways">
-                <!-- La chispa del match: donde se encuentran las dos tarjetas (index.js la enciende) -->
-                <span class="caminos-chispa" aria-hidden="true"></span>
                 <div class="pathway-card usuario">
                     <div class="pathway-header">
                         <div class="pathway-icon"><i data-ico="user"></i></div>

@@ -440,6 +440,12 @@
         this.anims = [];
         Array.prototype.forEach.call(el.querySelectorAll('[data-t]'), function (p) { self.anims = self.anims.concat(animacionesDe(p)); });
         Array.prototype.forEach.call(el.querySelectorAll('.e-capa'), function (c) { self.anims.push(animacionCapa(c, L)); });
+        // Ninguna animacion se descarta (2026-11-15). El navegador quita por su cuenta una animacion terminada
+        // cuando otra posterior ya manda sobre lo mismo: al salir una pieza (data-hasta), su animacion de ENTRADA
+        // quedaba quitada. En la primera vuelta no se nota, pero la historia se repite con las mismas
+        // animaciones: desde la segunda vuelta esas piezas ya no esperaban su momento y salian desde el
+        // principio (dos frases montadas abajo, los puntos del edificio antes de tiempo). persist() lo impide
+        this.anims.forEach(function (a) { if (a.persist) a.persist(); });
         // Reloj sin dibujo: marca el tiempo de la escena (para los porcentajes que cuentan y para saber
         // cuando termino el ciclo y hay que volver a empezar)
         this.reloj = new Animation(new KeyframeEffect(null, [], { duration: L, fill: 'forwards' }), document.timeline);

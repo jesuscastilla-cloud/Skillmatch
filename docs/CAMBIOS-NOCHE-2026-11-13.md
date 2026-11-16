@@ -433,6 +433,317 @@ Pedido de Luis, con capturas.
   - El medidor tenía un error: con letra oscura buscaba el fondo más claro como peor caso. Se corrigió para buscar el más oscuro.
 - **Pruebas:** `menu.spec` ahora revisa el vidrio claro en tema claro, el oscuro en tema oscuro y sobre la portada, y el logo de cada caso.
 
+### 44. La barra y la burbuja como las de Apple (2026-11-14, sin commit)
+
+Pedido de Luis con dos fotos de la barra del App Store (iOS 26): la burbuja «todavía no me convence», más transparente.
+
+- **Qué hace Apple** (fotos + reseña de MacStories + recreaciones como Liquidum):
+  - Quieta, la burbuja es un tinte casi transparente; la pestaña actual se reconoce por el **color** del icono y la palabra.
+  - Al tocarla o cuando viaja, **se levanta**: crece y se vuelve una gota de cristal; al llegar se asienta con un rebote.
+- **Qué cambió aquí** (`app.css` sección 88, `ui.js` `crearLente`):
+  - El lente tiene dos capas: `.lente-reposo` (el tinte) y `.lente-cristal` (la gota). `ui.js` pone `.levantado` mientras
+    se toca o viaja; el CSS solo cruza las dos con `opacity` (levantarse .12 s, asentarse .32 s).
+  - Levantada crece hasta x1,22 (en la mano) o x1,165 (viajando), con un resorte con rebote corto.
+  - El icono bajo la burbuja levantada crece x1,14 (la "lupa").
+  - La opción donde está (o a la que va) la burbuja lleva `.con-lente`: icono **y** palabra en turquesa
+    (`#5FD0DC` en vidrio oscuro, `#075A62` en vidrio claro). El color viaja con la burbuja.
+  - La barra deja pasar más: tinte oscuro del 34 al 26 %, oscurecido de .42 a .5, velo claro del 50 al 40 %.
+  - La barra de abajo baja de 68 a 62 px: la burbuja queda más ancha que alta (70 x 52), como la de Apple.
+- **Se quitó el filtro que refractaba dentro del lente.** Motivo, visto con zoom: un `backdrop-filter` dentro de otra
+  pieza con `backdrop-filter` no dobla las letras, les pone encima una copia torcida. Eso era el halo de colores en
+  reposo y las manchas al cruzar el borde. Ahora el lente va siempre detrás del icono y la palabra, que quedan nítidos.
+  La refracción de verdad sigue en el borde de las dos barras (sección 80).
+- **Medido:**
+  - Cuadros: 0 de más de 50 ms en clics y arrastres (PC peor 28–42 ms; celular peor 14–21 ms).
+    - Al quitar el filtro también se fue su "precalentado" y el primer viaje tuvo un cuadro de ~130 ms. Se arregló con
+      una copia invisible de cada tamaño y dejando la gota dibujada en su propia capa (`will-change: opacity`).
+  - Contraste con píxeles, bajando toda la página: la palabra activa 5,06–5,59:1 en vidrio claro (antes de oscurecer el
+    turquesa a `#075A62`; el mínimo era 4,64) y 8,5–9,8:1 en oscuro; las demás, de 7,75 a 15:1.
+- **Pruebas:** `menu.spec` y `cambio-de-pagina.spec` revisan el tinte en reposo, que no lleva filtro, que se levanta al
+  agarrarla y que se asienta al llegar. Corridas con navegación, vidrio, accesibilidad y humo: 141 en verde.
+- **Límite que quedó aquí (resuelto en el #45):** la burbuja ya no agrandaba ni doblaba lo de atrás como una lupa real.
+
+### 45. El movimiento de la burbuja, medido en un video (2026-11-14, sin commit)
+
+Luis mandó un video de 15 s de la barra de WhatsApp en iOS 26 y pidió aplicar ese movimiento.
+
+- **Cómo se analizó:** el video es HEVC (iPhone) y el equipo no tiene `ffmpeg`. Se abrió en el navegador de la app y se
+  sacaron sus 906 cuadros (60 por segundo) con un `<canvas>`. Luego se midió cada fase en hojas de cuadros.
+- **Lo que hace la burbuja en el video:**
+  - **Al presionar (0,13 s):** toda la barra crece un 3,5 %. La burbuja pasa de tinte oscuro a un lente más claro que
+    la barra, que crece más a lo alto (×1,3, se sale por arriba y por abajo) que a lo ancho (×1,14). Lo de debajo se ve
+    agrandado.
+  - **Al arrastrar:** sigue al dedo 1 a 1 y su borde dobla los iconos y palabras vecinos, con un arcoíris fino.
+  - **Al soltar (0,17 s):** se encoge y se oscurece hasta volver a ser el tinte, con un rebote mínimo.
+  - **Al tocar otra pestaña (0,3 s en total):** se vuelve lente casi al instante, viaja en ~0,1 s estirada, pasa un
+    poco de largo y se asienta.
+- **Qué cambió aquí** (`ui.js` `crearLente` y `Cristal`; `app.css` sección 89):
+  - **La lupa (`.lente-lupa`):** el lente levantado ahora es de verdad. Agranda ×1,14 y dobla lo que tiene debajo con un
+    filtro SVG, con arcoíris en el borde. Va **fuera de la barra**, en `<body>` y encima de ella: así su
+    `backdrop-filter` ve la barra ya pintada y dobla sus letras de verdad (dentro de la barra les ponía una copia
+    torcida encima, ver #44). Solo existe mientras la burbuja está levantada; quieta sigue el tinte con letras nítidas.
+  - **Tamaño levantada:** ×1,30 de alto y ×1,14 de ancho (antes ×1,22 parejo).
+  - **Resortes con los tiempos del video:** viaje `k=520, z=.75`; levantarse y asentarse `k=600, z=.7`.
+  - **Fundidos:** levantarse .1 s, asentarse .2 s.
+  - **La barra crece 3,5 % al agarrar la burbuja**, solo donde la barra no refracta (Safari y Firefox, o sea el iPhone).
+    En Chromium, al agrandarla el filtro del borde dejaba de calzar y salía una raya curva en cada punta.
+  - **Sin el filtro (Safari, Firefox):** se levanta la gota sin doblez del #44, y el icono y la palabra de debajo crecen.
+- **Medido:**
+  - Cuadros: 0 de más de 50 ms en clics y arrastres (PC peor 21–42 ms; celular peor 14–21 ms).
+  - Cada tamaño de lupa se dibuja antes en una copia invisible: sin eso, el primer viaje tiene un cuadro lento.
+- **Pruebas:** `cambio-de-pagina.spec` revisa la lupa en PC y en celular (está en `<body>`, lleva el filtro, va justo
+  sobre el lente, crece más a lo alto y se va al soltar) y el camino sin filtro (gota, barra ×1,035, icono ×1,18).
+  Corridas con menú, navegación, vidrio, accesibilidad y humo: 143 en verde.
+- **Límites conocidos:**
+  - En iPhone (Safari) no hay doblez: es un límite del navegador. Se ve la gota y la barra que crece.
+  - La página cambia cuando la burbuja llega (0,38 s), no al instante como en una app: aquí cada pestaña es otra página.
+  - Falta probarlo en un celular real.
+
+### 46. Tres errores que encontró Luis al probar (2026-11-15, sin commit)
+
+Los tres se reprodujeron con un script antes de tocarlos, y cada uno quedó con su prueba automática.
+
+1. **La barra quedaba clara sobre la portada oscura al pasar a tema claro** (`ui.js`, `vidrioSegunFondo`).
+   - **Causa:** el tema cambia con un efecto (View Transition). Mientras dura, `document.elementsFromPoint` solo
+     devuelve la "foto" de la transición y no la página. La revisión caía justo ahí, no veía la ciudad y dejaba el
+     vidrio claro. Se reprodujo 12 de 12 veces.
+   - **Arreglo:** las zonas oscuras (portada, pie, portadas de perfil, mapa) ahora se miran por sus medidas, que no
+     dependen de eso. Además se revisa en el mismo instante en que cambia el tema (la "foto" nueva ya sale bien) y
+     otra vez al terminar el efecto.
+   - **Prueba:** `menu.spec`, «en la portada, al pasar a tema claro la barra sigue de vidrio oscuro sobre la ciudad».
+2. **Al agrandar el mapa, el anillo del alcance se salía del planeta** (`mapa-cerca.js`).
+   - **Causa:** el anillo se dibuja en un SVG que deja ver lo que se sale. Con 100 km, un clic en «+» lo llevaba de
+     271 a 503 px sobre un planeta de 364 px, encima del título, la leyenda y los botones.
+   - **Arreglo:** el anillo va recortado al borde del planeta (`clipPath` `#cmDisco`), en un grupo aparte para que el
+     recorte no crezca con la animación de entrada. Su etiqueta de km solo se pone en un punto que caiga dentro.
+   - **Prueba:** `cerca.spec`, «al agrandar el mapa, el anillo de tu alcance no se sale del planeta».
+3. **En la escena de la portada se montaban dos frases** (la naranja sobre la blanca) (`escenas.js`).
+   - **Causa:** el navegador descarta por su cuenta una animación terminada cuando otra posterior manda sobre lo mismo.
+     Al salir una pieza, su animación de entrada quedaba descartada (18 de 127). En la primera vuelta no se nota; desde
+     la segunda, esas piezas ya no esperaban su momento: dos frases a la vez y los puntos del edificio antes de tiempo.
+   - **Arreglo:** `persist()` en todas las animaciones de la escena: ninguna se descarta.
+   - **Prueba:** `escena-inicio.spec`, «al repetirse la historia, cada frase vuelve a esperar su momento». Se comprobó
+     que falla si se quita el arreglo.
+
+Corridas con mapa, escena, menú, cambio de página, navegación, vidrio, accesibilidad, humo, inicio y elegir cuenta:
+198 en verde.
+
+### 47. Los dos caminos son diplomas (2026-11-15, sin commit)
+
+Pedido de Luis: las tarjetas "Si buscas trabajo" y "Si eres empresa" del cierre de la portada, como diplomas de frente,
+que al bajar se desenrollen como un papel enrollado, con la firma escrita a pluma y el sello de SkillMatch en una esquina.
+Skills usadas: `frontend-design` (el diseño), `animate` (la animación) y `review-animations` (la revisión).
+
+- **El diseño** (`app.css` sección 90; `index.js` arma las piezas en `DIPLOMAS`):
+  - Papel blanco de algodón frío, más oscuro donde se curva hacia los rollos, con doble filete (azul marino y turquesa).
+  - Rollos de papel arriba y abajo, con la espiral en las puntas (como la referencia que mandó Luis, pero de frente).
+  - La firma: "SkillMatch" con los trazos de la fuente de un solo trazo EMS Allure (licencia libre OFL; anotado en
+    `assets/fonts/LEEME.md`), con punta de pluma ancha (5 copias del trazo en diagonal) y un rasgo debajo. Sobre su
+    línea dice "Cartagena de Indias".
+  - El sello: roseta naranja con el centro azul marino, "SKILLMATCH · CARTAGENA" alrededor, las dos personas del logo y
+    dos cintas, montado sobre la esquina de abajo a la derecha.
+  - El texto y los botones no cambiaron (mismos enlaces). "Publicar mis vacantes" pasó a contorno azul marino.
+  - Se quitó la chispa naranja que antes se encendía entre las dos tarjetas: el sello cumple ese papel.
+- **La animación** (una sola vez, cuando el diploma ya se ve casi a la mitad; en el computador el segundo va 170 ms después):
+  1. Aparece enrollado (0,3 s).
+  2. Se desenrolla hacia abajo en 1,05 s con la curva del cajón de iOS: el rollo de abajo baja y el papel se descubre
+     detrás. El texto no se mueve: una ventana baja mientras su contenido sube lo mismo (solo `transform`).
+  3. La firma se escribe sola en 1,5 s, trazo por trazo y a velocidad pareja de pluma.
+  4. El sello se estampa: baja girando, golpea (se aplasta un poco), sale una onda y las cintas se acomodan.
+  - Con "reducir movimiento" ya está abierto, firmado y sellado, sin animación.
+- **Medido:**
+  - Contraste con píxeles sobre el papel: título 13,4:1, texto 7,3:1, ítems 11,1:1, "Cartagena de Indias" 5,8:1, iconos 4,7 a 5,5:1.
+  - Cuadros: el primer cuadro del desenrollado tardaba 62 ms (dibujar el papel por primera vez en la tarjeta de video; sin
+    código de por medio). Arreglo: mientras espera, el diploma ya está dibujado (opacidad .001) y cada pieza tiene su capa;
+    al terminar se le quitan. Comparado contra la versión anterior en otro puerto: 0 cuadros de más de 50 ms (3 de 3).
+- **Pruebas:** `diplomas.spec.js` (nueva): las piezas y los enlaces; que esperan sin verse y se abren al llegar con el
+  texto quieto; y que con "reducir movimiento" ya están abiertos.
+
+### 48. Los diplomas, con estilo antiguo (2026-11-15, sin commit)
+
+Pedido de Luis: "dale un estilo al diploma como más antiguo". Solo cambió el aspecto (app.css sección 90 y el sello en
+index.js); la animación es la misma del #47.
+
+- **Papel:** pergamino marfil envejecido, con grano (un ruido SVG pequeño que se repite), manchas de humedad y los
+  bordes tostados. Los rollos también son de pergamino.
+- **Letra:** títulos y descripción en **IM Fell English**, una letra de imprenta del siglo XVII (libre, OFL; guardada en
+  `assets/fonts`, anotada en el LEEME). La descripción va en cursiva. Las listas siguen en la letra del sitio, para leerse fácil.
+- **Tinta:** sepia en el texto y los iconos. La firma, en tinta ferrogálica (casi negra, tirando a café).
+- **Marco:** filete doble sepia y adornos de pluma en las cuatro esquinas.
+- **Sello:** de **lacre** naranja (la chispa de la marca), de borde irregular con dos chorreados, con "SKILLMATCH · CARTAGENA"
+  y las dos personas del logo en relieve. Va sobre dos cintas de seda azul marino.
+- **Botones:** "Crear mi perfil" sigue naranja; "Publicar mis vacantes" pasa a contorno sepia.
+- **Medido:**
+  - Contraste con píxeles en el peor punto del papel: título 8,3:1, descripción 6,4:1, ítems 8,3:1, "Cartagena de Indias"
+    5,6:1, botones 6,1 y 9,2:1, iconos 4,1 a 4,7:1.
+  - La animación, medida contra la versión anterior: 0 cuadros de más de 50 ms (3 de 3).
+- **Pruebas:** diplomas, inicio, humo, accesibilidad y escena: 92 en verde.
+
+### 49. Los diplomas, en papel blanco y más separados (2026-11-15, sin commit)
+
+Pedido de Luis: "que sean mejor de color blanco y sepáralos un poco".
+
+- El papel y los rollos pasaron de pergamino marfil a **blanco de algodón**, con grano fino y los bordes apenas gastados.
+  Lo demás del estilo antiguo sigue: IM Fell English, tinta sepia, adornos en las esquinas y el sello de lacre.
+- Entre los dos diplomas hay **56 px** (antes 24); el cierre se ensanchó de 980 a 1040 px para que no se angosten. En el
+  celular van uno debajo del otro con 48 px.
+- Contraste (con píxeles, peor punto): título 12,8:1, descripción 9,9:1, ítems 11,8:1, "Cartagena de Indias" 8,4:1,
+  iconos 5,8 a 6,7:1. Animación: 0 cuadros de más de 50 ms. Pruebas: 74 en verde.
+
+### 50. Los diplomas pasan a contratos actuales (2026-11-15, sin commit)
+
+Pedido de Luis: "mejor que sean como un contrato actual; la firma sí déjala, pero lo demás más actual, más profesional".
+
+- **La hoja:** blanca, con la franja de la marca arriba (azul marino a turquesa), esquinas apenas redondeadas y una
+  sombra real sobre la franja oscura. Sin rollos, sin adornos ni pergamino.
+- **La letra:** la del sitio (Bricolage Grotesque y Instrument Sans). Se borró IM Fell English (archivos y nota del LEEME):
+  ya no se usaba.
+- **Los puntos, como cláusulas:** separados por rayas finas, y una raya bajo el título.
+- **La firma:** se quedó la de pluma, ahora en tinta azul de firmar. Debajo dice "SkillMatch, Cartagena de Indias".
+- **El sello:** de caucho en tinta turquesa, con doble aro, "SKILLMATCH · CARTAGENA DE INDIAS" alrededor y las dos personas
+  del logo. La tinta no queda pareja (le faltan puntitos y rayitas, como un sello de verdad) y se mezcla con el papel.
+- **La animación:** la hoja sale de arriba a abajo como de la impresora (0,9 s), se firma (1,4 s) y se estampa el sello.
+- Los colores de la hoja son fijos (no los del tema): la hoja es blanca también en tema oscuro. Sin eso, el texto salía
+  casi blanco sobre blanco en tema oscuro.
+- **Medido:**
+  - Contraste con píxeles: título 16,4:1, descripción 7,1:1, cláusulas 10,8:1, pie de firma 7,1:1, iconos 6 a 6,7:1.
+  - Cuadros: la primera versión del sello usaba un filtro de ruido para la tinta y el primer cuadro tardaba ~90 ms. Con
+    los huecos dibujados como figuras fijas: 0 cuadros de más de 50 ms (3 de 3).
+- **Pruebas:** `diplomas.spec.js` actualizada (sin rollos); con inicio, humo y accesibilidad, 74 en verde.
+
+### 51. Los contratos, con sombra y otra vez desenrollándose (2026-11-15, sin commit)
+
+Pedido de Luis: "colócales como una sombra a los contratos y que también tengan la animación esa que se desenrollan".
+
+- **La sombra:** mucho más honda (sobre la franja azul oscuro la de antes casi no se veía): una grande y suave, una de
+  contacto y dos sombras inclinadas bajo las esquinas de abajo, como una hoja con las puntas apenas levantadas.
+- **El desenrollado:** el contrato aparece enrollado arriba; un rollo de papel blanco baja (y se adelgaza) mientras la hoja
+  se descubre detrás. Al llegar abajo, el rollo se aplana y desaparece: queda el contrato liso. Luego se firma y se sella.
+  Con "reducir movimiento" no hay rollo: ya está firmado y sellado.
+- **Medido:** el rollo trajo un cuadro de ~60 ms al empezar. La causa: las espirales de sus puntas, hechas con un degradado
+  repetido (con un dibujo SVG, ~53 ms). Hechas con bordes interiores: el peor cuadro, 49 ms (ninguno de más de 50, 3 de 3).
+- **Pruebas:** `diplomas.spec.js` revisa que haya un rollo y que al terminar no se vea; con inicio, humo y accesibilidad,
+  74 en verde.
+
+### 52. Fotos de perfil, el menú "Tu cuenta" y una revisión de fluidez (2026-11-15, sin commit)
+
+Pedido de Luis: revisar a fondo trabas y fluidez; que las fotos de perfil salgan en Mensajes, Conexiones, etc.; una
+animación suave para el menú del perfil; y que el cambio de tema en el celular sea más fluido. Todo se midió en un
+"celular" simulado (390 px y el procesador 4 veces más lento, como un teléfono de gama media).
+
+- **Fotos de perfil** (`ui.js` `pintarLogos`/`fotoDeCuenta`, `mensajes.js`, `conexiones.js`): si la persona tiene foto, se ve
+  su foto (no su inicial) en la lista de Mensajes, la cabecera del chat, "Nuevo mensaje" y las tarjetas de Conexiones
+  (conexiones, solicitudes y sugerencias). Se trae una vez por persona y queda guardada en la sesión; si la página ya
+  la tiene en sus datos (sugerencias), no se pide nada. Al cambiar de conversación no se cuela la foto de otra persona.
+  Prueba nueva: `fotos-de-perfil.spec.js`.
+- **El menú "Tu cuenta"** (`ui.js` `menuDeCuenta`): nace del botón de tu foto (crece desde ahí con la curva de los
+  paneles de iOS, 300 ms) y lo de adentro llega en cuatro tandas cortas (30 ms entre una y otra). Cierra más rápido
+  (140 ms) hacia el botón. Si se abre a mitad del cierre, sigue desde donde iba. Con "reducir movimiento", solo un
+  fundido. 0 cuadros de más de 50 ms abriendo y cerrando.
+- **Abrir el menú era lento por un `:has()`**: reglas como `body:has(> .hero:not([hidden]))` hacían que, al mostrar
+  cualquier cosa que cuelga de `body` (el menú), el navegador recalculara los estilos de toda la página. Abrir el menú
+  costaba hasta 181 ms; ahora 41 a 52 ms. Se cambiaron por la clase `body.con-portada` (la trae `index.html` y la pone
+  `ui.js`) y por selectores de hermanos (`.auth-shell ~ footer`).
+- **Cambio de tema en el celular** (`ui.js` `cambiarTemaConEfecto`, `app.css` sección 91):
+  - El toque se ve al instante (~15 ms): el efecto empieza en el cuadro siguiente. Antes el toque tardaba lo mismo que
+    todo el recálculo (250 a 400 ms en el celular simulado).
+  - `content-visibility: auto` en las secciones largas, las tarjetas y el pie: lo que está fuera de la pantalla no se
+    recalcula. Con su alto de reserva medido en cada tamaño, para que la barra de desplazamiento no salte.
+  - En el celular el círculo del efecto dura 520 ms (antes 650).
+  - Peor cuadro al cambiar de tema, antes → ahora: Inicio 366 → 243 ms, Vacantes 348 → 223 ms, Mensajes 181 → 125 ms,
+    Conexiones 282 → 139 ms (celular simulado; en un teléfono real es unas 4 veces menos).
+- **Auditoría de fluidez** de 12 páginas (carga y desplazamiento):
+  - **El arranque de cada página** se demoraba en `construirTabbar`: el lente de la barra de abajo dibujaba el mapa de su
+    lupa punto por punto al cargar (+50 a 200 ms). Ahora se dibuja en un momento libre.
+  - **El globo** de "Vacantes cerca de ti": sus nombres se escribían en cada cuadro y eso obligaba a recalcular los
+    estilos de toda la página (38 a 82 ms por cuadro al bajar). Ahora cada nombre se dibuja una vez en un lienzo
+    aparte y luego solo se pega. Además, mientras gira o vuela dibuja la mitad de puntos.
+  - **Al bajar**: la revisión del color del vidrio pasó de cada cuadro a cada 40 px, y la barra de arriba se actualiza
+    una vez por cuadro.
+  - Resultado del desplazamiento en el celular (cuadros de más de 50 ms, antes → ahora): Inicio con sesión 23 → 4,
+    Vacantes 16 → 2, Mensajes 9 → 0, Conexiones 1 → 0, Empresas 3 → 0, Mi empresa 2 → 0, Elegir cuenta 3 → 0.
+  - Lo que queda: el globo del Inicio de visitante en su vuelo de entrada (~100 ms por cuadro en el celular simulado)
+    y procesar los datos del mapa (mundo y municipios, una sola vez y en ratos libres, ~80 a 110 ms).
+
+### 53. "Llenar con mi hoja de vida": solo propone lo que de verdad es una habilidad (2026-11-15, sin commit)
+- **Archivo**: `leer-hoja-de-vida.js` (sección "Habilidades"), estilos `.lector-chip-nivel` y `.lector-subtitulo` en `app.css`.
+- **Problema medido** con 6 hojas de vida típicas: todo lo que estaba bajo "Habilidades" separado por comas entraba
+  marcado. Entraban rótulos ("Habilidades blandas: liderazgo"), cualidades ("puntual", "honesta y proactiva"),
+  la ciudad ("Cartagena", "Bolívar"), los puntos de nivel ("○○"), la palabra "Avanzado" sola, y el nivel pegado
+  al nombre ("Excel básico" se guardaba con ese nombre y con nivel Intermedio).
+- **Ahora** cada pedazo pasa por filtros en orden:
+  1. Se le separa el nivel ("Excel (Avanzado)", "Inglés B1", "AutoCAD 80%", "Photoshop ●●●○○", "3/5", o el nivel
+     en el renglón de abajo) y ese nivel se guarda con esa habilidad.
+  2. Si está en un **catálogo** de ~170 habilidades (oficios de Cartagena, herramientas, programación, idiomas),
+     se propone **marcada** y con su nombre de siempre ("Microsoft Excel", "Manejo de Excel" → "Excel").
+  3. El ruido (correo, teléfono, ciudad, fechas, rótulos) se descarta.
+  4. Las **cualidades** ("Responsable", "Buena presentación personal") no se proponen: la ventana las nombra y
+     sugiere contarlas en "Acerca de ti".
+  5. En una **frase larga** se buscan las habilidades del catálogo ("Control de versiones con Git y GitHub" → Git, GitHub).
+  6. Lo corto que no se reconoce aparece **sin marcar** y con "Revisa".
+- **Nuevo**: las del catálogo que se mencionan en la experiencia, los cursos o el perfil (y no en "Habilidades")
+  se ofrecen aparte, **sin marcar** ("También las mencionas en tu hoja de vida").
+- **Pruebas**: `hoja-de-vida-pdf.spec.js` actualizada y una nueva ("solo propone marcado lo que de verdad es una
+  habilidad"): 18 de 18 pasan en PC y celular.
+
+### 54. El menú "Tu cuenta" sale de una "ranura de luz" (2026-11-15, sin commit)
+- **Archivos**: `ui.js` (menuDeCuenta: `animarRanura`; el menú ahora va dentro de `.cuenta-ranura` y hay una línea
+  `.cuenta-filo`) y `app.css` (`.cuenta-ranura`, `.cuenta-filo`; la sombra del menú pasó a la ranura).
+- **Historia**: primero se probó el efecto "genio" de Apple. Luis: "parece una copia y no pega", pidió algo original,
+  sutil, limpio y novedoso. El genio se quitó entero.
+- **Qué hace ahora**: al tocar tu foto, una línea fina con los colores del logo (naranja → turquesa) se traza desde el
+  botón a lo ancho del borde de arriba del menú, y el menú **sale de esa línea**: se desenrolla hacia abajo como un papel
+  que sale de una ranura (el mismo gesto de los contratos de la portada). La línea se apaga cuando el menú ya salió.
+  Al cerrar, el menú se enrolla rápido hacia la línea y la línea se recoge hacia tu foto.
+- **Cómo**: solo `transform` y `opacity`. La ranura recorta y baja desde −alto hasta su lugar, mientras el menú de
+  adentro sube lo mismo al revés: el menú casi no se mueve y lo que crece es la ventana que lo deja ver (va 10 px
+  "atrasado" para que se sienta que lo jalan). Abrir (un poco más lento, pedido de Luis): línea ~230 ms + menú 440 ms (curva de cajón de iOS). Cerrar: 200 ms.
+  Si se cierra a mitad de abrir, sigue desde donde iba. Con "reducir movimiento": un fundido.
+- **Fluidez** (celular simulado 4 veces más lento, con tarjeta gráfica): peor cuadro 56 ms la primera vez y 14 ms las
+  siguientes; en PC, 7 ms. Igual que un simple fundido (el genio llegaba a 56–200 ms).
+- **Pruebas**: navegación, menú, cambio de página y hoja de vida (63) pasan.
+
+### 55. Revisión final a fondo: errores, pruebas y fluidez (2026-11-15, sin commit)
+- **La ola del pie se mueve otra vez** (pedido de Luis: "eso ya tampoco se mueve"). En las páginas de vidrio la
+  curva era una máscara quieta sobre el pie. Ahora el pie no pinta sus primeros 47 px (su color va en `::after`) y
+  la ola (`.pie-ola`) es el azul del pie con forma de ola, que se desliza con `transform` como la del inicio.
+  `app.css`, sección del pie en páginas de vidrio. La prueba `pie-ola.spec.js` se actualizó a lo nuevo.
+- **"Cómo aprende SkillMatch" se congelaba ~2,6 s al cargar** (PC y celular): llegó de `main` pidiendo las fuentes a
+  Google Fonts (hoja que frena el primer dibujo). Ahora usa las fuentes del proyecto como las demás y tiene la
+  transición entre páginas (`pagereveal`) que le faltaba. Carga: 2,6 s → 0,4 s.
+- **El mapa se quedaba sin municipios** cuando la entrada del globo esperaba al mapa del mundo (red lenta): un
+  `return` salía antes de pedirlos. Era también la causa de la prueba del mapa que fallaba "a veces".
+- **Mapa más liviano**: el mundo y los municipios se leen cuando la página está quieta (no a mitad de un
+  desplazamiento), y los contornos se cierran con una línea en vez de `closePath` (era lo más caro del vuelo de
+  entrada: ~270 ms de 4,5 s en un celular lento).
+- **Contratos de la portada en un celular acostado**: podían quedarse invisibles para siempre (esperaban ver el 42 %
+  de un contrato más alto que la pantalla). Ahora también se abren al ocupar el 60 % de la pantalla.
+- **Barrido de errores**: 21 páginas × tipos de cuenta × PC/celular × claro/oscuro, bajando hasta el final, abriendo
+  "Tu cuenta", cambiando el tema y cerrando con Escape: 0 errores de JavaScript, 0 archivos que no cargan, 0
+  desbordes laterales, 0 imágenes rotas. JS (`node --check`), HTML (etiquetas) y CSS (llaves) sin errores.
+- **Fluidez al bajar** (cuadros de más de 50 ms): en PC, 0 en 15 de 16 páginas; en celular simulado 4 veces más lento,
+  0 en 13 de 16. Queda el globo del inicio de visitante en su vuelo de entrada (dibujo de las costas del mundo).
+
+### 56. La barra ya no se traba al cambiar de pestaña (2026-11-15, sin commit)
+- **Lo que Luis sentía**: al tocar una opción de la barra, la marca (lente) llega a su destino al 99 % a los
+  155 ms (medido), pero la página esperaba **380 ms** para cambiar: más de 200 ms quieta, y después la carga de la
+  página nueva. Ahora cambia a los **200 ms** (`VIAJE_LENTE` en `ui.js`), en la barra de abajo y en la de arriba.
+  Del toque a irse: 580–620 ms → 340–440 ms (celular simulado 4 veces más lento).
+- **La página nueva se arma más liviana mientras entra deslizándose**: al cargar, varias piezas leían medidas con la
+  página a medio armar y la obligaban a calcularse una y otra vez. Se quitaron:
+  - el monograma (`ui.js`): leía el ancho de cada cuadrito con `offsetWidth` → ahora `ResizeObserver`
+    (~160 ms menos al llegar a Vacantes);
+  - el lente de la barra de abajo se ubica en el próximo cuadro (~96 ms);
+  - la barra que se esconde y el vidrio según el fondo leían `scrollY` al cargar → lo toman en el primer
+    desplazamiento (~100 ms cada una);
+  - la rueda de "Cómo funciona" (`rueda-pasos.js`): ancho por `ResizeObserver` y sin `offsetWidth` forzado (~75 ms).
+  - Inicio listo al llegar: 1302 → 707 ms (celular simulado).
+- **Se probó y se quitó**: preparar la página de destino en segundo plano al apoyar el dedo (speculation rules,
+  solo Chrome/Edge/Android). No se pudo comprobar en ningún navegador de prueba (lo tienen apagado) y una página
+  preparada corre su código sin verse (por ejemplo, marcaría como vista la entrada de la isla del Inicio).
+- **Pruebas**: `cambio-de-pagina.spec.js` pedía esperar al menos 300 ms; ahora 180 (sigue comprobando que la marca
+  llega antes de cambiar).
+
 ## Lo que NO hice a propósito (necesita tu permiso)
 
 1. ~~Fuentes dentro del proyecto~~ — **hecho con tu permiso** (ver #32).
