@@ -60,7 +60,7 @@
     lienzo.innerHTML = `<div class="cm-halo" aria-hidden="true"></div>
         <canvas class="cm-globo" aria-hidden="true"></canvas>
         <div class="cm-brillo" aria-hidden="true"></div>
-        <svg class="cm-rutas-svg" focusable="false" aria-hidden="true"><defs class="cm-recortes"></defs><g class="cm-rutas"></g></svg>
+        <svg class="cm-rutas-svg" focusable="false" aria-hidden="true"><defs><clipPath id="cmDisco"><circle class="cm-disco-recorte" r="0"/></clipPath></defs><defs class="cm-recortes"></defs><g class="cm-rutas"></g></svg>
         <div class="cm-pines" aria-hidden="true"></div>
         <span class="cm-pin cm-pin-tu es-activo" aria-hidden="true"><i></i><b></b></span>
         <canvas class="cm-mini" aria-hidden="true"></canvas>
@@ -140,20 +140,39 @@
         return { arcos: arcos, paises: paises };
     }
 
+    /* Leer el mundo y los municipios cuesta ~100 ms cada uno en un celular lento (medido en la revision de fluidez
+       2026-11-15): si llegaban mientras la persona bajaba por la pagina, ese cuadro se trababa. Ahora se esperan
+       a que la pagina este quieta (sin bajar hace 250 ms) y a un rato libre; si nunca para, igual se leen al
+       pasar "maximo" ms, para que el mapa no se quede sin datos. */
+    let ultimoScroll = 0;
+    window.addEventListener('scroll', () => { ultimoScroll = performance.now(); }, { passive: true });
+    function cuandoQuieto(hacer, maximo) {
+        const inicio = performance.now();
+        const probar = () => {
+            const ahora = performance.now();
+            if (ahora - ultimoScroll > 250 || ahora - inicio > maximo) {
+                if ('requestIdleCallback' in window) requestIdleCallback(hacer, { timeout: 400 }); else hacer();
+            } else setTimeout(probar, 120);
+        };
+        probar();
+    }
+
     function pedirMundo() {
         if (mundoPedido) return;
         mundoPedido = true;
-        fetch(URL_MUNDO).then(r => { if (!r.ok) throw new Error('sin mundo'); return r.json(); }).then(json => {
+        fetch(URL_MUNDO).then(r => { if (!r.ok) throw new Error('sin mundo'); return r.json(); }).then(json => cuandoQuieto(() => {
             mundo = leerMundo(json);
             buscarPais();
+            // Los municipios (384 KB) en el proximo rato libre: nunca mientras la persona baja por la pagina.
+            // Se piden ANTES de la salida de abajo: si la entrada estaba esperando al mundo, el "return" los
+            // dejaba sin pedir y el mapa se quedaba sin municipios (pasaba con red lenta; hallado 2026-11-15)
+            if ('requestIdleCallback' in window) requestIdleCallback(pedirMunicipios, { timeout: 6000 });
+            else setTimeout(pedirMunicipios, 1500);
             if (esperaMundo) { lanzar(); return; }         // la entrada estaba esperando a los continentes
             if (visible && !reducido) pedirCuadro();       // aparecen con un fundido
             else { alfaTierra = 1; pintar(); }
             if (capa) dibujarMini();
-            // Los municipios (384 KB) en el proximo rato libre: nunca mientras la persona baja por la pagina
-            if ('requestIdleCallback' in window) requestIdleCallback(pedirMunicipios, { timeout: 6000 });
-            else setTimeout(pedirMunicipios, 1500);
-        }).catch(() => { mundoFallo = true; if (esperaMundo) lanzar(); });   // sin continentes el mapa igual funciona
+        }, 1500)).catch(() => { mundoFallo = true; if (esperaMundo) lanzar(); });   // sin continentes el mapa igual funciona
     }
 
     /**
@@ -210,7 +229,7 @@
     function pedirMunicipios() {
         if (municipiosPedidos) return;
         municipiosPedidos = true;
-        fetch(URL_MUNICIPIOS).then(r => { if (!r.ok) throw new Error('sin municipios'); return r.json(); }).then(json => {
+        fetch(URL_MUNICIPIOS).then(r => { if (!r.ok) throw new Error('sin municipios'); return r.json(); }).then(json => cuandoQuieto(() => {
             municipios = leerMundo(json);
             // Los arcos que usa un solo municipio son el borde de afuera de Colombia (costa o frontera)
             const usos = new Uint8Array(municipios.arcos.length);
@@ -220,7 +239,7 @@
             // hay varios "San Rafael" y el DANE escribe "Cartagena de Indias")
             C.lista.forEach(c => { const i = paisDe(c.lat, c.lon, municipios); if (i >= 0) municipioDe[c.clave] = i; });
             if (cam && m) pintar();
-        }).catch(() => { /* sin municipios el mapa funciona igual */ });
+        }, 6000)).catch(() => { /* sin municipios el mapa funciona igual */ });
     }
 
     let miPais = -1;        // indice del pais donde estas (-1: ninguno o todavia no se sabe)
@@ -260,12 +279,15 @@
         const arcos = (datos || mundo).arcos;
         for (const anillo of pais.anillos) {
             for (const i of anillo) proyectarArco(arcos[i >= 0 ? i : ~i], cam, m);
-            let primero = true;
+            let primero = true, x0 = 0, y0 = 0;
             recorrer(anillo, (a, j) => {
-                if (primero) { lapiz.moveTo(a.p[3 * j], a.p[3 * j + 1]); primero = false; }
+                if (primero) { x0 = a.p[3 * j]; y0 = a.p[3 * j + 1]; lapiz.moveTo(x0, y0); primero = false; }
                 else lapiz.lineTo(a.p[3 * j], a.p[3 * j + 1]);
             }, salto, datos);
-            lapiz.closePath();
+            // Se cierra con una linea al primer punto y no con closePath: en un camino con cientos de paises,
+            // closePath era lo mas caro del vuelo de entrada del globo (275 ms de 4,5 s en un celular lento,
+            // medido). Para rellenar da lo mismo
+            lapiz.lineTo(x0, y0);
         }
     }
 
@@ -295,8 +317,12 @@
         const mini = !!(opciones && opciones.mini);
         sello++;
         const k = cam.k, cx = m.cx, cy = m.cy, R = m.R;
-        // Detalle segun la distancia: que entre punto y punto haya unos 2 pixeles, no mas fino
-        salto = Math.max(1, Math.min(24, Math.floor(RADIO_TIERRA / k / 2.2)));
+        // Detalle segun la distancia: que entre punto y punto haya unos 2 pixeles, no mas fino. Mientras el planeta
+        // se mueve (el vuelo de entrada, un arrastre o su inercia) basta con la mitad de puntos: el ojo no alcanza a
+        // ver el detalle y cada cuadro cuesta la mitad (revision de fluidez 2026-11-15: en un celular, el vuelo tenia
+        // cuadros de 110 a 200 ms). Al quedar quieto se vuelve a dibujar con todo el detalle
+        const enMovimiento = !mini && !!(vuelo || arrastre || inercia);
+        salto = Math.max(1, Math.min(24, Math.floor(RADIO_TIERRA / k / (enMovimiento ? 1.1 : 2.2))));
         const entero = k < R * 1.05;         // se ve el planeta completo
         if (mini) {
             // El recuadro pequeno se dibuja una sola vez: lleva su mar y su recorte redondo en el canvas
@@ -471,39 +497,70 @@
         }
         // Nombres de los municipios vecinos, muy tenues, solo si caben y no tapan pines ni etiquetas
         if (quieto && alfaRotulos > 0.01 && cam.k > m.R * 60) {
-            lapiz.font = '500 11px "Instrument Sans", system-ui, sans-serif';
-            lapiz.textAlign = 'center';
-            lapiz.textBaseline = 'middle';
-            lapiz.fillStyle = 'rgba(210, 232, 250, ' + (0.42 * alfaRotulos).toFixed(3) + ')';
+            const FUENTE_MUNICIPIO = '500 11px "Instrument Sans", system-ui, sans-serif';
             const puestos = [];
             visibles.forEach(i => {
                 const mu = municipios.paises[i];
                 if (conVacantes.has(i) || !mu.n || Math.sqrt(mu.s) * RAD * cam.k < 70) return;
                 const q = enPantalla(mu.cv, cam, m);
                 if (q[2] < 0.3 || Math.hypot(q[0] - m.cx, q[1] - m.cy) > m.R - 30) return;
-                const medio = lapiz.measureText(mu.n).width / 2 + 6;
+                const r = rotulo(mu.n, FUENTE_MUNICIPIO), medio = r.ancho / 2 + 6;
                 if (evitar.some(o => Math.abs(o[0] - q[0]) < medio + o[2] && Math.abs(o[1] - q[1]) < 10 + o[2])) return;
                 if (puestos.some(o => Math.abs(o[0] - q[0]) < medio + o[2] && Math.abs(o[1] - q[1]) < 18)) return;
                 puestos.push([q[0], q[1], medio]);
-                lapiz.fillText(mu.n, q[0], q[1]);
+                pegarRotulo(lapiz, r, q[0], q[1], 0.42 * alfaRotulos);
             });
         }
         lapiz.globalAlpha = base;
     }
 
+    /* Los nombres del mapa (revision de fluidez, 2026-11-15). Antes se escribian en el globo con lapiz.font y
+       fillText en cada cuadro: cambiar la letra de un lienzo que esta en la pagina obliga al navegador a poner al
+       dia los estilos de TODA la pagina, y al bajar (con las barras cambiando de clase) eso costaba 38 a 82 ms por
+       cuadro en un celular (medido). Ahora cada nombre se dibuja una sola vez en un lienzo suelto, que no esta en
+       la pagina, y en cada cuadro solo se pega esa imagen (drawImage). */
+    const COLOR_ROTULO = 'rgb(210, 232, 250)';
+    const rotulosHechos = new Map();
+    const lienzoMedidas = document.createElement('canvas').getContext('2d');
+    function rotulo(texto, fuente, espacio) {
+        const dpr = m ? m.dpr : 1, clave = fuente + '|' + (espacio || 0) + '|' + dpr + '|' + texto;
+        let r = rotulosHechos.get(clave);
+        if (r) return r;
+        lienzoMedidas.font = fuente;
+        if ('letterSpacing' in lienzoMedidas) lienzoMedidas.letterSpacing = (espacio || 0) + 'px';
+        const ancho = Math.ceil(lienzoMedidas.measureText(texto).width) + 2, alto = 18;
+        const lienzo = document.createElement('canvas');
+        lienzo.width = Math.ceil(ancho * dpr); lienzo.height = Math.ceil(alto * dpr);
+        const l = lienzo.getContext('2d');
+        l.scale(dpr, dpr);
+        l.font = fuente;
+        if ('letterSpacing' in l) l.letterSpacing = (espacio || 0) + 'px';
+        l.textBaseline = 'middle';
+        l.fillStyle = COLOR_ROTULO;
+        l.fillText(texto, 1, alto / 2);
+        if (rotulosHechos.size > 500) rotulosHechos.clear();
+        r = { lienzo: lienzo, ancho: ancho, alto: alto };
+        rotulosHechos.set(clave, r);
+        return r;
+    }
+    /** Pega un nombre ya dibujado: centrado en x (o desde x si "izquierda"), en medio de y, con su transparencia */
+    function pegarRotulo(lapiz, r, x, y, alfa, izquierda) {
+        const antes = lapiz.globalAlpha;
+        lapiz.globalAlpha = antes * alfa;
+        lapiz.drawImage(r.lienzo, izquierda ? x - 1 : x - r.ancho / 2, y - r.alto / 2, r.ancho, r.alto);
+        lapiz.globalAlpha = antes;
+    }
+
     /** Nombres de paises y ciudades de referencia; se corren o se omiten si tapan tu punto o un pin. */
     function rotular(lapiz, cam, m, visibles) {
         const cabe = (x, y, medio) => Math.hypot(x - m.cx, y - m.cy) + medio < m.R - 8;
-        lapiz.font = '600 12px "Instrument Sans", system-ui, sans-serif';
-        lapiz.textAlign = 'center';
-        lapiz.textBaseline = 'middle';
-        if ('letterSpacing' in lapiz) lapiz.letterSpacing = '2px';
+        const FUENTE_PAIS = '600 12px "Instrument Sans", system-ui, sans-serif';
         for (const i of visibles) {
             const p = mundo.paises[i];
             if (!p.n || Math.sqrt(p.s) * RAD * cam.k < 80) continue;      // el nombre no cabe en el pais
             const q = enPantalla(p.cv, cam, m);
             if (q[2] < 0.3) continue;
-            const texto = p.n.toUpperCase(), medio = lapiz.measureText(texto).width / 2 + 10;
+            const r = rotulo(p.n.toUpperCase(), FUENTE_PAIS, 2), medio = r.ancho / 2 + 10;
             let y = null;
             for (const dy of [0, 46, -46, 86, -86, 126, -126]) {
                 const yy = q[1] + dy;
@@ -512,29 +569,25 @@
                 y = yy; break;
             }
             if (y === null) continue;
-            lapiz.fillStyle = 'rgba(210, 232, 250, ' + ((i === miPais ? 0.6 : 0.34) * alfaRotulos).toFixed(3) + ')';
-            lapiz.fillText(texto, q[0], y);
+            pegarRotulo(lapiz, r, q[0], y, (i === miPais ? 0.6 : 0.34) * alfaRotulos);
         }
-        if ('letterSpacing' in lapiz) lapiz.letterSpacing = '0px';
 
         // Ciudades de referencia (las principales que caben sin estorbar): un punto tenue y su nombre
         if (cam.k < m.R * 5) return;
-        lapiz.font = '500 12px "Instrument Sans", system-ui, sans-serif';
-        lapiz.textAlign = 'left';
+        const FUENTE_CIUDAD = '500 12px "Instrument Sans", system-ui, sans-serif';
         const puestas = [];
         for (const ciudad of REFERENCIAS) {
             if (puestas.length >= 6) break;
             const q = enPantalla(ciudad.v, cam, m);
             if (q[2] < 0.3) continue;
-            const ancho = lapiz.measureText(ciudad.corto).width, medio = q[0] + 8 + ancho / 2;
+            const r = rotulo(ciudad.corto, FUENTE_CIUDAD), ancho = r.ancho, medio = q[0] + 8 + ancho / 2;
             if (!cabe(medio, q[1], ancho / 2 + 10)) continue;
             if (evitar.some(o => Math.abs(o[0] - medio) < ancho / 2 + 12 + o[2] && Math.abs(o[1] - q[1]) < 14 + o[2])) continue;
             if (puestas.some(o => Math.abs(o[0] - medio) < (ancho + o[2]) / 2 + 24 && Math.abs(o[1] - q[1]) < 24)) continue;
             puestas.push([medio, q[1], ancho]);
             lapiz.fillStyle = 'rgba(210, 232, 250, ' + (0.55 * alfaRotulos).toFixed(3) + ')';
             lapiz.beginPath(); lapiz.arc(q[0], q[1], 2, 0, 2 * Math.PI); lapiz.fill();
-            lapiz.fillStyle = 'rgba(210, 232, 250, ' + (0.5 * alfaRotulos).toFixed(3) + ')';
-            lapiz.fillText(ciudad.corto, q[0] + 8, q[1]);
+            pegarRotulo(lapiz, r, q[0] + 8, q[1], 0.5 * alfaRotulos, true);
         }
     }
 
@@ -681,7 +734,8 @@
     function quitarRecortes() {
         entradas.forEach(a => a.cancel());
         entradas = [];
-        capaRutas.querySelectorAll('[clip-path]').forEach(g => g.removeAttribute('clip-path'));
+        // Solo los recortes de entrada de las rutas: el del anillo (el borde del planeta) se queda
+        capaRutas.querySelectorAll('.cm-ruta-grupo[clip-path]').forEach(g => g.removeAttribute('clip-path'));
         recortes.innerHTML = '';
     }
     function limpiarEncima() {
@@ -769,7 +823,10 @@
 
         // El anillo de tu alcance (debajo de las rutas) y su etiqueta con los km
         const radio = actual.radio || 0;
-        const anillo = radio ? '<g class="cm-alcance"><path class="cm-alcance-area"/><path class="cm-alcance-borde"/></g>' : '';
+        // Va recortado al planeta (2026-11-15): al agrandar el mapa el anillo crece con el y se salia del
+        // planeta, encima del titulo, la leyenda y los botones. El recorte va en un grupo de afuera: el de
+        // adentro crece desde tu punto (transform) y el recorte no debe crecer con el
+        const anillo = radio ? '<g class="cm-alcance-recorte" clip-path="url(#cmDisco)"><g class="cm-alcance"><path class="cm-alcance-area"/><path class="cm-alcance-borde"/></g></g>' : '';
         if (radio) pines += '<span class="cm-alcance-km">' + radio + ' km</span>';
         recortes.innerHTML = defs;
         capaRutas.innerHTML = anillo + rayos + rutas;
@@ -798,6 +855,7 @@
         if (radio) capa.alcance = {
             g: capaRutas.querySelector('.cm-alcance'), area: capaRutas.querySelector('.cm-alcance-area'),
             borde: capaRutas.querySelector('.cm-alcance-borde'), km: capaPines.querySelector('.cm-alcance-km'),
+            disco: svgRutas.querySelector('.cm-disco-recorte'), discoR: '',
             puntos: circulo(vOrigen, radio, 96)
         };
         if (capa.alcance) capa.alcance.tam = tam(capa.alcance.km);
@@ -836,6 +894,11 @@
         // El anillo de tu alcance: sus 96 puntos en la pantalla. Crece desde tu punto (transform-origin)
         if (capa.alcance) {
             const A0 = capa.alcance, q = A0.puntos.map(v => enPantalla(v, cam, m));
+            // El recorte, del tamano del planeta de ahora (cambia al girar el celular o cambiar el ancho)
+            if (A0.disco && A0.discoR !== m.cx + '|' + m.cy + '|' + m.R) {
+                A0.discoR = m.cx + '|' + m.cy + '|' + m.R;
+                A0.disco.setAttribute('cx', f(m.cx)); A0.disco.setAttribute('cy', f(m.cy)); A0.disco.setAttribute('r', f(m.R));
+            }
             // Se ve si tu punto se ve, todo el anillo queda de este lado y no es un puntito (desde Madrid,
             // con el planeta entero, 25 km miden 2 pixeles: ahi el anillo y su etiqueta sobran)
             const seVe = yoSeVe && q.every(p => p[2] > 0.02) && Math.hypot(q[0][0] - yo[0], q[0][1] - yo[1]) > 14;
@@ -945,12 +1008,15 @@
         capa.lejos.forEach(g => poner(g.nombre, g.lugaresNombre));
         capa.lejos.forEach(g => poner(g.km, g.lugaresKm));
         // Los km del anillo: en el primer punto del borde (de 8, empezando por el noreste) donde no choquen con nada
+        // y que caiga dentro del planeta (con el mapa agrandado el anillo queda afuera: ahi la etiqueta no va)
         if (capa.alcance) {
             const A0 = capa.alcance, t = A0.tam || [0, 0];
             let lugar = null;
             if (A0.q) {
                 for (let j = 1; j < 9 && !lugar; j++) {
-                    const c = dentro(A0.q[Math.round(((j % 8) / 8) * A0.q.length) % A0.q.length]);
+                    const punto = A0.q[Math.round(((j % 8) / 8) * A0.q.length) % A0.q.length];
+                    if (Math.hypot(punto[0] - m.cx, punto[1] - m.cy) > m.R - 6) continue;
+                    const c = dentro(punto);
                     const r = [c[0] - t[0] / 2, c[1] - t[1] / 2, c[0] + t[0] / 2, c[1] + t[1] / 2];
                     if (!choca(r)) lugar = { c: c, r: r };
                 }
