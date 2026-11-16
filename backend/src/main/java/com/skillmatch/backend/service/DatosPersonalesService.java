@@ -70,7 +70,7 @@ public class DatosPersonalesService {
         datos.put("certificaciones", user.getCertifications());
         datos.put("consentimientos", user.getConsentimientos());
         datos.put("cuentaUnidaAGoogle", user.getGoogleId() != null);
-        datos.put("postulaciones", applicationService.getApplicationsByUser(userId));
+        datos.put("postulaciones", applicationService.getAllApplicationsByUserIncludingWithdrawn(userId));
         datos.put("vacantesGuardadas", savedJobService.getUserSavedJobs(userId));
         datos.put("conexiones", mongoTemplate.find(new Query(new Criteria().orOperator(
                 Criteria.where("userId").is(userId), Criteria.where("connectedUserId").is(userId))), Connection.class));

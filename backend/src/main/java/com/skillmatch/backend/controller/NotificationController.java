@@ -87,6 +87,9 @@ public class NotificationController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> deleteOldNotifications(@PathVariable int daysOld,
                                                      @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        if (daysOld < 1 || daysOld > 365) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Los días deben estar entre 1 y 365."));
+        }
         try {
             notificationService.deleteOldNotifications(currentUser.getId(), daysOld);
             return ResponseEntity.ok(new MessageResponse("Notificaciones antiguas eliminadas exitosamente"));

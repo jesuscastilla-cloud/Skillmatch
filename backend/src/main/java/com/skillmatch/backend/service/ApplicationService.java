@@ -71,11 +71,14 @@ public class ApplicationService {
         if (job.getExpirationDate() != null && job.getExpirationDate().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Esta vacante ya cerró: su fecha límite pasó.");
         }
-        if (applicationRepository.existsByUserIdAndJobId(userId, jobId)) {
+        // Si la retiro antes, vuelve a postularse sobre la misma (no se duplica)
+        Application application = applicationRepository.findByUserIdAndJobId(userId, jobId).orElse(null);
+        if (application != null && application.getStatus() != ApplicationStatus.RETIRADA) {
             throw new DuplicateResourceException("Ya te has postulado a esta oferta");
         }
-
-        Application application = new Application();
+        if (application == null) application = new Application();
+        application.setReviewedDate(null);
+        application.setNotes(null);
         application.setUserId(userId);
         application.setJobId(jobId);
         application.setResume(request.getResume());
@@ -110,6 +113,10 @@ public class ApplicationService {
         if (!isAdmin && !isApplicant && !isJobOwner) {
             throw new ResourceNotFoundException("Postulación no encontrada");
         }
+        // La empresa deja de ver una postulación retirada
+        if (application.getStatus() == ApplicationStatus.RETIRADA && !isApplicant && !isAdmin) {
+            throw new ResourceNotFoundException("Postulación no encontrada");
+        }
 
         ApplicationResponse response = loadAndMapSingle(application);
         if (!isAdmin && !isJobOwner) {
@@ -121,6 +128,13 @@ public class ApplicationService {
     public List<ApplicationResponse> getApplicationsByUser(String userId) {
         List<ApplicationResponse> applications = mapList(applicationRepository.findByUserId(userId));
         applications.forEach(app -> app.setNotes(null)); // las notas son internas de la empresa
+        return applications;
+    }
+
+    /** Para "Descargar mis datos": TODAS las postulaciones de la persona, tambien las que retiro. */
+    public List<ApplicationResponse> getAllApplicationsByUserIncludingWithdrawn(String userId) {
+        List<ApplicationResponse> applications = mapListSinFiltrar(applicationRepository.findByUserId(userId));
+        applications.forEach(app -> app.setNotes(null));
         return applications;
     }
 
@@ -144,7 +158,7 @@ public class ApplicationService {
                 .stream().map(Job::getId).collect(Collectors.toList());
         if (jobIds.isEmpty()) return Page.empty(pageable);
 
-        Query query = new Query(Criteria.where("jobId").in(jobIds));
+        Query query = new Query(Criteria.where("jobId").in(jobIds).and("status").ne(ApplicationStatus.RETIRADA));
         long total = mongoTemplate.count(query, Application.class);
         List<Application> apps = mongoTemplate.find(query.with(pageable), Application.class);
         return new PageImpl<>(mapList(apps), pageable, total);
@@ -175,8 +189,14 @@ public class ApplicationService {
         Job job = jobRepository.findById(application.getJobId())
                 .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado"));
         verifyJobOwnership(job, requesterId);
+        if (application.getStatus() == ApplicationStatus.RETIRADA) {
+            throw new ResourceNotFoundException("Postulación no encontrada con ID: " + id);
+        }
 
         ApplicationStatus appStatus = ApplicationStatus.fromValue(status);
+        if (appStatus == ApplicationStatus.RETIRADA) {
+            throw new IllegalArgumentException("Solo la persona puede retirar su postulación.");
+        }
         ApplicationStatus antes = application.getStatus();
         application.setStatus(appStatus);
         if (notes != null) application.setNotes(notes);
@@ -208,15 +228,28 @@ public class ApplicationService {
             throw new AccessDeniedException("No tienes permiso para eliminar esta postulación");
         }
 
-        applicationRepository.delete(application);
-        log.info("Postulación {} eliminada por usuario {}", id, requesterId);
+        if (hasManagementPrivileges && !isOwner) {
+            applicationRepository.delete(application);   // moderacion: se borra de verdad
+            log.info("Postulación {} eliminada por usuario {}", id, requesterId);
+            return;
+        }
+        // La persona la retira: no se borra, queda como RETIRADA y deja de verse
+        if (application.getStatus() == ApplicationStatus.RETIRADA) return;
+        if (application.getStatus() != ApplicationStatus.PENDIENTE && application.getStatus() != ApplicationStatus.REVISADA) {
+            throw new IllegalArgumentException("La empresa ya respondió esta postulación: no se puede retirar.");
+        }
+        application.setStatus(ApplicationStatus.RETIRADA);
+        application.setUpdatedAt(LocalDateTime.now());
+        applicationRepository.save(application);
+        log.info("Postulación {} retirada por usuario {}", id, requesterId);
     }
 
     public long countApplicationsByCompany(String companyId) {
         List<String> jobIds = jobRepository.findByCompanyId(companyId)
                 .stream().map(Job::getId).collect(Collectors.toList());
         if (jobIds.isEmpty()) return 0L;
-        return mongoTemplate.count(new Query(Criteria.where("jobId").in(jobIds)), Application.class);
+        return mongoTemplate.count(
+                new Query(Criteria.where("jobId").in(jobIds).and("status").ne(ApplicationStatus.RETIRADA)), Application.class);
     }
 
     public long countPendingApplicationsByCompany(String companyId) {
@@ -233,13 +266,13 @@ public class ApplicationService {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado con ID: " + jobId));
         if (!isAdmin) verifyJobOwnership(job, requesterId);
-        long total = applicationRepository.countByJobId(jobId);
+        long total = applicationRepository.countByJobIdAndStatusNot(jobId, ApplicationStatus.RETIRADA);
         log.debug("Total de postulaciones para job {}: {}", jobId, total);
         return total;
     }
 
     public boolean hasUserApplied(String userId, String jobId) {
-        boolean exists = applicationRepository.existsByUserIdAndJobId(userId, jobId);
+        boolean exists = applicationRepository.existsByUserIdAndJobIdAndStatusNot(userId, jobId, ApplicationStatus.RETIRADA);
         log.debug("Usuario {} ya aplicado a job {}: {}", userId, jobId, exists);
         return exists;
     }
@@ -260,7 +293,13 @@ public class ApplicationService {
         return mapToResponse(application, user, job, company);
     }
 
+    /** Las listas no incluyen las postulaciones retiradas: nadie las ve. */
     private List<ApplicationResponse> mapList(List<Application> applications) {
+        return mapListSinFiltrar(applications.stream()
+                .filter(a -> a.getStatus() != ApplicationStatus.RETIRADA).collect(Collectors.toList()));
+    }
+
+    private List<ApplicationResponse> mapListSinFiltrar(List<Application> applications) {
         if (applications.isEmpty()) return List.of();
         Set<String> userIds = applications.stream().map(Application::getUserId).collect(Collectors.toSet());
         Set<String> jobIds = applications.stream().map(Application::getJobId).collect(Collectors.toSet());
@@ -312,6 +351,8 @@ public class ApplicationService {
         if (job != null) {
             response.setJobId(job.getId());
             response.setJobTitle(job.getTitle());
+            response.setJobStatus(job.getStatus() != null ? job.getStatus().name() : null);
+            response.setJobActive(job.getActive());
         }
         if (company != null) {
             response.setCompanyName(company.getName());

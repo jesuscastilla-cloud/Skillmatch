@@ -81,7 +81,7 @@ class ApplicationServiceTest {
 
         when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
         when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
-        when(applicationRepository.existsByUserIdAndJobId("user-id-1", "job-id-5")).thenReturn(false);
+        when(applicationRepository.findByUserIdAndJobId("user-id-1", "job-id-5")).thenReturn(Optional.empty());
 
         Application saved = new Application();
         saved.setId("app-id-100");
@@ -132,7 +132,9 @@ class ApplicationServiceTest {
 
         when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
         when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
-        when(applicationRepository.existsByUserIdAndJobId("user-id-1", "job-id-5")).thenReturn(true);
+        Application yaExiste = new Application();
+        yaExiste.setStatus(ApplicationStatus.PENDIENTE);
+        when(applicationRepository.findByUserIdAndJobId("user-id-1", "job-id-5")).thenReturn(Optional.of(yaExiste));
 
         assertThatThrownBy(() -> applicationService.createApplication("user-id-1", request))
                 .isInstanceOf(DuplicateResourceException.class);
@@ -326,14 +328,14 @@ class ApplicationServiceTest {
 
         assertThatThrownBy(() -> applicationService.countApplicationsByJob("job-id-5", "user-id-99", false))
                 .isInstanceOf(AccessDeniedException.class);
-        verify(applicationRepository, never()).countByJobId(any());
+        verify(applicationRepository, never()).countByJobIdAndStatusNot(any(), any());
     }
 
     @Test
     void countApplicationsByJob_dueno_cuenta() {
         when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
         when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
-        when(applicationRepository.countByJobId("job-id-5")).thenReturn(4L);
+        when(applicationRepository.countByJobIdAndStatusNot("job-id-5", ApplicationStatus.RETIRADA)).thenReturn(4L);
 
         assertThat(applicationService.countApplicationsByJob("job-id-5", "user-id-2", false)).isEqualTo(4L);
     }
@@ -371,5 +373,129 @@ class ApplicationServiceTest {
         when(userRepository.findAllById(any())).thenReturn(List.of(applicant));
         when(jobRepository.findAllById(any())).thenReturn(List.of(openJob));
         when(companyRepository.findAllById(any())).thenReturn(List.of(company));
+    }
+
+    private Application postulacion(ApplicationStatus estado) {
+        Application a = new Application();
+        a.setId("app-id-70");
+        a.setUserId("user-id-1");
+        a.setJobId("job-id-5");
+        a.setStatus(estado);
+        return a;
+    }
+
+    @Test
+    void retirar_unaPendiente_quedaComoRetirada_yNoSeBorra() {
+        Application a = postulacion(ApplicationStatus.PENDIENTE);
+        when(applicationRepository.findById("app-id-70")).thenReturn(Optional.of(a));
+
+        applicationService.deleteApplication("app-id-70", "user-id-1", false);
+
+        assertThat(a.getStatus()).isEqualTo(ApplicationStatus.RETIRADA);
+        verify(applicationRepository).save(a);
+        verify(applicationRepository, never()).delete(any(Application.class));
+    }
+
+    @Test
+    void retirar_unaYaRespondida_noSePuede() {
+        Application a = postulacion(ApplicationStatus.ACEPTADA);
+        when(applicationRepository.findById("app-id-70")).thenReturn(Optional.of(a));
+
+        assertThatThrownBy(() -> applicationService.deleteApplication("app-id-70", "user-id-1", false))
+                .hasMessageContaining("ya respondió");
+        assertThat(a.getStatus()).isEqualTo(ApplicationStatus.ACEPTADA);
+    }
+
+    @Test
+    void retirarAjena_esProhibido() {
+        Application a = postulacion(ApplicationStatus.PENDIENTE);
+        when(applicationRepository.findById("app-id-70")).thenReturn(Optional.of(a));
+
+        assertThatThrownBy(() -> applicationService.deleteApplication("app-id-70", "otra-persona", false))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        assertThat(a.getStatus()).isEqualTo(ApplicationStatus.PENDIENTE);
+    }
+
+    @Test
+    void unAdmin_siBorraDeVerdad() {
+        Application a = postulacion(ApplicationStatus.PENDIENTE);
+        when(applicationRepository.findById("app-id-70")).thenReturn(Optional.of(a));
+
+        applicationService.deleteApplication("app-id-70", "admin-1", true);
+
+        verify(applicationRepository).delete(a);
+    }
+
+    @Test
+    void despuesDeRetirar_puedePostularseDeNuevo_sobreLaMisma() {
+        Application retirada = postulacion(ApplicationStatus.RETIRADA);
+        retirada.setNotes("nota vieja");
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(applicationRepository.findByUserIdAndJobId("user-id-1", "job-id-5")).thenReturn(Optional.of(retirada));
+        when(applicationRepository.save(any(Application.class))).thenAnswer(i -> i.getArgument(0));
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
+
+        ApplicationResponse r = applicationService.createApplication("user-id-1", new ApplicationRequest("job-id-5", null, "otra carta"));
+
+        assertThat(r.getId()).isEqualTo("app-id-70");           // la misma, no una nueva
+        assertThat(r.getStatus()).isEqualTo("pendiente");
+        assertThat(retirada.getNotes()).isNull();
+    }
+
+    @Test
+    void laEmpresaNoPuedeResponderUnaRetirada_niVerla() {
+        Application a = postulacion(ApplicationStatus.RETIRADA);
+        when(applicationRepository.findById("app-id-70")).thenReturn(Optional.of(a));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
+
+        assertThatThrownBy(() -> applicationService.updateStatus("app-id-70", "aceptada", null, "user-id-2"))
+                .isInstanceOf(com.skillmatch.backend.exception.ResourceNotFoundException.class);
+        assertThatThrownBy(() -> applicationService.getApplicationById("app-id-70", "user-id-2", false))
+                .isInstanceOf(com.skillmatch.backend.exception.ResourceNotFoundException.class);
+    }
+
+    @Test
+    void nadiePuedePonerRetiradaDesdeElEstadoDeLaEmpresa() {
+        Application a = postulacion(ApplicationStatus.PENDIENTE);
+        when(applicationRepository.findById("app-id-70")).thenReturn(Optional.of(a));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
+
+        assertThatThrownBy(() -> applicationService.updateStatus("app-id-70", "retirada", null, "user-id-2"))
+                .hasMessageContaining("Solo la persona");
+    }
+
+    @Test
+    void lasListasNoIncluyenLasRetiradas_peroLaDescargaDeDatosSi() {
+        Application viva = postulacion(ApplicationStatus.PENDIENTE);
+        Application retirada = postulacion(ApplicationStatus.RETIRADA);
+        retirada.setId("app-id-71");
+        when(applicationRepository.findByUserId("user-id-1")).thenReturn(java.util.List.of(viva, retirada));
+        when(userRepository.findAllById(any())).thenReturn(java.util.List.of(applicant));
+        when(jobRepository.findAllById(any())).thenReturn(java.util.List.of(openJob));
+        when(companyRepository.findAllById(any())).thenReturn(java.util.List.of(company));
+
+        assertThat(applicationService.getApplicationsByUser("user-id-1")).extracting(ApplicationResponse::getId)
+                .containsExactly("app-id-70");
+        assertThat(applicationService.getAllApplicationsByUserIncludingWithdrawn("user-id-1"))
+                .extracting(ApplicationResponse::getId).containsExactly("app-id-70", "app-id-71");
+    }
+
+    @Test
+    void laRespuestaTraeSiLaVacanteSigueAbierta() {
+        Application a = postulacion(ApplicationStatus.PENDIENTE);
+        openJob.setStatus(JobStatus.CERRADA);
+        openJob.setActive(false);
+        when(applicationRepository.findByUserId("user-id-1")).thenReturn(java.util.List.of(a));
+        when(userRepository.findAllById(any())).thenReturn(java.util.List.of(applicant));
+        when(jobRepository.findAllById(any())).thenReturn(java.util.List.of(openJob));
+        when(companyRepository.findAllById(any())).thenReturn(java.util.List.of(company));
+
+        ApplicationResponse r = applicationService.getApplicationsByUser("user-id-1").get(0);
+
+        assertThat(r.getJobStatus()).isEqualTo("CERRADA");
+        assertThat(r.getJobActive()).isFalse();
     }
 }

@@ -38,7 +38,9 @@ COPY --from=build /build/target/*.jar app.jar
 RUN chown app:app app.jar
 USER app
 
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom"
+# America/Bogota: las horas que ve la gente (mensajes, "publicada hoy") salen en hora de Colombia.
+# Mongo guarda el instante exacto, asi que lo ya guardado tambien sale bien, sin migrar nada.
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -Duser.timezone=America/Bogota -Djava.security.egd=file:/dev/./urandom"
 ENV PORT=8080
 EXPOSE 8080
 

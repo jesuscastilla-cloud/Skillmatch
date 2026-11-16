@@ -251,7 +251,8 @@ public class AvisosCorreoService {
         String hoy = LocalDate.now(BOGOTA).toString();
         // Las postulaciones de demostracion no cuentan: no se le escribe a una empresa por algo inventado
         List<Application> recientes = mongoTemplate.find(new Query(Criteria.where("appliedDate")
-                .gt(LocalDateTime.now().minusDays(1)).and("ejemplo").ne(true)), Application.class);
+                .gt(LocalDateTime.now().minusDays(1)).and("ejemplo").ne(true)
+                .and("status").ne(ApplicationStatus.RETIRADA)), Application.class);
         Map<String, Long> porVacante = recientes.stream()
                 .collect(Collectors.groupingBy(Application::getJobId, LinkedHashMap::new, Collectors.counting()));
         Map<String, Map<String, Long>> porEmpresa = new LinkedHashMap<>();

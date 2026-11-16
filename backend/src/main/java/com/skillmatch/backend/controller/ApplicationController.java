@@ -75,6 +75,9 @@ public class ApplicationController {
             @PathVariable String companyId,
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        pageable = com.skillmatch.backend.validation.Paginas.segura(pageable,
+                java.util.Set.of("appliedDate", "status", "createdAt"), org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC, "appliedDate"));
         Page<ApplicationResponse> apps = applicationService.getApplicationsByCompany(
                 companyId, requireUser(currentUser), hasRole(currentUser, "ADMIN"), pageable);
         return ResponseEntity.ok(apps);

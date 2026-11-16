@@ -346,6 +346,7 @@ Skillmatch/
 │   └── start.ps1 / start.sh   Arranque local con variables de desarrollo
 ├── pruebas/                   Pruebas del frontend con Playwright y una API falsa
 ├── scripts/                   Copia cifrada y restauración de MongoDB
+├── herramientas/              Datos del mapa y `probar-ataques.mjs` (ataques contra el servidor local)
 ├── mineria-datos/             Análisis de Minería de Datos I (notebook y resultados)
 ├── documentos/                Entregas académicas en PDF
 ├── docs/                      Toda la documentación (ver abajo) e imágenes del README
@@ -370,6 +371,7 @@ Skillmatch/
 | [PRUEBAS-FRONTEND](docs/PRUEBAS-FRONTEND.md) | Las pruebas con Playwright |
 | [MINERIA-DATOS](docs/MINERIA-DATOS.md) | El análisis de Minería de Datos I |
 | [ANALISIS-FRONTEND](docs/ANALISIS-FRONTEND.md) · [ANALISIS-PROFUNDO](docs/ANALISIS-PROFUNDO.md) · [REVISION-CALIDAD](docs/REVISION-CALIDAD.md) · [AVANCE-VISUAL](docs/AVANCE-VISUAL.md) · [PENDIENTES-BACKEND](docs/PENDIENTES-BACKEND.md) | Revisiones y bitácoras del trabajo |
+| [CAMBIOS-NOCHE-2026-11-13](docs/CAMBIOS-NOCHE-2026-11-13.md) · [PENDIENTES-2026-11-13](docs/PENDIENTES-2026-11-13.md) | El rediseño de noviembre (vidrio, portada, vacantes) y lo que quedó pendiente |
 | [ENDPOINTS-API](docs/ENDPOINTS-API.md) · [GUIA-PRUEBAS-API](docs/GUIA-PRUEBAS-API.md) | La primera versión de la API (la referencia al día es Swagger) |
 
 ---

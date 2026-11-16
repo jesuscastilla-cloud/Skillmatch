@@ -18,10 +18,12 @@ public class CertificationRequest {
 
     @NotBlank(message = "{validation.certification.name.required}")
     @Size(max = 200, message = "{validation.certification.name.max}")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String name;
 
     @NotBlank(message = "{validation.certification.issuer.required}")
     @Size(max = 200, message = "{validation.certification.issuer.max}")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String issuer;
 
     private LocalDate issueDate;
@@ -30,6 +32,7 @@ public class CertificationRequest {
     private LocalDate expirationDate;
 
     @Size(max = 100, message = "{validation.certification.credentialId.max}")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String credentialId;
 
     @Pattern(regexp = EntradaSegura.REGEX_ENLACE, message = "El enlace del certificado debe empezar por http:// o https://")

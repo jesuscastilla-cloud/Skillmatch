@@ -50,6 +50,12 @@ public class CompanyRequest {
 
     private Integer foundedYear;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @jakarta.validation.constraints.AssertTrue(message = "El año de fundación debe estar entre 1800 y este año.")
+    public boolean isAnioValido() {
+        return foundedYear == null || (foundedYear >= 1800 && foundedYear <= java.time.Year.now().getValue());
+    }
+
     @Size(max = 2000, message = "Los beneficios no pueden exceder 2000 caracteres")
     private String benefits;
 

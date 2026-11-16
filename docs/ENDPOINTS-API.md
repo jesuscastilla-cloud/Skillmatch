@@ -97,9 +97,9 @@ Base URL: `http://localhost:8080/api/jobs`
 - `modality`: presencial, remoto, híbrido
 - `experienceLevel`: junior, semi-senior, senior, sin-experiencia
 - `location`: texto de ubicación
-- `minSalary` / `maxSalary`: rangos salariales
+- `minSalary` / `maxSalary`: rangos salariales (entre 0 y 50.000.000; fuera de ese rango responde 400)
 
-**Body para crear oferta:**
+**Body para crear oferta** (los salarios son enteros entre 1 y 50.000.000 pesos al mes; vacío = sin salario; el 0 no vale):
 ```json
 {
   "companyId": 1,
@@ -133,7 +133,7 @@ Base URL: `http://localhost:8080/api/applications`
 | GET | `/company/{companyId}` | Postulaciones de una empresa | EMPRESA, ADMIN |
 | GET | `/status/{status}` | Por estado (pendiente/revisada/aceptada/rechazada) | EMPRESA, ADMIN |
 | PATCH | `/{id}/status?status=X&notes=Y` | Actualizar estado | EMPRESA, ADMIN |
-| DELETE | `/{id}` | Eliminar postulación | USER, ADMIN |
+| DELETE | `/{id}` | Retirar postulación (queda `retirada`, nadie la ve; solo estando pendiente o revisada). Un ADMIN la borra de verdad | USER, ADMIN |
 | GET | `/job/{jobId}/count` | Contar postulaciones | Público |
 | GET | `/check?jobId=X` | Verificar si ya se postuló | USER, ADMIN |
 

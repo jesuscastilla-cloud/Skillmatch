@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import com.skillmatch.backend.validation.EntradaSegura;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,13 +20,16 @@ public class EducationRequest {
 
     @NotBlank(message = "La institución es obligatoria")
     @Size(max = 200, message = "La institución no puede tener más de 200 caracteres")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String school;
 
     @NotBlank(message = "El título es obligatorio")
     @Size(max = 200, message = "El título no puede tener más de 200 caracteres")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String degree;
 
     @Size(max = 200, message = "El área de estudio no puede tener más de 200 caracteres")
+    @Pattern(regexp = EntradaSegura.REGEX_SIN_ETIQUETAS, message = EntradaSegura.MENSAJE_SIN_ETIQUETAS)
     private String fieldOfStudy;
 
     @NotNull(message = "La fecha de inicio es obligatoria")

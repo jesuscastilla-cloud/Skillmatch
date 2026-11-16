@@ -62,7 +62,7 @@ function crearApi(opciones = {}) {
         const u = usuario(a.userId); const j = vacante(a.jobId); const c = j && empresa(j.companyId);
         return { id: a.id, userId: a.userId, userName: nombre(u), userEmail: u && u.email, userPhone: u && u.phone,
             userHeadline: u && u.headline, userLocation: u && u.location, userProfileImageUrl: u && u.profileImageUrl || null,
-            jobId: a.jobId, jobTitle: j && j.title, companyName: c && c.name, status: a.status, resume: null,
+            jobId: a.jobId, jobTitle: j && j.title, companyName: c && c.name, jobStatus: j && String(j.status || '').toUpperCase(), jobActive: j ? j.active !== false : null, status: a.status, resume: null,
             coverLetter: a.coverLetter || null, notes: a.notes || null, appliedDate: a.appliedDate, reviewedDate: a.reviewedDate || null,
             createdAt: a.appliedDate, updatedAt: a.appliedDate };
     };

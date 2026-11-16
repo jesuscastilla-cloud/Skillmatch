@@ -4,7 +4,9 @@ public enum ApplicationStatus {
     PENDIENTE("pendiente"),
     REVISADA("revisada"),
     ACEPTADA("aceptada"),
-    RECHAZADA("rechazada");
+    RECHAZADA("rechazada"),
+    /** La persona la retiro: queda guardada, pero ni ella ni la empresa la ven en sus listas. */
+    RETIRADA("retirada");
 
     private final String value;
 
