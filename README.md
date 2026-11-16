@@ -114,7 +114,13 @@ Indicadores públicos del mercado laboral: qué tipo de trabajo hay, dónde, con
   guardado en la dirección para compartirlo.
 - **Perfil completo:** habilidades con nivel, experiencia, estudios, foto y portada. Se puede **llenar desde tu hoja
   de vida en PDF** y **descargar como hoja de vida**.
-- **Postularte con un mensaje propio**, guardar vacantes y ver en qué va cada postulación.
+- **Tus posibilidades antes de postularte:** en cada postulación en proceso, un recuadro dice si tus posibilidades son
+  *buenas, regulares o bajas* y qué te ayudaría a mejorar. Lo calcula un modelo que aprende de las respuestas de las
+  empresas ([cómo aprende](#el-modelo-que-aprende-de-las-respuestas)). Es una estimación, no una promesa, y la empresa no la ve.
+- **Postularte con un mensaje propio**, guardar vacantes, ver en qué va cada postulación y **retirarla** mientras la
+  empresa no responda. Si la vacante cierra, te lo dice.
+- **Correos que tú eliges:** te avisan cuando una empresa responde, cuando tienes mensajes sin leer y, si quieres,
+  con las vacantes nuevas de la semana. Los apagas desde *Más → Correos que recibo* o con el enlace de cada correo.
 - **Red y mensajes:** conectar con otras personas y empresas, conversar, archivar y eliminar conversaciones.
 
 </details>
@@ -125,7 +131,9 @@ Indicadores públicos del mercado laboral: qué tipo de trabajo hay, dónde, con
 - **Mi empresa:** primeros pasos guiados, logo y portada, y el perfil público que ven las personas.
 - **Publicar y editar vacantes** con vista previa en vivo; cerrarlas y reabrirlas sabiendo qué pasa con quienes
   esperan respuesta.
-- **Tablero de postulaciones** y ventana de candidatos para revisar a cada persona.
+- **Tablero de postulaciones** y ventana de candidatos para revisar a cada persona, con el **anillo de compatibilidad**
+  de cada una y la opción de ordenarlas por *Más compatibles*.
+- **Un resumen al final del día** con las postulaciones nuevas (por correo, si lo dejas activo).
 - **Descargar las postulaciones en Excel** (un `.xlsx` de verdad, con filtros y fechas como fechas).
 - **Cifras de cada vacante** y mensajes directos con los candidatos.
 
@@ -137,7 +145,10 @@ Indicadores públicos del mercado laboral: qué tipo de trabajo hay, dónde, con
 - **Entrar con Google** o con correo y contraseña; **"¿Olvidaste tu contraseña?"** con un código al correo.
 - **Directorio de empresas** con su perfil público e **indicadores del mercado laboral** calculados con los datos del
   día.
+- **Una página que explica cómo aprende el modelo**, paso a paso y sin términos técnicos, con un juego para probarlo:
+  [Cómo aprende SkillMatch](SkillMatch/src/pages/como-aprende.html).
 - **Se instala como app** (PWA) y tiene una página para cuando no hay conexión.
+- **Menú «Tu cuenta»** con tu foto y el avance de tu perfil, y una **barra de vidrio** que toma el color del fondo.
 - **Modo claro y oscuro**, tres tamaños de letra, navegación con teclado, respeto por *"reducir movimiento"* y
   *"reducir transparencia"*.
 - **Paleta de comandos** con <kbd>Ctrl</kbd> + <kbd>K</kbd> para buscar vacantes y moverse por el sitio.
@@ -150,6 +161,7 @@ Indicadores públicos del mercado laboral: qué tipo de trabajo hay, dónde, con
 ## Cómo se ve
 
 > Las capturas cambian solas con el tema de GitHub: en modo oscuro ves el sitio oscuro y en modo claro, el claro.
+> Se generan con el diseño actual y datos de prueba (`node pruebas/capturas-readme.js`).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/portada-oscuro.jpg">
@@ -189,12 +201,30 @@ Indicadores públicos del mercado laboral: qué tipo de trabajo hay, dónde, con
 <br><sub><b>Indicadores</b>: el mercado laboral con los datos del día</sub>
 </td>
 </tr>
+<tr>
+<td width="50%" align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/como-aprende-oscuro.jpg">
+  <img alt="Página Cómo aprende SkillMatch" src="docs/img/como-aprende-claro.jpg">
+</picture>
+<br><sub><b>Cómo aprende SkillMatch</b>: el modelo explicado paso a paso</sub>
+</td>
+<td width="50%" align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/mi-empresa-oscuro.jpg">
+  <img alt="Mi empresa" src="docs/img/mi-empresa-claro.jpg">
+</picture>
+<br><sub><b>Mi empresa</b>: primeros pasos, resumen y postulaciones</sub>
+</td>
+</tr>
 </table>
 
 <p align="center">
-  <img alt="Vacantes en el celular" src="docs/img/celular-vacantes.jpg" width="260">
-  &nbsp;&nbsp;&nbsp;
-  <img alt="Indicadores en el celular" src="docs/img/celular-indicadores.jpg" width="260">
+  <img alt="Portada en el celular" src="docs/img/celular-portada.jpg" width="220">
+  &nbsp;&nbsp;
+  <img alt="Vacantes en el celular" src="docs/img/celular-vacantes.jpg" width="220">
+  &nbsp;&nbsp;
+  <img alt="Indicadores en el celular" src="docs/img/celular-indicadores.jpg" width="220">
   <br><sub>En el celular, con la barra de pestañas abajo</sub>
 </p>
 
@@ -216,6 +246,7 @@ flowchart LR
     end
 
     A -->|datos| M[("MongoDB Atlas")]
+    A -->|aprende cada noche| P["Modelo predictivo<br/>(árbol de decisión)"]
     A -->|códigos y avisos| G["Gmail (SMTP)"]
     A <-->|entrar con Google| O["Google OAuth 2.0"]
 ```
@@ -226,21 +257,26 @@ flowchart LR
 | **Backend** | Spring Boot 3.5, Java 17, Spring Security | API REST con JWT en cookie `httpOnly`, OAuth2 para Google, envío de correo por SMTP |
 | **Base de datos** | MongoDB Atlas (Spring Data) | Índices y migraciones que corren solos al arrancar |
 | **Despliegue** | Docker en Render | El `Dockerfile` mete el frontend dentro del `.jar`; cada push a `main` se publica solo |
-| **Pruebas** | JUnit 5 + Mockito, Playwright | ~300 pruebas del backend y 19 grupos de pruebas del frontend en Edge, computador y celular |
+| **Modelo predictivo** | Árbol de decisión (CART) escrito en Java, sin librerías de pago | Aprende de las postulaciones que las empresas ya respondieron y se reentrena cada noche. Java y Python dan el mismo resultado (hay una prueba que lo comprueba) |
+| **Pruebas** | JUnit 5 + Mockito, Playwright | ~390 pruebas del backend y 33 archivos de pruebas del frontend (~500 corridas) en Edge, computador y celular |
 
 ---
 
 ## Seguridad y datos personales
 
-El backend pasó por una **auditoría completa en 11 fases** ([informe](docs/AUDITORIA-BACKEND.md)), probada contra
-MongoDB con ataques reales. Algunas de las protecciones:
+El backend pasó por una **auditoría completa en 12 fases** ([informe](docs/AUDITORIA-BACKEND.md)), probada contra
+MongoDB con ataques reales. La última fase atacó el servidor local con unos **110 ataques** (roles falsos, datos de otras
+personas, inyección en filtros, tokens falsificados, cuerpos gigantes, fuerza bruta y spam); los huecos que
+aparecieron se arreglaron y la herramienta queda para repetirlos: `node herramientas/probar-ataques.mjs`.
+Algunas de las protecciones:
 
 | Tema | Cómo se protege |
 |---|---|
 | **Sesiones** | JWT en cookie `httpOnly` y `Secure`, que se invalida de verdad al cerrar sesión o cambiar la contraseña |
 | **Fuerza bruta** | Límite de intentos por IP y bloqueo por cuenta tras 5 contraseñas equivocadas |
 | **Acceso a datos** | Cada persona solo ve y cambia lo suyo; el correo y el teléfono no son públicos |
-| **Entradas** | Búsquedas literales, límites de tamaño, solo enlaces e imágenes seguras, errores sin detalles internos |
+| **Entradas** | Búsquedas literales, límites de tamaño, solo enlaces e imágenes seguras, textos cortos sin etiquetas HTML, orden de las listas con campos permitidos y errores sin detalles internos |
+| **Números** | Salarios enteros de $1 a $50.000.000 al mes (el 0 y las cifras absurdas se rechazan), con el mismo límite en la página, que avisa junto al campo |
 | **Navegador** | CSP estricta, CORS cerrado al propio dominio y cabeceras de seguridad |
 | **Cuentas** | Correos con servidor real (no desechables), contraseñas comunes rechazadas, recuperación con código de un solo uso |
 | **Ley 1581 de 2012** | Prueba de la autorización con versión y fecha, plazos de retención y borrado de cuentas inactivas, [política de datos](SkillMatch/src/pages/politica-datos.html) |
@@ -347,7 +383,7 @@ Skillmatch/
 ├── pruebas/                   Pruebas del frontend con Playwright y una API falsa
 ├── scripts/                   Copia cifrada y restauración de MongoDB
 ├── herramientas/              Datos del mapa y `probar-ataques.mjs` (ataques contra el servidor local)
-├── mineria-datos/             Análisis de Minería de Datos I (notebook y resultados)
+├── mineria-datos/             Minería de Datos I: análisis, notebook y el modelo predictivo en Python
 ├── documentos/                Entregas académicas en PDF
 ├── docs/                      Toda la documentación (ver abajo) e imágenes del README
 ├── Dockerfile                 Imagen única: backend + frontend
@@ -370,6 +406,7 @@ Skillmatch/
 | [REGISTRO-Y-MARCO-LEGAL](docs/REGISTRO-Y-MARCO-LEGAL.md) | Los registros frente a la ley colombiana |
 | [PRUEBAS-FRONTEND](docs/PRUEBAS-FRONTEND.md) | Las pruebas con Playwright |
 | [MINERIA-DATOS](docs/MINERIA-DATOS.md) | El análisis de Minería de Datos I |
+| [Modelo predictivo](mineria-datos/modelo-predictivo/README.md) | Cómo se construyó el modelo de postulaciones, cómo se comprueba y cómo se explica |
 | [ANALISIS-FRONTEND](docs/ANALISIS-FRONTEND.md) · [ANALISIS-PROFUNDO](docs/ANALISIS-PROFUNDO.md) · [REVISION-CALIDAD](docs/REVISION-CALIDAD.md) · [AVANCE-VISUAL](docs/AVANCE-VISUAL.md) · [PENDIENTES-BACKEND](docs/PENDIENTES-BACKEND.md) | Revisiones y bitácoras del trabajo |
 | [CAMBIOS-NOCHE-2026-11-13](docs/CAMBIOS-NOCHE-2026-11-13.md) · [PENDIENTES-2026-11-13](docs/PENDIENTES-2026-11-13.md) | El rediseño de noviembre (vidrio, portada, vacantes) y lo que quedó pendiente |
 | [ENDPOINTS-API](docs/ENDPOINTS-API.md) · [GUIA-PRUEBAS-API](docs/GUIA-PRUEBAS-API.md) | La primera versión de la API (la referencia al día es Swagger) |
@@ -383,6 +420,22 @@ compatibilidad. Con 1.167 vacantes y regresión logística, el modelo acierta el
 (contra 20,5 % de la referencia), y en validación cruzada Random Forest llega al **78,9 %**.
 
 Análisis completo, datos, resultados y limitaciones: [docs/MINERIA-DATOS.md](docs/MINERIA-DATOS.md).
+
+### El modelo que aprende de las respuestas
+
+Además de clasificar vacantes, SkillMatch **predice qué tan probable es que una empresa acepte una postulación**. Un árbol
+de decisión (CART, de profundidad 4) mira 14 características de cada postulación (porcentaje de habilidades que
+coinciden, si hay carta y de cuántas palabras, experiencia, ciudad, cuántos se postularon antes...) y aprende de las
+que la empresa ya aceptó o rechazó.
+
+- **Se compara con el «modelo flojo»** (el que siempre responde lo más común) con validación cruzada en 5 partes,
+  repartidas **por vacante** para que no vea en el examen lo que ya vio al estudiar. Solo si el árbol le gana se muestran
+  posibilidades y consejos; si no, la página lo dice.
+- **Los consejos solo piden mejorar algo** (por ejemplo, qué habilidades te faltan para parecerte a las postulaciones que suelen ser aceptadas).
+- **Necesita datos reales:** mínimo 30 postulaciones respondidas, con 8 de cada tipo. Mientras tanto se pueden cargar
+  **datos de demostración**, marcados como tales en la página, que no entran en las cifras públicas ni mandan correos.
+- **Se reentrena cada noche** y se explica en [Cómo aprende SkillMatch](SkillMatch/src/pages/como-aprende.html).
+- Para el análisis y los cuadernos: [mineria-datos/modelo-predictivo](mineria-datos/modelo-predictivo/README.md).
 Entregas: [propuesta del modelo](documentos/propuesta_modelo.pdf) · [informe metodológico](documentos/informe_metodologico.pdf).
 
 ---
@@ -425,6 +478,10 @@ Entregas: [propuesta del modelo](documentos/propuesta_modelo.pdf) · [informe me
 | Oct 2026 | Análisis de Minería de Datos I |
 | Oct 2026 | Auditoría de seguridad y datos personales del backend en 11 fases ([#12](https://github.com/jesuscastilla-cloud/Skillmatch/pull/12)) |
 | Oct 2026 | Entrar con Google ([#13](https://github.com/jesuscastilla-cloud/Skillmatch/pull/13)), correo con Gmail y "¿Olvidaste tu contraseña?" ([#15](https://github.com/jesuscastilla-cloud/Skillmatch/pull/15)) |
+| Nov 2026 | Prototipo y comparación de modelos de postulaciones ([#25](https://github.com/jesuscastilla-cloud/Skillmatch/pull/25), [#26](https://github.com/jesuscastilla-cloud/Skillmatch/pull/26)) |
+| Nov 2026 | Modelo predictivo dentro de SkillMatch: árbol de decisión en el servidor, página «Cómo aprende», recuadro en *Mis postulaciones* y correos automáticos que cada persona elige ([#27](https://github.com/jesuscastilla-cloud/Skillmatch/pull/27), [#28](https://github.com/jesuscastilla-cloud/Skillmatch/pull/28)) |
+| Nov 2026 | Rediseño inmersivo: portada con escena isométrica, barra de vidrio, lente del menú, vacantes con tu perfil al lado y compatibilidad para las empresas ([#29](https://github.com/jesuscastilla-cloud/Skillmatch/pull/29)) |
+| Nov 2026 | Límites y revisión con mente maliciosa: salarios y números acotados, postulación *Retirada*, hora de Colombia y 5 huecos de seguridad cerrados |
 
 ---
 
