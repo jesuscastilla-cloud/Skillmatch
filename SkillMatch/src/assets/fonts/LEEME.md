@@ -19,6 +19,16 @@ en proyectos comerciales; no se pueden vender solas). Texto completo: https://op
 - Bricolage Grotesque — Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
 - Instrument Sans — Copyright 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
 
+## La firma de los contratos de la portada (no es un archivo de fuente)
+
+La firma "SkillMatch" de los contratos de la portada (index.js, `FIRMA`; app.css, sección 90) se armó el 15 de noviembre
+de 2026 con los trazos de **EMS Allure**, una fuente de un solo trazo (como la línea de una pluma). Solo se guardaron los
+trazos de esas 10 letras, ya convertidos en curvas SVG dentro de index.js: no hay archivo de fuente que cargar.
+
+- EMS Allure: Sheldon B. Michaels (conversión a SVG: Windell H. Oskay), derivada de **Allura** de Rob Leuschke (TypeSETit).
+  Licencia libre **SIL Open Font License 1.1**. Se tomó de las extensiones de Inkscape:
+  https://gitlab.com/inkscape/extensions/-/tree/master/svg_fonts
+
 ## Para actualizarlas
 
 Pedir la hoja de Google con un navegador moderno (el enlace que estaba en las páginas) y bajar los `.woff2` del bloque

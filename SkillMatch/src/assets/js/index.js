@@ -498,6 +498,215 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 })();
 
+/* ---------- Los dos caminos son contratos (pedidos de Luis 2026-11-15; app.css seccion 90) ----------
+   Cada tarjeta del cierre se vuelve un contrato de hoy: hoja blanca, la firma a pluma y el sello de caucho de
+   SkillMatch. Aqui se arman sus piezas (siempre) y abrir() hace la animacion, una sola vez, cuando la tarjeta llega a
+   la pantalla:
+   1. se desenrolla de arriba a abajo: un rollo de papel baja y descubre la hoja (una ventana que baja mientras su
+      contenido sube lo mismo: el texto queda quieto y solo se mueven transform); al llegar, el rollo se aplana y
+      desaparece;
+   2. la firma se escribe sola, trazo por trazo, a velocidad de pluma;
+   3. el sello de SkillMatch se estampa en la esquina, con un golpe.
+   Con "reducir movimiento" (o sin animaciones) no se llama a abrir(): ya esta firmado y sellado. */
+const DIPLOMAS = (function () {
+    const tarjetas = Array.from(document.querySelectorAll('.cta-final .pathway-card'));
+    if (!tarjetas.length) return null;
+    const SVG = 'http://www.w3.org/2000/svg';
+
+    // La firma: "SkillMatch" en EMS Allure, una fuente de un solo trazo (licencia OFL; assets/fonts/LEEME.md),
+    // suavizada y con un rasgo debajo. Cada trazo con su largo, para que la pluma vaya a velocidad pareja
+    const FIRMA = {
+        caja: '-42 -788 4977 1236',
+        trazos: [
+            ['M693 -580C698 -587 716 -606 721 -621C726 -636 730 -653 721 -668C712 -683 699 -705 665 -709C632 -713 573 -702 520 -690C468 -678 392 -658 350 -636C308 -614 282 -583 268 -558C254 -533 249 -505 265 -485C281 -465 320 -454 362 -438C404 -422 475 -408 517 -391C560 -374 594 -356 617 -337C641 -318 652 -296 658 -277C664 -258 659 -242 652 -224C645 -206 639 -191 617 -170C596 -149 564 -120 523 -98C482 -75 431 -52 372 -35C313 -17 219 2 167 6C116 11 86 0 63 -9C40 -18 36 -27 28 -47C21 -67 15 -103 19 -129C23 -155 37 -181 54 -202C70 -223 94 -240 117 -255C140 -270 160 -281 189 -293C218 -304 276 -319 293 -324', 2334],
+            ['M675 -183C685 -194 716 -226 738 -252C759 -278 793 -323 804 -337', 201],
+            ['M779 -356C793 -356 831 -344 864 -356C897 -368 940 -397 977 -428C1014 -459 1059 -509 1087 -542C1115 -575 1133 -601 1144 -627C1156 -653 1161 -679 1156 -696C1151 -713 1134 -728 1112 -728C1090 -728 1050 -714 1024 -696C998 -677 978 -650 955 -617C933 -584 910 -535 889 -498C869 -461 859 -454 832 -394C805 -334 749 -203 725 -139C701 -75 686 -27 687 -13C688 2 709 -27 731 -54C753 -80 788 -135 819 -173C851 -211 891 -256 920 -284C950 -312 975 -333 996 -343C1017 -353 1038 -345 1046 -346', 1971],
+            ['M845 -249C853 -215 872 -100 892 -44C912 12 935 53 964 85C993 117 1040 138 1068 148C1096 159 1118 153 1134 148C1150 143 1158 128 1163 120C1168 112 1166 110 1166 101C1166 92 1164 72 1163 66', 640],
+            ['M1031 -183C1042 -192 1085 -212 1100 -236C1115 -260 1135 -353 1122 -328C1109 -303 1037 -136 1024 -85C1011 -34 1028 -35 1043 -22C1058 -9 1090 2 1116 -6C1141 -14 1172 -49 1194 -69C1216 -90 1231 -110 1245 -129C1259 -148 1273 -174 1279 -183', 827],
+            ['M1185 -476L1157 -438', 48],
+            ['M1286 -176C1305 -191 1358 -223 1402 -265C1446 -307 1508 -374 1550 -428C1592 -482 1631 -550 1657 -589C1683 -628 1699 -642 1705 -662C1711 -682 1706 -700 1692 -709C1678 -718 1646 -724 1623 -718C1600 -712 1581 -705 1554 -674C1527 -643 1493 -588 1459 -532C1425 -476 1381 -396 1352 -340C1323 -284 1298 -240 1283 -198C1267 -155 1260 -114 1261 -85C1262 -56 1273 -36 1289 -25C1305 -14 1331 -14 1355 -19C1379 -24 1406 -35 1431 -54C1456 -72 1488 -110 1506 -132C1524 -154 1535 -174 1541 -183', 1898],
+            ['M1547 -176C1566 -191 1619 -223 1663 -265C1707 -307 1769 -374 1811 -428C1853 -482 1892 -550 1918 -589C1944 -628 1960 -642 1966 -662C1972 -682 1967 -700 1953 -709C1939 -718 1907 -724 1884 -718C1861 -712 1842 -705 1815 -674C1788 -643 1754 -588 1720 -532C1686 -476 1642 -396 1613 -340C1584 -284 1559 -240 1544 -198C1528 -155 1521 -114 1522 -85C1523 -56 1534 -36 1550 -25C1566 -14 1592 -14 1616 -19C1640 -24 1667 -35 1692 -54C1717 -72 1749 -110 1767 -132C1785 -154 1796 -174 1802 -183', 1898],
+            ['M2057 -536C2070 -542 2115 -558 2135 -570C2155 -581 2163 -592 2176 -605C2189 -618 2201 -631 2211 -646C2222 -661 2231 -684 2239 -693C2247 -702 2268 -726 2261 -699C2254 -672 2222 -593 2198 -529C2175 -465 2147 -378 2120 -315C2093 -251 2064 -197 2038 -148C2012 -99 1986 -50 1962 -19C1938 13 1918 28 1896 41C1875 54 1850 64 1833 60C1816 56 1798 34 1795 16C1792 -2 1792 -14 1814 -47C1836 -81 1883 -134 1928 -186C1972 -237 2023 -297 2082 -356C2141 -415 2227 -499 2280 -542C2334 -585 2369 -599 2403 -614C2437 -629 2457 -634 2482 -633C2507 -631 2536 -625 2554 -605C2572 -585 2586 -561 2589 -513C2592 -465 2579 -369 2573 -315C2567 -261 2563 -229 2554 -189C2545 -149 2522 -93 2520 -76C2519 -58 2529 -61 2545 -82C2561 -102 2576 -134 2617 -198C2659 -261 2752 -401 2794 -463C2836 -525 2845 -544 2869 -570C2893 -596 2919 -614 2939 -621C2959 -628 2978 -619 2989 -614C3001 -609 3003 -601 3008 -589C3013 -576 3025 -566 3021 -539C3016 -512 2995 -459 2983 -428C2970 -396 2959 -379 2945 -350C2931 -321 2912 -283 2901 -255C2890 -227 2883 -206 2879 -180C2875 -154 2873 -127 2879 -101C2885 -75 2894 -32 2917 -22C2939 -11 2981 -20 3014 -38C3048 -56 3095 -105 3118 -129C3141 -153 3147 -174 3153 -183', 4505],
+            ['M3679 -183C3673 -174 3656 -149 3641 -132C3627 -115 3611 -95 3590 -79C3569 -62 3538 -41 3515 -31C3493 -21 3470 -14 3455 -19C3441 -24 3430 -42 3427 -63C3425 -83 3431 -107 3439 -142C3448 -177 3477 -257 3480 -274C3484 -291 3481 -264 3461 -243C3441 -221 3395 -176 3360 -145C3326 -114 3286 -78 3254 -57C3221 -36 3188 -17 3165 -19C3143 -20 3128 -44 3121 -66C3115 -89 3111 -121 3128 -154C3144 -186 3185 -231 3219 -261C3253 -290 3300 -315 3332 -331C3365 -347 3387 -352 3414 -356C3442 -360 3481 -358 3496 -356C3512 -354 3506 -345 3508 -343', 1581],
+            ['M3679 -183C3687 -190 3715 -211 3729 -224C3743 -237 3749 -242 3764 -261C3779 -280 3799 -304 3820 -337C3842 -370 3876 -428 3893 -457C3911 -486 3927 -500 3927 -510C3927 -520 3928 -577 3893 -517C3859 -457 3751 -226 3720 -151C3688 -76 3702 -88 3704 -66C3706 -45 3712 -28 3729 -22C3747 -16 3779 -14 3808 -28C3837 -43 3876 -84 3902 -110C3929 -136 3957 -171 3968 -183', 1293],
+            ['M3764 -346L3968 -356', 205],
+            ['M4243 -306C4243 -313 4247 -340 4239 -350C4232 -360 4221 -369 4198 -365C4175 -361 4137 -354 4101 -328C4066 -302 4009 -234 3985 -208C3960 -182 3963 -186 3953 -170C3944 -154 3931 -127 3928 -110C3925 -93 3930 -80 3934 -66C3938 -52 3933 -34 3953 -25C3974 -17 4018 -10 4057 -16C4096 -21 4151 -39 4186 -57C4222 -75 4247 -102 4268 -123C4290 -144 4308 -173 4315 -183', 984],
+            ['M4315 -183C4339 -205 4397 -265 4459 -315C4522 -365 4634 -434 4689 -482C4745 -530 4772 -568 4793 -605C4814 -642 4824 -683 4815 -702C4807 -721 4765 -725 4740 -718C4716 -711 4694 -684 4670 -662C4647 -640 4625 -620 4601 -586C4577 -552 4552 -503 4526 -457C4501 -411 4475 -380 4447 -309C4419 -238 4357 -58 4359 -31C4360 -5 4426 -111 4456 -148C4486 -185 4509 -224 4538 -252C4568 -280 4611 -301 4633 -315C4656 -329 4664 -334 4674 -334C4685 -333 4694 -324 4696 -312C4698 -300 4696 -282 4686 -261C4676 -239 4650 -214 4636 -183C4623 -152 4608 -103 4607 -76C4606 -48 4616 -28 4630 -19C4645 -9 4675 -11 4696 -19C4718 -26 4737 -45 4759 -63C4781 -81 4809 -109 4828 -129C4848 -149 4868 -174 4875 -183', 2719],
+            ['M 4620 110 C 3900 290 2100 300 980 215 C 700 195 600 165 700 140', 4022]
+        ]
+    };
+    // La punta ancha de la pluma: 5 copias del trazo corridas en diagonal (45 grados). Donde el trazo va en
+    // la direccion de la punta queda fino y donde va de traves queda grueso, como la tinta de antes
+    const PUNTA = [-28, -14, 0, 14, 28];
+    function firma() {
+        const svg = document.createElementNS(SVG, 'svg');
+        svg.setAttribute('viewBox', FIRMA.caja);
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        PUNTA.forEach(function (p) {
+            const g = document.createElementNS(SVG, 'g');
+            g.setAttribute('transform', 'translate(' + p + ' ' + (-p) + ')');
+            FIRMA.trazos.forEach(function (t, i) {
+                const path = document.createElementNS(SVG, 'path');
+                path.setAttribute('d', t[0]);
+                path.setAttribute('pathLength', '1');
+                path.dataset.trazo = i;
+                g.appendChild(path);
+            });
+            svg.appendChild(g);
+        });
+        return svg;
+    }
+
+    // El sello: de caucho, entintado en turquesa (como el de una notaria o una empresa): doble aro, el nombre
+    // alrededor y las dos personas del logo en el centro. La tinta no queda pareja: una mascara le quita puntitos y
+    // rayitas aqui y alla, como un sello de verdad. Son figuras fijas (siempre las mismas): con un filtro de ruido
+    // el primer cuadro de la animacion tardaba ~90 ms (medido). Cada contrato necesita sus propios id
+    function sello(n) {
+        const tinta = '#0A6F7B';
+        let huecos = '', s = 7 + n * 13;
+        const azar = function () { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+        for (let i = 0; i < 70; i++) {
+            const a = azar() * Math.PI * 2, r = 8 + azar() * 40;
+            huecos += '<circle cx="' + (50 + r * Math.cos(a)).toFixed(1) + '" cy="' + (50 + r * Math.sin(a)).toFixed(1) + '" r="' + (.35 + azar() * .9).toFixed(2) + '"/>';
+        }
+        for (let i = 0; i < 6; i++) {
+            const x = 12 + azar() * 70, y = 12 + azar() * 70;
+            huecos += '<path d="M' + x.toFixed(1) + ' ' + y.toFixed(1) + 'l' + (4 + azar() * 6).toFixed(1) + ' ' + (azar() * 2 - 1).toFixed(1) + '" stroke="#000000" stroke-width=".7" stroke-linecap="round"/>';
+        }
+        return '<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">' +
+            '<defs>' +
+                '<mask id="selloTinta' + n + '"><rect width="100" height="100" fill="#FFFFFF"/><g fill="#000000">' + huecos + '</g></mask>' +
+                '<path id="selloAro' + n + '" d="M50 50m-34.5 0a34.5 34.5 0 1 1 69 0a34.5 34.5 0 1 1 -69 0"/>' +
+            '</defs>' +
+            '<g mask="url(#selloTinta' + n + ')" fill="none" stroke="' + tinta + '">' +
+                '<circle cx="50" cy="50" r="46" stroke-width="3"/>' +
+                '<circle cx="50" cy="50" r="41.5" stroke-width="1"/>' +
+                '<circle cx="50" cy="50" r="26" stroke-width="1.2"/>' +
+                '<text font-size="8" font-weight="700" fill="' + tinta + '" stroke="none" font-family="Instrument Sans, sans-serif"><textPath href="#selloAro' + n + '" textLength="212" lengthAdjust="spacing">SKILLMATCH · CARTAGENA DE INDIAS ·</textPath></text>' +
+                // Las dos personas del logo y el gancho del match
+                '<g fill="' + tinta + '" stroke="none">' +
+                    '<circle cx="44" cy="41" r="5"/>' +
+                    '<path d="M34.5 62v-7a9.5 9.5 0 0 1 9.5-9.5h.6a8.2 8.2 0 0 1 8.2 8.2V62z"/>' +
+                    '<circle cx="57" cy="41" r="5"/>' +
+                    '<path d="M48.8 62v-7a9.5 9.5 0 0 1 9.5-9.5a9.5 9.5 0 0 1 9.5 9.5V62z"/>' +
+                '</g>' +
+                '<path d="M51.5 51.5c-4 2-5.5 5.8-2.8 8.3" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>' +
+            '</g>' +
+        '</svg>';
+    }
+
+    function armarDiploma(tarjeta, n) {
+        tarjeta.classList.add('diploma');
+        const papel = document.createElement('div'), hoja = document.createElement('div');
+        papel.className = 'diploma-papel';
+        hoja.className = 'diploma-hoja';
+        while (tarjeta.firstChild) hoja.appendChild(tarjeta.firstChild);
+        // El pie: la firma sobre su linea y quien firma. Es adorno: el lector de pantalla no lo lee
+        const pie = document.createElement('div');
+        pie.className = 'diploma-pie';
+        pie.setAttribute('aria-hidden', 'true');
+        const bloque = document.createElement('div');
+        bloque.className = 'diploma-firma';
+        bloque.appendChild(firma());
+        bloque.insertAdjacentHTML('beforeend', '<span class="diploma-linea"></span><span class="diploma-lugar">SkillMatch, Cartagena de Indias</span>');
+        pie.appendChild(bloque);
+        hoja.appendChild(pie);
+        papel.appendChild(hoja);
+        const sombra = document.createElement('span');
+        sombra.className = 'diploma-sombra';
+        sombra.setAttribute('aria-hidden', 'true');
+        tarjeta.appendChild(sombra);
+        tarjeta.appendChild(papel);
+        // El rollo de papel: solo se ve mientras el contrato se desenrolla (quieto, opacidad 0)
+        tarjeta.insertAdjacentHTML('beforeend',
+            '<span class="diploma-rollo" aria-hidden="true"></span>' +
+            '<span class="diploma-sello" aria-hidden="true"><span class="diploma-sello-onda"></span>' + sello(n) + '</span>');
+    }
+    tarjetas.forEach(armarDiploma);
+
+    // Curvas: la del cajon de iOS para la hoja que sale (arranca con impulso y se posa largo), la fuerte de
+    // salida para lo que entra
+    const SALE = 'cubic-bezier(.32, .72, 0, 1)';
+    const SALIDA = 'cubic-bezier(.23, 1, .32, 1)';
+    const total = FIRMA.trazos.reduce(function (s, t) { return s + t[1]; }, 0);
+
+    /** El contrato llega: la hoja sale de arriba a abajo (como de la impresora), se firma y se sella. "espera" en ms */
+    function abrir(tarjeta, espera) {
+        const papel = tarjeta.querySelector('.diploma-papel'), hoja = tarjeta.querySelector('.diploma-hoja');
+        const sombra = tarjeta.querySelector('.diploma-sombra'), selloEl = tarjeta.querySelector('.diploma-sello');
+        const rollo = tarjeta.querySelector('.diploma-rollo');
+        if (!papel || !hoja) return;
+        const t0 = espera || 0;
+        const todas = [];
+        const vez = function (el, cuadros, o) {
+            const a = el && el.animate(cuadros, Object.assign({ fill: 'backwards' }, o));
+            if (a) todas.push(a);
+            return a;
+        };
+
+        // 1. El contrato se desenrolla (pedido de Luis): aparece enrollado arriba; el rollo baja (y se adelgaza: le
+        //    queda menos papel) y la hoja se descubre detras de el (una ventana que baja mientras su contenido sube lo
+        //    mismo: el texto queda quieto; solo transform). Al llegar abajo, el rollo se aplana y desaparece: queda
+        //    la hoja lisa, como un contrato
+        const dura = 1050, t1 = t0 + 220;
+        const sube = rollo ? -(tarjeta.offsetHeight - rollo.offsetHeight / 2) : 0;
+        vez(tarjeta, [{ transform: 'translateY(14px)' }, { transform: 'none' }], { duration: 620, delay: t0, easing: SALIDA });
+        if (rollo) {
+            // Sus tiempos van en una sola animacion: aparece (220 ms), baja junto con la hoja (1050 ms) y se aplana (200 ms)
+            const largo = 220 + dura + 200;
+            todas.push(rollo.animate([
+                { opacity: 0, transform: 'translateY(' + sube + 'px) scaleY(1.35)' },
+                { opacity: 1, transform: 'translateY(' + sube + 'px) scaleY(1.35)', offset: 220 / largo, easing: SALE },
+                { opacity: 1, transform: 'translateY(0) scaleY(1)', offset: (220 + dura) / largo, easing: SALIDA },
+                { opacity: 0, transform: 'translateY(3px) scaleY(.35)' }
+            ], { duration: largo, delay: t0, fill: 'none' }));
+        }
+        vez(papel, [{ transform: 'translateY(calc(-100% - 6px))' }, { transform: 'none' }], { duration: dura, delay: t1, easing: SALE });
+        vez(hoja, [{ transform: 'translateY(calc(100% + 6px))' }, { transform: 'none' }], { duration: dura, delay: t1, easing: SALE });
+        vez(sombra, [{ opacity: 0, transform: 'scaleY(0)' }, { opacity: 1, transform: 'none' }], { duration: dura, delay: t1, easing: SALE });
+
+        // 2. La firma: cada trazo empieza cuando termina el anterior (con un instante de pluma levantada);
+        //    las 5 copias de la punta van juntas. Velocidad pareja: cada trazo dura segun su largo
+        const t2 = t1 + dura * .8, escribir = 1400, levanta = 40;
+        let reloj = t2;
+        const momentos = FIRMA.trazos.map(function (t) {
+            const d = Math.max(60, Math.round(t[1] / total * escribir));
+            const m = { delay: reloj, duration: d };
+            reloj += d + levanta;
+            return m;
+        });
+        tarjeta.querySelectorAll('.diploma-firma path').forEach(function (p) {
+            const m = momentos[+p.dataset.trazo];
+            // Escondido del todo antes de su turno (opacity), para que la punta redonda no deje un punto
+            todas.push(p.animate([
+                { strokeDasharray: '1 1.2', strokeDashoffset: 1, opacity: 0 },
+                { strokeDasharray: '1 1.2', strokeDashoffset: .985, opacity: 1, offset: .015 },
+                { strokeDasharray: '1 1.2', strokeDashoffset: 0, opacity: 1 }
+            ], { duration: m.duration, delay: m.delay, easing: 'linear', fill: 'backwards' }));
+        });
+
+        // 3. El sello: baja, golpea el papel (se aplasta un poco) y se asienta; la onda del golpe
+        const t3 = reloj + 120, golpe = t3 + 260;
+        vez(selloEl, [
+            { opacity: 0, transform: 'translateY(-14px) scale(1.35)' },
+            { opacity: 1, transform: 'translateY(0) scale(.95)', offset: .55 },
+            { opacity: 1, transform: 'scale(1.02)', offset: .78 },
+            { opacity: 1, transform: 'none' }
+        ], { duration: 460, delay: t3, easing: SALIDA });
+        const onda = selloEl && selloEl.querySelector('.diploma-sello-onda');
+        if (onda) todas.push(onda.animate([{ opacity: .8, transform: 'scale(.85)' }, { opacity: 0, transform: 'scale(1.6)' }], { duration: 520, delay: golpe, easing: SALIDA, fill: 'both' }));
+        // El papel acusa el golpe: baja 1 px y vuelve
+        vez(hoja, [{ transform: 'none' }, { transform: 'translateY(1px)', offset: .3 }, { transform: 'none' }], { duration: 240, delay: golpe, easing: SALIDA, fill: 'none' });
+        // Terminado: las piezas dejan sus capas propias (app.css, .diploma-capas), ya no se mueven
+        Promise.all(todas.map(function (a) { return a.finished; }))
+            .then(function () { tarjeta.classList.remove('diploma-capas'); })
+            .catch(function () { /* cancelada: se queda como esta */ });
+    }
+
+    return { tarjetas: tarjetas, abrir: abrir };
+})();
+
 /* ---------- La portada se construye al bajar (app.css, seccion 52) ----------
    Cada grupo de piezas se arma UNA vez, cuando llega a la pantalla (no es parallax: al seguir bajando
    nada se mueve). Cada pieza llega de donde tiene sentido:
@@ -505,8 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
    - los filtros salen de debajo de la barra de busqueda;
    - el globo sube como un planeta y las vacantes salen volando DEL globo hasta su lugar;
    - el panel del paso entra desde la rueda (la rueda arma sus piezas en rueda-pasos.js);
-   - en el cierre, la persona entra por la izquierda, la empresa por la derecha, y donde se
-     encuentran se enciende la chispa del match.
+   - en el cierre, cada camino es un diploma que se desenrolla, se firma y se sella (DIPLOMAS, arriba).
    Antes de su turno, las piezas esperan invisibles (.cons-espera, solo si este archivo corre: sin
    JavaScript se ve todo). Solo transform y opacity. Con "reducir movimiento" no se arma nada: ya esta. */
 (function portadaQueSeConstruye() {
@@ -637,28 +845,29 @@ document.addEventListener('DOMContentLoaded', () => {
             ps.forEach(function (w, i) { entra(w, { opacity: 0, transform: 'translateY(.55em)' }, { duration: 560, delay: i * 60 }); });
             entra(p, { opacity: 0, transform: sube(10) }, { duration: 560, delay: 100 + ps.length * 60 });
         });
-        const caminos = cierre.querySelector('.pathways');
-        const persona = cierre.querySelector('.pathway-card.usuario'), empresa = cierre.querySelector('.pathway-card.empresa');
-        const chispa = cierre.querySelector('.caminos-chispa');
-        grupo(caminos, [persona, empresa], function () {
-            const lejos = Math.round(110 * k), llega = 900, retraso = 150;
-            // Se pasan 4 px hacia el centro (el choque) y vuelven: el encuentro se siente
-            [[persona, -1], [empresa, 1]].forEach(function (c) {
-                if (!c[0]) return;
-                c[0].animate([
-                    { offset: 0, opacity: 0, transform: 'translateX(' + (c[1] * lejos) + 'px) rotate(' + (c[1] * 3) + 'deg)' },
-                    { offset: .72, opacity: 1, transform: 'translateX(' + (-c[1] * 4) + 'px) rotate(0deg)', easing: 'cubic-bezier(.3, 0, .3, 1)' }
-                ], { duration: llega, delay: retraso, easing: SALIDA, fill: 'backwards' });
-            });
-            if (chispa) {
-                chispa.animate([
-                    { opacity: 0, transform: 'scale(.3)' },
-                    { opacity: 1, transform: 'scale(1.5)', offset: .25 },
-                    { opacity: .8, transform: 'scale(2.2)', offset: .55 },
-                    { opacity: 0, transform: 'scale(3.2)' }
-                ], { duration: 1000, delay: retraso + llega * .66, easing: 'cubic-bezier(.2, .8, .3, 1)' });
-            }
-        });
+        // Los diplomas: cada uno se abre cuando ya se ve casi la mitad (asi se ve desenrollarse, firmarse y
+        // sellarse; en el celular, uno debajo del otro, cada uno a su turno). Esperan invisibles, sin moverse
+        // de su lugar (no cambia el alto de la pagina). Si llegan juntos (en el computador), el segundo va
+        // un poco despues
+        if (DIPLOMAS) {
+            let ultima = -1e9, seguidas = 0;
+            const verlos = new IntersectionObserver(function (entradas) {
+                entradas.forEach(function (e) {
+                    // Casi la mitad a la vista, o (si el contrato es mas alto que la pantalla, como en un celular
+                    // acostado) que ya ocupe el 60 % de ella: si no, podria no abrirse nunca y quedarse invisible
+                    if (!e.isIntersecting || (e.intersectionRatio < .42 && e.intersectionRect.height < innerHeight * .6)) return;
+                    verlos.unobserve(e.target);
+                    const ahora = performance.now();
+                    seguidas = ahora - ultima < 150 ? seguidas + 1 : 0;
+                    ultima = ahora;
+                    DIPLOMAS.abrir(e.target, seguidas * 170);
+                    e.target.classList.remove('cons-espera');    // en el mismo cuadro: las animaciones ya lo ocultan
+                });
+            }, { threshold: [.1, .2, .3, .42] });
+            // Mientras esperan, cada pieza que se va a mover ya tiene su capa dibujada (.diploma-capas, app.css
+            // seccion 90): sin esto, el primer cuadro del desenrollado tardaba ~62 ms dibujando el papel
+            DIPLOMAS.tarjetas.forEach(function (t) { t.classList.add('cons-pieza', 'cons-espera', 'diploma-capas'); verlos.observe(t); });
+        }
     }
 
     // Vigila todos los grupos: cada uno se arma una vez, cuando su borde de arriba pasa el 88 % de la pantalla
