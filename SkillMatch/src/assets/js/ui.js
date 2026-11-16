@@ -419,7 +419,16 @@
                     return '<button type="button" role="radio" data-tema="' + t[0] + '" aria-checked="false">' + svgIcon(t[1]) + '<span>' + t[2] + '</span></button>';
                 }).join('') +
             '</div>';
-        document.body.appendChild(menu);
+        // La ranura: el menu va adentro. Mientras se abre o se cierra, recorta (ver "la ranura de luz" abajo)
+        const ranura = document.createElement('div');
+        ranura.className = 'cuenta-ranura';
+        ranura.appendChild(menu);
+        document.body.appendChild(ranura);
+        // La linea de luz de donde sale el menu
+        const filo = document.createElement('span');
+        filo.className = 'cuenta-filo';
+        filo.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(filo);
 
         // ----- El tema: Claro, Oscuro o Auto (sigue al sistema: no se guarda nada) -----
         const sistemaOscuro = window.matchMedia('(prefers-color-scheme: dark)');
@@ -539,9 +548,9 @@
         const ubicar = function () {
             const r = boton.getBoundingClientRect();
             const angosta = window.innerWidth <= 600;
-            menu.style.top = Math.round(r.bottom + 10) + 'px';
-            if (angosta) { menu.style.left = '8px'; menu.style.right = '8px'; }
-            else { menu.style.left = 'auto'; menu.style.right = Math.max(8, Math.round(window.innerWidth - r.right - 8)) + 'px'; }
+            ranura.style.top = Math.round(r.bottom + 10) + 'px';
+            if (angosta) { ranura.style.left = '8px'; ranura.style.right = '8px'; }
+            else { ranura.style.left = 'auto'; ranura.style.right = Math.max(8, Math.round(window.innerWidth - r.right - 8)) + 'px'; }
         };
         const fuera = function (e) {
             if (!menu.contains(e.target) && !boton.contains(e.target)) cerrar(false);
@@ -549,8 +558,96 @@
         const teclas = function (e) {
             if (e.key === 'Escape') { e.preventDefault(); cerrar(true); }
         };
+        // ----- Abrir y cerrar: "la ranura de luz" (pedido de Luis 2026-11-15: original, sutil, limpia) -----
+        // Antes fue una escala desde el boton y luego el genio de Apple ("parece una copia", dijo Luis). Ahora: al tocar
+        // tu foto, una linea fina con los colores del logo (naranja -> turquesa) se traza desde el boton a lo ancho del
+        // borde de arriba del menu, y el menu SALE DE ESA LINEA: se desenrolla hacia abajo como un papel que sale de una
+        // ranura (el mismo gesto de los contratos de la portada). La linea se apaga cuando el menu ya salio. Al cerrar,
+        // el menu se enrolla de vuelta hacia la linea y la linea se recoge hacia tu foto.
+        // Solo transform y opacity: la ranura recorta y baja desde -alto hasta su lugar, mientras el menu de adentro
+        // sube lo mismo al reves. Asi el menu casi no se mueve: lo que crece es la ventana que lo deja ver, desde la
+        // linea hacia abajo. El menu va 10 px "atrasado" y llega al final: se siente que lo jalan de la ranura.
+        // Si se cierra a mitad de abrir (o al reves), sigue desde donde iba. Con "reducir movimiento": un fundido.
+        const CURVA_SALE = 'cubic-bezier(.32, .72, 0, 1)';   // la de los cajones de iOS: sale con impulso y se posa
+        const CURVA_UI = 'cubic-bezier(.23, 1, .32, 1)';      // ease-out fuerte: la linea y el cierre
+        let animMenu = null;    // el fundido de "reducir movimiento"
+        let piezas = [];        // las animaciones de la ranura, el menu y la linea
+        let turno = 0;          // cada abrir o cerrar tiene su turno: el final de uno viejo no hace nada
+        const animarRanura = function (abriendo) {
+            // Si iba una, se arranca desde donde esta cada pieza
+            const desde = piezas.length ? [ranura, menu, filo].map(function (el) {
+                const cs = getComputedStyle(el);
+                return { transform: cs.transform, opacity: +cs.opacity };
+            }) : null;
+            piezas.forEach(function (a) { a.cancel(); });
+            const alto = menu.offsetHeight;
+            const cerrada = 'translateY(' + (-alto) + 'px)', guardado = 'translateY(' + (alto - 10) + 'px)';
+            // La linea va sobre el borde de arriba del menu y crece desde el boton (offset*: sin las animaciones)
+            const b = boton.getBoundingClientRect();
+            const ancho = Math.max(0, ranura.offsetWidth - 28);
+            const x = Math.max(0, Math.min(ancho, b.left + b.width / 2 - ranura.offsetLeft - 14));
+            filo.style.cssText = 'top:' + (ranura.offsetTop - 1) + 'px;left:' + (ranura.offsetLeft + 14) + 'px;width:' + ancho + 'px;' +
+                'transform-origin:' + x + 'px 50%;background:linear-gradient(' + (x > ancho / 2 ? 270 : 90) + 'deg,' +
+                'rgba(255,138,61,0),#FF8A3D 12%,#FFB066 45%,#5FD0DC 85%,rgba(95,208,220,0))';
+            ranura.classList.add('animando');
+            if (abriendo) ranura.classList.add('abierta'); else ranura.classList.remove('abierta');
+            const d = function (i, prop, normal) { return desde ? desde[i][prop] : normal; };
+            if (abriendo) {
+                // La linea se traza (~230 ms; Luis la pidio un poco mas lenta), espera a que el menu salga y se apaga
+                piezas = [
+                    filo.animate([
+                        { transform: desde ? d(2, 'transform') : 'scaleX(0)', opacity: desde ? d(2, 'opacity') : 1, easing: CURVA_UI },
+                        { transform: 'scaleX(1)', opacity: 1, offset: .38 },
+                        { transform: 'scaleX(1)', opacity: 1, offset: .62 },
+                        { transform: 'scaleX(1)', opacity: 0 }
+                    ], { duration: desde ? 340 : 600 }),
+                    // El menu sale de la linea, un poco despues de que ella arranca
+                    ranura.animate([{ transform: d(0, 'transform', cerrada) }, { transform: 'none' }],
+                        { duration: 440, delay: desde ? 0 : 100, easing: CURVA_SALE, fill: 'backwards' }),
+                    menu.animate([
+                        { transform: d(1, 'transform', guardado), opacity: d(1, 'opacity', 0) },
+                        { opacity: 1, offset: .3 },
+                        { transform: 'none', opacity: 1 }
+                    ], { duration: 440, delay: desde ? 0 : 100, easing: CURVA_SALE, fill: 'backwards' })
+                ];
+            } else {
+                // Se enrolla rapido hacia la linea, que se recoge hacia tu foto
+                piezas = [
+                    ranura.animate([{ transform: d(0, 'transform', 'none') }, { transform: cerrada }],
+                        { duration: 200, easing: CURVA_UI, fill: 'forwards' }),
+                    menu.animate([
+                        { transform: d(1, 'transform', 'none'), opacity: d(1, 'opacity', 1) },
+                        { opacity: 1, offset: .5 },
+                        { transform: guardado, opacity: 0 }
+                    ], { duration: 200, easing: CURVA_UI, fill: 'forwards' }),
+                    filo.animate([
+                        { transform: 'scaleX(1)', opacity: desde ? d(2, 'opacity') : 0 },
+                        { transform: 'scaleX(1)', opacity: 1, offset: .35, easing: CURVA_UI },
+                        { transform: 'scaleX(0)', opacity: 0 }
+                    ], { duration: 280, fill: 'forwards' })
+                ];
+            }
+            const miTurno = ++turno;
+            Promise.all(piezas.map(function (a) { return a.finished; })).then(function () {
+                if (miTurno !== turno) return;
+                piezas.forEach(function (a) { a.cancel(); });
+                piezas = [];
+                ranura.classList.remove('animando');
+                if (!abriendo && menu.classList.contains('cerrando')) { menu.hidden = true; menu.classList.remove('cerrando'); }
+            }, function () { /* cancelada por otra: esa se encarga */ });
+        };
+        const animarApertura = function () {
+            if (!menu.animate) return;
+            if (!reduceMotion) { animarRanura(true); return; }
+            // Reducir movimiento: un fundido corto, desde donde iba si se estaba cerrando
+            const desde = animMenu ? +getComputedStyle(menu).opacity : 0;
+            if (animMenu) animMenu.cancel();
+            ranura.classList.add('abierta');
+            animMenu = menu.animate([{ opacity: desde }, { opacity: 1 }], { duration: 140, easing: 'ease-out' });
+            animMenu.onfinish = function () { animMenu = null; };
+        };
         const abrir = function () {
-            if (!menu.hidden) return;
+            if (!menu.hidden && !menu.classList.contains('cerrando')) return;
             // La campana de avisos, si estaba abierta, se cierra (no van dos menus a la vez)
             const campana = document.getElementById('notificationsBtn');
             if (campana && campana.getAttribute('aria-expanded') === 'true') campana.click();
@@ -558,10 +655,9 @@
             marcarTema();
             ubicar();
             menu.hidden = false;
-            boton.setAttribute('aria-expanded', 'true');
             menu.classList.remove('cerrando');
-            menu.classList.add('abriendo');
-            requestAnimationFrame(function () { requestAnimationFrame(function () { menu.classList.remove('abriendo'); }); });
+            boton.setAttribute('aria-expanded', 'true');
+            animarApertura();
             document.addEventListener('pointerdown', fuera, true);
             document.addEventListener('keydown', teclas);
             window.addEventListener('resize', ubicar);
@@ -569,20 +665,31 @@
             if (primero) primero.focus({ preventScroll: true });
         };
         const cerrar = function (devolverFoco) {
-            if (menu.hidden) return;
+            if (menu.hidden || menu.classList.contains('cerrando')) return;
             boton.setAttribute('aria-expanded', 'false');
             document.removeEventListener('pointerdown', fuera, true);
             document.removeEventListener('keydown', teclas);
             window.removeEventListener('resize', ubicar);
-            const quieto = reduceMotion || !menu.animate;
-            if (quieto) menu.hidden = true;
-            else {
+            if (!menu.animate) { menu.hidden = true; ranura.classList.remove('abierta'); }
+            else if (!reduceMotion) {
+                // Se enrolla de vuelta hacia la linea (desde donde iba si aun se estaba abriendo)
                 menu.classList.add('cerrando');
-                setTimeout(function () { if (menu.classList.contains('cerrando')) { menu.hidden = true; menu.classList.remove('cerrando'); } }, 140);
+                animarRanura(false);
+            } else {
+                const desde = +getComputedStyle(menu).opacity;
+                if (animMenu) animMenu.cancel();
+                menu.classList.add('cerrando');
+                ranura.classList.remove('abierta');
+                animMenu = menu.animate([{ opacity: desde }, { opacity: 0 }], { duration: 120, easing: 'ease-out', fill: 'forwards' });
+                animMenu.onfinish = function () {
+                    animMenu.cancel();
+                    animMenu = null;
+                    if (menu.classList.contains('cerrando')) { menu.hidden = true; menu.classList.remove('cerrando'); }
+                };
             }
             if (devolverFoco) boton.focus({ preventScroll: true });
         };
-        boton.addEventListener('click', function () { if (menu.hidden) abrir(); else cerrar(true); });
+        boton.addEventListener('click', function () { if (menu.hidden || menu.classList.contains('cerrando')) abrir(); else cerrar(true); });
         // Con el teclado: al salir del menu con Tab, se cierra
         menu.addEventListener('focusout', function (e) {
             if (e.relatedTarget && !menu.contains(e.relatedTarget) && e.relatedTarget !== boton) cerrar(false);
@@ -657,6 +764,11 @@
     // La direccion queda anotada para la pagina nueva: el guion del <head> de
     // cada pagina la lee en "pagereveal" y la pagina se desliza de ese lado.
     let viajePendiente = 0;
+    // Cuanto se espera, desde el toque, para cambiar de pagina. El lente llega al 99 % de su camino a los 155 ms y
+    // termina de asentarse hacia los 300 (medido). Antes se esperaban 380 ms: la marca ya habia llegado y durante
+    // mas de 200 ms no pasaba nada, y luego venia la carga de la pagina nueva; eso se sentia como que la barra se
+    // trababa (Luis, 2026-11-15). A los 200 ms ya llego (apenas pasa de largo 2 % y vuelve): la pagina cambia ahi
+    const VIAJE_LENTE = 200;
 
     /** Anota hacia que lado del menu queda el destino (desde y hasta: posiciones en el menu). */
     function anotarDireccion(a, desde, hasta) {
@@ -690,7 +802,7 @@
         marca.className = 'lente lente-pestanas';
         marca.setAttribute('aria-hidden', 'true');
         // irCuandoLlegue espera esto antes de cambiar de pagina (lo que tarda el lente en llegar)
-        marca.dataset.viaje = '380';
+        marca.dataset.viaje = String(VIAJE_LENTE);
         nav.appendChild(marca);
         nav.classList.add('con-marca');
         const actual = function () { return nav.querySelector('a.is-active'); };
@@ -705,13 +817,13 @@
             if (sinViaje) return;
             if (e) { irCuandoLlegue(e, a, marca); return; }
             clearTimeout(viajePendiente);
-            viajePendiente = setTimeout(function () { UI.irA(a.href); }, 380);
+            viajePendiente = setTimeout(function () { UI.irA(a.href); }, VIAJE_LENTE);
         };
         const lente = crearLente({
             capa: nav,
             elemento: marca,
             enlaces: function () { return enlaces; },
-            alto: 58,          // 4 px mas que la pestana: la palabra queda lejos del borde que dobla
+            alto: 52,          // 4 px mas que la pestana: llena la capsula, como la burbuja de Apple
             arrastre: true,
             // Soltado sobre una pestana: si es la de esta pagina, vuelve a su sitio; si no, lleva alla
             alSoltar: function (a) {
@@ -719,7 +831,10 @@
                 elegir(a, null);
             }
         });
-        lente.ir(actual(), true);
+        // En el proximo cuadro (antes de dibujarlo): ubicarlo aqui obligaba a medir la pagina a medio armar, y como
+        // despues se sigue armando, el navegador la calculaba dos veces (revision 2026-11-15: ~96 ms en un celular
+        // lento al llegar a otra pagina, justo mientras entraba deslizandose)
+        requestAnimationFrame(function () { lente.ir(actual(), true); });
         nav.addEventListener('click', function (e) {
             const a = e.target instanceof Element && e.target.closest('a');
             if (!a || !vaAOtraPagina(e, a)) return;
@@ -804,6 +919,19 @@
 
     function cambiarTemaConEfecto(nuevo, boton, aplicar) {
         if ((reduceMotion && !modoDemo()) || !document.startViewTransition) { aplicar(); return; }
+        // Primero se pinta lo que la persona toco (el boton o la opcion del menu, ya marcada) y en el cuadro
+        // siguiente arranca el efecto: el recalculo de toda la pagina ya no retrasa esa respuesta (revision de
+        // fluidez 2026-11-15: en un celular, el toque tardaba 250 a 400 ms en verse)
+        if (!boton || !boton.isConnected || cambiarTemaConEfecto.esperando) { aplicar(); return; }
+        cambiarTemaConEfecto.esperando = true;
+        requestAnimationFrame(function () {
+            setTimeout(function () {
+                cambiarTemaConEfecto.esperando = false;
+                efectoDelTema(nuevo, boton, aplicar);
+            }, 0);
+        });
+    }
+    function efectoDelTema(nuevo, boton, aplicar) {
         const r = boton.getBoundingClientRect();
         const x = r.left + r.width / 2, y = r.top + r.height / 2;
         const radio = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
@@ -812,9 +940,13 @@
         const transicion = document.startViewTransition(aplicar);
         transicion.ready.then(function () {
             raiz.animate({ clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + radio + 'px at ' + x + 'px ' + y + 'px)'] },
-                         { duration: 650, easing: 'cubic-bezier(.4, 0, .2, 1)', pseudoElement: '::view-transition-new(root)' });
+                         // En el celular el circulo recorre menos pantalla: 520 ms (650 se sentia lento)
+                         { duration: innerWidth <= 760 ? 520 : 650, easing: 'cubic-bezier(.4, 0, .2, 1)', pseudoElement: '::view-transition-new(root)' });
         }).catch(function () {});
-        transicion.finished.finally(function () { raiz.classList.remove('tema-cambiando'); });
+        transicion.finished.finally(function () {
+            raiz.classList.remove('tema-cambiando');
+            document.dispatchEvent(new Event('skillmatch:tema-listo'));   // vidrioSegunFondo revisa otra vez
+        });
     }
 
     /** Sombra en la barra superior solo cuando hay contenido arriba. */
@@ -826,11 +958,23 @@
         const hero = document.querySelector('body > .hero');
         const actualizar = function () {
             header.classList.toggle('is-scrolled', window.scrollY > 4);
+            // body.con-portada: la portada se ve (app.css, seccion 42; antes era un :has() que hacia recalcular
+            // toda la pagina cada vez que se abria un menu)
+            const conPortada = !!hero && !hero.hidden;
+            if (document.body.classList.contains('con-portada') !== conPortada) document.body.classList.toggle('con-portada', conPortada);
             const sobreHero = !!hero && !hero.hidden && hero.getBoundingClientRect().bottom > header.offsetHeight;
             if (header.classList.contains('sobre-hero') !== sobreHero) header.classList.toggle('sobre-hero', sobreHero);
         };
-        actualizar();
-        window.addEventListener('scroll', actualizar, { passive: true });
+        // La primera vez, en el proximo cuadro (antes de dibujarlo): leer la portada aqui obligaba a calcular la
+        // pagina a medio armar (revision 2026-11-15)
+        requestAnimationFrame(actualizar);
+        // Una vez por cuadro (antes, en cada evento de scroll: leer la posicion forzaba recalculos)
+        let enCola = false;
+        window.addEventListener('scroll', function () {
+            if (enCola) return;
+            enCola = true;
+            requestAnimationFrame(function () { enCola = false; actualizar(); });
+        }, { passive: true });
         // El hero se esconde cuando hay sesion (panel-inicio.js): se revisa de nuevo al cambiar
         if (hero && 'MutationObserver' in window) new MutationObserver(actualizar).observe(hero, { attributes: true, attributeFilter: ['hidden'] });
     }
@@ -849,7 +993,9 @@
         if (!header) return;
         const raiz = document.documentElement;
         const ARRIBA = 96, BAJAR = 24, SUBIR = 8;
-        let ultimo = Math.max(0, window.scrollY);
+        // La posicion de partida se toma en el primer movimiento: leer scrollY aqui, con la pagina a medio armar,
+        // obligaba a calcularla entera (revision 2026-11-15: ~100 ms en un celular lento al llegar a otra pagina)
+        let ultimo = -1;
         let recorrido = 0;          // lo recorrido seguido en la misma direccion (+ baja, - sube)
         let pendiente = false;
         const poner = function (esconder) {
@@ -865,7 +1011,7 @@
             pendiente = false;
             const maximo = raiz.scrollHeight - window.innerHeight;
             const y = Math.min(Math.max(0, window.scrollY), Math.max(0, maximo)); // sin el rebote del iPhone
-            const d = y - ultimo;
+            const d = ultimo < 0 ? 0 : y - ultimo;
             ultimo = y;
             if (y < ARRIBA || y >= maximo - 4) { recorrido = 0; poner(false); return; }
             if (d === 0) return;
@@ -1016,17 +1162,15 @@
             });
         };
 
-        /** El lente: una capsula entera de vidrio curvo. Agranda lo de adentro (como una lupa, x1,12) y en el
-         *  borde dobla mas. Se dibuja a la resolucion de la pantalla (si no, lo agrandado se ve pixelado).
+        /** La lupa (el lente levantado, app.css seccion 89): una capsula entera de vidrio curvo. Agranda lo de
+         *  adentro (x1,14, como en el video de referencia) y en el borde dobla mas. Se dibuja a la resolucion
+         *  de la pantalla (si no, lo agrandado se ve pixelado).
          *  maximo: el desvio mas grande, en px (el filtro usa escala = 2 x maximo) */
         const mapaDeLente = function (w, h, maximo) {
             const k = Math.min(3, window.devicePixelRatio || 1);
             const W = Math.round(w * k), H = Math.round(h * k);
             const a = lienzo(W, H), d = a.img.data;
-            // Medido: con un borde de 42 % del alto y toda la fuerza, las palabras bajo el lente se torcian
-            // 2026-11-13 (Luis): el aro del doblez tocaba la palabra y la torcia. Ahora el doblez va solo en un aro
-            // fino (16 % del alto) y por dentro apenas una lupa suave (x1,06), que no deforma letras
-            const r = h / 2, bisel = h * 0.16, aumento = 1.06, borde = maximo * 0.6;
+            const r = h / 2, bisel = h * 0.24, aumento = 1.14, borde = maximo * 0.55;
             for (let y = 0; y < H; y++) {
                 for (let x = 0; x < W; x++) {
                     const px = (x + 0.5) / k - w / 2, py = (y + 0.5) / k - h / 2;
@@ -1051,15 +1195,14 @@
             a.ctx.putImageData(a.img, 0, 0);
             return a.c.toDataURL('image/png');
         };
-        // El lente: el doblez en tres pasadas, una por color y cada una un poco mas corta (rojo 1, verde
-        // 0,92, azul 0,84; el video usa 68/60/52, que aqui dejaba un arcoiris exagerado). Al juntarlas, el
-        // borde se separa en un arcoiris muy fino, como en un prisma
+        // El doblez en tres pasadas, una por color y cada una un poco mas corta (rojo 1, verde 0,95, azul 0,9):
+        // al juntarlas, el borde se separa en un arcoiris fino, como en un prisma (y como en el video)
         const filtroDeLente = function (id, w, h, mapa, escala) {
             return armar(id, function (pieza) {
                 pieza('feImage', { href: mapa, x: 0, y: 0, width: w, height: h, preserveAspectRatio: 'none', result: 'mapa' });
                 [['r', 1, '1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'],
-                 ['g', 0.92, '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0'],
-                 ['b', 0.84, '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0']].forEach(function (c) {
+                 ['g', 0.95, '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0'],
+                 ['b', 0.9, '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0']].forEach(function (c) {
                     pieza('feDisplacementMap', { in: 'SourceGraphic', in2: 'mapa', scale: Math.round(escala * c[1]), xChannelSelector: 'R', yChannelSelector: 'G', result: 'd' + c[0] });
                     pieza('feColorMatrix', { in: 'd' + c[0], type: 'matrix', values: c[2], result: c[0] });
                 });
@@ -1129,66 +1272,129 @@
      *  opciones: capa (el contenedor donde vive, con position), elemento (el lente), enlaces() (las
      *  opciones), margen (px de mas a lo ancho), alto (px; si no, el alto de la opcion), arrastre (bool),
      *  alSoltar(a). */
+    /** Hace algo cuando el navegador esta libre (o a los 2,5 s como mucho): lo que no hace falta para ver la pagina */
+    const enCalma = window.requestIdleCallback
+        ? function (hacer) { requestIdleCallback(hacer, { timeout: 2500 }); }
+        : function (hacer) { setTimeout(hacer, 400); };
+
     function crearLente(opciones) {
         const capa = opciones.capa, lente = opciones.elemento;
-        lente.innerHTML = '<span class="lente-filo"></span><span class="lente-brillo"></span>';
-        // Tres resortes: el centro, el ancho y "agarrado" (0 suelto, 1 en la mano)
+        const barra = capa.closest('header, .tabbar') || capa;
+        // Como la burbuja de Apple (app.css, secciones 88 y 89; el movimiento se midio cuadro a cuadro en un video
+        // de la barra de WhatsApp en iOS 26). Tres piezas:
+        // - .lente-reposo: quieto es un tinte casi transparente, detras del icono y la palabra.
+        // - La LUPA (solo Chromium): al tocarlo o cuando viaja se levanta un lente de verdad, que agranda y dobla
+        //   lo que tiene debajo. Va FUERA de la barra (en <body>, encima): dentro, un backdrop-filter no ve lo
+        //   que hay detras de la barra y a las letras les ponia una copia torcida encima en vez de doblarlas.
+        // - .lente-cristal: la gota sin doblez, para los navegadores sin ese filtro (Safari, Firefox).
+        lente.innerHTML = '<span class="lente-reposo"></span><span class="lente-cristal"><span class="lente-filo"></span><span class="lente-brillo"></span></span>';
+        // Se crea la primera vez que el lente tiene tamano: una barra que no se ve (la de abajo en el computador)
+        // no deja una lupa suelta en la pagina
+        const puedeLupa = Cristal.disponible() && !reduceMotion;
+        let lupa = null;
+        const crearLupa = function () {
+            lupa = document.createElement('span');
+            lupa.className = 'lente-lupa';
+            lupa.setAttribute('aria-hidden', 'true');
+            lupa.innerHTML = '<span class="lente-filo"></span><span class="lente-brillo"></span>';
+            document.body.appendChild(lupa);
+            // Al cambiar de pagina no se queda a medio desvanecer en la foto de salida
+            window.addEventListener('pageswap', function () { lupa.classList.add('sin-fundido'); lupa.classList.remove('visible'); });
+        };
+        // Tres resortes: el centro, el ancho y "levantado" (0 quieto, 0,9 viajando, 1 en la mano)
         const cen = { x: 0, v: 0, meta: 0 }, anc = { x: 0, v: 0, meta: 0 }, agarre = { x: 0, v: 0, meta: 0 };
         const arrastre = { activo: false, v: 0 };
-        let caja = 0, alto = 0, y = 0, cuadro = 0, antes = 0, visible = false, actual = null;
+        let caja = 0, alto = 0, y = 0, cuadro = 0, antes = 0, visible = false, actual = null, arriba = false, conLupa = false;
         const filtros = {};
-        const refracta = Cristal.disponible();
-
-        // Un filtro por tamano de caja (en la isla las opciones miden distinto); se preparan de antemano
-        const aplicarFiltro = function () {
+        // Mientras se agarra, la barra de abajo crece un 3,5 % (seccion 89): las medidas se pasan a las de la capa
+        const escalaDeLaBarra = function () { return parseFloat(getComputedStyle(barra).scale) || 1; };
+        // La lupa, del tamano del lente y con el filtro de ese tamano
+        const vestirLupa = function () {
             const f = filtros[caja + 'x' + alto];
-            if (f) { lente.style.setProperty('--refraccion', f); lente.classList.add('con-refraccion'); }
-            else lente.classList.remove('con-refraccion');
+            if (!f) return false;
+            lupa.style.width = caja + 'px';
+            lupa.style.height = alto + 'px';
+            lupa.style.setProperty('--refraccion', f);
+            lupa.classList.toggle('en-claro', document.documentElement.dataset.theme === 'light' && !barra.classList.contains('vidrio-oscuro'));
+            return true;
         };
-        const prepararFiltro = function (w, h) {
-            if (!w || !h) return;
-            if (!refracta) { if (!(w + 'x' + h in filtros)) { filtros[w + 'x' + h] = null; precalentar(w, h, ''); } return; }
-            const clave = w + 'x' + h;
-            if (clave in filtros) return;
-            filtros[clave] = null;
-            const maximo = Math.round(h * 0.16);
-            const mapa = Cristal.mapaDeLente(w, h, maximo);
-            Cristal.cuandoCarguen([mapa]).then(function () {
-                const id = Cristal.nuevoId('lente');
-                Cristal.filtroDeLente(id, w, h, mapa, maximo * 2);
-                filtros[clave] = 'url(#' + id + ')';
-                precalentar(w, h, filtros[clave]);
-                aplicarFiltro();
-            });
+        // Levantado: aparece la lupa (o la gota) y el resorte lo agranda. El fundido lo hace el CSS con las clases
+        const levantar = function (cuanto) {
+            agarre.meta = cuanto;
+            if ((cuanto > 0) === arriba) return;
+            arriba = cuanto > 0;
+            if (arriba) {
+                // La lupa, solo si el filtro de este tamano ya esta listo; si no, la gota sin doblez
+                conLupa = !!lupa && vestirLupa();
+                lente.classList.toggle('con-lupa', conLupa);
+                capa.classList.toggle('lente-refracta', conLupa);
+                if (conLupa) { lupa.classList.remove('sin-fundido'); pintar(); }
+            }
+            lente.classList.toggle('levantado', arriba);
+            capa.classList.toggle('lente-arriba', arriba);     // sin lupa, el icono bajo el lente crece
+            if (lupa) lupa.classList.toggle('visible', arriba && conLupa);
         };
-        // La primera vez que el navegador usa un filtro lo prepara, y ese cuadro tardaba ~200 ms (medido, tambien
-        // con tarjeta de video): pasaba justo al hacer clic en una opcion de otro ancho. Por eso cada filtro se
-        // usa apenas se crea, en una copia invisible del lente, durante unos cuadros
-        const precalentar = function (w, h, url) {
-            const copia = document.createElement('span');
-            copia.className = 'lente lente-precalentar';
-            copia.setAttribute('aria-hidden', 'true');
-            // Igual al lente (filo y brillo) y estirada, como cuando viaja: asi la tarjeta de video prepara de una vez
-            // todo lo que necesita (medido: el primer viaje de la sesion tardaba ~200 ms en dibujarse)
-            copia.innerHTML = lente.innerHTML;
-            copia.style.cssText = 'width:' + w + 'px;height:' + h + 'px;opacity:.001;transition:none;transform:scale(1.2, .9);--refraccion:' + url;
-            if (url) copia.classList.add('con-refraccion');
-            capa.appendChild(copia);
+        // La opcion donde esta el lente (o a la que va) lleva .con-lente: el color de "actual" viaja con el
+        const senalar = function (a) {
+            opciones.enlaces().forEach(function (x) { x.classList.toggle('con-lente', x === a); });
+        };
+        // La primera vez que el navegador dibuja el lente levantado ese cuadro tardaba (~130 ms la gota y ~200 ms
+        // el filtro, justo en el primer viaje; con la copia, 21 ms). Por eso cada tamano se dibuja antes en una
+        // copia invisible, levantada y estirada, durante unos cuadros
+        const copiaInvisible = function (el, padre, estilo) {
+            el.setAttribute('aria-hidden', 'true');
+            el.style.cssText = 'opacity:.001;transition:none;' + estilo;
+            padre.appendChild(el);
             let n = 0;
-            const esperar = function () { if (++n < 4) requestAnimationFrame(esperar); else copia.remove(); };
+            const esperar = function () { if (++n < 4) requestAnimationFrame(esperar); else el.remove(); };
             requestAnimationFrame(esperar);
         };
+        const calientes = {};
+        const precalentar = function (w, h) {
+            const clave = w + 'x' + h;
+            if (!w || !h || calientes[clave]) return;
+            calientes[clave] = true;
+            const gota = document.createElement('span');
+            gota.className = 'lente lente-precalentar levantado';
+            gota.innerHTML = lente.innerHTML;
+            copiaInvisible(gota, capa, 'width:' + w + 'px;height:' + h + 'px;transform:scale(1.4, 1.3)');
+            if (!puedeLupa) return;
+            if (!lupa) crearLupa();
+            // El mapa de la lupa se dibuja punto por punto: en un momento libre, no al cargar (revision de fluidez
+            // 2026-11-15: hecho al cargar sumaba 50 a 200 ms al arranque de cada pagina en un celular). Si alguien
+            // toca la barra antes, se levanta la gota sin doblez
+            enCalma(function () {
+            const maximo = Math.round(h * 0.24);
+            const mapa = Cristal.mapaDeLente(w, h, maximo);
+            Cristal.cuandoCarguen([mapa]).then(function () {
+                const id = Cristal.nuevoId('lupa');
+                Cristal.filtroDeLente(id, w, h, mapa, maximo * 2);
+                filtros[clave] = 'url(#' + id + ')';
+                const copia = document.createElement('span');
+                copia.className = 'lente-lupa lente-precalentar visible';
+                copia.innerHTML = lupa.innerHTML;
+                const r = capa.getBoundingClientRect();
+                copiaInvisible(copia, document.body, 'width:' + w + 'px;height:' + h + 'px;--refraccion:' + filtros[clave] +
+                    ';transform:translate(' + Math.round(r.left) + 'px,' + Math.round(r.top) + 'px) scale(1.4, 1.3)');
+            });
+            });
+        };
         const medidaDe = function (a) {
-            const c = capa.getBoundingClientRect(), r = a.getBoundingClientRect();
-            const h = opciones.alto || Math.round(r.height);
-            return { centro: r.left - c.left + r.width / 2, ancho: Math.round(r.width + (opciones.margen || 0)), alto: h, y: r.top - c.top + (r.height - h) / 2 };
+            const c = capa.getBoundingClientRect(), r = a.getBoundingClientRect(), s = escalaDeLaBarra();
+            const h = opciones.alto || Math.round(r.height / s);
+            return { centro: (r.left - c.left + r.width / 2) / s, ancho: Math.round(r.width / s + (opciones.margen || 0)), alto: h, y: (r.top - c.top) / s + (r.height / s - h) / 2 };
         };
         const pintar = function () {
             const g = Math.tanh(Math.abs(cen.v) / 900);          // 0 quieto ... 1 muy rapido
-            const k = 1 + 0.07 * agarre.x;                        // agarrado: un poco mas grande
-            const sx = (anc.x / caja) * (1 + 0.22 * g) * k;
-            const sy = (1 - 0.12 * g) * k;
+            // Levantado, como en el video: crece mas a lo alto (x1,30: se sale de la barra) que a lo ancho (x1,14)
+            const sx = (anc.x / caja) * (1 + 0.22 * g) * (1 + 0.14 * agarre.x);
+            const sy = (1 - 0.12 * g) * (1 + 0.30 * agarre.x);
             lente.style.transform = 'translate(' + (cen.x - caja / 2).toFixed(2) + 'px, ' + y.toFixed(2) + 'px) scale(' + sx.toFixed(4) + ', ' + sy.toFixed(4) + ')';
+            if (!conLupa) return;
+            // La lupa va en medidas de la pantalla: donde este la capa ahora (la barra pudo crecer)
+            const r = capa.getBoundingClientRect(), s = escalaDeLaBarra();
+            lupa.style.transform = 'translate(' + (r.left + cen.x * s - caja / 2).toFixed(2) + 'px, ' + (r.top + (y + alto / 2) * s - alto / 2).toFixed(2) +
+                'px) scale(' + (sx * s).toFixed(4) + ', ' + (sy * s).toFixed(4) + ')';
         };
         const paso = function (b, k, z, dt) {
             const a = k * (b.meta - b.x) - 2 * z * Math.sqrt(k) * b.v;
@@ -1198,6 +1404,7 @@
         const quieto = function (b, e) { return Math.abs(b.meta - b.x) < e && Math.abs(b.v) < e * 10; };
         const saltar = function () {
             cancelAnimationFrame(cuadro); cuadro = 0;
+            if (!arrastre.activo) levantar(0);
             cen.x = cen.meta; anc.x = anc.meta; agarre.x = agarre.meta;
             cen.v = anc.v = agarre.v = 0;
             if (caja) pintar();
@@ -1205,11 +1412,14 @@
         const mover = function (t) {
             const dt = Math.min(0.032, ((t - antes) / 1000) || 0.016);
             antes = t;
-            // En dos medios pasos: los resortes rapidos no se desbocan si un cuadro llega tarde
+            // Viajando (a mas de 3 px de su destino) va levantado; al llegar se asienta
+            if (!arrastre.activo) levantar(Math.abs(cen.meta - cen.x) > 3 ? 0.9 : 0);
+            // En dos medios pasos: los resortes rapidos no se desbocan si un cuadro llega tarde.
+            // Los tiempos salen del video: el viaje dura ~0,1 s y pasa un poco de largo; asentarse, ~0,17 s
             for (let i = 0; i < 2; i++) {
-                if (!arrastre.activo) paso(cen, 420, 0.72, dt / 2);   // el centro: con un poco de rebote, como liquido
+                if (!arrastre.activo) paso(cen, 520, 0.75, dt / 2);   // el centro: con un poco de rebote, como liquido
                 paso(anc, 320, 0.9, dt / 2);
-                paso(agarre, 500, 1, dt / 2);
+                paso(agarre, 600, 0.7, dt / 2);                        // crece y se asienta con un rebote corto
             }
             if (arrastre.activo) { cen.v = arrastre.v; arrastre.v *= 0.82; }   // se estira con la velocidad del dedo
             pintar();
@@ -1224,15 +1434,16 @@
         /** Lleva el lente a la opcion "a" (sin viajar si sinViaje, o si aun no se veia) */
         const ir = function (a, sinViaje) {
             actual = a || null;
-            if (!a || !a.offsetWidth) { lente.style.opacity = '0'; visible = false; return; }
+            if (!a || !a.offsetWidth) { lente.style.opacity = '0'; visible = false; senalar(null); return; }
+            senalar(a);
             const m = medidaDe(a);
             cen.meta = m.centro; anc.meta = m.ancho; y = m.y;
             if (m.ancho !== caja || m.alto !== alto) {
                 caja = m.ancho; alto = m.alto;
                 lente.style.width = caja + 'px';
                 lente.style.height = alto + 'px';
-                prepararFiltro(caja, alto);
-                aplicarFiltro();
+                precalentar(caja, alto);
+                if (arriba && conLupa) vestirLupa();    // ya en el aire (soltado sobre una opcion de otro ancho)
             }
             if (sinViaje || !visible || reduceMotion) {
                 saltar();
@@ -1243,9 +1454,10 @@
             arrancar();
         };
         const enlaces = function () { return opciones.enlaces().filter(function (a) { return a.offsetWidth; }); };
+        // En la isla las opciones miden distinto: sus tamanos se preparan con calma, antes del primer viaje
         const prepararTodos = function () {
             (window.requestIdleCallback || setTimeout)(function () {
-                enlaces().forEach(function (a) { const m = medidaDe(a); prepararFiltro(m.ancho, m.alto); });
+                enlaces().forEach(function (a) { const m = medidaDe(a); precalentar(m.ancho, m.alto); });
             }, { timeout: 1500 });
         };
         prepararTodos();
@@ -1277,7 +1489,7 @@
         };
         if (opciones.arrastre && !reduceMotion) {
             let puntero = null, inicioX = 0, desfase = 0, ultimoT = 0, movido = false, ignorarClic = false;
-            const xEn = function (e) { return e.clientX - capa.getBoundingClientRect().left; };
+            const xEn = function (e) { return (e.clientX - capa.getBoundingClientRect().left) / escalaDeLaBarra(); };
             // Los enlaces no se arrastran como enlaces (el navegador soltaba el lente para "llevarse" el link)
             capa.addEventListener('dragstart', function (e) { if (arrastre.activo) e.preventDefault(); });
             capa.addEventListener('pointerdown', function (e) {
@@ -1285,7 +1497,7 @@
                 const x = xEn(e);
                 if (Math.abs(x - cen.x) > anc.x / 2) return;      // solo si se agarra el lente
                 puntero = e.pointerId; inicioX = x; desfase = x - cen.x; ultimoT = e.timeStamp; movido = false;
-                arrastre.activo = true; arrastre.v = 0; agarre.meta = 1;
+                arrastre.activo = true; arrastre.v = 0; levantar(1);
                 try { capa.setPointerCapture(e.pointerId); } catch (err) { /* sin captura: igual sigue */ }
                 capa.classList.add('lente-agarrado');
                 arrancar();
@@ -1306,12 +1518,14 @@
                 arrastre.v = (destino - cen.x) / dt * 1000;
                 ultimoT = e.timeStamp;
                 cen.x = destino;
-                marcarBajo(masCercano(cen.x));
+                const bajo = masCercano(cen.x);
+                marcarBajo(bajo);
+                senalar(bajo);
                 arrancar();
             });
             const soltar = function (e) {
                 if (!arrastre.activo || e.pointerId !== puntero) return;
-                arrastre.activo = false; agarre.meta = 0; puntero = null;
+                arrastre.activo = false; puntero = null;
                 capa.classList.remove('lente-agarrado');
                 marcarBajo(null);
                 if (movido) {
@@ -1321,6 +1535,9 @@
                     cen.v = arrastre.v;          // sale con la velocidad que llevaba
                     const a = masCercano(cen.x);
                     if (opciones.alSoltar) opciones.alSoltar(a); else ir(a);
+                } else {
+                    levantar(0);
+                    senalar(actual);
                 }
                 arrancar();
             };
@@ -1338,17 +1555,27 @@
      *  barras son de vidrio claro de fabrica (lo decide el CSS: sin parpadeo); en tema oscuro, oscuro. Y en tema
      *  claro, si lo que pasa por detras es una zona oscura, aqui se les pone .vidrio-oscuro: asi las letras
      *  siempre se leen.
-     *  Como se sabe que hay detras: document.elementsFromPoint en tres puntos de la barra (izquierda, centro y
-     *  derecha); manda la mayoria. Una zona es oscura si esta en ZONAS_OSCURAS (las que tienen foto o
-     *  degradado, cuyo color no se puede leer) o si su fondo es un color solido oscuro. Se revisa al bajar
-     *  (una vez por cuadro), al cambiar de tamano o de tema y cuando la portada se esconde. */
+     *  Como se sabe que hay detras: se miran tres puntos de la barra (izquierda, centro y derecha); manda la
+     *  mayoria. Un punto es oscuro si cae dentro de una de las ZONAS_OSCURAS (las que tienen foto o degradado,
+     *  cuyo color no se puede leer; se mira por sus medidas) o si lo que hay ahi (document.elementsFromPoint)
+     *  tiene de fondo un color solido oscuro. Se revisa al bajar (una vez por cuadro), al cambiar de tamano o
+     *  de tema y cuando la portada se esconde.
+     *  2026-11-15: las zonas se miran por sus medidas y no con elementsFromPoint porque, mientras el tema
+     *  cambia con su efecto (una View Transition), elementsFromPoint solo devuelve la "foto" de la transicion:
+     *  en la portada, al pasar a tema claro, la barra quedaba de vidrio claro sobre la ciudad oscura. */
     const ZONAS_OSCURAS = 'body > .hero:not([hidden]), footer.pie, .profile-cover, .company-cover-img, .empresa-portada, .cerca-mapa';
     function vidrioSegunFondo() {
         const barras = Array.from(document.querySelectorAll('body > header, body > .tabbar'));
         if (!barras.length) return;
         const raiz = document.documentElement;
         const ajeno = '.cuenta-menu, .chispa-match, .toast-stack, .lente, .notifications-dropdown, .cmdk';
-        const oscuroEn = function (x, y, barra) {
+        // Las zonas oscuras que se ven ahora, con sus medidas (una vez por revision)
+        const zonasAhora = function () {
+            return Array.from(document.querySelectorAll(ZONAS_OSCURAS)).map(function (z) { return z.getBoundingClientRect(); })
+                .filter(function (r) { return r.width > 0 && r.height > 0; });
+        };
+        const oscuroEn = function (x, y, barra, zonas) {
+            if (zonas.some(function (r) { return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; })) return true;
             const pila = document.elementsFromPoint(x, y);
             for (let i = 0; i < pila.length; i++) {
                 const el = pila[i];
@@ -1365,6 +1592,7 @@
         };
         const revisar = function () {
             const claro = raiz.getAttribute('data-theme') !== 'dark';
+            const zonas = claro ? zonasAhora() : [];
             barras.forEach(function (barra) {
                 let oscuro = false;
                 if (!claro) { if (barra.classList.contains('vidrio-oscuro')) { barra.classList.remove('vidrio-oscuro'); } }
@@ -1373,7 +1601,7 @@
                     // Escondida (al bajar) o sin tamano (la barra de abajo en el computador): se deja como estaba
                     if (!r.width || r.bottom <= 0 || r.top >= window.innerHeight) return;
                     const y = r.top + r.height / 2;
-                    const votos = [0.18, 0.5, 0.82].filter(function (f) { return oscuroEn(r.left + r.width * f, y, barra); }).length;
+                    const votos = [0.18, 0.5, 0.82].filter(function (f) { return oscuroEn(r.left + r.width * f, y, barra, zonas); }).length;
                     oscuro = votos >= 2;
                 }
                 const quiere = claro && oscuro;
@@ -1389,13 +1617,30 @@
             pendiente = true;
             requestAnimationFrame(function () { pendiente = false; revisar(); });
         };
-        revisar();
-        window.addEventListener('scroll', pedir, { passive: true });
+        // La primera vez, en el proximo cuadro (antes de dibujarlo): mirar el fondo aqui obligaba a calcular la
+        // pagina a medio armar (revision 2026-11-15)
+        requestAnimationFrame(revisar);
+        // Al bajar, una revision cada 40 px y no en cada cuadro (revision de fluidez 2026-11-15: en un celular cada
+        // una costaba hasta 60 ms por el recalculo que fuerza mirar la pagina). Lo de detras de la barra no cambia
+        // mas rapido que eso; y al quedar quieta, se revisa una ultima vez
+        // (La posicion de partida se toma en el primer movimiento: leer scrollY al cargar obligaba a calcular la
+        // pagina a medio armar, ~100 ms en un celular lento)
+        let ultimaY = null, finDelScroll = 0;
+        window.addEventListener('scroll', function () {
+            clearTimeout(finDelScroll);
+            finDelScroll = setTimeout(pedir, 120);
+            if (ultimaY !== null && Math.abs(window.scrollY - ultimaY) < 40) return;
+            ultimaY = window.scrollY;
+            pedir();
+        }, { passive: true });
         window.addEventListener('resize', pedir);
         window.addEventListener('load', pedir);
-        // El tema cambio (boton, menu "Tu cuenta" o el sistema en "Auto")
+        // El tema cambio (boton, menu "Tu cuenta" o el sistema en "Auto"): se revisa de una vez, sin esperar al
+        // siguiente cuadro, para que la "foto" del tema nuevo ya salga con el vidrio correcto; y otra vez al
+        // terminar el efecto, cuando elementsFromPoint vuelve a ver la pagina
+        document.addEventListener('skillmatch:tema-listo', pedir);
         if ('MutationObserver' in window) {
-            new MutationObserver(pedir).observe(raiz, { attributes: true, attributeFilter: ['data-theme'] });
+            new MutationObserver(function () { revisar(); pedir(); }).observe(raiz, { attributes: true, attributeFilter: ['data-theme'] });
             const hero = document.querySelector('body > .hero');
             if (hero) new MutationObserver(pedir).observe(hero, { attributes: true, attributeFilter: ['hidden'] });
         }
@@ -4134,7 +4379,7 @@
         li.setAttribute('aria-hidden', 'true');
         li.setAttribute('role', 'presentation');
         // irCuandoLlegue espera esto antes de cambiar de pagina (lo que tarda el lente en llegar)
-        li.dataset.viaje = '380';
+        li.dataset.viaje = String(VIAJE_LENTE);
         lista.appendChild(li);
         lista.classList.add('con-linea');
         // La pagina a la que se va tras un clic: manda mientras carga la siguiente
@@ -4155,7 +4400,7 @@
                 elegido = a;
                 lente.ir(a);
                 clearTimeout(viajePendiente);
-                viajePendiente = setTimeout(function () { UI.irA(a.href); }, 380);
+                viajePendiente = setTimeout(function () { UI.irA(a.href); }, VIAJE_LENTE);
             }
         });
         const ubicar = function (sinViaje) { lente.ir(elegido || activo(), sinViaje); };
@@ -4305,6 +4550,20 @@
         const palabras = String(nombre).split(/\s+/).filter(function (w) { return w && !PALABRAS_MENORES.test(w); });
         return ((palabras[0] || '').charAt(0) + (palabras[1] || '').charAt(0)).toUpperCase() || '?';
     }
+    // Dos iniciales cuando el cuadro mide 36 px o mas. El ancho llega por un ResizeObserver: el navegador avisa el
+    // tamano cuando ya hizo sus cuentas. Antes se leia con offsetWidth recien pintado el cuadro, y cada lectura lo
+    // obligaba a recalcular la pagina entera (revision 2026-11-15: al llegar a Vacantes, 9 lecturas = ~160 ms en un
+    // celular lento, justo mientras la pagina entraba deslizandose: la barra se veia trabada)
+    const medirMonograma = window.ResizeObserver ? new ResizeObserver(function (entradas) {
+        entradas.forEach(function (e) {
+            const el = e.target;
+            medirMonograma.unobserve(el);
+            const caja = e.borderBoxSize && e.borderBoxSize[0];
+            const ancho = caja ? caja.inlineSize : e.contentRect.width;
+            const nombre = (el.dataset.monograma || '').trim();
+            if (nombre && ancho >= 36 && !el.children.length && el.textContent.trim().length <= 2) el.textContent = inicialesDe(nombre);
+        });
+    }) : null;
     function monograma(el) {
         const nombre = (el.dataset.monograma || '').trim();
         if (!nombre) return;
@@ -4316,7 +4575,10 @@
         el.dataset.monoForma = FORMAS_MONOGRAMA[(h >>> 8) % FORMAS_MONOGRAMA.length];
         el.classList.add('monograma');
         // Dos iniciales si el cuadro solo traia su letra (sin logo, foto ni icono adentro) y es de 36 px o mas
-        if (!el.children.length && el.textContent.trim().length <= 2 && el.offsetWidth >= 36) el.textContent = inicialesDe(nombre);
+        if (!el.children.length && el.textContent.trim().length <= 2) {
+            if (medirMonograma) medirMonograma.observe(el);
+            else if (el.offsetWidth >= 36) el.textContent = inicialesDe(nombre);
+        }
     }
     function pintarMonogramas(raiz) {
         if (!raiz || !raiz.querySelectorAll) return;
@@ -4325,6 +4587,9 @@
     }
     UI.monograma = monograma;
 
+    // 2026-11-15 (Luis): lo mismo sirve para las FOTOS DE PERFIL de las personas (Mensajes, Conexiones, "Nuevo
+    // mensaje"): data-logo-cuenta="<id de su cuenta>" trae su foto. Si la pagina ya la tiene en sus datos, la pone en
+    // data-foto y no se pide nada. Las fotos tambien quedan guardadas en la sesion (una vez por persona)
     function pintarLogos(raiz) {
         if (!raiz.querySelectorAll) return;
         const cuadros = Array.from(raiz.querySelectorAll('[data-logo-empresa], [data-logo-cuenta]'));
@@ -4332,17 +4597,36 @@
         cuadros.forEach(function (cuadro) {
             if (cuadro.dataset.logoPedido) return;
             cuadro.dataset.logoPedido = '1';
-            UI.logoDeEmpresa(cuadro.dataset.logoEmpresa, cuadro.dataset.logoCuenta).then(function (url) {
+            const de = (cuadro.dataset.logoCuenta || '') + '|' + (cuadro.dataset.logoEmpresa || '');
+            const directa = imagenDeLogo(cuadro.dataset.foto);
+            if (directa && cuadro.dataset.logoCuenta) guardarLogo('u:' + cuadro.dataset.logoCuenta, directa);
+            (directa ? Promise.resolve(directa) : UI.logoDeEmpresa(cuadro.dataset.logoEmpresa, cuadro.dataset.logoCuenta)).then(function (url) {
                 if (!url || !cuadro.isConnected) return;
                 // Se cambia cuando la imagen ya cargo: si falla, queda la inicial
                 const img = new Image();
                 img.alt = '';
                 img.decoding = 'async';
-                img.onload = function () { cuadro.replaceChildren(img); cuadro.classList.add('con-logo'); };
+                img.onload = function () {
+                    // El cuadro pudo pasar a ser de otra persona mientras cargaba (la cabecera del chat)
+                    if ((cuadro.dataset.logoCuenta || '') + '|' + (cuadro.dataset.logoEmpresa || '') !== de) return;
+                    cuadro.replaceChildren(img);
+                    cuadro.classList.add('con-logo');
+                };
                 img.src = url;
             });
         });
     }
+    /** Un cuadro que se reutiliza para otra persona (la cabecera del chat): su inicial y, si tiene, su foto */
+    UI.fotoDeCuenta = function (cuadro, cuentaId, nombre) {
+        if (!cuadro) return;
+        cuadro.classList.remove('con-logo');
+        cuadro.textContent = (nombre || '?').charAt(0).toUpperCase();
+        cuadro.dataset.monograma = nombre || '';
+        monograma(cuadro);
+        delete cuadro.dataset.logoPedido;
+        if (cuentaId) cuadro.dataset.logoCuenta = String(cuentaId); else delete cuadro.dataset.logoCuenta;
+        pintarLogos(cuadro);
+    };
 
     /* ---------- 29. Menu de un boton ("Mas") ---------- */
 

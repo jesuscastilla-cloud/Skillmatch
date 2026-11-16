@@ -1112,8 +1112,10 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     overflow: hidden;
 }
 .connection-avatar-circle, .conversation-avatar { border-radius: 50%; }
-/* El logo de la empresa en lugar de la inicial, cuando lo tiene (ui.js, seccion 28) */
-.company-logo-opp > img, .cv-logo > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* El logo de la empresa (o la foto de perfil de la persona) en lugar de la inicial, cuando lo tiene (ui.js, seccion 28) */
+.company-logo-opp > img, .cv-logo > img,
+.connection-avatar-circle > img, .conversation-avatar > img, .chat-avatar > img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.chat-avatar.con-logo { overflow: hidden; }
 .cv-logo.con-logo { overflow: hidden; }
 
 .card-meta, .card-info, .offer-card-info, .connection-info {
@@ -1662,11 +1664,16 @@ p.job-title { line-height: 1.2; } /* la de la demo de la portada es un parrafo *
     display: inline-flex; align-items: center; gap: var(--s2);
     min-height: 40px; padding: 6px var(--s3);
     border: 1px solid var(--hairline); border-radius: var(--r-pill);
+    background: var(--surface);
     font-size: var(--t-sm); color: var(--ink-2); cursor: pointer;
 }
 .lector-chip:has(input:checked) { border-color: var(--sea); background: var(--sea-light); color: var(--ink); }
 .lector-chip.revisa { border-style: dashed; border-color: var(--sol); }
 .lector-chip input[type="checkbox"] { margin: 0; }
+/* El nivel que traia la hoja de vida ("Avanzado", "B1" -> Intermedio): pegado a su habilidad */
+.lector-chip-nivel { padding: 1px 8px; border-radius: var(--r-pill); background: var(--surface-sunk); color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; }
+/* Las que solo se mencionan en la experiencia, los cursos o el perfil */
+.lector-subtitulo { margin: var(--s4) 0 var(--s2); font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); }
 .lector-nivel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); margin-top: var(--s4); font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); }
 .lector-nivel select { width: auto; min-width: 12rem; }
 /* Los botones quedan siempre a la vista al bajar por la lista */
@@ -2661,8 +2668,8 @@ footer.pie > .container { position: relative; z-index: 1; }
 /* La columna oscura baja hasta el pie: sin la ola (pintaba una franja clara
    entre los dos) y el pie empieza recto, como la llamada final de la portada */
 @media (min-width: 1081px) {
-    body:has(.auth-shell) footer.pie { padding-top: var(--s8); }
-    body:has(.auth-shell) .pie-ola { display: none; }
+    body > .auth-shell ~ footer.pie { padding-top: var(--s8); }
+    body > .auth-shell ~ footer .pie-ola { display: none; }
 }
 /* Con JavaScript se reserva el espacio antes de dibujar: nada salta al cargar */
 @media (scripting: enabled) { .login-personajes { aspect-ratio: 360 / 280; } }
@@ -6687,23 +6694,46 @@ a.meta-tag:hover { background: var(--sea-light); color: var(--sea-deep); }
    tarjetas translucidas se verian unas a traves de otras. Los recuadros punteados, con el tinte de las
    tarjetas (con el vidrio fino, casi transparente en oscuro, su texto quedaba en 4.45) */
 .pagina-vidrio .indicadores-vacio { background: var(--vidrio-tinte); }
-/* El pie en las paginas de vidrio. La ola (.pie-ola) pinta el color liso de la pagina (--bg) sobre el
-   borde de arriba del pie: sobre el fondo vivo eso dejaba una franja clara de borde recto entre el vidrio
-   y la ola. Aqui el pie mismo termina en curva (una mascara con la misma ola, al reves) y encima de la
-   curva se ve el fondo vivo, como en el resto de la pagina. La curva queda quieta: deslizarla obligaria a
-   animar la mascara, y solo se animan transform y opacity. En la portada (pie pegado a la llamada final)
-   y en el login de computador (columna oscura hasta el pie) el pie sigue recto, sin ola. */
+/* El pie en las paginas de vidrio, con su ola que se DESLIZA como la del inicio (pedido de Luis 2026-11-15:
+   "eso ya tampoco se mueve"). Sobre la curva se ve el fondo vivo de la pagina, asi que la ola no puede pintar el
+   color de la pagina (como en la portada). Al reves: el pie no pinta nada en sus primeros 47 px (su color va en
+   ::after, desde ahi hacia abajo) y la ola (.pie-ola) es el azul del pie con forma de ola, el doble de ancha, que
+   se desliza con transform (ola-desliza, 36 s). Antes la curva era una mascara quieta sobre el pie entero:
+   moverla obligaba a animar la mascara. El resplandor del pie (::before) baja un poco para no asomarse sobre la
+   curva. En la portada (pie pegado a la llamada final) y en el login de computador (columna oscura hasta el pie)
+   el pie sigue recto, sin ola. */
 .pagina-vidrio footer.pie:not(.cta-final + footer) {
-    -webkit-mask:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C180 48 540 48 720 24S1260 0 1440 24V48H0Z'/%3E%3C/svg%3E") left top / 100% 48px no-repeat,
-        linear-gradient(#000 0 0) left 47px / 100% calc(100% - 47px) no-repeat;
-            mask:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C180 48 540 48 720 24S1260 0 1440 24V48H0Z'/%3E%3C/svg%3E") left top / 100% 48px no-repeat,
-        linear-gradient(#000 0 0) left 47px / 100% calc(100% - 47px) no-repeat;
+    isolation: isolate;
+    background: none;
 }
-.pagina-vidrio footer.pie:not(.cta-final + footer) .pie-ola { display: none; }
+.pagina-vidrio footer.pie:not(.cta-final + footer)::after {
+    content: "";
+    position: absolute;
+    inset: 47px 0 0;
+    z-index: -1;
+    background: var(--grain), var(--bg-deep);
+    background-blend-mode: overlay;
+    background-size: 220px 220px, auto;
+    pointer-events: none;
+}
+.pagina-vidrio footer.pie:not(.cta-final + footer)::before { top: 40px; }
+.pagina-vidrio footer.pie:not(.cta-final + footer) .pie-ola {
+    display: block;
+    background: var(--grain), var(--bg-deep);
+    background-blend-mode: overlay;
+    background-size: 220px 220px, auto;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C180 48 540 48 720 24S1260 0 1440 24V48H0Z'/%3E%3C/svg%3E") left top / 50% 100% repeat-x;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C180 48 540 48 720 24S1260 0 1440 24V48H0Z'/%3E%3C/svg%3E") left top / 50% 100% repeat-x;
+}
 @media (min-width: 1081px) {
-    .pagina-vidrio:has(.auth-shell) footer.pie:not(.cta-final + footer) { -webkit-mask: none; mask: none; }
+    .pagina-vidrio > .auth-shell ~ footer.pie:not(.cta-final + footer) {
+        background: var(--grain), var(--bg-deep);
+        background-blend-mode: overlay;
+        background-size: 220px 220px, auto;
+    }
+    .pagina-vidrio > .auth-shell ~ footer.pie:not(.cta-final + footer)::after { content: none; }
+    .pagina-vidrio > .auth-shell ~ footer.pie:not(.cta-final + footer)::before { top: -40%; }
+    .pagina-vidrio > .auth-shell ~ footer.pie:not(.cta-final + footer) .pie-ola { display: none; }
 }
 /* Donde lo ultimo antes del pie es una repisa de vidrio (los registros y, hasta 1080 px, el formulario de
    entrar y el de recuperar la clave), la repisa sigue por debajo de la ola: el pie sube 48 px y la repisa
@@ -7263,16 +7293,21 @@ header > nav.container { max-width: max(var(--shell), 1400px); }
 .nav-left > .nav-links a .ico { width: 16px; height: 16px; }
 
 /* ---------- 42. Portada: el azul del hero sube hasta arriba, detras de la barra ----------
+   2026-11-15: estas reglas eran "body:has(> .hero:not([hidden]))". El menu "Tu cuenta" (y otras piezas) son
+   hijos de body y se muestran quitandoles [hidden]: cada vez, el navegador reevaluaba body y recalculaba los
+   estilos de TODA la pagina (abrir el menu en un celular lento: 181 ms; sin esos :has(), 44 ms). Ahora la
+   portada se nombra directo y la barra usa body.con-portada (index.html la trae; ui.js la quita si la
+   portada se esconde). Las clases repetidas (.hero.hero, .con-portada.con-portada) conservan el peso de antes.
    El hero se mete debajo de la barra (que es pegajosa) y le suma su alto al relleno de arriba.
    Mientras la barra esta sobre el hero (ui.js le pone .sobre-hero), va transparente: el logo
    pasa a su version clara y la barra toma el estilo oscuro de la seccion 43. Al bajar y salir
    del hero, vuelve a ser la barra de siempre. */
-body:has(> .hero:not([hidden])) > .hero {
+body > .hero.hero:not([hidden]) {
     margin-top: calc(-1 * var(--app-bar-h));
     padding-top: calc(var(--s9) + var(--app-bar-h));
 }
 @media (max-width: 760px) {
-    body:has(> .hero:not([hidden])) > .hero { padding-top: calc(var(--s7) + var(--app-bar-h)); }
+    body > .hero.hero:not([hidden]) { padding-top: calc(var(--s7) + var(--app-bar-h)); }
 }
 
 /* ---------- 43. Barra sobre fondo oscuro: limpia y sin ruido (tema oscuro y sobre el azul de la portada) ----------
@@ -7764,11 +7799,11 @@ body:has(> .hero:not([hidden])) > .hero {
     --isla-w0: 160px;                       /* ancho de la isla pequena: el logo (120 px) y su aire */
 }
 :root body > header.sobre-hero:not(.is-scrolled),
-:root body:has(> .hero:not([hidden])) > header:not(.is-scrolled) { --isla-tinte: rgba(9, 24, 44, .08); --isla-brillo: 1; }
+:root body.con-portada.con-portada > header:not(.is-scrolled) { --isla-tinte: rgba(9, 24, 44, .08); --isla-brillo: 1; }
 :root body > header,
 :root body > header.is-scrolled,
 :root body > header.sobre-hero:not(.is-scrolled),
-:root body:has(> .hero:not([hidden])) > header:not(.is-scrolled) {
+:root body.con-portada.con-portada > header:not(.is-scrolled) {
     background-color: var(--isla-tinte);
     /* El filo: el borde casi no se ve y la luz de arriba (sombra interior) marca el grosor del cristal */
     border-color: var(--isla-borde);
@@ -7903,7 +7938,7 @@ body:has(> .hero:not([hidden])) > .hero {
     .isla-piezas > .isla-vidrio { display: none; }
     :root body > header,
     :root body > header.sobre-hero:not(.is-scrolled),
-    :root body:has(> .hero:not([hidden])) > header:not(.is-scrolled) { --isla-tinte: #081A30; }
+    :root body.con-portada.con-portada > header:not(.is-scrolled) { --isla-tinte: #081A30; }
     /* Sin el fundido del tinte: al pedir menos transparencia la isla queda solida de una vez */
     :root body > header, :root body > header.is-scrolled { transition: none; }
     :root.isla-intro body > header::before, .isla-piezas > span { background: #081A30; -webkit-backdrop-filter: none; backdrop-filter: none; }
@@ -7949,12 +7984,12 @@ body:has(> .hero:not([hidden])) > .hero {
 
 /* La portada usaba --app-bar-h, que en celular vale 60 px mientras la isla ocupa 68: quedaba una raya
    de 8 px arriba. Ahora sube lo mismo que ocupa la isla */
-body:has(> .hero:not([hidden])) > .hero {
+body > .hero.hero:not([hidden]) {
     margin-top: calc(-1 * var(--isla-espacio));
     padding-top: calc(var(--s9) + var(--isla-espacio));
 }
 @media (max-width: 760px) {
-    body:has(> .hero:not([hidden])) > .hero { padding-top: calc(var(--s7) + var(--isla-espacio)); }
+    body > .hero.hero:not([hidden]) { padding-top: calc(var(--s7) + var(--isla-espacio)); }
 }
 
 /* ---------- 51. La portada en cinco bloques (2026-11-12) ----------
@@ -7984,21 +8019,6 @@ body:has(> .hero:not([hidden])) > .hero {
 .cta-final .pathway-card .pathway-features li { color: #C7D5E5; }
 .cta-final .pathway-card .pathway-features .ico { color: #5FD0DC; }
 .cta-final .pathway-card .pathway-icon { background: rgba(95, 208, 220, .14); color: #5FD0DC; }
-/* La chispa del match: un punto naranja donde se encuentran las dos tarjetas. Quieta no se ve:
-   index.js la enciende cuando las tarjetas se juntan */
-.caminos-chispa {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    z-index: 2;
-    width: 34px;
-    height: 34px;
-    margin: -17px 0 0 -17px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #FFF3E6 0 14%, #FFA05C 26%, #FF7618 42%, rgba(255, 118, 24, .35) 58%, rgba(255, 118, 24, 0) 72%);
-    opacity: 0;
-    pointer-events: none;
-}
 
 /* ---------- 52. La portada se construye al bajar (index.js) ----------
    Cada grupo de piezas espera invisible hasta que llega a la pantalla; ahi index.js lo arma (una sola vez)
@@ -8828,36 +8848,24 @@ html:not(.isla-intro):not(.isla-abriendo) body > header.con-refraccion {
 }
 
 /* ---------- 81. El lente de las barras (video «Lente» de moxen.studio, pedido de Luis 2026-11-13) ----------
-   Reemplaza la gota y la linea turquesa (arriba) y la pastilla de la pestana activa (abajo). Es una capsula de
-   cristal que queda SOBRE la opcion actual: agranda y refracta lo que tiene debajo (el icono y la palabra), con
-   un arcoiris finito en el borde (ui.js, Cristal.filtroDeLente: tres pasadas, una por color). ui.js
-   (crearLente) la mueve con resortes, la estira con la velocidad y deja agarrarla y arrastrarla; aqui solo
-   va su aspecto. Del codigo del video: el filo con degradado conico, el brillo de arriba (11 % a cada lado)
-   y las sombras interiores (1,5 px arriba, 12 px de luz, 2 px abajo). Sin refraccion (Safari, Firefox) queda
-   el mismo cristal sin doblar lo de atras. */
+   Reemplaza la gota y la linea turquesa (arriba) y la pastilla de la pestana activa (abajo). Es una capsula
+   que marca la opcion actual. ui.js (crearLente) la mueve con resortes, la estira con la velocidad y deja
+   agarrarla y arrastrarla; aqui va su caja y las piezas del cristal (del codigo del video: el filo con
+   degradado conico y el brillo de arriba, 11 % a cada lado).
+   2026-11-14: su aspecto paso a la seccion 88 (quieta es un tinte, como la burbuja de Apple; levantada, una
+   gota de cristal) y ya no lleva el filtro que refractaba las letras (alla se explica por que). */
 .lente {
     position: absolute;
     left: 0; top: 0;
-    z-index: 3;
+    z-index: 0;                     /* detras del icono y la palabra (seccion 88) */
     pointer-events: none;
     border-radius: 999px;
     transform-origin: 50% 50%;
     will-change: transform;
     opacity: 0;                     /* ui.js lo muestra cuando ya esta en su sitio */
     transition: opacity .2s var(--ease-out);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, .08) 55%, rgba(255, 255, 255, .13));
-    box-shadow:
-        inset 0 1.5px 0 rgba(255, 255, 255, .7),
-        inset 0 12px 18px -10px rgba(255, 255, 255, .3),
-        inset 0 -2px 0 rgba(255, 255, 255, .2),
-        0 14px 30px -6px rgba(2, 10, 24, .5);
-    -webkit-backdrop-filter: saturate(150%) brightness(1.18);
-            backdrop-filter: saturate(150%) brightness(1.18);
 }
-.lente.con-refraccion {
-    -webkit-backdrop-filter: var(--refraccion) saturate(150%) brightness(1.18);
-            backdrop-filter: var(--refraccion) saturate(150%) brightness(1.18);
-}
+/* Sus dos capas, .lente-reposo y .lente-cristal, estan en la seccion 88 */
 /* El filo: un anillo de 1 px con degradado conico (blanco arriba a la izquierda, turquesa claro del otro lado) */
 .lente-filo {
     position: absolute;
@@ -8894,9 +8902,6 @@ html:not(.isla-intro):not(.isla-abriendo) body > header.con-refraccion {
 }
 /* El celular: el dedo puede arrastrar el lente de lado (sin que la pagina se lo lleve) */
 :root body > .tabbar { touch-action: pan-y; }
-@media (prefers-reduced-transparency: reduce) {
-    .lente, .lente.con-refraccion { background: rgba(255, 255, 255, .16); -webkit-backdrop-filter: none; backdrop-filter: none; }
-}
 
 /* ---------- 82. «Vacante»: tu perfil frente a las vacantes (video de moxen.studio, pedido de Luis 2026-11-13) ----------
    oportunidades.js (panelPerfil): arriba de la lista, tus habilidades con en cuantas de las vacantes que ves
@@ -9007,7 +9012,6 @@ mark.coincide.resaltada { background: var(--sea-light); box-shadow: 0 0 0 2px va
     }
     :root body > .tabbar.con-refraccion,
     :root body > .tabbar { background: #081A30 !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
-    .lente, .lente.con-refraccion { background: rgba(255, 255, 255, .16); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* ---------- 84. «Titular»: el menu "Tu cuenta" (video de moxen.studio, pedido de Luis 2026-11-13) ----------
@@ -9053,11 +9057,33 @@ mark.coincide.resaltada { background: var(--sea-light); box-shadow: 0 0 0 2px va
     :root body > header .cuenta-boton .cuenta-avatar { width: 32px; height: 32px; }
 }
 
+/* La ranura: el menu va adentro (ui.js la ubica bajo el boton). Mientras se abre o se cierra recorta: el menu sale
+   de la linea de luz como un papel de una ranura. La sombra va en la ranura y aparece cuando el menu ya salio */
+.cuenta-ranura { position: fixed; z-index: 300; pointer-events: none; }
+.cuenta-ranura.animando { overflow: hidden; }
+.cuenta-ranura::after {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    border-radius: 22px;
+    box-shadow: 0 28px 60px -20px rgba(0, 0, 0, .65);
+    opacity: 0;
+    transition: opacity .12s var(--ease-out);
+    pointer-events: none;
+}
+.cuenta-ranura.abierta:not(.animando)::after { opacity: 1; transition-duration: .2s; }
+/* La linea de luz, con los colores del logo (ui.js le pone el degradado segun de que lado esta el boton) */
+.cuenta-filo {
+    position: fixed; z-index: 301;
+    height: 2px; border-radius: 2px;
+    box-shadow: 0 0 12px rgba(255, 160, 92, .5);
+    opacity: 0;
+    pointer-events: none;
+}
+
 /* El menu: vidrio ahumado (los colores de adentro son los del tema oscuro, en los dos temas) */
 .cuenta-menu {
     --ink: #EEF3FA; --ink-2: #C7D5E5; --ink-3: #A9BBCE;
-    position: fixed;
-    z-index: 300;
+    position: relative;
+    pointer-events: auto;
     width: 320px;
     max-height: calc(100vh - 100px);
     overflow-y: auto;
@@ -9070,20 +9096,15 @@ mark.coincide.resaltada { background: var(--sea-light); box-shadow: 0 0 0 2px va
         rgba(10, 21, 34, .82);
     -webkit-backdrop-filter: blur(28px) saturate(180%);
             backdrop-filter: blur(28px) saturate(180%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 28px 60px -20px rgba(0, 0, 0, .65);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
     color: var(--ink);
     font: 500 14px/1.35 var(--font-text);
-    transform-origin: top right;
-    transition: opacity .18s cubic-bezier(.23, 1, .32, 1), transform .18s cubic-bezier(.23, 1, .32, 1);
 }
 .cuenta-menu[hidden] { display: none; }
-.cuenta-menu.abriendo, .cuenta-menu.cerrando { opacity: 0; transform: translateY(-4px) scale(.96); }
-.cuenta-menu.cerrando { transition-duration: .12s; }
+/* Cerrandose ya no se puede tocar (la animacion la hace ui.js, menuDeCuenta) */
+.cuenta-menu.cerrando { pointer-events: none; }
 @media (max-width: 600px) {
-    .cuenta-menu { width: auto; transform-origin: top center; }
-}
-@media (prefers-reduced-motion: reduce) {
-    .cuenta-menu.abriendo, .cuenta-menu.cerrando { transform: none; }
+    .cuenta-menu { width: auto; }
 }
 
 .cuenta-cabeza { display: flex; align-items: center; gap: 12px; padding: 4px 4px 12px; }
@@ -9270,32 +9291,7 @@ html[data-theme="light"]:not(.isla-intro):not(.isla-abriendo) body > header:not(
 /* "Unirse ahora": el turquesa de la marca con letra blanca (el claro de antes no se lee sobre vidrio claro) */
 :root[data-theme="light"] body > header:not(.vidrio-oscuro) a.btn-register,
 :root[data-theme="light"] body > header:not(.vidrio-oscuro) a.btn-register:hover { background: #0B7E8C; color: #FFFFFF !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 6px 16px -8px rgba(11, 126, 140, .7); }
-/* El lente sobre vidrio claro: cristal blanco con una sombra azul suave para que se note */
-:root[data-theme="light"] body > header:not(.vidrio-oscuro) .lente {
-    /* Casi transparente: el lente va ENCIMA de la palabra y un cuerpo blanco la deslavaba (se veia gris) */
-    background: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .03) 55%, rgba(255, 255, 255, .1));
-    box-shadow: inset 0 1.5px 0 #FFFFFF, inset 0 12px 18px -10px rgba(255, 255, 255, .6), inset 0 -2px 0 rgba(255, 255, 255, .5),
-        0 10px 24px -8px rgba(8, 32, 60, .28);
-    -webkit-backdrop-filter: saturate(140%) brightness(1.03);
-            backdrop-filter: saturate(140%) brightness(1.03);
-}
-:root[data-theme="light"] body > header:not(.vidrio-oscuro) .lente.con-refraccion {
-    -webkit-backdrop-filter: var(--refraccion) saturate(140%) brightness(1.03);
-            backdrop-filter: var(--refraccion) saturate(140%) brightness(1.03);
-}
-/* En vidrio claro el lente va DETRAS de la palabra, como la capsula clara de Apple en modo claro: encima, el
-   navegador lo pintaba gris (refracta solo lo de adentro de la barra) y tapaba la palabra. Asi queda una
-   capsula blanca esmerilada y la palabra encima, nitida. En vidrio oscuro sigue encima, con la lupa */
-:root[data-theme="light"] body > header:not(.vidrio-oscuro) .lente,
-:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) .lente {
-    z-index: 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .92), rgba(255, 255, 255, .62)) !important;
-    box-shadow: inset 0 1px 0 #FFFFFF, 0 0 0 1px rgba(8, 32, 60, .06), 0 8px 18px -8px rgba(8, 32, 60, .3) !important;
-    -webkit-backdrop-filter: none !important;
-            backdrop-filter: none !important;
-}
-:root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-principales > li > a,
-:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) ul a { position: relative; z-index: 1; }
+/* El lente va detras de la palabra en los dos vidrios y su aspecto esta en la seccion 88 */
 :root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-principales a.bajo-lente { color: #08203C; }
 :root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-principales a.bajo-lente .ico { color: #096670; }
 
@@ -9334,18 +9330,6 @@ html[data-theme="light"]:not(.isla-intro):not(.isla-abriendo) body > header:not(
 :root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) a:is(.is-active, .es-destino) .ico,
 :root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) a.bajo-lente .ico { color: #096670; }
 :root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) a.bajo-lente { color: #08203C; }
-:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) .lente {
-    /* Casi transparente: el lente va ENCIMA de la palabra y un cuerpo blanco la deslavaba (se veia gris) */
-    background: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .03) 55%, rgba(255, 255, 255, .1));
-    box-shadow: inset 0 1.5px 0 #FFFFFF, inset 0 12px 18px -10px rgba(255, 255, 255, .6), inset 0 -2px 0 rgba(255, 255, 255, .5),
-        0 10px 24px -8px rgba(8, 32, 60, .28);
-    -webkit-backdrop-filter: saturate(140%) brightness(1.03);
-            backdrop-filter: saturate(140%) brightness(1.03);
-}
-:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) .lente.con-refraccion {
-    -webkit-backdrop-filter: var(--refraccion) saturate(140%) brightness(1.03);
-            backdrop-filter: var(--refraccion) saturate(140%) brightness(1.03);
-}
 
 /* El cambio entre vidrio claro y oscuro: un fundido corto del tinte y las letras */
 :root body > .tabbar { transition: translate .3s cubic-bezier(.32, .72, 0, 1), background-color .25s var(--ease-out), border-color .25s var(--ease-out); }
@@ -9376,6 +9360,438 @@ html[data-theme="light"]:not(.isla-intro):not(.isla-abriendo) body > header:not(
     :root[data-theme="light"] body > header:not(.vidrio-oscuro) .cuenta-boton { border-color: rgba(8, 32, 60, .1); background: rgba(255, 255, 255, .5); color: #08203C; }
     :root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-buscar .cmdk-boton .ico { color: #08203C; }
     :root body > header .cuenta-boton .cuenta-avatar { width: 34px; height: 34px; }
+}
+
+/* ---------- 88. La barra y la burbuja como las de Apple (pedido de Luis 2026-11-14) ----------
+   Luis mando dos fotos de la barra del App Store (iOS 26) y pidio la burbuja mas transparente. Lo que hace Apple:
+   1. QUIETA, la burbuja no es un cristal brillante: es un tinte casi transparente (una "sombra" de vidrio) y
+      lo que dice cual es la pestana actual es el COLOR del icono y de la palabra.
+   2. Al TOCARLA o cuando VIAJA a otra pestana, se levanta: crece y se vuelve una gota de cristal claro (filo
+      de luz, brillo arriba y sombra), y el icono que queda debajo crece como bajo una lupa. Al llegar se
+      asienta con un rebote corto y vuelve a ser el tinte.
+   3. La barra deja pasar mas de lo que tiene atras (menos tinte, menos oscurecido).
+   Por eso el lente ahora tiene dos capas (ui.js, crearLente): .lente-reposo (el tinte) y .lente-cristal (la
+   gota). ui.js pone .levantado mientras se toca o viaja y aqui solo se cruzan las dos con opacity; el tamano
+   lo mueve el resorte de ui.js con transform.
+   El lente ya NO lleva el filtro que refractaba (seccion 81): por como trabaja backdrop-filter dentro de otra
+   pieza con backdrop-filter, no doblaba las letras sino que les ponia encima una copia torcida (un halo de
+   colores en reposo y manchas al cruzar el borde). Va siempre DETRAS del icono y la palabra, que quedan
+   nitidos. La refraccion de verdad sigue en el borde de las dos barras (seccion 80).
+   Levantarse es rapido (.1 s: responde al dedo) y asentarse un poco mas lento (.2 s), como en el video de la
+   seccion 89. */
+
+/* 3. La barra, mas transparente. Vidrio oscuro: el tinte baja del 34 al 26 % y lo de atras se oscurece menos
+   (brightness de .42 a .5). Vidrio claro: el velo blanco baja del 50 al 40 %. Contraste medido con pixeles
+   bajando toda la pagina (ver docs/CAMBIOS, cambio #44) */
+:root { --cristal-tinte: rgba(9, 24, 44, .26); }
+:root body > header { --isla-brillo: .5; }
+:root body > .tabbar { --cristal-filtro: blur(10px) saturate(200%) brightness(.5); }
+:root body > .tabbar.con-refraccion {
+    -webkit-backdrop-filter: var(--refraccion) saturate(200%) brightness(.5);
+            backdrop-filter: var(--refraccion) saturate(200%) brightness(.5);
+}
+html[data-theme="light"]:not(.isla-intro):not(.isla-abriendo) body > header:not(.vidrio-oscuro) { --isla-tinte: rgba(255, 255, 255, .4); }
+:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) { --cristal-tinte: rgba(255, 255, 255, .4); }
+/* La barra de abajo, mas baja (de 68 a 62 px), con la proporcion de la de Apple: la burbuja queda mas ancha que
+   alta (70 x 52) y no casi redonda. Cada pestana sigue midiendo 48 px de alto para el dedo */
+:root body > .tabbar a { min-height: 48px; padding: 4px 2px; }
+@media (max-width: 760px) {
+    body.has-tabbar { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+    .toast-stack { bottom: calc(86px + env(safe-area-inset-bottom)); }
+}
+
+/* 1. Quieta: el tinte. Las dos capas llenan el lente */
+.lente-reposo, .lente-cristal {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+.lente-reposo {
+    background: rgba(2, 10, 24, .3);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), inset 0 1px 0 rgba(255, 255, 255, .1);
+    transition: opacity .2s var(--ease-out);
+}
+/* 2. Levantada: la gota de cristal. Mas limpia que el lente de antes (cuerpo del 22 al 14 % de blanco, filo de
+   1 px y el brillo de arriba a la mitad): se ve lo de atras, no una capa blanca encima */
+.lente-cristal {
+    /* Opacidad .001 (no 0) y en su propia capa: el navegador ya la tiene dibujada, con su sombra, y al levantarse
+       solo cambia la opacidad. Sin esto, el primer viaje tenia un cuadro de 55 ms (medido 2026-11-14) */
+    opacity: .001;
+    will-change: opacity;
+    transition: opacity .2s var(--ease-out);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .03) 55%, rgba(255, 255, 255, .08));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .5),
+        inset 0 10px 16px -10px rgba(255, 255, 255, .16),
+        inset 0 -1px 0 rgba(255, 255, 255, .14),
+        0 12px 26px -8px rgba(2, 10, 24, .45);
+}
+.lente-cristal .lente-brillo { opacity: .5; }
+/* El lente va siempre DETRAS del icono y la palabra (encima, el tinte los apagaba) */
+:root body > header .nav-principales > li > a,
+:root body > .tabbar ul a { position: relative; z-index: 1; }
+/* Sin la lupa de verdad (seccion 89; Safari y Firefox): mientras el lente esta levantado, el icono que tiene
+   debajo crece un poco (con el mismo rebote que ya usa el menu al pasar el mouse) y, en el celular, la palabra */
+:root body > .tabbar a .ico { transition: scale .28s cubic-bezier(.34, 1.4, .64, 1), color .2s var(--ease-out); }
+:root body > .tabbar a > span { transition: scale .28s cubic-bezier(.34, 1.4, .64, 1); }
+:root body > .tabbar.lente-arriba:not(.lente-refracta) a.con-lente .ico,
+:root body > header .nav-principales.lente-arriba:not(.lente-refracta) a.con-lente .ico { scale: 1.18; }
+:root body > .tabbar.lente-arriba:not(.lente-refracta) a.con-lente > span { scale: 1.08; }
+.lente.levantado .lente-reposo { opacity: 0; transition-duration: .1s; }
+.lente.levantado .lente-cristal { opacity: 1; transition-duration: .1s; }
+
+/* En vidrio claro: quieta, un tinte azul marino al 8 %; levantada, una gota de vidrio blanco con su sombra */
+:root[data-theme="light"] body > header:not(.vidrio-oscuro) .lente-reposo,
+:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) .lente-reposo {
+    background: rgba(8, 32, 60, .08);
+    box-shadow: inset 0 0 0 1px rgba(8, 32, 60, .04);
+}
+:root[data-theme="light"] body > header:not(.vidrio-oscuro) .lente .lente-cristal,
+:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) .lente .lente-cristal {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .92), rgba(255, 255, 255, .5));
+    box-shadow: inset 0 1px 0 #FFFFFF, 0 0 0 1px rgba(8, 32, 60, .05), 0 10px 22px -8px rgba(8, 32, 60, .32);
+}
+
+/* El color dice cual es la actual: icono Y palabra en el turquesa de la marca (en Apple, en azul).
+   ui.js pone .con-lente a la opcion donde esta (o a la que va) el lente: asi el color viaja con el, y la
+   de antes se apaga apenas el lente sale. Sin lente todavia (la pagina cargando), manda la opcion activa */
+:root body > header, :root body > .tabbar { --lente-acento: #5FD0DC; --lente-normal: #EEF3FA; }
+:root[data-theme="light"] body > header:not(.vidrio-oscuro),
+:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) { --lente-acento: #075A62; --lente-normal: #12365E; }
+
+:root body > header .nav-left > .nav-links :is(a.active-nav, a.active),
+:root body > header .nav-left > .nav-links :is(a.active-nav, a.active) .ico,
+:root body > header .nav-left > .nav-links.con-linea a.con-lente,
+:root body > header .nav-left > .nav-links.con-linea a.con-lente .ico,
+:root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-left > .nav-links :is(a.active-nav, a.active),
+:root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-left > .nav-links :is(a.active-nav, a.active) .ico,
+:root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-left > .nav-links.con-linea a.con-lente,
+:root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-left > .nav-links.con-linea a.con-lente .ico { color: var(--lente-acento); }
+:root body > header .nav-left > .nav-links.con-linea :is(a.active-nav, a.active):not(.con-lente),
+:root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-left > .nav-links.con-linea :is(a.active-nav, a.active):not(.con-lente) { color: var(--lente-normal); }
+:root body > header .nav-left > .nav-links.con-linea :is(a.active-nav, a.active):not(.con-lente) .ico,
+:root[data-theme="light"] body > header:not(.vidrio-oscuro) .nav-left > .nav-links.con-linea :is(a.active-nav, a.active):not(.con-lente) .ico { color: inherit; }
+
+:root body > .tabbar a.is-active,
+:root body > .tabbar.con-marca a.con-lente,
+:root body > .tabbar.con-marca a.con-lente .ico,
+:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) a.is-active,
+:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro).con-marca a.con-lente,
+:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro).con-marca a.con-lente .ico { color: var(--lente-acento); }
+:root body > .tabbar.con-marca a:not(.con-lente),
+:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro).con-marca a:not(.con-lente) { color: var(--lente-normal); }
+:root body > .tabbar.con-marca a:not(.con-lente) .ico,
+:root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro).con-marca a:not(.con-lente) .ico { color: inherit; }
+
+/* "Reducir transparencia": las dos capas, solidas y sin filtro */
+@media (prefers-reduced-transparency: reduce) {
+    .lente .lente-reposo { background: rgba(255, 255, 255, .14); }
+    .lente .lente-cristal { background: rgba(255, 255, 255, .2); }
+    :root[data-theme="light"] body > header:not(.vidrio-oscuro) .lente-reposo,
+    :root[data-theme="light"] body > .tabbar:not(.vidrio-oscuro) .lente-reposo { background: rgba(8, 32, 60, .1); }
+}
+/* "Reducir movimiento": el lente no viaja ni se levanta (ui.js); sin fundido ni lupa */
+@media (prefers-reduced-motion: reduce) {
+    .lente-reposo, .lente-cristal { transition: none; }
+    :root body > .tabbar a .ico { transition: color .2s var(--ease-out); }
+    :root body > .tabbar a > span { transition: none; }
+    :root body > .tabbar.lente-arriba a.con-lente :is(.ico, span),
+    :root body > header .nav-principales.lente-arriba a.con-lente .ico { scale: none !important; }
+}
+
+/* ---------- 89. El movimiento de la burbuja, medido en un video (pedido de Luis 2026-11-14) ----------
+   Luis mando un video de 15 s de la barra de WhatsApp en iOS 26. Se saco cuadro a cuadro (60 por segundo) y esto
+   es lo que hace la burbuja, con sus tiempos:
+   - Al PRESIONAR (0,13 s): toda la barra crece un 3,5 %; la burbuja pasa de tinte oscuro a un lente de cristal
+     mas CLARO que la barra, que crece mas a lo alto (x1,3: se sale por arriba y por abajo) que a lo ancho (x1,14);
+     el icono y la palabra de debajo se ven agrandados (x1,14).
+   - Al ARRASTRAR: sigue al dedo 1 a 1; su borde dobla los iconos y palabras vecinos, con un arcoiris fino.
+   - Al SOLTAR (0,17 s): se encoge, se oscurece hasta volver a ser el tinte y la barra vuelve a su tamano, con un
+     rebote minimo.
+   - Al TOCAR otra pestana (0,3 s en total): se vuelve lente casi al instante, viaja en ~0,1 s estirada, pasa un
+     poco de largo y se asienta.
+   Los tamanos y resortes van en ui.js (crearLente). Aqui: la lupa, los fundidos y el crecer de la barra.
+
+   LA LUPA (.lente-lupa): el lente levantado. Es un lente de verdad: agranda y dobla lo que tiene debajo con un
+   filtro SVG (ui.js, Cristal.mapaDeLente). Va FUERA de la barra, en <body> y encima de ella: asi su
+   backdrop-filter ve la barra ya pintada, con sus iconos y palabras, y los dobla de verdad. (Dentro de la barra
+   no se puede: alli solo veia las letras sueltas y les ponia una copia torcida encima.)
+   Solo en navegadores Chromium; en Safari y Firefox se levanta la gota sin doblez de la seccion 88. */
+.lente-lupa {
+    position: fixed;
+    left: 0; top: 0;
+    z-index: 101;                   /* sobre la isla (100) y la barra de abajo (95); bajo los menus y ventanas */
+    pointer-events: none;
+    border-radius: 999px;
+    transform-origin: 50% 50%;
+    will-change: transform, opacity;
+    opacity: 0;
+    transition: opacity .2s var(--ease-out);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .04) 55%, rgba(255, 255, 255, .09));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .38),
+        inset 0 -1px 0 rgba(255, 255, 255, .14),
+        0 0 0 1px rgba(2, 10, 24, .26),
+        0 10px 22px -8px rgba(2, 10, 24, .5);
+    -webkit-backdrop-filter: var(--refraccion) brightness(1.14) saturate(112%);
+            backdrop-filter: var(--refraccion) brightness(1.14) saturate(112%);
+}
+.lente-lupa.visible { opacity: 1; transition-duration: .1s; }
+.lente-lupa.sin-fundido { transition: none; }
+.lente-lupa .lente-filo { opacity: .55; }
+.lente-lupa .lente-brillo { opacity: .3; }
+/* Sobre vidrio claro: cristal blanco (poco cuerpo: va encima de la palabra y mas blanco la deslavaba), con la
+   sombra azul marino */
+.lente-lupa.en-claro {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .05) 55%, rgba(255, 255, 255, .14));
+    box-shadow: inset 0 1px 0 #FFFFFF, 0 0 0 1px rgba(8, 32, 60, .07), 0 10px 22px -8px rgba(8, 32, 60, .34);
+    -webkit-backdrop-filter: var(--refraccion) brightness(1.03);
+            backdrop-filter: var(--refraccion) brightness(1.03);
+}
+.lente-lupa.en-claro .lente-filo { opacity: .9; }
+/* Con la lupa, la gota de la seccion 88 no se muestra (serian dos cristales) */
+.lente.con-lupa.levantado .lente-cristal { opacity: .001; }
+
+/* La barra de abajo crece mientras se tiene agarrada la burbuja. Solo donde la barra NO refracta (Safari y
+   Firefox, o sea el iPhone): con el filtro SVG, al agrandarla el mapa del doblez deja de calzar con su borde y
+   salia una raya curva en cada punta (visto en las fotos). En Chromium la barra se queda de su tamano */
+@media (prefers-reduced-motion: no-preference) {
+    :root body > .tabbar {
+        transition:
+            translate .3s cubic-bezier(.32, .72, 0, 1),
+            scale .3s cubic-bezier(.34, 1.4, .64, 1),
+            background-color .25s var(--ease-out),
+            border-color .25s var(--ease-out);
+    }
+    :root body > .tabbar.lente-agarrado:not(.con-refraccion) { scale: 1.035; }
+}
+@media (prefers-reduced-transparency: reduce) { .lente-lupa { display: none; } }
+@media print { .lente-lupa { display: none; } }
+
+/* ---------- 90. Los dos caminos son contratos (pedidos de Luis 2026-11-15) ----------
+   Las tarjetas "Si buscas trabajo" y "Si eres empresa" del cierre de la portada son dos contratos de hoy: una hoja
+   blanca con la franja de la marca arriba, los puntos como clausulas, la firma a pluma en tinta azul y un sello de
+   caucho de SkillMatch. index.js (DIPLOMAS) les pone las piezas y, al llegar a la pantalla, el contrato se
+   desenrolla (un rollo de papel baja y luego desaparece), se firma y se sella (una sola vez; con "reducir
+   movimiento" ya estan firmados, sin rollo).
+   Solo con .diploma (la pone index.js): sin JavaScript quedan las tarjetas de vidrio de siempre.
+   Historia: primero fueron diplomas de pergamino con rollos, despues antiguos, despues blancos; Luis los quiso
+   "como un contrato actual, mas profesional", conservando la firma.
+   Contraste medido con pixeles: ver docs/CAMBIOS, cambio #50. */
+.cta-final .pathways { max-width: 1040px; column-gap: 56px; row-gap: var(--s7); }   /* los dos, separados (56 px) */
+.cta-final .pathways .pathway-card.diploma {
+    position: relative;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    color: #12365E;
+}
+/* La sombra de la hoja sobre la franja: pieza aparte, para que crezca con la hoja cuando se desenrolla.
+   Mas marcada (pedido de Luis): una sombra grande y suave, una de contacto cerca del papel y, debajo de las dos
+   esquinas de abajo, dos sombras inclinadas, como una hoja con las puntas apenas levantadas */
+.diploma-sombra {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: 6px;
+    transform-origin: 50% 0;
+    box-shadow:
+        0 38px 60px -8px rgba(0, 0, 0, .95),
+        0 16px 28px -6px rgba(0, 0, 0, .7),
+        0 3px 8px rgba(0, 0, 0, .5);
+    pointer-events: none;
+}
+.diploma-sombra::before,
+.diploma-sombra::after {
+    content: "";
+    position: absolute;
+    bottom: 16px;
+    z-index: -1;
+    width: 48%;
+    height: 24%;
+    box-shadow: 0 24px 26px rgba(0, 0, 0, .9);
+}
+.diploma-sombra::before { left: 10px; transform: rotate(-4.5deg); transform-origin: 0 100%; }
+.diploma-sombra::after { right: 10px; transform: rotate(4.5deg); transform-origin: 100% 100%; }
+
+/* El rollo de papel blanco: solo se ve mientras el contrato se desenrolla (index.js lo anima; quieto no se ve).
+   Un cilindro claro, un poco mas ancho que la hoja, con la espiral del papel en las puntas */
+.diploma-rollo {
+    position: absolute;
+    left: -7px;
+    right: -7px;
+    bottom: -11px;
+    z-index: 2;
+    height: 22px;
+    border-radius: 9px;
+    background: linear-gradient(180deg, #A9AFB2 0%, #E4E7E7 22%, #FFFFFF 40%, #F1F2F1 58%, #C8CDCF 82%, #9CA3A7 100%);
+    box-shadow: 0 -8px 12px -8px rgba(40, 44, 50, .3), 0 9px 14px -7px rgba(0, 0, 0, .65), inset 0 0 0 1px rgba(40, 44, 50, .12);
+    opacity: 0;
+    pointer-events: none;
+}
+.diploma-rollo::before,
+.diploma-rollo::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 9px;
+    border-radius: 50%;
+    /* La espiral del papel: anillos hechos con bordes interiores (lo mas barato de dibujar: con un degradado repetido
+       el primer cuadro del desenrollado tardaba ~60 ms y con un dibujo SVG ~53 ms, medido) */
+    background: #F4F5F4;
+    box-shadow:
+        inset 0 0 0 1px rgba(40, 44, 50, .28),
+        inset 0 0 0 2.4px #F4F5F4,
+        inset 0 0 0 3.4px #B4BBBF,
+        inset 0 0 0 4.8px #F4F5F4,
+        inset 0 0 0 5.8px #B4BBBF;
+}
+.diploma-rollo::before { left: -2px; }
+.diploma-rollo::after { right: -2px; }
+/* La ventana por la que se ve la hoja mientras sale (index.js la mueve con su contenido al reves) */
+.diploma-papel {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 6px;
+}
+/* La hoja: blanca, con la franja de la marca arriba (azul marino a turquesa) */
+.diploma-hoja {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 34px 36px 30px;
+    background: #FFFFFF;
+    border-top: 5px solid #0B7E8C;
+    border-image: linear-gradient(90deg, #0E2A47, #0B7E8C 70%, #5FD0DC) 1;
+}
+/* Los puntos son clausulas: separados por una raya fina, como en un contrato. Colores fijos (no los --ink del
+   tema): la hoja es blanca tambien en tema oscuro */
+.cta-final .pathway-card.diploma .pathway-header { padding-bottom: var(--s4); border-bottom: 1px solid #E3E8EE; }
+.cta-final .pathway-card.diploma .pathway-features { margin: var(--s2) 0 var(--s5); }
+.cta-final .pathway-card.diploma .pathway-features li { padding: 10px 0; border-bottom: 1px solid #EEF1F5; color: #12365E; }
+.cta-final .pathway-card.diploma h3 { color: #08203C; }
+.cta-final .pathway-card.diploma .pathway-header p { color: #3A5A80; }
+.cta-final .pathway-card.diploma .pathway-features .ico { color: #096670; }
+.cta-final .pathway-card.diploma .pathway-icon { background: #EAF6F7; color: #096670; box-shadow: none; }
+.cta-final .pathway-card.diploma .btn { align-self: flex-start; }
+/* "Publicar mis vacantes": el boton de contorno, en azul marino */
+.cta-final .pathway-card.diploma .btn-secondary {
+    color: #08203C;
+    background: transparent;
+    border: 1.5px solid rgba(8, 32, 60, .3);
+    box-shadow: none;
+}
+@media (hover: hover) and (pointer: fine) {
+    .cta-final .pathway-card.diploma .btn-secondary:hover { color: #08203C; background: rgba(8, 32, 60, .05); border-color: rgba(8, 32, 60, .5); }
+}
+
+/* Mientras espera su turno (index.js), la hoja ya esta dibujada pero no se ve (opacidad .001, no 0) y cada pieza
+   que se va a mover tiene su propia capa: asi el primer cuadro no tiene que dibujar la hoja (medido: 62 ms sin
+   esto, ningun cuadro lento con esto). No se puede tocar mientras no se ve. Al terminar, index.js le quita
+   .diploma-capas */
+.cta-final .pathways .pathway-card.diploma.cons-espera { opacity: .001; pointer-events: none; }
+.diploma-capas :is(.diploma-papel, .diploma-hoja, .diploma-sombra, .diploma-sello, .diploma-rollo) { will-change: transform; }
+
+/* El pie: la firma sobre su linea y quien firma */
+.diploma-pie {
+    display: flex;
+    align-items: flex-end;
+    margin-top: auto;
+    padding-top: var(--s5);
+    padding-right: 104px;              /* el sello va en la esquina de abajo a la derecha */
+}
+.diploma-firma { display: grid; justify-items: start; width: min(220px, 100%); }
+.diploma-firma svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: -6px;               /* el rasgo de abajo roza la linea, como una firma de verdad */
+    overflow: visible;
+}
+.diploma-firma path {
+    fill: none;
+    stroke: #1F3F8F;                   /* tinta azul de esfero de firmar */
+    stroke-width: 22;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.diploma-linea { display: block; width: 100%; height: 0; border-top: 1px solid #9AA8B8; }
+.diploma-lugar { margin-top: 6px; font-size: 12.5px; color: #3A5A80; }
+
+/* El sello de caucho: abajo a la derecha, un poco girado y en tinta (se mezcla con el papel, como tinta) */
+.diploma-sello {
+    position: absolute;
+    right: 26px;
+    bottom: 22px;
+    z-index: 3;
+    width: 96px;
+    height: 96px;
+    pointer-events: none;
+}
+.diploma-sello svg { display: block; width: 100%; height: 100%; overflow: visible; transform: rotate(-12deg); mix-blend-mode: multiply; opacity: .9; }
+/* La onda del golpe al estampar (index.js la anima; quieta no se ve) */
+.diploma-sello-onda {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(11, 126, 140, .45);
+    opacity: 0;
+}
+
+/* Celular: la hoja con menos margen y el sello mas pequeno */
+@media (max-width: 760px) {
+    .diploma-hoja { padding: 28px 22px 24px; }
+    .diploma-pie { padding-right: 84px; }
+    .diploma-firma { width: min(180px, 100%); }
+    .diploma-sello { right: 16px; bottom: 18px; width: 78px; height: 78px; }
+}
+@media (forced-colors: active) {
+    .diploma-hoja { border: 1px solid CanvasText; }
+    .diploma-sello, .diploma-sombra, .diploma-rollo { display: none; }
+}
+@media print {
+    .diploma-sombra, .diploma-sello-onda, .diploma-rollo { display: none; }
+}
+
+/* ---------- 91. Lo que no se ve no se recalcula (revision de fluidez, 2026-11-15) ----------
+   Al cambiar de tema el navegador recalcula los estilos de TODA la pagina; en un celular eso congelaba la
+   pantalla 250 a 400 ms (medido con el procesador 4 veces mas lento, como un telefono de gama media).
+   content-visibility: auto le dice que las secciones y tarjetas que estan fuera de la pantalla no se dibujan ni
+   se recalculan hasta que llegan: medido, el peor cuadro del cambio de tema bajo entre 25 y 40 %.
+   contain-intrinsic-block-size es el alto que se les reserva antes de dibujarlas (medido en cada tamano, para que la
+   barra de desplazamiento no salte); "auto" hace que despues recuerde su alto real. Solo el ALTO: con
+   contain-intrinsic-size (alto y ancho) una tarjeta sin dibujar pedia 440 px de ancho y en un celular de 390 px la
+   pagina se corria hacia los lados. */
+:is(.search-section, .cerca-section, .como-funciona, .cta-final),
+body > footer {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 900px;
+}
+.search-section { contain-intrinsic-block-size: auto 330px; }
+.cta-final { contain-intrinsic-block-size: auto 890px; }
+body > footer { contain-intrinsic-block-size: auto 600px; }
+:is(.opportunity-card, .connection-card, .suggestion-card) {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 290px;
+}
+@media (max-width: 760px) {
+    .search-section { contain-intrinsic-block-size: auto 580px; }
+    .cerca-section { contain-intrinsic-block-size: auto 1950px; }
+    .como-funciona { contain-intrinsic-block-size: auto 1190px; }
+    .cta-final { contain-intrinsic-block-size: auto 1430px; }
+    body > footer { contain-intrinsic-block-size: auto 900px; }
+    :is(.opportunity-card, .connection-card, .suggestion-card) { contain-intrinsic-block-size: auto 440px; }
+}
+/* Al imprimir se dibuja todo */
+@media print {
+    :is(.search-section, .cerca-section, .como-funciona, .cta-final, .opportunity-card, .connection-card, .suggestion-card),
+    body > footer { content-visibility: visible; }
 }
 
 /* =====================================================================
