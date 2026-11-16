@@ -275,7 +275,7 @@ function displayConversations(conversationsList, numArchivadas = 0, archivadas =
 
         return `
             <div class="conversation-item ${unreadClass}${activa}" data-user-id="${escaparHtml(conv.otherUserId)}">
-                <div class="conversation-avatar" aria-hidden="true" data-monograma="${escaparHtml(conv.otherUserName || '')}">${conv.otherUserName ? escaparHtml(conv.otherUserName.charAt(0)) : '<i data-ico="user"></i>'}</div>
+                <div class="conversation-avatar" aria-hidden="true" data-monograma="${escaparHtml(conv.otherUserName || '')}"${conv.otherUserId ? ` data-logo-cuenta="${escaparHtml(String(conv.otherUserId))}"` : ''}>${conv.otherUserName ? escaparHtml(conv.otherUserName.charAt(0)) : '<i data-ico="user"></i>'}</div>
                 <div class="conversation-info">
                     <div class="conversation-header">
                         <h2><button type="button" class="conv-abrir"${activa ? ' aria-current="true"' : ''}${isUnread ? ` aria-describedby="sinLeer${i}"` : ''}>${nombre}</button></h2>
@@ -341,10 +341,9 @@ async function pintarCabecera(userId) {
     const poner = (nombre, titular) => {
         if (String(userId) !== String(currentConversationUserId)) return;
         nombreEl.textContent = nombre || 'Usuario';
-        avatarEl.textContent = (nombre || '?').charAt(0).toUpperCase();
-        // «Monograma»: el de esta persona (el mismo que en la lista de conversaciones)
-        avatarEl.dataset.monograma = nombre || '';
-        if (window.SkillMatchUI && SkillMatchUI.monograma) SkillMatchUI.monograma(avatarEl);
+        // Su inicial con su «Monograma» (el mismo que en la lista de conversaciones) y, si tiene, su foto de perfil
+        if (window.SkillMatchUI && SkillMatchUI.fotoDeCuenta) SkillMatchUI.fotoDeCuenta(avatarEl, userId, nombre);
+        else avatarEl.textContent = (nombre || '?').charAt(0).toUpperCase();
         titularEl.textContent = titular || '';
     };
     poner(conv ? conv.otherUserName : 'Cargando…', '');
@@ -874,7 +873,7 @@ function pintarPersonas(texto) {
     lista.innerHTML = filtradas.map(p => `
         <li>
             <button type="button" class="persona" data-id="${escaparHtml(p.id)}">
-                <span class="connection-avatar-circle" data-monograma="${escaparHtml(p.nombre)}">${escaparHtml(p.nombre.charAt(0).toUpperCase())}</span>
+                <span class="connection-avatar-circle" data-monograma="${escaparHtml(p.nombre)}" data-logo-cuenta="${escaparHtml(String(p.id))}">${escaparHtml(p.nombre.charAt(0).toUpperCase())}</span>
                 <span class="persona-texto">
                     <strong>${escaparHtml(p.nombre)}</strong>
                     ${p.titular ? `<small>${escaparHtml(p.titular)}</small>` : ''}
