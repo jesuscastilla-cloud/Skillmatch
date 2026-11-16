@@ -55,13 +55,18 @@ test('lee la hoja de vida, propone y no guarda nada sin confirmar', async ({ pag
     await expect(telefono).toContainText('Ahora en tu perfil: «3000000001»');
     await expect(v.locator('[data-dato="location"] [data-valor]')).toHaveValue('Turbaco');
 
-    // Las habilidades nuevas, marcadas; la que ya tiene no se repite
-    const chips = v.locator('[data-habilidad]');
+    // Las habilidades nuevas, marcadas y con su nombre limpio; el nivel va aparte
+    // ("Excel básico" -> Excel, Básico; "Inglés - B1" -> Inglés, Intermedio). La que ya tiene no se repite
+    const chips = v.locator('.lector-chips:not([data-mencionadas]) [data-habilidad]');
     await expect(chips).toHaveCount(4);
-    for (const nombre of ['Manejo de caja', 'Excel básico', 'Trabajo en equipo', 'Inglés B1']) {
+    for (const nombre of ['Manejo de caja', 'Excel', 'Trabajo en equipo', 'Inglés']) {
         await expect(v.locator(`[data-habilidad="${nombre}"]`)).toBeChecked();
     }
+    await expect(v.locator('[data-habilidad="Excel"]')).toHaveAttribute('data-nivel-propio', 'BASICO');
+    await expect(v.locator('[data-habilidad="Inglés"]')).toHaveAttribute('data-nivel-propio', 'INTERMEDIO');
     await expect(v).toContainText('Ya tienes Atención al cliente: no se repiten.');
+    // "Atención de mesas" en su experiencia: se ofrece aparte y sin marcar
+    await expect(v.locator('[data-mencionadas] [data-habilidad="Servicio de mesa"]')).not.toBeChecked();
 
     // Estudios completos, marcados
     const estudios = v.locator('[data-estudio]');
@@ -86,8 +91,10 @@ test('lee la hoja de vida, propone y no guarda nada sin confirmar', async ({ pag
     await v.locator('[data-agregar]').click();
     await expect(page.locator('.toast').last()).toContainText('Listo: agregamos 4 habilidades, 2 estudios y 1 experiencia a tu perfil.');
     const yo = api.estado.datos.usuarios.find(u => u.id === 'u-valentina');
-    expect(yo.skills.map(s => s.name)).toEqual(expect.arrayContaining(['Manejo de caja', 'Excel básico', 'Trabajo en equipo', 'Inglés B1']));
-    expect(yo.skills.find(s => s.name === 'Excel básico').level).toBe('INTERMEDIO');
+    expect(yo.skills.map(s => s.name)).toEqual(expect.arrayContaining(['Manejo de caja', 'Excel', 'Trabajo en equipo', 'Inglés']));
+    // El nivel de la hoja de vida se respeta; las que no lo dicen llevan el elegido (Intermedio)
+    expect(yo.skills.find(s => s.name === 'Excel').level).toBe('BASICO');
+    expect(yo.skills.find(s => s.name === 'Trabajo en equipo').level).toBe('INTERMEDIO');
     expect(yo.educations.map(e => e.school)).toEqual(['SENA', 'Colegio Santa María']);
     expect(yo.experiences).toEqual([expect.objectContaining({ position: 'Mesera', startDate: '2021-01-01', isCurrent: true, endDate: null })]);
     expect(yo.phone, 'el teléfono no se marcó: no cambia').toBe('3000000001');
@@ -140,6 +147,36 @@ test('una columna con las fechas a la derecha no se confunde con dos columnas', 
     await expect(empleos.nth(1).locator('[data-campo="position"]')).toHaveValue('Cajera');
     await expect(empleos.nth(1).locator('[data-campo="company"]')).toHaveValue('Supermercado Olímpica');
     await expect(empleos.nth(1).locator('[data-campo="description"]')).toHaveValue(/^Manejo de caja registradora/);
+});
+
+test('solo propone marcado lo que de verdad es una habilidad', async ({ page, api }) => {
+    await page.goto('perfil-usuario.html');
+    await subir(page, hacerPdf(columna([
+        { texto: 'Valentina Herrera', tam: 20, negrita: true },
+        titulo('HABILIDADES'),
+        'Habilidades blandas: liderazgo, comunicación asertiva, trabajo bajo presión',
+        'Técnicas: Microsoft Excel (Avanzado), Manejo de Opera PMS',
+        'Photoshop 3/5',
+        'Responsable, puntual, honesta y proactiva',
+        'Buena presentación personal',
+        'Repostería fina',
+        'Cartagena, Bolívar'
+    ])));
+    const v = ventana(page);
+    const marcadas = v.locator('[data-habilidad]:checked');
+    await expect(marcadas).toHaveCount(6);
+    for (const nombre of ['Liderazgo', 'Comunicación asertiva', 'Trabajo bajo presión', 'Excel', 'Opera PMS', 'Photoshop']) {
+        await expect(v.locator(`[data-habilidad="${nombre}"]`)).toBeChecked();
+    }
+    await expect(v.locator('[data-habilidad="Excel"]')).toHaveAttribute('data-nivel-propio', 'AVANZADO');
+    await expect(v.locator('[data-habilidad="Photoshop"]')).toHaveAttribute('data-nivel-propio', 'INTERMEDIO');
+    // Lo que no reconoce: sin marcar y con "Revisa"
+    await expect(v.locator('[data-habilidad="Repostería fina"]')).not.toBeChecked();
+    await expect(v.locator('.lector-chip.revisa')).toHaveCount(1);
+    // Ni rotulos, ni la ciudad, ni cualidades como habilidad; las cualidades se nombran
+    await expect(v.locator('[data-habilidad]')).toHaveCount(7);
+    await expect(v.locator('[data-cualidades]')).toContainText('«Responsable», «Puntual», «Honesta», «Proactiva» y «Buena presentación personal»: son cualidades tuyas');
+    await expect(v).toContainText('Nivel para las que no lo dicen');
 });
 
 test('si el PDF parece de otra persona, lo dice', async ({ page, api }) => {

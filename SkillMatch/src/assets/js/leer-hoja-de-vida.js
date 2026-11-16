@@ -183,23 +183,289 @@
         .replace(/\(\s*\)/g, ' ').replace(/\s*(?:-|–|—|\/|\bal?\b|\bhasta\b)\s*(?=$|\|)/gi, ' ')
         .replace(/^[\s|,\-–—:]+|[\s|,\-–—:]+$/g, '').replace(/\s+/g, ' ').trim();
 
-    // Habilidades: separadas por vinetas, comas, punto y coma o barras. Una
-    // frase larga no es una habilidad: se deja fuera.
-    function habilidadesDe(lineas, esIdioma) {
-        const salida = [];
-        lineas.forEach(l => {
-            const partes = esIdioma ? [l.texto] : l.texto.split(/\s*(?:[•·●▪■◦➢➤✓✔|;,]|\s[-–]\s)\s*/);
-            partes.forEach(p => {
-                let s = p.replace(/^[\s\-–*\d.)•·]+/, '').replace(/[.:]+$/, '').trim();
-                if (esIdioma) s = s.replace(/\s*[:\-–(),]+\s*/g, ' ').replace(/\s+/g, ' ').trim();
-                if (s.length < 2 || /^\d+$/.test(s)) return;
-                const palabras = s.split(/\s+/).length;
-                if (s.length > 50 || palabras > 6) return;
-                salida.push({ nombre: s.slice(0, MAXIMO_HABILIDAD), revisa: palabras > 4 || s.length > MAXIMO_HABILIDAD });
+    /* ---------- Habilidades: solo lo que de verdad es una habilidad ---------- */
+    //
+    // Revision 2026-11-15 (Luis: "coge cosas que no son habilidades"). Antes, todo lo
+    // que estaba bajo "Habilidades" separado por comas se proponia marcado: entraban
+    // rotulos ("Habilidades blandas: liderazgo"), cualidades ("Puntual"), la ciudad,
+    // los puntos de nivel ("○○") y el nivel pegado al nombre ("Excel básico").
+    // Ahora cada pedazo pasa por estos filtros, en orden:
+    //  1. Se le quita el nivel ("Excel (Avanzado)", "Inglés B1", "AutoCAD 80%", "●●●○○")
+    //     y se guarda aparte, para usarlo como nivel de esa habilidad.
+    //  2. Si esta en el catalogo, se propone con su nombre de siempre y MARCADA
+    //     ("Microsoft Excel", "Manejo de Excel" -> "Excel").
+    //  3. Si es ruido (correo, telefono, ciudad, fecha, un rotulo), se descarta.
+    //  4. Si es una cualidad ("Responsable", "Buena presentación personal"), no se
+    //     propone: se avisa que va mejor en "Acerca de ti".
+    //  5. Si es una frase larga, se buscan dentro las habilidades del catalogo
+    //     ("Control de versiones con Git y GitHub" -> Git, GitHub).
+    //  6. Lo corto que no se reconoce se muestra SIN MARCAR y con "Revisa".
+    // Ademas, las habilidades del catalogo que aparecen en la experiencia, los cursos
+    // o el perfil se ofrecen aparte, sin marcar: hay evidencia, pero decide la persona.
+
+    // Catalogo: 'Nombre como se guarda|otra forma|otra forma' (las otras formas en
+    // minusculas y sin tildes). Las de HERRAMIENTAS tienen nombres que no se
+    // confunden con palabras comunes: se buscan tambien dentro de frases.
+    const HERRAMIENTAS = [
+        'Excel|microsoft excel|ms excel|excel avanzado', 'Word|microsoft word|ms word', 'PowerPoint|power point|microsoft powerpoint',
+        'Outlook|microsoft outlook', 'Office|microsoft office|ms office|paquete office|paquete de office|ofimatica|herramientas ofimaticas|office 365|microsoft 365',
+        'Google Workspace|g suite|gsuite|google drive|google docs|google sheets', 'Macros en Excel|macros|vba|excel vba', 'Power BI|powerbi', 'Tableau',
+        'Photoshop|adobe photoshop', 'Illustrator|adobe illustrator', 'InDesign|adobe indesign', 'Premiere|adobe premiere|premiere pro',
+        'After Effects|adobe after effects', 'Lightroom|adobe lightroom', 'Canva', 'Figma', 'CorelDRAW|corel draw|coreldraw|corel',
+        'AutoCAD|autocad 2d|autocad 3d', 'Revit', 'SketchUp|sketch up', 'SAP', 'Siigo', 'World Office', 'Helisa', 'Opera PMS|opera pms',
+        'Python', 'Java', 'JavaScript|js|java script', 'TypeScript|ts', 'HTML|html5', 'CSS|css3', 'React|react.js|reactjs', 'Angular',
+        'Vue.js|vue|vuejs', 'Node.js|node|nodejs', 'Spring Boot|springboot|spring', 'Django', 'Flask', 'PHP', 'Laravel', 'C#|c sharp',
+        '.NET|dotnet|.net core|asp.net', 'Kotlin', 'Swift', 'Flutter', 'Dart', 'C++|cpp', 'SQL', 'MySQL', 'PostgreSQL|postgres|postgre sql',
+        'SQL Server|sql server|microsoft sql server', 'MongoDB|mongo|mongo db', 'Oracle|oracle database', 'Firebase', 'Git', 'GitHub|git hub',
+        'GitLab', 'Docker', 'Kubernetes|k8s', 'AWS|amazon web services', 'Azure|microsoft azure', 'GCP|google cloud', 'Linux', 'Scrum', 'Jira',
+        'WordPress|word press', 'Shopify', 'Android|android studio', 'Bootstrap', 'Tailwind CSS|tailwind', 'jQuery', 'Sass|scss',
+        'REST API|api rest|apis rest|restful|servicios rest', 'GraphQL', 'CI/CD|ci cd', 'TDD'
+    ];
+    const OFICIOS = [
+        'Atención al cliente|servicio al cliente|atencion y servicio al cliente|servicio y atencion al cliente|atencion a clientes|atencion al publico|servicio al publico',
+        'Ventas|venta|tecnicas de venta|tecnicas de ventas|asesoria comercial', 'Manejo de caja|caja|caja registradora|manejo de caja registradora|cuadre de caja',
+        'Trabajo en equipo|trabajar en equipo|capacidad de trabajo en equipo|capacidad para trabajar en equipo|trabajo colaborativo',
+        'Comunicación|comunicacion efectiva|buena comunicacion|habilidades comunicativas|comunicacion oral y escrita', 'Comunicación asertiva',
+        'Liderazgo', 'Trabajo bajo presión|trabajar bajo presion|manejo de la presion|tolerancia a la presion',
+        'Resolución de problemas|solucion de problemas|resolver problemas|solucionar problemas', 'Resolución de conflictos|manejo de conflictos|solucion de conflictos',
+        'Toma de decisiones|tomar decisiones', 'Negociación', 'Pensamiento crítico', 'Pensamiento analítico|capacidad analitica|analisis de datos',
+        'Creatividad', 'Adaptabilidad|adaptacion al cambio|capacidad de adaptacion|flexibilidad', 'Gestión del tiempo|manejo del tiempo|administracion del tiempo',
+        'Organización y planeación|organizacion|planificacion|planeacion|organizacion y planificacion', 'Aprendizaje rápido|facilidad de aprendizaje|capacidad de aprendizaje',
+        'Atención al detalle|atencion a los detalles', 'Empatía',
+        'Servicio de mesa|servicio a la mesa|atencion de mesas', 'Cocina|cocina nacional', 'Cocina internacional', 'Repostería|pasteleria|reposteria y pasteleria',
+        'Panadería', 'Coctelería', 'Bartender|bartending', 'Barismo|barista', 'Manipulación de alimentos|curso de manipulacion de alimentos|buenas practicas de manufactura|bpm',
+        'Recepción', 'Recepción hotelera', 'Reservas|manejo de reservas|reservaciones', 'Check-in y check-out|check in|check-in|check out|check-out|check in y check out',
+        'Housekeeping|camareria', 'Hotelería', 'Turismo', 'Guía turístico|guianza turistica|guia turistica|guianza',
+        'Facturación|facturacion electronica', 'Contabilidad', 'Archivo|gestion documental|manejo de archivo|archivo y correspondencia', 'Nómina|liquidacion de nomina',
+        'Cartera|cobranza|gestion de cartera', 'Bodega e inventarios|inventarios|inventario|control de inventarios|manejo de inventarios|bodega|almacen|almacenamiento',
+        'Logística', 'Compras', 'Call center|contact center|telemercadeo', 'Mercadeo|marketing', 'Marketing digital|mercadeo digital',
+        'Redes sociales|manejo de redes sociales|gestion de redes sociales|community manager', 'Diseño gráfico', 'Fotografía', 'Edición de video|edicion de videos',
+        'Gestión de proyectos|administracion de proyectos', 'Recursos humanos|talento humano|seleccion de personal', 'Comercio exterior|comercio internacional',
+        'Operaciones portuarias|operacion portuaria', 'Conducción|manejo de vehiculos', 'Montacargas|operacion de montacargas|manejo de montacargas',
+        'Electricidad|instalaciones electricas|electricidad residencial', 'Soldadura|soldadura mig|soldadura tig', 'Construcción|obra civil',
+        'Mantenimiento|mantenimiento preventivo|mantenimiento correctivo|mantenimiento preventivo y correctivo', 'Plomería', 'Carpintería',
+        'Refrigeración|aire acondicionado|refrigeracion y aire acondicionado', 'Mecánica automotriz', 'Seguridad y salud en el trabajo|sst|sg-sst|sg sst|seguridad industrial|hseq',
+        'Trabajo en alturas|curso de alturas|curso de trabajo en alturas', 'Primeros auxilios', 'Enfermería', 'Aseo y limpieza|servicios generales|limpieza|aseo',
+        'Vigilancia|seguridad privada', 'Peluquería', 'Manicure|manicura', 'Maquillaje'
+    ].concat(['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3'].map(c => {
+        const k = c.toLowerCase();
+        return 'Licencia de conducción ' + c + '|licencia ' + k + '|licencia de conduccion ' + k + '|pase ' + k + '|licencia de conduccion categoria ' + k + '|licencia categoria ' + k;
+    }));
+    const IDIOMAS = ['Inglés|english', 'Francés', 'Portugués', 'Italiano', 'Alemán', 'Español|castellano', 'Mandarín|chino mandarin|chino'];
+
+    const CATALOGO = new Map();      // forma plana -> { nombre, enTexto, idioma }
+    [[HERRAMIENTAS, true], [OFICIOS, false], [IDIOMAS, false]].forEach(([grupo, herramienta]) => grupo.forEach(fila => {
+        const [nombre, ...otras] = fila.split('|');
+        [plano(nombre)].concat(otras).forEach(forma => {
+            if (!CATALOGO.has(forma)) CATALOGO.set(forma, { nombre, idioma: grupo === IDIOMAS,
+                // Dentro de una frase: las herramientas, y las formas de dos o mas palabras ("manejo de caja")
+                enTexto: forma.length >= 3 && (herramienta || forma.includes(' ')) });
+        });
+    }));
+    // Las formas largas primero: "sql server" antes que "sql"
+    const FORMAS = [...CATALOGO.keys()].sort((a, b) => b.length - a.length);
+    const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const BUSCADORES = new Map(FORMAS.map(f => [f, new RegExp('(^|[^a-z0-9+#.])' + escRe(f) + '(?=$|[^a-z0-9+#])', 'g')]));
+
+    // Cualidades: dicen como es la persona, no lo que sabe hacer. Una empresa no las
+    // busca como habilidad; van mejor en "Acerca de ti".
+    const CUALIDAD = /^(persona |muy |soy )?(responsable|puntual|honest[oa]|proactiv[oa]|dinamic[oa]|organizad[oa]|ordenad[oa]|respetuos[oa]|amable|carismatic[oa]|comprometid[oa]|disciplinad[oa]|leal|sociable|paciente|perseverante|persistente|trabajador(a)?|emprendedor(a)?|creativ[oa]|colaborador(a)?|cordial|atent[oa]|servicial|recursiv[oa]|optimista|positiv[oa]|alegre|extrovertid[oa]|eficiente|eficaz|confiable|autodidacta|humilde|tolerante|amigable|educad[oa]|etica|responsabilidad|puntualidad|honestidad|respeto|compromiso|lealtad|disciplina|etica profesional|sentido de pertenencia|proactividad|iniciativa|motivacion|vocacion de servicio|(buena |excelente )?actitud( positiva| de servicio)?|(buena |excelente )?presentacion( personal)?|disponibilidad\b.*|ganas de aprender|deseos de superacion)$/;
+    // Rotulos que agrupan habilidades ("Blandas:", "Lenguajes:"): no son habilidades
+    const ROTULO = /^(habilidades|competencias|conocimientos|destrezas|aptitudes|herramientas|otras|otros|blandas|duras|tecnicas|personales|profesionales|interpersonales|informaticas|tecnologicas|digitales|software|programas|lenguajes( de programacion)?|frameworks|librerias|bases de datos|plataformas|ofimatica|idiomas|nivel|tecnologias)( (blandas|duras|tecnicas|personales|profesionales|informaticas|tecnologicas|digitales|de programacion|y destrezas|y competencias|laborales))*$/;
+    const DEPARTAMENTOS = /^(bolivar|atlantico|sucre|cordoba|magdalena|cesar|la guajira|antioquia|valle( del cauca)?|santander|cundinamarca|colombia)$/;
+    // Lo que se le quita adelante a una habilidad: "Manejo de", "Conocimientos en"...
+    const RELLENO = /^(manejo|dominio|uso|conocimientos?( basicos| avanzados)?|nociones|experiencia|habilidad(es)?|capacidad|curso|operacion|herramientas?|programa|software|plataforma|buen|buena|excelente)( (de(l| la| las| los)?|en|para|con|sobre))? /;
+
+    // Niveles, de la forma en que los escriben las hojas de vida
+    const NIVEL_PALABRA = [
+        [/^(basic[oa]|elemental|principiante|baj[oa]|a1|a2)$/, 'BASICO'],
+        [/^(intermedi[oa]|medi[oa]|conversacional|b1|b2)$/, 'INTERMEDIO'],
+        [/^(avanzad[oa]|alt[oa]|superior|c1)$/, 'AVANZADO'],
+        [/^(expert[oa]|nativ[oa]|lengua materna|bilingue|c2)$/, 'EXPERTO']
+    ];
+    const nivelDePalabra = p => { const n = NIVEL_PALABRA.find(([re]) => re.test(p)); return n ? n[1] : ''; };
+    const nivelDeFraccion = f => (f <= 0.4 ? 'BASICO' : f <= 0.6 ? 'INTERMEDIO' : f <= 0.85 ? 'AVANZADO' : 'EXPERTO');
+    // Palabras de nivel que se pueden quitar del final o de un parentesis. "Alto", "medio" y
+    // "bajo" solo con "nivel" delante o entre parentesis: "Trabajo bajo presión" no tiene nivel.
+    const NIVEL_FUERTE = 'b[aá]sic[oa]|intermedi[oa]|avanzad[oa]|expert[oa]|nativ[oa]|biling[uü]e|elemental|principiante|conversacional|lengua materna';
+    const NIVEL_DEBIL = 'alt[oa]|medi[oa]|baj[oa]|superior';
+    const CEFR = /(?:^|[\s(,:-])([abc][12])(?=$|[\s),.])/i;
+
+    /** Separa el nivel del nombre: "Excel (Avanzado)" -> { texto: "Excel", nivel: "AVANZADO" } */
+    function quitarNivel(texto) {
+        let t = ' ' + texto + ' ';
+        let nivel = '';
+        const tomar = n => { if (n && !nivel) nivel = n; return ' '; };
+        // Puntos o estrellas: "●●●○○" (los convierte antes partirRenglon) o "4/5"
+        t = t.replace(/\(?\s*nivel (\d+)\/(\d+)\s*\)?/gi, (x, a, b) => tomar(nivelDeFraccion(a / b)));
+        t = t.replace(/\(?\s*(\d)\s*\/\s*(5|10)\s*\)?/g, (x, a, b) => tomar(nivelDeFraccion(a / b)));
+        t = t.replace(/\(?\s*(\d{1,3})\s*%\s*\)?/g, (x, n) => tomar(nivelDeFraccion(Math.min(100, n) / 100)));
+        // Entre parentesis: "(Avanzado)", "(nivel medio)"
+        t = t.replace(new RegExp('\\(\\s*(?:nivel\\s+)?(' + NIVEL_FUERTE + '|' + NIVEL_DEBIL + ')\\s*\\)', 'gi'), (x, p) => tomar(nivelDePalabra(plano(p))));
+        // Con "nivel" delante: "nivel alto"
+        t = t.replace(new RegExp('[\\s:,-]+nivel\\s+(' + NIVEL_FUERTE + '|' + NIVEL_DEBIL + ')(?=\\s)', 'gi'), (x, p) => tomar(nivelDePalabra(plano(p))));
+        // Al final o al principio: "Excel avanzado", "Avanzado en Excel"
+        t = t.replace(new RegExp('[\\s:,-]+(' + NIVEL_FUERTE + ')\\s*$', 'i'), (x, p) => tomar(nivelDePalabra(plano(p))));
+        t = t.replace(new RegExp('^\\s*(' + NIVEL_FUERTE + ')\\s+(en|de)\\s+', 'i'), (x, p) => tomar(nivelDePalabra(plano(p))));
+        t = t.replace(/\(\s*\)/g, ' ').replace(/\s+/g, ' ').replace(/^[\s:,\-–|]+|[\s:,\-–|]+$/g, '');
+        return { texto: t, nivel };
+    }
+    // Un pedazo que es solo un nivel: "Avanzado", "(B2)", "Intermedio (B2)", "80%", "nivel alto"
+    const SOLO_NIVEL = new RegExp('^(?:[\\s(),:\\-–]*(?:nivel\\s*:?\\s*)?(?:' + plano(NIVEL_FUERTE + '|' + NIVEL_DEBIL).replace(/\[aa\]/g, 'a').replace(/\[uu\]/g, 'u') +
+        '|[abc][12]|\\d{1,3}\\s*%|\\d\\s*/\\s*(?:5|10)|nivel \\d+/\\d+))+[\\s(),:\\-–]*$');
+    const soloNivel = texto => SOLO_NIVEL.test(plano(texto));
+    const CEFR_SOLO = /^[\s(]*[abc][12][\s)]*$/i;
+    const PALABRA_NIVEL = { BASICO: 'básico', INTERMEDIO: 'intermedio', AVANZADO: 'avanzado', EXPERTO: 'experto' };
+    /** El nivel de un pedazo que es solo nivel; el del Marco Europeo (B2) manda sobre la palabra */
+    function nivelDeTexto(texto) {
+        const p = plano(texto).replace(/[(),:]/g, ' ').replace(/\s+/g, ' ').trim();
+        const c = p.match(/(?:^|\s)([abc][12])(?=$|\s)/);
+        if (c) return nivelDePalabra(c[1]);
+        return nivelDePalabra(p.replace(/^nivel\s*/, '')) || quitarNivel(' ' + texto + ' ').nivel;
+    }
+
+    const delCatalogo = p => CATALOGO.get(p) || CATALOGO.get(p.replace(RELLENO, '')) || CATALOGO.get(p.replace(/^(persona |muy )/, ''));
+
+    /** "MANEJO DE INVENTARIOS" -> "Manejo de inventarios"; "repostería" -> "Repostería" */
+    function presentable(texto) {
+        let t = texto.trim();
+        if (t.length > 4 && t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]{3}/.test(t)) t = t.toLowerCase();
+        return t.charAt(0).toUpperCase() + t.slice(1);
+    }
+
+    /** Las habilidades del catalogo que aparecen dentro de un texto. "todas": tambien las de una palabra */
+    function buscarEnTexto(texto, todas) {
+        let p = ' ' + plano(texto).replace(/[“”"«»]/g, ' ') + ' ';
+        const halladas = [];
+        FORMAS.forEach(forma => {
+            const c = CATALOGO.get(forma);
+            if (!c.enTexto && !(todas && forma.length >= 4 && !c.idioma)) return;
+            const re = BUSCADORES.get(forma);
+            re.lastIndex = 0;
+            if (!re.test(p)) return;
+            if (!halladas.includes(c.nombre)) halladas.push(c.nombre);
+            re.lastIndex = 0;
+            p = p.replace(re, (x, antes) => antes + ' '.repeat(forma.length)); // no la cuenta otra vez dentro de otra
+        });
+        return halladas;
+    }
+
+    /** Un pedazo ("Microsoft Excel (Avanzado)") -> que es: del catalogo, cualidad, frase, desconocida o nada */
+    function clasificar(pedazo) {
+        const original = pedazo.replace(/^[\s\-–*\d.)•·]+/, '').replace(/[.:;]+$/, '').trim();
+        if (original.length < 2) return null;
+        const { texto, nivel } = quitarNivel(original);
+        const p = plano(texto).replace(/[“”"«»]/g, '').trim();
+        if (!p) return null;
+        let c = delCatalogo(p) || delCatalogo(p.replace(/[(),:]/g, ' ').replace(/\s+/g, ' ').trim());
+        if (c) return { tipo: 'catalogo', nombre: c.nombre, nivel };
+        // "Inglés B1": el B1 es nivel solo en un idioma ("Licencia B1" ya la reconocio el catalogo)
+        const cefr = texto.match(CEFR);
+        if (cefr) {
+            c = delCatalogo(plano(texto.replace(cefr[1], ' ')).replace(/[(),:-]/g, ' ').replace(/\s+/g, ' ').trim());
+            if (c && c.idioma) return { tipo: 'catalogo', nombre: c.nombre, nivel: nivelDePalabra(cefr[1].toLowerCase()) || nivel };
+        }
+        // Ruido: contacto, lugares, fechas, numeros, rotulos
+        if (CORREO.test(texto) || /https?:|www\.|\.com\b/i.test(texto) || telefonoDe(texto) || /^[\d\s.,/%-]+$/.test(p)) return null;
+        if (ciudadDe(texto) && p.split(' ').length <= 3) return null;
+        if (DEPARTAMENTOS.test(p) || ROTULO.test(p) || fechasDe(texto).fechas.length && sinFechas(texto).length < 4) return null;
+        if (p.replace(/[^a-z]/g, '').length < 2) return null;
+        // Cualidades, solas o en pareja ("honesta y proactiva")
+        const piezas = p.split(/\s*(?:,|\by\b|\be\b)\s*/).filter(Boolean);
+        if (piezas.every(x => CUALIDAD.test(x))) return { tipo: 'cualidad', nombres: texto.split(/\s*(?:,|\by\b|\be\b)\s*/).filter(Boolean).map(presentable) };
+        // "Word y Excel": si cada pieza es del catalogo, son varias
+        if (piezas.length > 1 && piezas.every(x => delCatalogo(x))) return { tipo: 'varias', nombres: piezas.map(x => delCatalogo(x).nombre), nivel };
+        const palabras = p.split(' ').length;
+        if (palabras > 4 || original.length > 50 || /[.!?]/.test(original)) return { tipo: 'frase', texto: original };
+        const sinRelleno = texto.replace(new RegExp('^\\s*(' + RELLENO.source.slice(1, -1) + ')\\s*', 'i'), '').trim();
+        const nombre = presentable(plano(sinRelleno) && sinRelleno.length >= 2 ? sinRelleno : texto);
+        return { tipo: 'desconocida', nombre: nombre.slice(0, MAXIMO_HABILIDAD), nivel };
+    }
+
+    /** Un renglon de la seccion -> pedazos: "Blandas: liderazgo, comunicación | Excel - Avanzado" */
+    function partirRenglon(texto) {
+        // Puntos o estrellas de nivel: "●●●○○" -> "(nivel 3/5)"
+        let t = texto.replace(/[●◉★⬤■]+[○◯☆□]+|[●◉★⬤■]{2,}(?=\s*$)/g, m => {
+            const llenos = (m.match(/[●◉★⬤■]/g) || []).length;
+            return ' (nivel ' + llenos + '/' + m.length + ') ';
+        });
+        const pedazos = [];
+        // "Inglés" + "B1" -> "Inglés (intermedio)"; "Licencia de conducción" + "B1" -> "Licencia de conducción B1"
+        const conNivel = (base, s) => {
+            const c = delCatalogo(plano(base));
+            if (CEFR_SOLO.test(s) && !(c && c.idioma)) return base + ' ' + s.replace(/[()]/g, '').trim();
+            const n = nivelDeTexto(s);
+            return n ? base + ' (' + PALABRA_NIVEL[n] + ')' : base;
+        };
+        t.split(/\s*(?:[•·●▪■◦➢➤✓✔|;]|\s[-–]\s)\s*/).forEach(segmento => {
+            if (!segmento.trim()) return;
+            // "Excel - Avanzado" o "Excel | Avanzado": el nivel suelto va con lo de antes
+            if (soloNivel(segmento) && pedazos.length) { pedazos[pedazos.length - 1] = conNivel(pedazos[pedazos.length - 1], segmento); return; }
+            let s = segmento;
+            // "Lenguajes: Java, Python" -> se quita el rotulo; "Español: Nativo" -> "Español (Nativo)"
+            const dos = s.match(/^([^:]{2,40}):\s*(.+)$/);
+            if (dos) {
+                if (soloNivel(dos[2])) s = conNivel(dos[1], dos[2]);
+                else if (!delCatalogo(plano(dos[1]))) s = dos[2];
+                else s = dos[1] + ', ' + dos[2];
+            }
+            // "Herramientas ofimáticas (Word, Excel, Outlook)": lo de adentro tambien
+            s = s.replace(/\(([^()]*(?:,|\sy\s)[^()]*)\)/g, ', $1');
+            s.split(/\s*,\s*/).forEach(x => {
+                if (!x.trim()) return;
+                if (soloNivel(x) && pedazos.length) pedazos[pedazos.length - 1] = conNivel(pedazos[pedazos.length - 1], x);
+                else pedazos.push(x);
             });
         });
-        const vistas = new Set();
-        return salida.filter(h => !vistas.has(plano(h.nombre)) && vistas.add(plano(h.nombre)));
+        return pedazos;
+    }
+
+    /**
+     * Las habilidades de las secciones "Habilidades" e "Idiomas".
+     * Devuelve { habilidades: [{ nombre, nivel, revisa }], cualidades: [nombres] }
+     */
+    function habilidadesDe(lineas) {
+        const habilidades = [];
+        const cualidades = [];
+        let ultima = null;
+        const poner = (nombre, nivel, revisa) => {
+            const igual = habilidades.find(h => plano(h.nombre) === plano(nombre));
+            if (igual) { if (!igual.nivel && nivel) igual.nivel = nivel; if (!revisa) igual.revisa = false; ultima = igual; return; }
+            ultima = { nombre: nombre.slice(0, MAXIMO_HABILIDAD), nivel: nivel || '', revisa: !!revisa };
+            habilidades.push(ultima);
+        };
+        lineas.forEach(l => {
+            // El nivel en el renglon de abajo ("Inglés" y debajo "B2"): es de la anterior
+            if (soloNivel(l.texto)) { if (ultima && !ultima.nivel) ultima.nivel = nivelDeTexto(l.texto); ultima = null; return; }
+            ultima = null;
+            partirRenglon(l.texto).forEach(clasificarPedazo);
+        });
+        return { habilidades, cualidades };
+
+        function clasificarPedazo(pedazo) {
+            const c = clasificar(pedazo);
+            if (!c) return;
+            if (c.tipo === 'catalogo') poner(c.nombre, c.nivel, false);
+            else if (c.tipo === 'varias') c.nombres.forEach(n => poner(n, c.nivel, false));
+            else if (c.tipo === 'cualidad') c.nombres.forEach(n => { if (!cualidades.some(x => plano(x) === plano(n))) cualidades.push(n); });
+            else if (c.tipo === 'frase') buscarEnTexto(c.texto, true).forEach(n => poner(n, '', false));
+            else poner(c.nombre, c.nivel, true);
+        }
+    }
+
+    /** Las del catalogo que se mencionan en la experiencia, los cursos o el perfil */
+    function mencionadasEn(porSeccion, yaEstan) {
+        const vistas = new Set(yaEstan.map(h => plano(h.nombre)));
+        const salida = [];
+        [['experiencia', 'tu experiencia'], ['cursos', 'tus cursos'], ['perfil', 'tu perfil'], ['otros', 'tus proyectos']].forEach(([s, donde]) => {
+            const texto = (porSeccion[s] || []).map(l => l.texto).join('\n');
+            buscarEnTexto(texto, s === 'cursos').forEach(nombre => {
+                if (vistas.has(plano(nombre))) return;
+                vistas.add(plano(nombre));
+                salida.push({ nombre, donde });
+            });
+        });
+        return salida;
     }
 
     const INSTITUCION = /\b(universidad|institucion|instituto|colegio|sena|corporacion|fundacion|escuela|politecnico|liceo|academia|tecnologico|centro de formacion)\b/;
@@ -326,12 +592,15 @@
             bio = { valor, recortada, revisa: recortada };
         }
 
+        const halladas = habilidadesDe((porSeccion.habilidades || []).concat(porSeccion.idiomas || []));
         return {
             nombre, correo,
             telefono: telefono ? { valor: telefono, revisa: false } : null,
             ciudad: ciudad ? { valor: ciudad, revisa: false } : null,
             titular, bio,
-            habilidades: habilidadesDe(porSeccion.habilidades || []).concat(habilidadesDe(porSeccion.idiomas || [], true)),
+            habilidades: halladas.habilidades,
+            cualidades: halladas.cualidades,
+            mencionadas: mencionadasEn(porSeccion, halladas.habilidades),
             estudios: estudiosDe(porSeccion.estudios || []),
             experiencias: experienciasDe(porSeccion.experiencia || []),
             secciones: Object.keys(porSeccion),
@@ -403,7 +672,7 @@
             }
             if (!v.raiz.isConnected) return;
             const hallado = analizar(leido.lineas);
-            const vacio = !hallado.telefono && !hallado.ciudad && !hallado.titular && !hallado.bio && !hallado.habilidades.length && !hallado.estudios.length && !hallado.experiencias.length;
+            const vacio = !hallado.telefono && !hallado.ciudad && !hallado.titular && !hallado.bio && !hallado.habilidades.length && !hallado.mencionadas.length && !hallado.estudios.length && !hallado.experiencias.length;
             if (!leido.lineas.length) return volverAEmpezar('Este PDF es una imagen escaneada: no tiene texto que se pueda leer. Prueba con el que exportas desde Word o Google Docs.');
             if (vacio) return volverAEmpezar('Leímos tu PDF pero no encontramos datos para tu perfil. ¿Tiene títulos como "Experiencia", "Estudios" o "Habilidades"?');
             progreso.textContent = 'Comparando con tu perfil…';
@@ -470,16 +739,31 @@
             dato('bio', 'Acerca de ti', h.bio, valor => `<textarea class="lector-campo" data-valor rows="4" maxlength="${MAXIMO_BIO}" aria-label="Acerca de ti">${esc(valor)}</textarea>`)
         ].join('');
 
-        const habilidades = nuevas.length ? `
+        // Las del catalogo que solo se mencionan en la experiencia, los cursos o el perfil
+        const mencionadas = (h.mencionadas || []).filter(s => !yaTiene.has(plano(s.nombre)));
+        const nombreNivel = k => (NIVELES.find(n => n[0] === k) || [, ''])[1];
+        const chip = (s, marcada, titulo) => `
+                    <label class="lector-chip${s.revisa ? ' revisa' : ''}"${titulo ? ` title="${esc(titulo)}"` : ''}><input type="checkbox" data-elegible data-habilidad="${esc(s.nombre)}"${s.nivel ? ` data-nivel-propio="${s.nivel}"` : ''}${marcada ? ' checked' : ''}><span>${esc(s.nombre)}</span>${s.nivel ? `<span class="lector-chip-nivel">${nombreNivel(s.nivel)}</span>` : ''}${s.revisa ? '<span class="lector-etiqueta">Revisa</span>' : ''}</label>`;
+        const conNivel = nuevas.some(s => s.nivel);
+        const desconocidas = nuevas.some(s => s.revisa);
+        const cualidades = h.cualidades || [];
+        const habilidades = nuevas.length || mencionadas.length || cualidades.length ? `
             <fieldset class="lector-grupo">
-                <legend>${cuantas(nuevas.length, 'habilidad', 'habilidades')}</legend>
-                <div class="lector-chips">${nuevas.map((s, i) => `
-                    <label class="lector-chip${s.revisa ? ' revisa' : ''}"><input type="checkbox" data-elegible data-habilidad="${esc(s.nombre)}"${s.revisa ? '' : ' checked'}><span>${esc(s.nombre)}</span>${s.revisa ? '<span class="lector-etiqueta">Revisa</span>' : ''}</label>`).join('')}
+                <legend>${nuevas.length ? cuantas(nuevas.length, 'habilidad', 'habilidades') : 'Habilidades'}</legend>
+                ${nuevas.length ? `<div class="lector-chips">${nuevas.map(s => chip(s, !s.revisa)).join('')}
                 </div>
-                <label class="lector-nivel">Nivel para estas habilidades
+                ${desconocidas ? '<p class="lector-nota">Las que dicen «Revisa» no las reconocimos como habilidades: márcalas solo si lo son.</p>' : ''}` : ''}
+                ${mencionadas.length ? `
+                <p class="lector-subtitulo">También las mencionas en tu hoja de vida</p>
+                <div class="lector-chips" data-mencionadas>${mencionadas.map(s => chip(s, false, 'Aparece en ' + s.donde)).join('')}
+                </div>
+                <p class="lector-nota">Aparecen en ${esc(lista([...new Set(mencionadas.map(s => s.donde))]))}, no en tus habilidades: márcalas si las dominas.</p>` : ''}
+                ${nuevas.length || mencionadas.length ? `
+                <label class="lector-nivel">${conNivel ? 'Nivel para las que no lo dicen' : 'Nivel para estas habilidades'}
                     <select data-nivel>${NIVELES.map(([k, t]) => `<option value="${k}"${k === 'INTERMEDIO' ? ' selected' : ''}>${t}</option>`).join('')}</select>
                 </label>
-                <p class="lector-nota">Después puedes cambiar el nivel de cada una en tu perfil.${repetidas.length ? ' Ya tienes ' + esc(lista(repetidas.map(s => s.nombre))) + ': no se repiten.' : ''}</p>
+                <p class="lector-nota">${conNivel ? 'Las que traen su nivel en tu hoja de vida lo conservan. ' : ''}Después puedes cambiar el nivel de cada una en tu perfil.${repetidas.length ? ' Ya tienes ' + esc(lista(repetidas.map(s => s.nombre))) + ': no se repiten.' : ''}</p>` : ''}
+                ${cualidades.length ? `<p class="lector-nota" data-cualidades>No agregamos ${esc(lista(cualidades.map(c => '«' + c + '»')))}: son cualidades tuyas, no habilidades que una empresa busque. Cuéntalas en «Acerca de ti».</p>` : ''}
             </fieldset>` : '';
 
         const estudios = h.estudios.length ? `
@@ -511,6 +795,7 @@
         const encontrado = lista([
             h.telefono && 'tu teléfono', h.ciudad && 'tu ciudad', h.titular && 'tu titular', h.bio && 'tu presentación',
             h.habilidades.length && cuantas(h.habilidades.length, 'habilidad', 'habilidades'),
+            !h.habilidades.length && h.mencionadas.length && cuantas(h.mencionadas.length, 'habilidad mencionada', 'habilidades mencionadas'),
             h.estudios.length && cuantas(h.estudios.length, 'estudio', 'estudios'),
             h.experiencias.length && cuantas(h.experiencias.length, 'experiencia', 'experiencias')
         ]);
@@ -575,7 +860,8 @@
         const datos = {};
         marcado('[data-dato]').forEach(c => { datos[c.dataset.dato] = c.querySelector('[data-valor]').value.trim(); });
         const nivel = (form.querySelector('[data-nivel]') || {}).value || 'INTERMEDIO';
-        const habilidades = [...form.querySelectorAll('[data-habilidad]:checked')].map(c => c.dataset.habilidad);
+        // Cada una con el nivel que traia la hoja de vida; si no traia, el elegido
+        const habilidades = [...form.querySelectorAll('[data-habilidad]:checked')].map(c => ({ nombre: c.dataset.habilidad, nivel: c.dataset.nivelPropio || nivel }));
         const valor = (caja, campo) => { const c = caja.querySelector(`[data-campo="${campo}"]`); return c ? (c.type === 'checkbox' ? c.checked : c.value.trim()) : ''; };
         const estudios = marcado('[data-estudio]').map(c => ({
             school: valor(c, 'school'), degree: valor(c, 'degree'), fieldOfStudy: '', description: valor(c, 'anios'), isCurrent: false
@@ -591,7 +877,7 @@
         const base = `${API_BASE_URL}/users/${encodeURIComponent(user.id)}`;
         const enviar = (url, metodo, cuerpo) => fetchWithAuth(url, { method: metodo, body: JSON.stringify(cuerpo) }).then(r => { if (!r.ok) throw new Error(r.status); });
         if (Object.keys(datos).length) tareas.push({ grupo: 'datos', hacer: () => enviar(base, 'PUT', datos) });
-        habilidades.forEach(nombre => tareas.push({ grupo: 'habilidad', hacer: () => enviar(base + '/skills', 'POST', { name: nombre, level: nivel }) }));
+        habilidades.forEach(s => tareas.push({ grupo: 'habilidad', hacer: () => enviar(base + '/skills', 'POST', { name: s.nombre, level: s.nivel }) }));
         estudios.forEach(e => tareas.push({ grupo: 'estudio', hacer: () => enviar(base + '/educations', 'POST', e) }));
         experiencias.forEach(e => tareas.push({ grupo: 'experiencia', hacer: () => enviar(base + '/experiences', 'POST', e) }));
 
