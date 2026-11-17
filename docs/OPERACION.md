@@ -343,3 +343,30 @@ las contactará al correo de su cuenta, y la solicitud queda registrada igual.
 3. «Aprobar» (puedes ajustar los meses) o «Rechazar» con el motivo, que la empresa ve.
 4. Si la empresa ya tenía el plan activo, la vigencia se suma desde su fecha de fin.
 5. Al vencer, la empresa vuelve sola al plan Básico; sus procesos abiertos siguen funcionando.
+
+### Capacidad de correos (Gmail gratis, unos 500 al día)
+
+El sistema reparte el día así (el contador vive en MongoDB, no se reinicia con el servidor):
+
+| Reserva | Correos | Para qué |
+|---|---|---|
+| Fuera del tope | 100 | Códigos de verificación, recuperación de clave y avisos de seguridad (no esperan nunca) |
+| **Alta** (hasta 400) | invitaciones a la siguiente etapa, respuesta a una postulación | Lo que la persona espera en el día |
+| **Media** (hasta 340) | recordatorios (plan Profesional), resumen diario a empresas | |
+| **Baja** (hasta 280) | mensajes sin leer, vacantes nuevas | Pueden esperar |
+
+- **Empresas gratuitas y de pago:** el plan Básico (20 invitaciones al mes, sin recordatorios) no puede llegar a llenar el día. Una empresa Profesional (300 al mes, 50 por envío) puede enviar hasta 50 invitaciones en un envío; con unas ocho empresas Profesionales enviando 50 el mismo día se llega al tope de 400. Los recordatorios son «media» a propósito: nunca le quitan lugar a una invitación nueva.
+- **Al llegar al tope** el correo no se pierde: queda en la cola (colección `correos_pendientes`) y sale cuando haya cupo (se revisa cada 10 minutos, primero lo más importante). La campanita dentro de SkillMatch siempre se crea al instante.
+- **Si ya no sirve** (una invitación pasó su plazo para responder, un resumen tiene más de un día) se descarta y se cuenta: «Descartados hoy» aparece en `GET /api/admin/correos/estado` y queda una línea de aviso en el registro del servidor.
+- **Si Gmail falla** se reintenta hasta 3 veces; después se descarta y se registra como error.
+- **Señal para crecer:** si «En cola» no baja a cero al final del día varios días seguidos, hay que pasar a un servicio de correo con más capacidad (el cambio se hace solo en `CorreoService`).
+- El tope se cambia con `app.correo.maximo-al-dia` (por defecto 400).
+
+### Operaciones simultáneas
+Los cupos de horarios, los límites del plan, la aprobación de solicitudes y los tres tipos de cambio de una invitación (confirmar, cancelar, recordar) se protegen con un cerrojo guardado en MongoDB (`CerrojoService`, colección `cerrojos`); sirve aunque haya más de un servidor y vence solo a los 15 segundos si algo se cuelga. Si dos personas chocan, la segunda espera unos milisegundos; si pasan 10 segundos, recibe «Hay otra operación en curso» (409) y puede reintentar.
+
+Las pruebas que lo demuestran necesitan un MongoDB local (nunca Atlas):
+```bash
+SKILLMATCH_MONGO_PRUEBAS=mongodb://localhost:27017 ./mvnw test -Dtest=ConcurrenciaMongoTest
+```
+Usan la base `skillmatch_concurrencia_prueba` (se borra al empezar y al terminar). Sin esa variable se omiten.

@@ -10253,6 +10253,8 @@ body.con-barra-invitar { padding-bottom: 140px; }
 .invitacion-tipo svg { width: 14px; height: 14px; }
 .invitacion-tarjeta h3, .mia-cabeza h3 { margin: var(--s3) 0 2px; font-family: var(--font-display); font-size: var(--t-lg); color: var(--ink); }
 .invitacion-vacante { margin: 0 0 var(--s3); color: var(--ink-2); font-weight: 600; }
+.invitacion-donde { display: flex; gap: var(--s2); align-items: flex-start; margin: 0 0 var(--s3); font-size: var(--t-sm); color: var(--ink); overflow-wrap: anywhere; }
+.invitacion-donde svg { width: 16px; height: 16px; color: var(--sea); flex: none; margin-top: 2px; }
 .invitacion-sub { margin: 0 0 var(--s2); font-size: var(--t-sm); color: var(--ink-3); }
 .invitacion-horarios-mini { list-style: none; margin: 0 0 var(--s3); padding: 0; display: grid; gap: 6px; }
 .invitacion-horarios-mini li { display: flex; gap: var(--s2); align-items: center; padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--hairline); font-size: var(--t-sm); color: var(--ink); }
@@ -10412,6 +10414,9 @@ body.con-barra-invitar { padding-bottom: 140px; }
 .mia-confirmada h3 { font-family: var(--font-display); font-size: var(--t-lg); color: var(--ink); margin: var(--s2) 0 var(--s3); }
 .mia-cuando, .mia-donde { display: flex; gap: var(--s2); align-items: center; justify-content: center; margin: 0 0 var(--s2); color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
 .mia-cuando svg, .mia-donde svg { width: 18px; height: 18px; color: var(--sea); flex: none; }
+.mia-antes { margin: 0 0 var(--s4); }
+.mia-antes .mia-donde { justify-content: flex-start; align-items: flex-start; font-weight: 400; color: var(--ink-2); margin-bottom: var(--s3); }
+.mia-antes .mia-donde strong { color: var(--ink); }
 .mia-confirmada .mia-indicaciones { text-align: left; margin-top: var(--s3); }
 .mia-confirmada .modal-actions { justify-content: center; flex-wrap: wrap; }
 .mia-cerrada { display: flex; gap: var(--s3); align-items: flex-start; padding: var(--s4); border-radius: var(--r-md); background: var(--surface-sunk); color: var(--ink-2); }
@@ -10537,7 +10542,23 @@ body.con-barra-invitar { padding-bottom: 140px; }
 .contratar-incluye li { display: flex; gap: 6px; font-size: var(--t-sm); color: var(--ink-2); }
 .contratar-incluye svg { width: 16px; height: 16px; color: var(--verde); flex: none; margin-top: 2px; }
 .contratar-resumen h4 { margin: 0 0 var(--s2); color: var(--ink); }
-.contratar-despues { margin: 0 0 var(--s3); padding-left: 1.2em; display: grid; gap: var(--s2); color: var(--ink-2); font-size: var(--t-sm); }
+.admin-correos-caja { display: flex; gap: var(--s3); align-items: flex-start; margin: 0 0 var(--s4); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--surface-sunk); }
+.admin-correos-caja svg { width: 22px; height: 22px; color: var(--sea); flex: none; margin-top: 2px; }
+.admin-correos-caja p { margin: 2px 0 0; font-size: var(--t-sm); color: var(--ink-2); }
+.admin-correos-caja.is-alerta { box-shadow: inset 3px 0 0 var(--naranja); }
+.contratar-vigencia { margin: 0 0 var(--s3); padding: var(--s3); border-radius: var(--r-md); background: var(--surface-sunk); }
+.contratar-vigencia h4 { margin: 0 0 var(--s2); }
+.contratar-fechas { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); font-size: var(--t-sm); color: var(--ink-2); }
+.contratar-fechas li { display: grid; grid-template-columns: 20px 1fr; gap: var(--s2); align-items: start; }
+.contratar-fechas svg { width: 18px; height: 18px; color: var(--sea); }
+.contratar-fechas strong { color: var(--ink); }
+/* Los botones de las ventanas de invitar, contratar y responder quedan a la vista aunque el contenido sea largo
+   (la regla general solo cubre a los hijos directos del cuerpo de la ventana) */
+.contratar > .modal-actions, .invitar-flujo > .modal-actions, .mia-ventana > .modal-actions {
+    position: sticky; bottom: calc(var(--s5) * -1);
+    margin: var(--s4) calc(var(--s5) * -1) calc(var(--s5) * -1);
+}
+.contratar-despues { list-style: decimal; margin: 0 0 var(--s3); padding-left: 1.2em; display: grid; gap: var(--s2); color: var(--ink-2); font-size: var(--t-sm); }
 .contratar-contacto { display: flex; gap: 6px; align-items: center; font-size: var(--t-sm); color: var(--ink-3); margin: 0; }
 .contratar-contacto svg { width: 16px; height: 16px; }
 
@@ -10571,7 +10592,8 @@ body.con-barra-invitar { padding-bottom: 140px; }
 .admin-nota { margin: var(--s3) 0 0; padding: var(--s3); border-radius: var(--r-sm); background: var(--surface-sunk); font-size: var(--t-sm); color: var(--ink-2); }
 .admin-acciones { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s4); }
 .admin-vacio { list-style: none; text-align: center; padding: var(--s6) var(--s4); color: var(--ink-3); }
-.admin-vacio svg { width: 40px; height: 40px; }
+.admin-vacio svg { width: 40px; height: 40px; display: block; margin: 0 auto var(--s2); }
+.admin-vacio p { margin: 0 auto; max-width: 46ch; }
 .admin-comercial-estado { margin-bottom: var(--s4); }
 .admin-comercial-estado small { display: block; margin-top: 6px; color: var(--ink-3); }
 .admin-form { max-width: 820px; }

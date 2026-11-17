@@ -82,3 +82,13 @@ test('lo que debe pasar, dicho en español', async ({ page, context, api }) => {
 ```
 
 Esta carpeta no entra al sitio publicado: el `Dockerfile` solo copia `backend/` y `SkillMatch/src`.
+
+## Si alguna prueba falla "de la nada" (revisión 2026-11-16)
+
+En una corrida completa de la rama de invitaciones fallaron 9 ejecuciones. Se investigó con evidencia:
+
+- **4 eran reales:** dos pruebas viejas contaban el menú de la empresa y el orden de las secciones; el cambio (nuevas opciones «Plan y uso» e «Invitaciones») las dejó desactualizadas. Se corrigieron sus expectativas.
+- **Las otras 5 no se reproducen con normalidad:** pasan 20 de 20 veces solas, y la suite completa pasó sin fallos en `origin/main` (492 pruebas) y en la rama (530 pruebas) en dos corridas posteriores con los mismos 3 trabajadores.
+- **Sí son sensibles a la carga:** con 10 navegadores a la vez, la suite falla de forma intermitente incluso en `origin/main` limpio (4 de 396 ejecuciones) y en la rama (8 de 396), siempre en las mismas familias (`vacantes.spec.js`, `menu.spec.js`, `perfil.spec.js`). Los errores son de tiempo: esperas de 6 s que vencen, «Target page closed», contexto que no cierra a tiempo.
+- **Patrón común:** en la corrida original y en una tercera corrida completa (528 de 530; fallaron `indicadores.spec.js:53` y `vacantes.spec.js:268`, otras pruebas distintas) el error dominante es `Tearing down "context" exceeded the test timeout of 45000ms`: la comprobación de la pantalla ya pasó y lo que no termina a tiempo es **cerrar el navegador** de esa prueba. Repetidas solas, esas dos pasan 10 de 10. Es un problema de la infraestructura de pruebas (Edge sin ventana que tarda en cerrar, con `trace: 'retain-on-failure'` activo), no de una pantalla.
+- **Lo que no se sabe:** qué sobrecargó el equipo en la corrida original (esa corrida tardó 16,5 min contra unos 12,7 de las siguientes). No hay evidencia de que sea del código ni del equipo; si vuelve a pasar, repetir con `npx playwright test --workers=2` y guardar el `trace.zip` de la prueba que falle.

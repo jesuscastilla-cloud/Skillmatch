@@ -119,7 +119,21 @@
     }
 
     // ------------------------------------------------------------------ empresas con plan
+    // Cuántos correos salieron hoy, cuántos esperan cupo y cuántos se descartaron por vencidos
+    async function cargarCorreos() {
+        const caja = document.getElementById('adminCorreos');
+        const r = await api('/admin/correos/estado').catch(() => null);
+        if (!r || !r.ok) { caja.innerHTML = ''; return; }
+        const c = await r.json();
+        const alerta = c.pendientes > 0 || c.descartadosHoy > 0;
+        caja.innerHTML = `<div class="admin-correos-caja${alerta ? ' is-alerta' : ''}"><i data-ico="mail"></i>
+            <div><strong>Correos de hoy: ${c.enviadosHoy} de ${c.topeDiario}</strong>
+            <p>${c.pendientes ? `${c.pendientes} esperando cupo; salen solos en cuanto lo haya, primero las invitaciones. ` : 'Ninguno esperando cupo. '}${c.descartadosHoy ? `${c.descartadosHoy} se descartaron por vencidos.` : ''}
+            Los códigos de verificación tienen ${c.reservadoParaCodigos} envíos aparte.</p></div></div>`;
+    }
+
     async function cargarEmpresas() {
+        cargarCorreos();
         const caja = document.getElementById('adminEmpresas');
         const r = await api('/admin/planes/empresas').catch(() => null);
         if (!r || !r.ok) { caja.innerHTML = '<p class="error-text">No pudimos cargar las empresas.</p>'; return; }

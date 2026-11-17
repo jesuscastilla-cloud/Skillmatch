@@ -343,6 +343,8 @@
                                 <span class="invitacion-tipo"><i data-ico="${datos.tipo === 'ENTREVISTA' ? 'chat' : 'list'}"></i> ${TIPOS[datos.tipo]} · ${MODALIDADES[datos.modalidad]}</span>
                                 <h3>${esc(empresaNombre())} te invita a la siguiente etapa</h3>
                                 <p class="invitacion-vacante">${esc(lista[0].jobTitle || '')} · ${datos.duracionMinutos} minutos</p>
+                                <p class="invitacion-donde"><i data-ico="${datos.modalidad === 'PRESENCIAL' ? 'pin' : 'desktop'}"></i> ${datos.modalidad === 'PRESENCIAL'
+                                    ? esc(datos.lugar) : 'En línea: el enlace lo ve cada persona cuando confirma'}</p>
                                 <p class="invitacion-sub">Elige el horario que te sirva:</p>
                                 <ul class="invitacion-horarios-mini">${horarios.map(h => `<li><i data-ico="calendar"></i> ${esc(mayus(diaHora(h.inicio)))}</li>`).join('')}</ul>
                                 <p class="invitacion-plazo"><i data-ico="clock"></i> Responde antes del ${esc(diaHora(aLocal(limite)))}</p>
@@ -623,7 +625,7 @@
                 <h4 class="proceso-titulo"><i data-ico="calendar"></i> Horarios</h4>
                 <ul class="proceso-horarios">${d.horarios.map(h => {
                     const quienes = porHorario(h.id);
-                    return `<li><div class="proceso-horario-cabeza"><strong>${esc(mayus(diaHora(h.inicio)))}</strong><span>${h.confirmados} de ${h.cupos} cupos</span></div>
+                    return `<li><div class="proceso-horario-cabeza"><strong>${esc(mayus(diaHora(h.inicio)))}</strong><span>${h.confirmados} de ${h.cupos} ${h.cupos === 1 ? 'cupo' : 'cupos'}</span></div>
                         <div class="proceso-cupo"><span style="width:${Math.min(100, Math.round(h.confirmados / h.cupos * 100))}%"></span></div>
                         <p class="proceso-nombres">${quienes.length ? quienes.map(p => esc(p.nombre)).join(' · ') : '<span class="tenue">Nadie ha elegido este horario</span>'}</p></li>`;
                 }).join('')}</ul>
@@ -786,12 +788,17 @@
                     <div class="modal-actions"><button type="button" class="btn-primary-modal" data-cerrar>Cerrar</button></div>`;
             } else {
                 caja.innerHTML = cabecera() + `
+                    <div class="mia-antes">
+                        ${i.modalidad === 'PRESENCIAL'
+                            ? `<p class="mia-donde"><i data-ico="pin"></i> <span><strong>Dónde:</strong> ${esc(i.lugar || '')}</span></p>`
+                            : `<p class="mia-donde"><i data-ico="desktop"></i> <span><strong>Dónde:</strong> en línea. El enlace de la ${i.tipo === 'EVALUACION' ? 'evaluación' : 'reunión'} lo verás aquí cuando confirmes.</span></p>`}
+                        ${i.indicaciones ? `<div class="mia-indicaciones"><strong>Indicaciones</strong><p>${esc(i.indicaciones)}</p></div>` : ''}
+                    </div>
                     <p class="mia-instruccion">Elige el horario que te sirva:</p>
                     <div class="mia-horarios" role="radiogroup" aria-label="Horarios">${i.horarios.map(h => `
                         <label class="mia-horario${h.disponible ? '' : ' is-lleno'}"><input type="radio" name="horario" value="${esc(h.id)}"${elegido === h.id ? ' checked' : ''}${h.disponible ? '' : ' disabled'}>
                             <span><strong>${esc(mayus(fecha(h.inicio).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })))}</strong>
                             <small>${esc(hora(h.inicio))}${h.disponible ? '' : ' · Lleno'}</small></span></label>`).join('')}</div>
-                    ${i.indicaciones ? `<div class="mia-indicaciones"><strong>Indicaciones</strong><p>${esc(i.indicaciones)}</p></div>` : ''}
                     <p class="mia-plazo"><i data-ico="clock"></i> Responde antes del ${esc(diaHora(i.respondeAntesDe))}</p>
                     <div class="form-group"><label for="miaComentario">Mensaje para la empresa (opcional)</label>
                         <textarea id="miaComentario" rows="2" maxlength="300" placeholder="Ej.: Llevaré mi hoja de vida impresa.">${esc(i.comentario || '')}</textarea></div>

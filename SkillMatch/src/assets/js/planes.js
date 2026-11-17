@@ -181,6 +181,25 @@
     }
 
     // ------------------------------------------------------------------ contratacion
+    /** Cuánto dura el plan y cuándo se renueva el cupo de invitaciones, dicho con fechas reales. */
+    function vigenciaTexto(plan, meses) {
+        const ahora = new Date();
+        const actual = mio && mio.vigenteHasta ? new Date(mio.vigenteHasta) : null;
+        const sigueActivo = actual && actual > ahora && mio.plan && mio.plan.id === plan.id;
+        const desde = sigueActivo ? actual : ahora;
+        const fin = new Date(desde); fin.setMonth(fin.getMonth() + meses);
+        const renueva = mio && mio.uso && mio.uso.seRenuevaEl ? new Date(mio.uso.seRenuevaEl) : null;
+        const dia = f => f.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+        const filas = [
+            sigueActivo
+                ? `<li><i data-ico="calendar"></i><span>Ya tienes el plan activo hasta el <strong>${esc(dia(actual))}</strong>. Los ${meses} ${meses === 1 ? 'mes' : 'meses'} se suman a esa fecha: quedarías hasta el <strong>${esc(dia(fin))}</strong>.</span></li>`
+                : `<li><i data-ico="calendar"></i><span>El plan empieza el día en que verificamos tu pago y dura ${meses} ${meses === 1 ? 'mes' : 'meses'}. Si lo activáramos hoy, estaría vigente hasta el <strong>${esc(dia(fin))}</strong>.</span></li>`,
+            `<li><i data-ico="clock"></i><span>Las <strong>${plan.invitacionesMes} invitaciones</strong> se cuentan por mes calendario${renueva ? ` y el cupo se renueva el <strong>${esc(renueva.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }))}</strong>` : ''}, y de nuevo el día 1 de cada mes mientras el plan esté vigente.</span></li>`,
+            '<li><i data-ico="refresh"></i><span>Al terminar la vigencia, tu empresa vuelve al plan Básico. Los procesos que ya abriste siguen funcionando.</span></li>'
+        ];
+        return `<h4>Vigencia y renovación del cupo</h4><ul class="contratar-fechas">${filas.join('')}</ul>`;
+    }
+
     function contratar(plan) {
         if (!plan) return;
         const s = sesion() || {};
@@ -222,6 +241,7 @@
                             <div><p>Plan ${esc(plan.nombre)} · ${meses} ${meses === 1 ? 'mes' : 'meses'}</p><strong>${pesos(plan.precioMensual * meses)}</strong></div>
                         </div>
                         <ul class="contratar-incluye">${plan.beneficios.map(b => `<li><i data-ico="check"></i>${esc(b)}</li>`).join('')}</ul>
+                        <div class="contratar-vigencia">${vigenciaTexto(plan, meses)}</div>
                         <h4>Qué pasa después</h4>
                         <ol class="contratar-despues">
                             <li><strong>Registramos tu solicitud</strong> y la ves en «Tu plan y tu uso» como pendiente de verificación.</li>

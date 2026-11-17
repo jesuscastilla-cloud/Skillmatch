@@ -29,6 +29,10 @@ test('la empresa ve su plan y su uso, elige el Profesional y solicita la activac
     await page.locator('.contratar-mes', { hasText: '3 meses' }).click();
     await page.locator('#ventanaContratar [data-siguiente]').click();
     await expect(page.locator('.contratar-total')).toContainText('$149.700');
+    // La vigencia y la renovación del cupo se dicen con fechas, no en general
+    await expect(page.locator('.contratar-vigencia')).toContainText('dura 3 meses');
+    await expect(page.locator('.contratar-vigencia')).toContainText('el cupo se renueva el');
+    await expect(page.locator('.contratar-vigencia')).toContainText('vuelve al plan Básico');
     await page.locator('[data-solicitar]').click();
     await expect(page.locator('#ventanaContratar')).toContainText('Recibimos tu solicitud');
     await expect(page.locator('#ventanaContratar')).toContainText('Pendiente de verificación');
@@ -70,6 +74,7 @@ test('el administrador aprueba una solicitud y la empresa queda con el plan acti
     expect(api.estado.datos.planes['c-hotel'].plan).toBe('PROFESIONAL');
     await page.locator('#btnEmpresas').click();
     await expect(page.locator('#adminEmpresas')).toContainText('Hotel Puerta del Mar');
+    await expect(page.locator('#adminCorreos')).toContainText('Correos de hoy: 12 de 400');
     expect(errores).toEqual([]);
 });
 

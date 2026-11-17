@@ -133,7 +133,7 @@ function crearApi(opciones = {}) {
         return { ...inv, invitacionId: inv.id, id: ic.id, applicationId: ic.applicationId, empresa: (empresa(inv.companyId) || {}).name,
             miEstado: estadoReal(ic, inv), horarioId: ic.horarioId, comentario: ic.comentario, respondidaEn: ic.respondidaEn,
             puedeResponder: abierta && ic.estado !== 'CANCELADA',
-            lugar: ic.estado === 'CONFIRMADA' ? inv.lugar : null, enlace: ic.estado === 'CONFIRMADA' ? inv.enlace : null,
+            lugar: inv.lugar, enlace: ic.estado === 'CONFIRMADA' ? inv.enlace : null,
             horarios: inv.horarios.map(h => {
                 const ocupados = d.invitados.filter(x => x.invitacionId === inv.id && x.estado === 'CONFIRMADA' && x.horarioId === h.id).length;
                 const mio = ic.horarioId === h.id && ic.estado === 'CONFIRMADA';
@@ -145,6 +145,8 @@ function crearApi(opciones = {}) {
 
         // ---- Planes (PlanController) y su catalogo (CatalogoPlanes.java)
         ['GET', /^\/public\/planes$/, () => [200, CATALOGO]],
+        ['GET', /^\/admin\/correos\/estado$/, (p, q, c, yo) => yo === 'u-admin'
+            ? [200, { enviadosHoy: 12, descartadosHoy: 0, topeDiario: 400, pendientes: 0, reservadoParaCodigos: 100 }] : [403, {}]],
         ['GET', /^\/planes\/mio$/, (p, q, c, yo) => {
             const emp = empresaDe(yo); if (!emp) return [403, { message: 'Esta cuenta no tiene una empresa' }];
             return [200, resumenPlan(emp)];

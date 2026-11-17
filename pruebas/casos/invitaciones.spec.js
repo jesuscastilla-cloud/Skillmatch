@@ -99,12 +99,27 @@ test.describe('el candidato', () => {
         await page.goto('perfil-usuario.html');
         await expect(page.locator('#invitacionesCard')).toContainText('1 por responder');
         await page.locator('[data-mia="ic-1"]').click();
+        // Antes de decidir ya ve dónde es y qué debe llevar
+        await expect(page.locator('.mia-antes')).toContainText('Cra. 3 # 10-20');
+        await expect(page.locator('.mia-antes')).toContainText('Trae tu documento.');
         await page.locator('.mia-horario').first().click();
         await page.locator('[data-confirmar]').click();
         await expect(page.locator('.mia-confirmada')).toContainText('Tu asistencia está confirmada');
         await expect(page.locator('.mia-confirmada')).toContainText('Cra. 3 # 10-20');
         expect(api.estado.datos.invitados[0]).toMatchObject({ estado: 'CONFIRMADA', horarioId: 'h1' });
         expect(errores).toEqual([]);
+    });
+
+    test('en una reunión virtual, el enlace privado espera a la confirmación', async ({ page, api }) => {
+        procesoCon(api);
+        Object.assign(api.estado.datos.invitaciones[0], { modalidad: 'VIRTUAL', lugar: null, enlace: 'https://meet.example.com/abc' });
+        await page.goto('perfil-usuario.html');
+        await page.locator('[data-mia="ic-1"]').click();
+        await expect(page.locator('.mia-antes')).toContainText('en línea');
+        await expect(page.locator('.mia-antes')).not.toContainText('meet.example.com');
+        await page.locator('.mia-horario').first().click();
+        await page.locator('[data-confirmar]').click();
+        await expect(page.locator('.mia-confirmada a')).toHaveAttribute('href', 'https://meet.example.com/abc');
     });
 
     test('un horario lleno no se puede elegir', async ({ page, api }) => {
