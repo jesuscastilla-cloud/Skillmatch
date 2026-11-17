@@ -11028,3 +11028,92 @@ html[data-theme="dark"]:not(.isla-intro):not(.isla-abriendo):not(#barra-ligera) 
     :root:not(#barra-ligera) body > .tabbar.vidrio-oscuro,
     :root[data-theme="dark"]:not(#barra-ligera) body > .tabbar { background: #0B1B2C; }
 }
+
+/* ---------- 95. «Cómo aprende SkillMatch» para leer como un informe (2026-11-16) ----------
+   La pagina sigue el orden del proceso (problema, datos, variables, modelo, evaluacion, interpretacion,
+   uso, simulador, reentrenamiento y reglas de asociacion) con los nombres tecnicos correctos. Se suman:
+   la ficha tecnica, la matriz de confusion con sus ejes, la tabla de metricas, la escala de umbrales
+   y el registro de entrenamientos. El arbol (seccion 4) queda igual. */
+
+/* Ficha tecnica: dos columnas de pares nombre / valor */
+.mp-ficha-caja h2 { margin-bottom: var(--s4); }
+.mp-ficha {
+    display: grid;
+    grid-template-columns: minmax(0, 220px) minmax(0, 1fr) minmax(0, 220px) minmax(0, 1fr);
+    gap: var(--s3) var(--s5);
+    margin: 0;
+}
+.mp-ficha dt { font-size: var(--t-sm); font-weight: 700; color: var(--ink); }
+.mp-ficha dd { margin: 0; font-size: var(--t-sm); line-height: 1.5; color: var(--ink-2); }
+.mp-ficha-detalle { grid-template-columns: minmax(0, 260px) minmax(0, 1fr); }
+@media (max-width: 1000px) { .mp-ficha { grid-template-columns: minmax(0, 200px) minmax(0, 1fr); } }
+@media (max-width: 600px) {
+    .mp-ficha, .mp-ficha-detalle { grid-template-columns: 1fr; gap: 2px; }
+    .mp-ficha dd + dt { margin-top: var(--s3); }
+}
+
+/* Tipo de cada variable, con el nombre de su columna */
+.mp-variables .mp-var-tipo { display: block; margin-top: 4px; font-size: var(--t-xs); color: var(--ink-muted); }
+.mp-variables .mp-var-tipo code { font-size: .95em; color: var(--sea-deep); background: none; padding: 0; }
+
+/* Evaluacion: matriz y comparacion lado a lado */
+.mp-eval { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s6); align-items: start; }
+.mp-eval .mp-subtitulo { margin-top: var(--s5); }
+.mp-eval > * { min-width: 0; }
+@media (max-width: 900px) { .mp-eval { grid-template-columns: 1fr; gap: 0; } }
+
+/* La matriz de confusion, con sus dos ejes (real en las filas, prediccion en las columnas) */
+.mp-matriz { display: block; }
+.mp-confusion { width: 100%; border-collapse: separate; border-spacing: 6px; table-layout: fixed; }
+.mp-confusion th { font-size: var(--t-xs); font-weight: 700; color: var(--ink-2); text-align: center; padding: 2px 4px; }
+.mp-confusion thead .mp-eje { color: var(--ink); font-size: var(--t-sm); padding-bottom: 0; }
+.mp-confusion tbody th { text-align: right; width: 34%; padding-right: var(--s2); color: var(--ink); line-height: 1.3; }
+.mp-confusion .mp-eje-fila { display: block; font-weight: 600; color: var(--ink-3); }
+.mp-confusion .mp-esquina { width: 34%; }
+.mp-celda { padding: var(--s3); border-radius: var(--r-md); text-align: center; vertical-align: middle; }
+.mp-celda.acierto { background: var(--verde-soft); }
+.mp-celda.error { background: var(--rojo-soft); }
+.mp-celda-n { display: block; font-family: var(--font-display); font-size: var(--t-xl); font-weight: 700; color: var(--ink); line-height: 1.1; }
+.mp-celda strong { display: block; font-size: var(--t-sm); color: var(--ink); }
+.mp-celda small { display: block; font-size: var(--t-xs); color: var(--ink-3); line-height: 1.3; }
+.mp-matriz-nota { margin-top: var(--s2); font-size: var(--t-xs); color: var(--ink-3); }
+@media (max-width: 600px) {
+    .mp-confusion { border-spacing: 4px; }
+    .mp-confusion tbody th, .mp-confusion .mp-esquina { width: 25%; padding-right: 2px; }
+    .mp-celda { padding: var(--s2) 4px; }
+    .mp-celda-n { font-size: var(--t-lg); }
+    .mp-celda small { font-size: 10.5px; }
+}
+
+/* Tabla de metricas y registro de entrenamientos */
+.mp-tabla-marco { margin-top: var(--s3); overflow-x: auto; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--surface); }
+.mp-metricas { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+.mp-metricas th, .mp-metricas td { padding: var(--s2) var(--s3); text-align: left; border-bottom: 1px solid var(--hairline-soft); white-space: nowrap; color: var(--ink-2); }
+.mp-metricas thead th { background: var(--surface-sunk); color: var(--ink); font-size: var(--t-xs); font-weight: 700; }
+.mp-metricas tbody th { color: var(--ink); font-weight: 600; white-space: normal; }
+.mp-metricas .num { text-align: right; font-variant-numeric: tabular-nums; }
+.mp-metricas tbody tr:last-child > * { border-bottom: 0; }
+.mp-metricas .mp-en-uso > * { background: var(--sea-light); }
+.mp-chip { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--sea); color: #fff; font-size: 11px; font-weight: 700; vertical-align: 1px; }
+.mp-metricas .mp-mas { color: var(--verde-deep, #1E7B4F); font-weight: 600; }
+.mp-metricas .mp-menos { color: var(--rojo-deep, #B4232C); font-weight: 600; }
+.mp-registro { margin: 0; }
+.mp-linea .mp-tabla-marco { margin-top: var(--s4); }
+
+/* Escala de umbrales: de 0 a 100 %, con las tres zonas */
+.mp-escala { display: flex; margin-top: var(--s4); border-radius: var(--r-md); overflow: hidden; }
+.mp-escala > span { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: var(--s3); text-align: center; }
+.mp-escala strong { font-size: var(--t-sm); color: var(--ink); }
+.mp-escala small { font-size: var(--t-xs); color: var(--ink-2); }
+.mp-escala .bajas { background: var(--rojo-soft); }
+.mp-escala .regulares { background: var(--sol-soft); }
+.mp-escala .buenas { background: var(--verde-soft); }
+.mp-escala-ejes { position: relative; height: 20px; margin-top: 4px; font-size: var(--t-xs); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.mp-escala-ejes span { position: absolute; top: 0; transform: translateX(-50%); }
+.mp-escala-ejes span:first-child { left: 0; transform: none; }
+.mp-escala-ejes span:last-child { right: 0; transform: none; }
+.mp-reglas-uso { margin: var(--s4) 0 0; padding-left: var(--s5); display: grid; gap: var(--s2); font-size: var(--t-sm); line-height: 1.5; color: var(--ink-2); }
+
+/* Reglas de asociacion: soporte, confianza y lift en una linea */
+.mp-juntas-dato { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); }
+.mp-juntas-dato strong { color: var(--ink); font-variant-numeric: tabular-nums; }

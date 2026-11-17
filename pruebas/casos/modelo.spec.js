@@ -14,19 +14,52 @@ function modeloQueGana(api) {
 }
 
 test.describe('Cómo aprende SkillMatch', () => {
-    test('con los datos de prueba dice «Demostración» y que no le gana al modelo flojo', async ({ page, context, api, errores }) => {
+    test('con los datos de ejemplo lo avisa y dice que no supera a la línea base', async ({ page, context, api, errores }) => {
         await entrarComo(context, 'visitante');
         await page.goto('como-aprende.html');
         await expect(page.locator('#mpEstado')).toContainText('151');
         await expect(page.locator('#mpDemo')).toBeVisible();
+        await expect(page.locator('#mpDemo')).toContainText('Datos de ejemplo');
         await expect(page.locator('#mpVeredicto')).not.toHaveClass(/gana/);
-        // Lo que mira: la variable nueva, solo con los que se postularon antes
+        await expect(page.locator('#mpVeredicto')).toContainText('no supera a la línea base');
+        // Las variables de entrada: la nueva, solo con los que se postularon antes
         await expect(page.locator('#mpVariables')).toContainText('Cuántos se postularon antes');
         await expect(page.locator('#mpVariables')).not.toContainText('Cuánta gente se postuló');
         expect(errores).toEqual([]);
     });
 
-    test('«Pruébalo» cambia al mover un control y nunca muestra un porcentaje', async ({ page, context, api, errores }) => {
+    // 2026-11-16: la pagina se lee como un informe, con los nombres tecnicos correctos y en el orden del proceso
+    test('se lee como un informe: ficha técnica, pasos en orden y métricas con sus nombres correctos', async ({ page, context, api, errores }) => {
+        await entrarComo(context, 'visitante');
+        await page.goto('como-aprende.html');
+        const ficha = page.locator('#mpFicha');
+        await expect(ficha).toContainText('Clasificación binaria supervisada');
+        await expect(ficha).toContainText('Árbol de decisión CART, criterio de Gini, profundidad máxima 4');
+        await expect(ficha).toContainText('Validación cruzada estratificada de 5 pliegues, agrupada por vacante');
+        // Los pasos, en el orden del proceso
+        const titulos = await page.locator('.mp-parte h2').allTextContents();
+        expect(titulos).toEqual(['Ficha técnica', 'Planteamiento del problema', 'Conjunto de datos', 'Variables de entrada', 'El modelo: árbol de decisión',
+            'Evaluación del modelo', 'Interpretación: importancia de las variables', 'De la probabilidad al mensaje', 'Simulador',
+            'Reentrenamiento', 'Análisis complementario: reglas de asociación']);
+        // La matriz de confusión con sus ejes y sus cuatro casos
+        const matriz = page.locator('.mp-confusion');
+        await expect(matriz).toContainText('Predicción del modelo');
+        await expect(matriz).toContainText('Real:');
+        for (const sigla of ['VP', 'FN', 'FP', 'VN']) await expect(matriz).toContainText(sigla);
+        // Las métricas de los tres modelos
+        await expect(page.locator('.mp-metricas').first().locator('tbody tr')).toHaveCount(3);
+        await expect(page.locator('.mp-metricas').first()).toContainText('Línea base');
+        await expect(page.locator('.mp-metricas').first()).toContainText('ROC-AUC');
+        // Los umbrales y las reglas de asociación con soporte, confianza y lift
+        await expect(page.locator('#mpUmbrales')).toContainText('60 % o más');
+        await expect(page.locator('#mpJuntas li').first()).toContainText('Lift');
+        // Ni el lenguaje de antes ni el árbol perdido: el árbol sigue
+        await expect(page.locator('main')).not.toContainText(/modelo flojo|nota del examen/i);
+        await expect(page.locator('#mpArbol .mp-nodo').first()).toBeVisible();
+        expect(errores).toEqual([]);
+    });
+
+    test('el simulador cambia al mover un control y nunca muestra un porcentaje', async ({ page, context, api, errores }) => {
         await entrarComo(context, 'visitante');
         await page.goto('como-aprende.html');
         const resultado = page.locator('#mpResultado');
