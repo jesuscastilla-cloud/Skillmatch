@@ -53,8 +53,8 @@ public class RegistrationService {
     static final Duration VIGENCIA_PENDIENTE = Duration.ofMinutes(30);
 
     /** Versión de la política vigente (la que muestra politica-datos.html). */
-    @Value("${app.privacidad.version-politica:0.1}")
-    private String versionPolitica = "0.1";
+    @Value("${app.privacidad.version-politica:1.0}")
+    private String versionPolitica = "1.0";
 
     /**
      * false mientras el frontend no envíe aceptaPolitica / mayorDeEdad: así el registro
