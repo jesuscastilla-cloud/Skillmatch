@@ -4,9 +4,9 @@ const { test, expect, entrarComo } = require('../apoyo/prueba');
 test('cada postulación trae su anillo y sus habilidades, y "Más compatibles" la ordena', async ({ page, context, api, errores }) => {
     await entrarComo(context, 'empresa');
     await page.goto('perfil-empresa.html');
-    // Despues de "Primeros pasos", las postulaciones van antes que las vacantes y que "Acerca de nosotros"
+    // Despues de "Primeros pasos", las postulaciones (y sus invitaciones) van antes que las vacantes y que "Acerca de nosotros"
     const orden = await page.locator('.company-main-area > .content-section-card').evaluateAll(s => s.filter(x => !x.hidden && x.id !== 'primerosPasos').map(x => x.id || x.querySelector('h2').textContent.trim()));
-    expect(orden.slice(0, 3)).toEqual(['candidatos', 'ofertas', 'Acerca de nosotros']);
+    expect(orden.slice(0, 4)).toEqual(['candidatos', 'invitacionesEmpresa', 'ofertas', 'Acerca de nosotros']);
 
     // Valentina tiene las 3 habilidades que pide "Mesero o mesera"
     const valentina = page.locator('.application-card', { hasText: 'Valentina Herrera' });

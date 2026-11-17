@@ -42,13 +42,14 @@ import lombok.RequiredArgsConstructor;
 public class CorreosController {
 
     private static final Set<String> TIPOS = Set.of(PreferenciasCorreo.RESPUESTA, PreferenciasCorreo.MENSAJES,
-            PreferenciasCorreo.VACANTES, PreferenciasCorreo.POSTULACIONES);
+            PreferenciasCorreo.VACANTES, PreferenciasCorreo.POSTULACIONES, PreferenciasCorreo.INVITACIONES);
 
     private static final Map<String, String> NOMBRES = Map.of(
             PreferenciasCorreo.RESPUESTA, "las respuestas de las empresas a tus postulaciones",
             PreferenciasCorreo.MENSAJES, "los avisos de mensajes sin leer",
             PreferenciasCorreo.VACANTES, "las vacantes nuevas de los lunes",
-            PreferenciasCorreo.POSTULACIONES, "el resumen diario de candidatos");
+            PreferenciasCorreo.POSTULACIONES, "el resumen diario de candidatos",
+            PreferenciasCorreo.INVITACIONES, "las invitaciones a entrevistas y evaluaciones");
 
     private final AvisosCorreoService avisos;
 
@@ -96,6 +97,7 @@ public class CorreosController {
         m.put(PreferenciasCorreo.MENSAJES, p.isMensajes());
         m.put(PreferenciasCorreo.VACANTES, p.isVacantes());
         m.put(PreferenciasCorreo.POSTULACIONES, p.isPostulaciones());
+        m.put(PreferenciasCorreo.INVITACIONES, p.isInvitaciones());
         return m;
     }
 

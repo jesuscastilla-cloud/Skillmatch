@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración de planes - SkillMatch Cartagena</title>
+    <meta name="description" content="Administración de los planes de empresas de SkillMatch.">
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <!-- Fuentes guardadas en el proyecto (assets/fonts, app.css seccion 77) -->
+    <link rel="preload" href="../assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');document.documentElement.style.setProperty('--reloj',Date.now()%864e5+'ms');addEventListener('pagereveal',function(e){var v=e.viewTransition,d;try{d=JSON.parse(sessionStorage.getItem('skillmatch_deslizar'));sessionStorage.removeItem('skillmatch_deslizar');}catch(x){}if(d&&d.a===location.pathname&&Date.now()-d.t<15000){if(v&&v.types)v.types.add('ir-'+d.dir);var h=document.documentElement,c='entra-'+d.dir;h.classList.add(c);setTimeout(function(){h.classList.remove(c);},1400);}});})();</script>
+</head>
+<body class="pagina-vidrio pagina-admin">
+    <div class="fondo-vivo" aria-hidden="true"><span class="mancha-1"></span><span class="mancha-2"></span><span class="mancha-3"></span><span class="mancha-4"></span><span class="mancha-5"></span></div>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <header>
+        <nav class="container" aria-label="Principal">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
+                </div>
+                <ul class="nav-links nav-principales">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="empresas.html">Empresas</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="login.html" class="btn-login">Iniciar sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="main" class="container admin">
+        <div class="admin-cabeza">
+            <p class="planes-eti"><i data-ico="settings"></i> Administración</p>
+            <h1>Planes de empresas</h1>
+            <p>Atiende las solicitudes de activación, revisa las empresas con plan activo y escribe los datos para cobrar.</p>
+        </div>
+
+        <div class="admin-sin-permiso" id="adminSinPermiso" hidden>
+            <i data-ico="lock"></i>
+            <h2>Esta página es solo para administradores</h2>
+            <p>Entra con una cuenta de administrador para gestionar los planes.</p>
+            <a class="btn btn-primary" href="login.html?volver=admin.html">Iniciar sesión</a>
+        </div>
+
+        <div id="adminContenido" hidden>
+            <div class="admin-tabs" role="tablist" aria-label="Secciones">
+                <button type="button" role="tab" aria-selected="true" aria-controls="tabSolicitudes" id="btnSolicitudes" data-tab="tabSolicitudes"><i data-ico="inbox"></i> Solicitudes <span class="admin-cuenta" id="adminPendientes"></span></button>
+                <button type="button" role="tab" aria-selected="false" aria-controls="tabEmpresas" id="btnEmpresas" data-tab="tabEmpresas" tabindex="-1"><i data-ico="building"></i> Empresas con plan</button>
+                <button type="button" role="tab" aria-selected="false" aria-controls="tabComercial" id="btnComercial" data-tab="tabComercial" tabindex="-1"><i data-ico="money"></i> Datos para cobrar</button>
+            </div>
+
+            <section class="admin-panel" role="tabpanel" id="tabSolicitudes" aria-labelledby="btnSolicitudes">
+                <div class="admin-filtros" role="group" aria-label="Mostrar">
+                    <button type="button" class="proceso-filtro" aria-pressed="true" data-estado="PENDIENTE">Pendientes</button>
+                    <button type="button" class="proceso-filtro" aria-pressed="false" data-estado="">Todas</button>
+                </div>
+                <ul class="admin-solicitudes" id="adminSolicitudes" aria-busy="true"><li class="skeleton-bloque"></li></ul>
+            </section>
+
+            <section class="admin-panel" role="tabpanel" id="tabEmpresas" aria-labelledby="btnEmpresas" hidden>
+                <div id="adminCorreos" class="admin-correos" aria-live="polite"></div>
+                <div id="adminEmpresas" aria-busy="true"><div class="skeleton-bloque"></div></div>
+            </section>
+
+            <section class="admin-panel" role="tabpanel" id="tabComercial" aria-labelledby="btnComercial" hidden>
+                <div class="admin-comercial-estado" id="adminComercialEstado"></div>
+                <form id="adminComercial" class="admin-form" novalidate>
+                    <div class="invitar-fila">
+                        <div class="form-group"><label for="cRazon">Razón social o nombre comercial</label><input id="cRazon" name="razonSocial" maxlength="150"></div>
+                        <div class="form-group"><label for="cNit">NIT</label><input id="cNit" name="nit" maxlength="30" inputmode="numeric"></div>
+                    </div>
+                    <div class="invitar-fila">
+                        <div class="form-group"><label for="cBanco">Banco</label><input id="cBanco" name="banco" maxlength="80"></div>
+                        <div class="form-group"><label for="cTipo">Tipo de cuenta</label>
+                            <select id="cTipo" name="tipoCuenta"><option value="">Elige</option><option>Ahorros</option><option>Corriente</option></select></div>
+                    </div>
+                    <div class="invitar-fila">
+                        <div class="form-group"><label for="cNumero">Número de cuenta</label><input id="cNumero" name="numeroCuenta" maxlength="40" inputmode="numeric"></div>
+                        <div class="form-group"><label for="cTitular">Titular de la cuenta</label><input id="cTitular" name="titular" maxlength="150"></div>
+                    </div>
+                    <div class="invitar-fila">
+                        <div class="form-group"><label for="cCorreo">Correo para recibir comprobantes</label><input id="cCorreo" name="correoPagos" type="email" maxlength="254"></div>
+                        <div class="form-group"><label for="cTel">Teléfono o WhatsApp de pagos (opcional)</label><input id="cTel" name="telefonoPagos" type="tel" maxlength="25"></div>
+                    </div>
+                    <div class="form-group"><label for="cInstr">Instrucciones adicionales (opcional)</label>
+                        <textarea id="cInstr" name="instrucciones" rows="3" maxlength="1000" placeholder="Ej.: Escribe el nombre de tu empresa en la referencia del pago."></textarea></div>
+                    <p class="admin-ayuda"><i data-ico="lock"></i> Estos datos solo los ve una empresa después de solicitar la activación. Banco, número de cuenta, titular y correo son necesarios para mostrarlos.</p>
+                    <p class="error-text" id="adminComercialError" role="alert" hidden></p>
+                    <button type="submit" class="btn btn-primary"><i data-ico="save"></i> Guardar datos</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/admin.js"></script>
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>

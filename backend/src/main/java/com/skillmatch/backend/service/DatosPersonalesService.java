@@ -79,6 +79,7 @@ public class DatosPersonalesService {
                         Criteria.where("receiverId").is(userId).and("deletedByReceiver").is(false)))
                 .with(Sort.by(Sort.Direction.ASC, "sentAt")), Message.class));
         datos.put("notificaciones", notificationRepository.findByUserIdOrderByCreatedAtDesc(userId));
+        datos.put("invitaciones", mongoTemplate.find(new Query(Criteria.where("userId").is(userId)), com.skillmatch.backend.model.InvitacionCandidato.class));
         companyRepository.findByUserId(userId).ifPresent(c -> datos.put("empresa", empresa(c)));
 
         log.info("Exportación de datos personales para usuario {}", userId);
@@ -136,6 +137,7 @@ public class DatosPersonalesService {
         mongoTemplate.remove(new Query(susConexiones), Connection.class);
         mongoTemplate.remove(new Query(Criteria.where("userId").is(userId)), Application.class);
         mongoTemplate.remove(new Query(Criteria.where("userId").is(userId)), SavedJob.class);
+        mongoTemplate.remove(new Query(Criteria.where("userId").is(userId)), com.skillmatch.backend.model.InvitacionCandidato.class);
         loginAttemptService.reset(LoginAttemptService.claveDe(user));
         userRepository.delete(user);
     }

@@ -126,6 +126,20 @@ public class GlobalExceptionHandler {
     }
 
     // Demasiados intentos con una cuenta (bloqueo por fuerza bruta)
+    // Llego al limite de su plan: 409 con "codigo": "cupo" para que la pagina muestre los planes
+    @ExceptionHandler(CupoAgotadoException.class)
+    public ResponseEntity<?> handleCupo(CupoAgotadoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", ex.getMessage(), "codigo", "cupo"));
+    }
+
+    // Otra operacion sobre lo mismo sigue en curso (ver CerrojoService)
+    @ExceptionHandler(OperacionEnCursoException.class)
+    public ResponseEntity<?> handleEnCurso(OperacionEnCursoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", ex.getMessage(), "codigo", "en_curso"));
+    }
+
     @ExceptionHandler(TooManyAttemptsException.class)
     public ResponseEntity<?> handleTooManyAttempts(TooManyAttemptsException ex) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)

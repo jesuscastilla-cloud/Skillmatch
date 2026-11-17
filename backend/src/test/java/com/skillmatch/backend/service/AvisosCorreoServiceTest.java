@@ -46,7 +46,7 @@ class AvisosCorreoServiceTest {
         jwt.setSecret("secreto-de-prueba");
         avisos = new AvisosCorreoService(correo, notificaciones, modelo, preferencias,
                 mock(AvisoEnviadoRepository.class), usuarios, mock(JobRepository.class),
-                mock(CompanyRepository.class), mock(MongoTemplate.class), jwt, "https://sitio.test/", 400);
+                mock(CompanyRepository.class), mock(MongoTemplate.class), jwt, new ColaEnMemoria(correo, 400), "https://sitio.test/");
         ana.setId("u1");
         ana.setFirstName("Ana");
         ana.setEmail("ana@correo.co");
@@ -110,7 +110,7 @@ class AvisosCorreoServiceTest {
         jwt.setSecret("x");
         AvisosCorreoService conTope = new AvisosCorreoService(correo, notificaciones, modelo, preferencias,
                 mock(AvisoEnviadoRepository.class), usuarios, mock(JobRepository.class),
-                mock(CompanyRepository.class), mock(MongoTemplate.class), jwt, "https://sitio.test", 1);
+                mock(CompanyRepository.class), mock(MongoTemplate.class), jwt, new ColaEnMemoria(correo, 1), "https://sitio.test");
         postulacion.setStatus(ApplicationStatus.ACEPTADA);
 
         conTope.postulacionRespondida(postulacion, vacante);

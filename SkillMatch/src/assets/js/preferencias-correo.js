@@ -13,6 +13,7 @@
 
     const PERSONAS = [
         { k: 'respuesta', t: 'Cuando una empresa responde mi postulación', d: 'Si no te aceptaron, el correo trae un consejo para la próxima.' },
+        { k: 'invitaciones', t: 'Cuando una empresa me invita a una entrevista o evaluación', d: 'Con los horarios propuestos y hasta cuándo puedo responder.' },
         { k: 'mensajes', t: 'Cuando tengo un mensaje sin leer', d: 'Si lleva más de 2 horas sin leer. Como máximo uno al día por conversación.' },
         { k: 'vacantes', t: 'Vacantes nuevas para mí', d: 'Los lunes: las 3 vacantes nuevas que más se parecen a tus habilidades.' }
     ];

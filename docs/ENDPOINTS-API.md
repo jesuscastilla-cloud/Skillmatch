@@ -148,6 +148,36 @@ Base URL: `http://localhost:8080/api/applications`
 
 ---
 
+## 📨 Invitaciones a la siguiente etapa
+
+| Método | Ruta | Quién | Qué hace |
+|---|---|---|---|
+| POST | `/api/invitaciones` | Empresa | Invita a varios postulantes de una vacante (entrevista o evaluación, horarios con cupos). |
+| GET | `/api/invitaciones?jobId=` | Empresa | Sus procesos, con cuentas por estado. |
+| GET | `/api/invitaciones/{id}` | Empresa dueña | Detalle: horarios, cupos ocupados y respuesta de cada persona. |
+| POST | `/api/invitaciones/{id}/recordar` | Empresa (plan Profesional) | Recuerda a quienes no han respondido (una vez cada 24 h). |
+| POST | `/api/invitaciones/{id}/cancelar` | Empresa dueña | Cancela el proceso y avisa a los invitados. |
+| GET | `/api/invitaciones/mias` | Persona | Sus invitaciones. El lugar y el enlace solo aparecen al confirmar. |
+| POST | `/api/invitaciones/respuestas/{id}` | Persona invitada | `{ "asiste": true, "horarioId": "...", "comentario": "..." }` |
+
+Los límites del plan responden **409** con `{ "message": "...", "codigo": "cupo" }`.
+
+## 💳 Planes para empresas
+
+| Método | Ruta | Quién | Qué hace |
+|---|---|---|---|
+| GET | `/api/public/planes` | Cualquiera | Catálogo: Básico y Profesional, con precio y límites. |
+| GET | `/api/planes/mio` | Empresa | Plan vigente, uso del mes, vigencia, solicitudes y datos de pago (solo con una solicitud pendiente). |
+| POST | `/api/planes/solicitudes` | Empresa | `{ "plan": "PROFESIONAL", "meses": 1, "contactoNombre", "contactoCorreo", "contactoTelefono", "nota" }` (meses: 1, 3 o 6). |
+| DELETE | `/api/planes/solicitudes/{id}` | Empresa | Cancela su solicitud pendiente. |
+| GET | `/api/admin/planes/solicitudes?estado=` | Admin | Solicitudes (todas o por estado). |
+| POST | `/api/admin/planes/solicitudes/{id}/aprobar` | Admin | `{ "meses", "nota" }`: activa o extiende la vigencia. |
+| POST | `/api/admin/planes/solicitudes/{id}/rechazar` | Admin | `{ "nota" }` obligatoria. |
+| GET | `/api/admin/planes/empresas` | Admin | Empresas con plan Profesional y su vigencia. |
+| GET / PUT | `/api/admin/comercial` | Admin | Datos para cobrar (razón social, NIT, banco, cuenta, titular, correo y teléfono de pagos, instrucciones). |
+
+---
+
 ## 💡 Modelos de Perfil
 
 ### 🎓 Experiencia Laboral (Experience)

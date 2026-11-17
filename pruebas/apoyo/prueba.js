@@ -7,7 +7,8 @@ const CUENTAS = {
     persona: { id: 'u-valentina', firstName: 'Valentina', lastName: 'Herrera', email: 'valentina@prueba.test', role: 'USER', userType: 'usuario', companyId: null },
     otra: { id: 'u-andres', firstName: 'Andrés', lastName: 'Julio', email: 'andres@prueba.test', role: 'USER', userType: 'usuario', companyId: null },
     empresa: { id: 'u-hotel', firstName: 'Hotel Puerta del Mar', lastName: 'Empresa', email: 'hotel@prueba.test', role: 'EMPRESA', userType: 'empresa', companyId: 'c-hotel' },
-    digital: { id: 'u-digital', firstName: 'Caribe Digital Estudio', lastName: 'Empresa', email: 'digital@prueba.test', role: 'EMPRESA', userType: 'empresa', companyId: 'c-digital' }
+    digital: { id: 'u-digital', firstName: 'Caribe Digital Estudio', lastName: 'Empresa', email: 'digital@prueba.test', role: 'EMPRESA', userType: 'empresa', companyId: 'c-digital' },
+    admin: { id: 'u-admin', firstName: 'Equipo', lastName: 'SkillMatch', email: 'admin@prueba.test', role: 'ADMIN', userType: 'usuario', companyId: null }
 };
 
 const test = base.test.extend({

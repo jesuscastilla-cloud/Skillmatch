@@ -93,6 +93,11 @@
         <div class="container">
             <div class="company-grid-layout">
                 <aside class="company-sidebar-left">
+                    <!-- Plan y uso (invitaciones.js) -->
+                    <div class="sidebar-widget plan-lateral" id="planLateral" hidden>
+                        <h2 class="widget-title"><i data-ico="sparkle"></i> Plan y uso</h2>
+                        <div class="plan-lateral-cuerpo"></div>
+                    </div>
                     <div class="sidebar-widget">
                         <h2 class="widget-title"><i data-ico="chart"></i> Resumen de actividad</h2>
                         <div class="activity-stats">
@@ -161,6 +166,19 @@
                             <div id="applications-board" class="tablero" hidden></div>
                         </div>
                     </div>
+                    <!-- Invitaciones a la siguiente etapa (invitaciones.js): cada proceso con sus respuestas -->
+                    <section class="content-section-card" id="invitacionesEmpresa" aria-labelledby="invitacionesTitulo">
+                        <div class="section-card-header">
+                            <h2 id="invitacionesTitulo">Invitaciones</h2>
+                            <div id="invitacionesPlan"></div>
+                        </div>
+                        <div class="section-card-body">
+                            <div id="invitacionesLista" aria-busy="true">
+                                <div class="skeleton-bloque"></div>
+                            </div>
+                        </div>
+                    </section>
+
                     <div class="content-section-card" id="ofertas">
                         <div class="section-card-header">
                             <h2>Ofertas publicadas</h2>
@@ -200,6 +218,7 @@
     <script src="../assets/js/editor-imagen.js"></script>
     <script src="../assets/js/hoja-excel.js"></script>
     <script src="../assets/js/perfil-empresa.js"></script>
+    <script src="../assets/js/invitaciones.js"></script>
     <script src="../assets/js/preferencias-correo.js"></script>
     <script src="../assets/js/ui.js"></script>
 </body>

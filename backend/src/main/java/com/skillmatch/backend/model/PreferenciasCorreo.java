@@ -18,7 +18,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PreferenciasCorreo {
 
-    public static final String RESPUESTA = "respuesta", MENSAJES = "mensajes", VACANTES = "vacantes", POSTULACIONES = "postulaciones";
+    public static final String RESPUESTA = "respuesta", MENSAJES = "mensajes", VACANTES = "vacantes", POSTULACIONES = "postulaciones",
+            INVITACIONES = "invitaciones";
 
     @Id
     private String userId;
@@ -31,6 +32,9 @@ public class PreferenciasCorreo {
 
     /** "Vacantes nuevas para ti", los lunes (personas). Opcional: apagado hasta que la persona lo pida. */
     private boolean vacantes = false;
+
+    /** "Una empresa te invita a una entrevista o evaluacion" (personas). */
+    private boolean invitaciones = true;
 
     /** "Un candidato se postulo", resumen diario (empresas). */
     private boolean postulaciones = true;
@@ -45,6 +49,7 @@ public class PreferenciasCorreo {
             case MENSAJES -> mensajes;
             case VACANTES -> vacantes;
             case POSTULACIONES -> postulaciones;
+            case INVITACIONES -> invitaciones;
             default -> false;
         };
     }
@@ -55,6 +60,7 @@ public class PreferenciasCorreo {
             case MENSAJES -> mensajes = valor;
             case VACANTES -> vacantes = valor;
             case POSTULACIONES -> postulaciones = valor;
+            case INVITACIONES -> invitaciones = valor;
             default -> throw new IllegalArgumentException("Tipo de correo desconocido: " + tipo);
         }
         actualizado = LocalDateTime.now();
