@@ -44,6 +44,10 @@ public class DataSeeder implements CommandLineRunner {
     private final ApplicationRepository applicationRepository;
     private final PasswordEncoder passwordEncoder;
     private final org.springframework.beans.factory.ObjectProvider<com.skillmatch.backend.service.ModeloPredictivoService> modeloPredictivo;
+    private final EscenarioDePrueba escenario;
+
+    /** Semanas de entrenamientos que se reconstruyen para el historial del modelo («Reentrenamiento»). */
+    static final int SEMANAS_DE_HISTORIAL = 8;
 
     private final Random random = new Random();
 
@@ -139,8 +143,19 @@ public class DataSeeder implements CommandLineRunner {
             log.info("Creando aplicaciones...");
             createApplications(users, jobs, seedApplications);
 
-            // El servidor ya atendia visitas mientras se sembraba: que el modelo aprenda ahora con lo nuevo
-            modeloPredictivo.ifAvailable(com.skillmatch.backend.service.ModeloPredictivoService::aprender);
+            log.info("Creando el escenario de prueba...");
+            escenario.crear();
+
+            // El modelo: primero los entrenamientos de las ultimas semanas, cada uno con los datos que habia ese
+            // dia (asi «Reentrenamiento» tiene historia que mostrar), y despues el de hoy
+            modeloPredictivo.ifAvailable(m -> {
+                int guardados = 0;
+                for (int semana = SEMANAS_DE_HISTORIAL; semana >= 1; semana--) {
+                    if (m.aprenderHasta(java.time.LocalDate.now().minusWeeks(semana).atTime(3, 30))) guardados++;
+                }
+                m.aprender();
+                log.info("   - Modelo: {} entrenamientos semanales reconstruidos y el de hoy", guardados);
+            });
 
             log.info("✅ Seed completado exitosamente!");
             log.info("📊 Datos creados: {} usuarios, {} empresas, {} ofertas, {} aplicaciones",
@@ -273,7 +288,9 @@ public class DataSeeder implements CommandLineRunner {
             job.setLocation(company.getLocation());
             job.setModality(new String[]{"presencial", "remoto", "híbrido"}[random.nextInt(3)]);
             job.setActive(random.nextInt(10) > 1);
-            job.setPostedDate(LocalDateTime.now().minusDays(random.nextInt(90)));
+            // Repartidas parejo en las ultimas 13 semanas (91 dias): asi cada semana tiene vacantes nuevas
+            // y los Indicadores siempre pueden comparar una semana con la anterior
+            job.setPostedDate(LocalDateTime.now().minusDays((long) i * 91 / Math.max(1, count)).minusHours(random.nextInt(12)));
 
             int skillCount = random.nextInt(5) + 3;
             List<String> jobSkills = new ArrayList<>();

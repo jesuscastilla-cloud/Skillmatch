@@ -72,7 +72,18 @@ public class TablaEjemplosService {
 
     /** Una fila por postulacion RESPONDIDA, con las 16 columnas de CABECERA (la usa el modelo de Java). */
     public List<Map<String, Number>> filas() {
-        List<Application> postulaciones = applicationRepository.findAll();
+        return filas(null);
+    }
+
+    /**
+     * La tabla como estaba en una fecha (hasta = null: hoy). Solo entran las postulaciones que ya existian
+     * y las respuestas que la empresa ya habia dado en ese momento: lo respondido despues seguia pendiente.
+     * La usa el sembrado para reconstruir los entrenamientos de las ultimas semanas (ModeloPredictivoService.aprenderHasta).
+     */
+    public List<Map<String, Number>> filas(LocalDateTime hasta) {
+        List<Application> postulaciones = applicationRepository.findAll().stream()
+                .filter(a -> hasta == null || (fecha(a) != null && !fecha(a).isAfter(hasta)))
+                .toList();
         Map<String, User> usuarios = userRepository.findAll().stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
         Map<String, Job> vacantes = jobRepository.findAll().stream()
@@ -90,6 +101,7 @@ public class TablaEjemplosService {
         List<Map<String, Number>> filas = new ArrayList<>();
         for (Application a : postulaciones) {
             if (a.getStatus() != ApplicationStatus.ACEPTADA && a.getStatus() != ApplicationStatus.RECHAZADA) continue;
+            if (hasta != null && (a.getReviewedDate() == null || a.getReviewedDate().isAfter(hasta))) continue;
             User u = usuarios.get(a.getUserId());
             Job v = vacantes.get(a.getJobId());
             if (u == null || v == null) continue;
