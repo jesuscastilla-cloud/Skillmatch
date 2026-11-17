@@ -63,71 +63,67 @@ test('el lente de cristal queda sobre la página actual y el mouse no lo mueve',
     expect(await enlace(page, 'Inicio').evaluate(a => getComputedStyle(a).boxShadow)).toBe('none');
 });
 
-// La barra es una isla flotante (app.css, sección 48): una cápsula azul noche separada de los bordes,
-// igual en el tema claro y en el oscuro, arriba y al bajar, y en todas las páginas
+// La barra es una isla flotante y ligera (app.css, sección 94, 2026-11-16): delgada, de vidrio suave que toma el
+// color de lo que tiene detrás, las opciones solo con su palabra y la página actual marcada con la chispa naranja
 const aspecto = page => page.locator('body > header').evaluate(h => {
     const c = getComputedStyle(h), r = h.getBoundingClientRect();
     return { fondo: c.backgroundColor, radio: parseFloat(c.borderTopLeftRadius), alto: Math.round(r.height), arriba: Math.round(r.top), izquierda: Math.round(r.left) };
 });
+const chispa = (page, texto) => enlace(page, texto).evaluate(a => {
+    const d = getComputedStyle(a, '::after');
+    return { display: d.display, fondo: d.backgroundColor, ancho: d.width };
+});
 
-test('la barra es una isla flotante de vidrio: compacta, centrada, con buscador visible y cada opción con su icono encima del texto', async ({ page, context, api }, info) => {
+test('la barra es una isla flotante ligera: compacta, centrada, con buscador visible y la página actual marcada con la chispa', async ({ page, context, api }, info) => {
     test.skip(info.project.name !== 'escritorio', 'en celular el menú va en la barra de abajo');
     await entrarComo(context, 'visitante');
     await page.goto('empresas.html');
     const isla = await aspecto(page);
-    // Tema claro: vidrio claro que deja pasar el color de atras (2026-11-13, seccion 87)
+    // Tema claro: vidrio claro y suave que deja pasar el color de atrás, sin refracción
     await expect(page.locator('body > header')).not.toHaveClass(/vidrio-oscuro/);
-    expect(isla.fondo).toBe('rgba(255, 255, 255, 0.4)');
-    // Desenfoca: con blur() o, con la refraccion (2026-11-13), dentro de su filtro SVG (url(#...))
-    expect(await page.locator('body > header').evaluate(h => getComputedStyle(h).backdropFilter)).toMatch(/blur|url\(/);
+    expect(isla.fondo).toBe('rgba(255, 255, 255, 0.74)');
+    expect(await page.locator('body > header').evaluate(h => getComputedStyle(h).backdropFilter)).toMatch(/blur/);
     expect(isla.radio).toBeGreaterThanOrEqual(20);            // puntas redondas
     expect(isla.arriba).toBeGreaterThanOrEqual(6);            // separada del borde de arriba...
     expect(isla.izquierda).toBeGreaterThanOrEqual(10);        // ...y de los lados
-    expect(isla.alto).toBe(64);                                // 64 px: el logo alineado con el menu y sus cabezas con aire
-    // Compacta (mide lo que su contenido, no 1280 px) y centrada en la ventana
+    expect(isla.alto).toBe(56);                                // delgada: 56 px
+    // Compacta (mide lo que su contenido) y centrada en la ventana
     const caja = await page.locator('body > header').boundingBox();
     expect(caja.width).toBeLessThan(1100);
     expect(Math.abs((caja.x + caja.width / 2) - page.viewportSize().width / 2)).toBeLessThan(2);
-    // Cada opción con su icono encima del texto (como torre.ai, con nuestro estilo; 2026-11-12)
+    // Las opciones son solo la palabra, en una línea (el icono queda para la barra del celular)
     await expect(page.locator('header .nav-principales a')).toHaveCount(3);   // Inicio, Vacantes, Empresas
-    await expect(page.locator('header .nav-principales a .ico')).toHaveCount(3);
-    const encima = await page.locator('header .nav-principales a').evaluateAll(as => as.every(a => {
-        const ico = a.querySelector('.ico').getBoundingClientRect(), r = document.createRange();
-        r.selectNodeContents(a); const texto = [...r.getClientRects()].pop();
-        return ico.bottom <= texto.top + 1 && Math.abs((ico.left + ico.right) / 2 - (texto.left + texto.right) / 2) < 2;
-    }));
-    expect(encima).toBe(true);
+    for (const ico of await page.locator('header .nav-principales a .ico').all()) await expect(ico).toBeHidden();
+    const altos = await page.locator('header .nav-principales a').evaluateAll(as => as.map(a => a.getBoundingClientRect().height));
+    expect(Math.max(...altos)).toBeLessThanOrEqual(40);
     // El buscador, visible y al lado del logo (antes del menú)
     const [logo, buscar, menu] = await Promise.all([page.locator('header .logo').boundingBox(), page.locator('header .nav-buscar .cmdk-boton').boundingBox(), page.locator('header .nav-principales').boundingBox()]);
     expect(buscar.x).toBeGreaterThan(logo.x + logo.width);
     expect(buscar.x + buscar.width).toBeLessThan(menu.x);
     await expect(page.locator('header .nav-buscar .cmdk-texto')).toHaveText('Buscar vacantes');
-    // "Tema" es solo la palabra de abajo: el lector de pantalla oye el nombre del botón, una vez
+    // "Tema" es solo su icono; el lector de pantalla oye el nombre del botón
     await expect(page.getByRole('button', { name: /^Cambiar a modo (claro|oscuro)$/ })).toHaveCount(1);
-    // Sobre vidrio claro: el logo normal, la opción activa en el turquesa de la marca (icono y palabra, como la
-    // barra de Apple) sobre su tinte, y
-    // "Iniciar sesión" como enlace de texto (sin borde ni fondo) junto al botón turquesa con letra blanca
+    // La página actual en el azul de la marca, con la chispa naranja debajo; las demás sin chispa
     await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo\.png$/);
-    await expect(enlace(page, 'Empresas')).toHaveCSS('color', 'rgb(7, 90, 98)');
-    await expect(enlace(page, 'Empresas').locator('.ico')).toHaveCSS('color', 'rgb(7, 90, 98)');
-    await expect(enlace(page, 'Vacantes')).toHaveCSS('color', 'rgb(18, 54, 94)');
+    await expect(enlace(page, 'Empresas')).toHaveCSS('color', 'rgb(8, 32, 60)');
+    await expect(enlace(page, 'Vacantes')).toHaveCSS('color', 'rgb(58, 85, 115)');
+    expect(await chispa(page, 'Empresas')).toEqual({ display: 'block', fondo: 'rgb(255, 118, 24)', ancho: '5px' });
+    expect((await chispa(page, 'Vacantes')).fondo).not.toBe('rgb(255, 118, 24)');
+    // "Iniciar sesión" como enlace de texto junto al botón turquesa con letra blanca
     const entrar = await page.locator('.btn-login').evaluate(a => { const c = getComputedStyle(a); return { color: c.color, fondo: c.backgroundColor, borde: c.borderTopWidth }; });
     expect(entrar).toEqual({ color: 'rgb(8, 32, 60)', fondo: 'rgba(0, 0, 0, 0)', borde: '0px' });
     expect(await page.locator('header a.btn-register').evaluate(a => getComputedStyle(a).color)).toBe('rgb(255, 255, 255)');
-    // El lente de la opción activa la cubre entera (icono y palabra), con aire alrededor
+    // El lente sigue debajo de la opción activa, como un tinte casi invisible
     const [lente, opcion] = await Promise.all([page.locator('.lente-menu').boundingBox(), enlace(page, 'Empresas').boundingBox()]);
     expect(lente.x).toBeLessThan(opcion.x);
     expect(lente.x + lente.width).toBeGreaterThan(opcion.x + opcion.width);
-    expect(lente.y).toBeLessThan(opcion.y);
-    expect(lente.y + lente.height).toBeGreaterThan(opcion.y + opcion.height);
     expect(await page.locator('header .nav-principales').evaluate(u => getComputedStyle(u).backgroundImage)).toBe('none');
-    // En tema oscuro, el vidrio oscuro de siempre con letras claras y el logo claro
+    // En tema oscuro, el vidrio oscuro con letras claras y el logo claro
     await page.evaluate(() => localStorage.setItem('skillmatch_theme', 'dark'));
     await page.reload();
-    expect((await aspecto(page)).fondo).toBe('rgba(9, 24, 44, 0.26)');
+    expect((await aspecto(page)).fondo).toBe('rgba(10, 26, 46, 0.5)');
     await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo-oscuro\.png$/);
-    // (espera a que termine el fundido del color)
-    await expect(enlace(page, 'Empresas')).toHaveCSS('color', 'rgb(95, 208, 220)');
+    await expect(enlace(page, 'Empresas')).toHaveCSS('color', 'rgb(255, 255, 255)');
 });
 
 test('la isla no cambia de forma ni de lugar al bajar; su vidrio toma el color de lo que tiene detrás', async ({ page, context, api }, info) => {
@@ -138,9 +134,10 @@ test('la isla no cambia de forma ni de lugar al bajar; su vidrio toma el color d
     // El azul de la portada llega hasta arriba, detrás de la isla
     expect(await page.locator('.hero').evaluate(h => Math.round(h.getBoundingClientRect().top))).toBeLessThanOrEqual(1);
     const arriba = await aspecto(page);
-    // La opción actual, en el turquesa claro de la marca (icono y palabra); las demás, casi blancas
-    await expect(enlace(page, 'Inicio')).toHaveCSS('color', 'rgb(95, 208, 220)');
-    await expect(enlace(page, 'Vacantes')).toHaveCSS('color', 'rgb(238, 243, 250)');
+    // Sobre la ciudad de noche: la opción actual en blanco con su chispa; las demás, claras y más tenues
+    await expect(enlace(page, 'Inicio')).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(enlace(page, 'Vacantes')).toHaveCSS('color', 'rgba(238, 243, 250, 0.74)');
+    expect((await chispa(page, 'Inicio')).display).toBe('block');
     await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo-oscuro\.png$/);
     // Ya fuera de la portada, sobre las secciones claras: la misma isla, en el mismo sitio
     await page.evaluate(() => window.scrollTo(0, document.querySelector('.hero').offsetHeight + 400));
@@ -149,12 +146,11 @@ test('la isla no cambia de forma ni de lugar al bajar; su vidrio toma el color d
     await page.mouse.wheel(0, -60);
     await expect(page.locator('html')).not.toHaveClass(/barras-escondidas/);
     await page.waitForTimeout(400);
-    // Solo cambia el vidrio: sobre la ciudad de noche, oscuro y casi transparente; sobre lo claro, vidrio claro
-    // con letras oscuras (seccion 87). Ni la forma ni el lugar
+    // Solo cambia el vidrio: oscuro sobre la ciudad, claro sobre lo claro. Ni la forma ni el lugar
     const abajo = await aspecto(page);
-    expect(arriba.fondo).toBe('rgba(9, 24, 44, 0.08)');
+    expect(arriba.fondo).toBe('rgba(10, 26, 46, 0.5)');
     await expect(page.locator('body > header')).not.toHaveClass(/vidrio-oscuro/);
-    expect(abajo.fondo).toBe('rgba(255, 255, 255, 0.4)');
+    expect(abajo.fondo).toBe('rgba(255, 255, 255, 0.74)');
     delete arriba.fondo; delete abajo.fondo;
     expect(abajo).toEqual(arriba);
     await expect(page.locator('header .logo img')).toHaveAttribute('src', /logo\.png$/);

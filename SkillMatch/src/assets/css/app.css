@@ -10065,7 +10065,7 @@ body > footer { contain-intrinsic-block-size: auto 600px; }
 .correos-nota svg, .correos-nota i { flex: none; width: 18px; height: 18px; }
 
 /* =====================================================================
-   86. Invitaciones a la siguiente etapa y planes para empresas
+   92. Invitaciones a la siguiente etapa y planes para empresas
        (invitaciones.js, planes.js, admin.js). Solo animan transform y opacity.
    ===================================================================== */
 
@@ -10645,7 +10645,7 @@ body.con-barra-invitar { padding-bottom: 140px; }
 }
 
 /* ========================================================================
-   87. Paginas legales y Centro de privacidad
+   93. Paginas legales y Centro de privacidad
    Privacidad, politica de datos, declaracion de datos, cookies y terminos.
    Reutilizan .politica (texto) y suman navegacion entre documentos, tablas
    que se apilan en el celular, tarjetas del Centro de privacidad y el pie legal.
@@ -10749,4 +10749,282 @@ body.con-barra-invitar { padding-bottom: 140px; }
 .privacidad-banda .legal-icono svg { width: 28px; height: 28px; }
 @media (max-width: 760px) {
     .privacidad-banda-caja { grid-template-columns: 1fr; padding: var(--s5); }
+}
+
+/* ---------- 94. Barra ligera «la chispa» (pedido 2026-11-16) ----------
+   La barra se sentia pesada: 64 px de alto, un icono encima de cada palabra, vidrio oscuro con filo de luz y
+   refraccion (el aire «de otra epoca»), y ocho piezas compitiendo. Ahora:
+   - Delgada (56 px en el computador, 52 en el celular) y en silencio: vidrio suave y desenfocado, sin filo
+     brillante ni refraccion; un borde de un pixel y una sombra corta.
+   - Las opciones son solo palabras (en el computador); el icono queda en la barra de pestanas del celular.
+   - Lo unico llamativo: la chispa naranja del logo marca la pagina donde estas (debajo de la palabra en el
+     computador, encima del icono en el celular). El lente sigue ahi, convertido en un tinte casi invisible.
+   - El buscador es una capsula tenue, «Tema» queda solo con su icono y «Unirse ahora» es mas compacto.
+   Manda sobre las secciones 48 a 91. Sus reglas empiezan con :root:not(#barra-ligera): ese id no existe, asi
+   que no cambia a que se aplican; solo les da precedencia sobre las capas anteriores sin usar !important.
+   La apertura de la portada (seccion 48.3) sigue igual y toma este vidrio por sus variables. */
+:root:not(#barra-ligera) {
+    --chispa: #FF7618;
+    --barra-claro: rgba(255, 255, 255, .74);
+    --barra-claro-borde: rgba(8, 32, 60, .08);
+    --barra-oscuro: rgba(10, 26, 46, .5);
+    --barra-oscuro-borde: rgba(255, 255, 255, .1);
+    --barra-sombra: 0 14px 34px -22px rgba(8, 32, 60, .55);
+    /* Colores fijos: dentro de la barra --ink cambia segun el vidrio (seccion 87) y no sirve aqui */
+    --barra-tinta: #08203C;
+    --barra-tinta-2: #3A5573;
+    --barra-tinta-3: #5A7391;
+}
+/* La apertura de la portada pinta con estas variables: el mismo vidrio nuevo */
+:root:not(#barra-ligera) body > header { --isla-tinte: var(--barra-oscuro); --isla-borde: var(--barra-oscuro-borde); }
+html[data-theme="light"]:not(.isla-intro):not(.isla-abriendo):not(#barra-ligera) body > header:not(.vidrio-oscuro) {
+    --isla-tinte: var(--barra-claro); --isla-borde: var(--barra-claro-borde);
+}
+
+/* ===== La isla de arriba ===== */
+html:not(.isla-intro):not(.isla-abriendo):not(#barra-ligera) body > header {
+    background: var(--barra-claro);
+    background-image: none;
+    border: 1px solid var(--barra-claro-borde);
+    box-shadow: var(--barra-sombra);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+            backdrop-filter: blur(18px) saturate(170%);
+}
+html:not(.isla-intro):not(.isla-abriendo):not(#barra-ligera) body > header::after { content: none; }
+html:not(.isla-intro):not(.isla-abriendo):not(#barra-ligera) body > header.vidrio-oscuro,
+html[data-theme="dark"]:not(.isla-intro):not(.isla-abriendo):not(#barra-ligera) body > header {
+    background: var(--barra-oscuro);
+    border-color: var(--barra-oscuro-borde);
+    box-shadow: 0 14px 34px -20px rgba(0, 0, 0, .7);
+}
+
+@media (min-width: 761px) {
+    :root:not(#barra-ligera) body > header { height: 56px; min-height: 56px; }
+    :root:not(#barra-ligera) body > header > nav { height: 100%; min-height: 0; padding-block: 0; }
+    :root:not(#barra-ligera) body > header > nav > .nav-left > .logo { margin-right: 14px; }
+    :root:not(#barra-ligera) body > header .logo img { height: 32px; width: auto; }
+
+    /* Las opciones: solo la palabra, en una linea */
+    :root:not(#barra-ligera) body > header .nav-links a.con-icono,
+    :root:not(#barra-ligera) body > header .nav-links :is(.theme-toggle, .notifications-btn) {
+        flex-direction: row;
+        gap: 8px;
+        min-height: 38px;
+        padding: 0 14px !important;
+        border-radius: 999px;
+        color: var(--barra-tinta-2);
+        font: 600 14.5px/1 var(--font-text);
+        letter-spacing: -.005em;
+    }
+    :root:not(#barra-ligera) body > header .nav-principales a.con-icono .ico { display: none; }
+    :root:not(#barra-ligera) body > header .nav-links a.btn-login .ico { display: none; }
+    :root:not(#barra-ligera) body > header :is(.theme-toggle, .notifications-btn)::after { content: none; }
+    :root:not(#barra-ligera) body > header .nav-links :is(.theme-toggle, .notifications-btn) {
+        justify-content: center;
+        width: 38px;
+        padding: 0 !important;
+    }
+    :root:not(#barra-ligera) body > header .nav-links :is(.theme-toggle, .notifications-btn) .ico { width: 19px; height: 19px; }
+    :root:not(#barra-ligera) body > header .nav-left > .nav-links { gap: 2px; }
+    :root:not(#barra-ligera) body > header > nav > .nav-links { gap: 4px; }
+
+    /* La pagina actual: la palabra en el azul de la marca y la chispa naranja debajo */
+    :root:not(#barra-ligera) body > header .nav-left > .nav-links :is(a.active-nav, a.active) { color: var(--barra-tinta); }
+    :root:not(#barra-ligera) body > header .nav-left > .nav-links :is(a.active-nav, a.active)::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 4px;
+        width: 5px;
+        height: 5px;
+        margin-left: -2.5px;
+        display: block;
+        right: auto;
+        border-radius: 50%;
+        background: var(--chispa);
+        box-shadow: 0 0 0 3px rgba(255, 118, 24, .16), 0 0 10px rgba(255, 118, 24, .55);
+        transform: none;
+        animation: chispa-enciende .5s var(--ease-out, ease-out) both;
+    }
+    @media (hover: hover) {
+        :root:not(#barra-ligera) body > header .nav-links a.con-icono:hover,
+        :root:not(#barra-ligera) body > header .nav-links :is(.theme-toggle, .notifications-btn):hover {
+            color: var(--barra-tinta);
+            background: rgba(8, 32, 60, .05);
+        }
+    }
+
+    /* Sobre el vidrio oscuro (la portada de noche o el tema oscuro): letras claras */
+    :root:not(#barra-ligera) body > header:is(.vidrio-oscuro) .nav-links a.con-icono,
+    :root:not(#barra-ligera) body > header:is(.vidrio-oscuro) .nav-links :is(.theme-toggle, .notifications-btn),
+    :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-links a.con-icono,
+    :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-links :is(.theme-toggle, .notifications-btn) { color: rgba(238, 243, 250, .74); }
+    :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-left > .nav-links :is(a.active-nav, a.active),
+    :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-left > .nav-links :is(a.active-nav, a.active) { color: #FFFFFF; }
+    @media (hover: hover) {
+        :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-links a.con-icono:hover,
+        :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-links :is(.theme-toggle, .notifications-btn):hover,
+        :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-links a.con-icono:hover,
+        :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-links :is(.theme-toggle, .notifications-btn):hover {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, .07);
+        }
+    }
+
+    /* El buscador: una capsula tenue, sin borde */
+    :root:not(#barra-ligera) body > header .nav-buscar { margin-right: 14px; }
+    :root:not(#barra-ligera) body > header .nav-buscar .cmdk-boton {
+        height: 36px;
+        min-height: 36px;
+        justify-content: flex-start;
+        gap: 10px;
+        padding: 0 8px 0 14px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(8, 32, 60, .055);
+        box-shadow: none;
+        color: var(--barra-tinta-3);
+        font: 500 13.5px/1 var(--font-text);
+    }
+    :root:not(#barra-ligera) body > header .nav-buscar .cmdk-boton .ico { width: 16px; height: 16px; order: -1; }
+    :root:not(#barra-ligera) body > header .nav-buscar .cmdk-atajo {
+        margin-left: 6px;
+        padding: 3px 7px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(8, 32, 60, .07);
+        color: #5A7391;
+        font: 600 11px/1 var(--font-text);
+        box-shadow: none;
+    }
+    :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-buscar .cmdk-boton,
+    :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-buscar .cmdk-boton { background: rgba(255, 255, 255, .08); color: rgba(238, 243, 250, .7); }
+    :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-buscar .cmdk-atajo,
+    :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-buscar .cmdk-atajo { background: rgba(255, 255, 255, .1); color: rgba(238, 243, 250, .7); }
+    @media (hover: hover) {
+        :root:not(#barra-ligera) body > header .nav-buscar .cmdk-boton:hover { background: rgba(8, 32, 60, .09); color: var(--barra-tinta); }
+        :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-buscar .cmdk-boton:hover,
+        :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-buscar .cmdk-boton:hover { background: rgba(255, 255, 255, .13); color: #FFFFFF; }
+    }
+
+    /* Entrar y Unirse: un enlace de texto y una capsula compacta */
+    :root:not(#barra-ligera) body > header .nav-links a.btn-login { color: var(--barra-tinta); }
+    :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-links a.btn-login,
+    :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-links a.btn-login { color: #FFFFFF; }
+    :root:not(#barra-ligera) body > header .nav-links a.btn-register {
+        min-height: 38px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--sea);
+        background-image: none;
+        box-shadow: 0 6px 16px -8px rgba(14, 138, 150, .8);
+        color: #FFFFFF;
+        font: 700 14px/1 var(--font-text);
+        letter-spacing: -.005em;
+    }
+    :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-links a.btn-register,
+    :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-links a.btn-register { background: #5FD0DC; color: #08203C; box-shadow: 0 6px 18px -8px rgba(95, 208, 220, .7); }
+
+    /* Los mensajes sin leer: la cifra junto a la palabra, no encima (ya no hay icono arriba) */
+    :root:not(#barra-ligera) body > header .nav-principales a.con-icono > .nav-no-leidos {
+        position: static; margin-left: -2px; box-shadow: none;
+    }
+
+    /* Tu cuenta: el avatar y la palabra en una linea */
+    :root:not(#barra-ligera) body > header .cuenta-boton { flex-direction: row; gap: 8px; min-height: 38px; padding: 0 12px 0 4px; border-radius: 999px; font: 600 14px/1 var(--font-text); }
+}
+
+/* El lente: quieto es un tinte casi invisible (lo que marca la pagina es la chispa); sin filo ni brillo */
+:root:not(#barra-ligera) .lente-reposo { background: rgba(8, 32, 60, .045); box-shadow: none; }
+:root:not(#barra-ligera) body > header.vidrio-oscuro ~ .lente-reposo,
+:root:not(#barra-ligera) .lente-menu .lente-reposo { background: transparent; }
+:root:not(#barra-ligera) .lente .lente-filo,
+:root:not(#barra-ligera) .lente .lente-brillo { opacity: 0; }
+
+@keyframes chispa-enciende {
+    0% { opacity: 0; transform: scale(.2); }
+    60% { opacity: 1; transform: scale(1.35); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* ===== El celular: arriba la isla corta; abajo la capsula de pestanas ===== */
+@media (max-width: 760px) {
+    :root:not(#barra-ligera) body > header { height: 52px; min-height: 52px; }
+    :root:not(#barra-ligera) body > header .logo img { height: 32px; width: auto; }
+    :root:not(#barra-ligera) body > header .nav-buscar .cmdk-boton {
+        width: 38px; height: 38px; min-height: 38px; padding: 0;
+        border: 0; border-radius: 50%;
+        background: rgba(8, 32, 60, .055); box-shadow: none; color: var(--barra-tinta);
+    }
+    :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-buscar .cmdk-boton,
+    :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-buscar .cmdk-boton { background: rgba(255, 255, 255, .1); color: #FFFFFF; }
+    :root:not(#barra-ligera) body > header .nav-links a.btn-register {
+        min-height: 36px; padding: 0 14px;
+        border: 0; border-radius: 999px;
+        background: var(--sea); background-image: none; box-shadow: none;
+        color: #FFFFFF; font: 700 13.5px/1 var(--font-text);
+    }
+    :root:not(#barra-ligera) body > header.vidrio-oscuro .nav-links a.btn-register,
+    :root[data-theme="dark"]:not(#barra-ligera) body > header .nav-links a.btn-register { background: #5FD0DC; color: #08203C; }
+
+    /* Las pestanas: capsula clara, el icono y su palabra; la activa en turquesa con la chispa encima */
+    :root:not(#barra-ligera) body > .tabbar {
+        border: 1px solid var(--barra-claro-borde);
+        background: rgba(255, 255, 255, .84);
+        background-image: none;
+        box-shadow: 0 18px 40px -24px rgba(8, 32, 60, .55);
+        -webkit-backdrop-filter: blur(18px) saturate(170%);
+                backdrop-filter: blur(18px) saturate(170%);
+    }
+    :root:not(#barra-ligera) body > .tabbar::after { content: none; }
+    :root:not(#barra-ligera) body > .tabbar.vidrio-oscuro,
+    :root[data-theme="dark"]:not(#barra-ligera) body > .tabbar {
+        border-color: var(--barra-oscuro-borde);
+        background: rgba(10, 26, 46, .6);
+        box-shadow: 0 18px 40px -20px rgba(0, 0, 0, .7);
+    }
+    :root:not(#barra-ligera) body > .tabbar a { color: var(--barra-tinta-3); font-weight: 600; }
+    :root:not(#barra-ligera) body > .tabbar a .ico { width: 22px; height: 22px; }
+    :root:not(#barra-ligera) body > .tabbar a :is(span:not(.nav-no-leidos)) { font-size: 11px; letter-spacing: 0; }
+    :root:not(#barra-ligera) body > .tabbar a.is-active { color: var(--sea-deep, #075A62); }
+    :root:not(#barra-ligera) body > .tabbar.vidrio-oscuro a,
+    :root[data-theme="dark"]:not(#barra-ligera) body > .tabbar a { color: rgba(238, 243, 250, .66); }
+    :root:not(#barra-ligera) body > .tabbar.vidrio-oscuro a.is-active,
+    :root[data-theme="dark"]:not(#barra-ligera) body > .tabbar a.is-active { color: #5FD0DC; }
+    :root:not(#barra-ligera) body > .tabbar a.is-active::before {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        margin-left: -2.5px;
+        border-radius: 50%;
+        background: var(--chispa);
+        box-shadow: 0 0 0 3px rgba(255, 118, 24, .16), 0 0 10px rgba(255, 118, 24, .55);
+        animation: chispa-enciende .5s var(--ease-out, ease-out) both;
+    }
+    :root:not(#barra-ligera) body > .tabbar .lente-reposo { background: rgba(14, 138, 150, .1); }
+    :root:not(#barra-ligera) body > .tabbar.vidrio-oscuro .lente-reposo,
+    :root[data-theme="dark"]:not(#barra-ligera) body > .tabbar .lente-reposo { background: rgba(95, 208, 220, .12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root:not(#barra-ligera) body > header .nav-left > .nav-links :is(a.active-nav, a.active)::after,
+    :root:not(#barra-ligera) body > .tabbar a.is-active::before { animation: none; }
+}
+
+/* Reducir transparencia o mas contraste: barras solidas, sin desenfoque (como el resto de la capa de controles) */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+    html:not(.isla-intro):not(.isla-abriendo):not(#barra-ligera) body > header,
+    :root:not(#barra-ligera) body > .tabbar {
+        background: #FFFFFF;
+        -webkit-backdrop-filter: none;
+                backdrop-filter: none;
+    }
+    html:not(.isla-intro):not(.isla-abriendo):not(#barra-ligera) body > header.vidrio-oscuro,
+    html[data-theme="dark"]:not(.isla-intro):not(.isla-abriendo):not(#barra-ligera) body > header,
+    :root:not(#barra-ligera) body > .tabbar.vidrio-oscuro,
+    :root[data-theme="dark"]:not(#barra-ligera) body > .tabbar { background: #0B1B2C; }
 }
