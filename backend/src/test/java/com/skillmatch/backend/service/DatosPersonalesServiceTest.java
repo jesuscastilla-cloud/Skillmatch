@@ -113,5 +113,8 @@ class DatosPersonalesServiceTest {
         assertThat(guardada.getValue().getUserId()).isNull();
         assertThat(guardada.getValue().getActive()).isFalse();
         verify(mongoTemplate).updateMulti(any(Query.class), any(Update.class), eq(Job.class));
+        // Sus invitaciones se borran y sus solicitudes de plan quedan sin datos de contacto
+        verify(mongoTemplate).remove(any(Query.class), eq(com.skillmatch.backend.model.Invitacion.class));
+        verify(mongoTemplate).updateMulti(any(Query.class), any(Update.class), eq(com.skillmatch.backend.model.SolicitudPlan.class));
     }
 }

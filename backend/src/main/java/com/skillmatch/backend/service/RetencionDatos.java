@@ -23,6 +23,8 @@ import java.util.List;
  * necesario; plazos aprobados el 27 de octubre de 2026):
  * - Postulaciones: se borran 12 meses después de cerrar la vacante (esta tarea).
  * - Notificaciones: 90 días, con un índice TTL (MongoIndexConfig).
+ * - Invitaciones a la siguiente etapa (y las respuestas de cada persona): 12 meses despues de enviarlas.
+ * - Solicitudes de plan rechazadas o canceladas: 12 meses. Las aprobadas se conservan como soporte contable.
  * - Cuentas sin entrar 24 meses: aviso por correo a los 23 y borrado 30 días después
  *   si no entra (cuentasInactivas). Sin correo configurado no se borra nada.
  */
@@ -32,6 +34,8 @@ import java.util.List;
 public class RetencionDatos {
 
     static final int MESES_POSTULACIONES = 12;
+    static final int MESES_INVITACIONES = 12;
+    static final int MESES_SOLICITUDES_NO_APROBADAS = 12;
     static final int MESES_AVISO_INACTIVA = 23;
     static final int DIAS_ENTRE_AVISO_Y_BORRADO = 30;
     /** Avisos por día: Gmail permite unos 500 correos diarios y los códigos también cuentan. */
@@ -58,6 +62,26 @@ public class RetencionDatos {
             log.info("Retención: {} postulaciones borradas (vacantes cerradas hace más de {} meses)",
                     borradas, MESES_POSTULACIONES);
         }
+    }
+
+    /** Todos los dias a las 3:30 a. m.: invitaciones viejas y solicitudes de plan que no se aprobaron. */
+    @Scheduled(cron = "0 30 3 * * *")
+    public void borrarInvitacionesYSolicitudesViejas() {
+        LocalDateTime limite = LocalDateTime.now(clock).minusMonths(MESES_INVITACIONES);
+        List<String> procesos = mongoTemplate.find(new Query(Criteria.where("createdAt").lt(limite)),
+                com.skillmatch.backend.model.Invitacion.class).stream().map(com.skillmatch.backend.model.Invitacion::getId).toList();
+        if (!procesos.isEmpty()) {
+            long respuestas = mongoTemplate.remove(new Query(Criteria.where("invitacionId").in(procesos)),
+                    com.skillmatch.backend.model.InvitacionCandidato.class).getDeletedCount();
+            mongoTemplate.remove(new Query(Criteria.where("_id").in(procesos)), com.skillmatch.backend.model.Invitacion.class);
+            log.info("Retención: {} invitaciones y {} respuestas borradas (enviadas hace más de {} meses)",
+                    procesos.size(), respuestas, MESES_INVITACIONES);
+        }
+        long solicitudes = mongoTemplate.remove(new Query(Criteria.where("estado")
+                        .in(com.skillmatch.backend.model.SolicitudPlan.Estado.RECHAZADA, com.skillmatch.backend.model.SolicitudPlan.Estado.CANCELADA)
+                        .and("createdAt").lt(LocalDateTime.now(clock).minusMonths(MESES_SOLICITUDES_NO_APROBADAS))),
+                com.skillmatch.backend.model.SolicitudPlan.class).getDeletedCount();
+        if (solicitudes > 0) log.info("Retención: {} solicitudes de plan no aprobadas borradas", solicitudes);
     }
 
     /**

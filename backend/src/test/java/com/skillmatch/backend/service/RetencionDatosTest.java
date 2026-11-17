@@ -53,6 +53,32 @@ class RetencionDatosTest {
     }
 
     @Test
+    void borraLasInvitacionesViejasConSusRespuestasYLasSolicitudesNoAprobadas() {
+        com.skillmatch.backend.model.Invitacion vieja = new com.skillmatch.backend.model.Invitacion();
+        vieja.setId("inv-vieja");
+        when(mongoTemplate.find(any(Query.class), eq(com.skillmatch.backend.model.Invitacion.class))).thenReturn(List.of(vieja));
+        com.mongodb.client.result.DeleteResult resultado = com.mongodb.client.result.DeleteResult.acknowledged(2);
+        when(mongoTemplate.remove(any(Query.class), any(Class.class))).thenReturn(resultado);
+
+        retencion.borrarInvitacionesYSolicitudesViejas();
+
+        verify(mongoTemplate).remove(any(Query.class), eq(com.skillmatch.backend.model.InvitacionCandidato.class));
+        verify(mongoTemplate).remove(any(Query.class), eq(com.skillmatch.backend.model.Invitacion.class));
+        verify(mongoTemplate).remove(any(Query.class), eq(com.skillmatch.backend.model.SolicitudPlan.class));
+    }
+
+    @Test
+    void sinInvitacionesViejas_soloRevisaLasSolicitudes() {
+        when(mongoTemplate.find(any(Query.class), eq(com.skillmatch.backend.model.Invitacion.class))).thenReturn(List.of());
+        when(mongoTemplate.remove(any(Query.class), any(Class.class))).thenReturn(com.mongodb.client.result.DeleteResult.acknowledged(0));
+
+        retencion.borrarInvitacionesYSolicitudesViejas();
+
+        verify(mongoTemplate, never()).remove(any(Query.class), eq(com.skillmatch.backend.model.Invitacion.class));
+        verify(mongoTemplate).remove(any(Query.class), eq(com.skillmatch.backend.model.SolicitudPlan.class));
+    }
+
+    @Test
     void sinVacantesViejas_noBorraNada() {
         when(mongoTemplate.find(any(Query.class), eq(Job.class))).thenReturn(List.of());
 

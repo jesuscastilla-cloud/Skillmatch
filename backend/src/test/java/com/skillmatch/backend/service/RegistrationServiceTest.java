@@ -147,7 +147,7 @@ class RegistrationServiceTest {
 
         assertThat(guardado.getValue().getConsentimientos())
                 .extracting(Consentimiento::getTipo, Consentimiento::getVersion)
-                .containsExactly(tuple(Consentimiento.POLITICA_DATOS, "0.1"), tuple(Consentimiento.MAYOR_DE_EDAD, "0.1"));
+                .containsExactly(tuple(Consentimiento.POLITICA_DATOS, "1.0"), tuple(Consentimiento.MAYOR_DE_EDAD, "1.0"));
         assertThat(guardado.getValue().getConsentimientos()).allSatisfy(c -> assertThat(c.getFecha()).isNotNull());
     }
 

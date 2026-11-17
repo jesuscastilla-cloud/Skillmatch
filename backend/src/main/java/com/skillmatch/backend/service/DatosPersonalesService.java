@@ -146,6 +146,21 @@ public class DatosPersonalesService {
         mongoTemplate.updateMulti(new Query(Criteria.where("companyId").is(company.getId())),
                 new Update().set("active", false).set("status", JobStatus.CERRADA).set("updatedAt", LocalDateTime.now()),
                 Job.class);
+        // Las invitaciones que envio (con su lugar, enlace e indicaciones) y lo que respondieron las personas
+        List<String> procesos = mongoTemplate.find(new Query(Criteria.where("companyId").is(company.getId())),
+                com.skillmatch.backend.model.Invitacion.class).stream().map(com.skillmatch.backend.model.Invitacion::getId).toList();
+        if (!procesos.isEmpty()) {
+            mongoTemplate.remove(new Query(Criteria.where("invitacionId").in(procesos)), com.skillmatch.backend.model.InvitacionCandidato.class);
+        }
+        mongoTemplate.remove(new Query(Criteria.where("companyId").is(company.getId())), com.skillmatch.backend.model.Invitacion.class);
+        // Solicitudes de plan: las pendientes se borran; las ya atendidas se conservan como soporte contable,
+        // pero sin el nombre, el correo ni el telefono de quien las pidio
+        mongoTemplate.remove(new Query(Criteria.where("companyId").is(company.getId())
+                .and("estado").is(com.skillmatch.backend.model.SolicitudPlan.Estado.PENDIENTE)), com.skillmatch.backend.model.SolicitudPlan.class);
+        mongoTemplate.updateMulti(new Query(Criteria.where("companyId").is(company.getId())),
+                new Update().set("companyName", "Empresa eliminada").unset("contactoNombre").unset("contactoCorreo")
+                        .unset("contactoTelefono").unset("nota").unset("userId"),
+                com.skillmatch.backend.model.SolicitudPlan.class);
         company.setName("Empresa eliminada");
         company.setEmail(null);
         company.setPhone(null);
