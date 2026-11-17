@@ -45,7 +45,7 @@ test('una empresa ve Mensajes, sin Conexiones; su cuenta lleva Mi empresa', asyn
     const menu = await enlacesDelMenu(page);
     expect(menu).toContain('Mensajes');
     expect(menu).not.toContain('Conexiones');
-    expect(await opcionesDeCuenta(page)).toEqual(['Mi empresa', 'Candidatos', 'Publicar una vacante', 'Cambiar contraseña', 'Cerrar sesión']);
+    expect(await opcionesDeCuenta(page)).toEqual(['Mi empresa', 'Candidatos', 'Publicar una vacante', 'Plan y uso', 'Cambiar contraseña', 'Cerrar sesión']);
 });
 
 test('el menú "Tu cuenta": se abre desde su botón, se maneja con el teclado y trae tu perfil, tus postulaciones y el tema', async ({ page, context, api }) => {

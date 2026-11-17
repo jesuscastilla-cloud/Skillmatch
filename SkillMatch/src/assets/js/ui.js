@@ -378,7 +378,8 @@
         const opciones = esEmpresa ? [
             { href: 'perfil-empresa.html', ico: 'building', texto: 'Mi empresa' },
             { href: 'perfil-empresa.html#candidatos', ico: 'users', texto: 'Candidatos' },
-            { href: 'perfil-empresa.html?nueva=1', ico: 'plus', texto: 'Publicar una vacante' }
+            { href: 'perfil-empresa.html?nueva=1', ico: 'plus', texto: 'Publicar una vacante' },
+            { href: 'planes.html#plan-y-uso', ico: 'sparkle', texto: 'Plan y uso' }
         ] : [
             { href: 'perfil-usuario.html', ico: 'user', texto: 'Mi perfil' },
             { href: 'hoja-de-vida.html', ico: 'list', texto: 'Hoja de vida' },
@@ -2464,6 +2465,7 @@
         ] },
         { titulo: 'Empresas', enlaces: [
             ['registro-empresa.html', 'Registrar mi empresa'],
+            ['planes.html', 'Planes para empresas'],
             ['login.html?tipo=empresa', 'Acceso empresas']
         ] },
         { titulo: 'SkillMatch', enlaces: [
@@ -2496,6 +2498,7 @@
             ['perfil-empresa.html', 'Mi empresa'],
             ['perfil-empresa.html#candidatos', 'Postulaciones recibidas'],
             ['perfil-empresa.html#ofertas', 'Tus vacantes'],
+            ['planes.html#plan-y-uso', 'Plan y uso'],
             ['mensajes.html', 'Mensajes']
         ] },
         { titulo: 'Explora', enlaces: [

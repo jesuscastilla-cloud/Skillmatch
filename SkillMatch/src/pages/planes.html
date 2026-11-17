@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planes para empresas - SkillMatch Cartagena</title>
+    <meta name="description" content="Invita a varios candidatos a entrevistas o evaluaciones, coordina horarios y consulta sus respuestas desde un solo lugar. Plan Básico gratis y plan Profesional para empresas de Cartagena.">
+    <link rel="icon" href="../assets/img/favicon/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="../assets/img/favicon/favicon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="../assets/img/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#EDF2F8">
+    <!-- Fuentes guardadas en el proyecto (assets/fonts, app.css seccion 77) -->
+    <link rel="preload" href="../assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <script>(function(){var t=localStorage.getItem('skillmatch_theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('skillmatch_letra');if(l==='grande'||l==='muy-grande')document.documentElement.setAttribute('data-letra',l);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1B2C':'#EDF2F8');document.documentElement.style.setProperty('--reloj',Date.now()%864e5+'ms');addEventListener('pagereveal',function(e){var v=e.viewTransition,d;try{d=JSON.parse(sessionStorage.getItem('skillmatch_deslizar'));sessionStorage.removeItem('skillmatch_deslizar');}catch(x){}if(d&&d.a===location.pathname&&Date.now()-d.t<15000){if(v&&v.types)v.types.add('ir-'+d.dir);var h=document.documentElement,c='entra-'+d.dir;h.classList.add(c);setTimeout(function(){h.classList.remove(c);},1400);}});})();</script>
+</head>
+<body class="pagina-vidrio pagina-planes">
+    <div class="fondo-vivo" aria-hidden="true"><span class="mancha-1"></span><span class="mancha-2"></span><span class="mancha-3"></span><span class="mancha-4"></span><span class="mancha-5"></span></div>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <header>
+        <nav class="container" aria-label="Principal">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html" aria-label="SkillMatch, ir al inicio"><img src="../assets/img/logo.png" alt="SkillMatch" width="300" height="100"></a>
+                </div>
+                <ul class="nav-links nav-principales">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="oportunidades.html">Vacantes</a></li>
+                    <li><a href="index.html#como-funciona">Cómo funciona</a></li>
+                    <li><a href="empresas.html">Empresas</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="login.html" class="btn-login">Iniciar sesión</a></li>
+                <li><a href="seleccionar-registro.html" class="btn-register">Unirse ahora</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="main">
+        <!-- Portada de la pagina -->
+        <section class="planes-hero">
+            <div class="container planes-hero-grid">
+                <div class="planes-hero-texto">
+                    <p class="planes-eti"><i data-ico="building"></i> Para empresas</p>
+                    <h1>Invita a tus mejores candidatos sin llamar uno por uno</h1>
+                    <p class="planes-lead">Elige a varias personas que se postularon, envíales una invitación a entrevista o evaluación con tus horarios y mira en un solo lugar quién confirmó, quién no puede y quién falta por responder.</p>
+                    <div class="planes-hero-botones">
+                        <a href="#planes" class="btn btn-primary">Elegir plan</a>
+                        <a href="#como-funciona-planes" class="btn btn-secondary">Ver cómo funciona</a>
+                    </div>
+                    <ul class="planes-hero-puntos">
+                        <li><i data-ico="check"></i> Empiezas gratis</li>
+                        <li><i data-ico="check"></i> Sin permanencia</li>
+                        <li><i data-ico="check"></i> Tus candidatos responden desde SkillMatch</li>
+                    </ul>
+                </div>
+                <div class="planes-hero-arte" id="planesArte"></div>
+            </div>
+        </section>
+
+        <!-- Plan y uso (solo con sesion de empresa; planes.js lo llena) -->
+        <section class="container planes-uso" id="plan-y-uso" aria-labelledby="planUsoTitulo" hidden>
+            <h2 id="planUsoTitulo" class="planes-titulo">Tu plan y tu uso</h2>
+            <div class="planes-uso-grid" id="planUso" aria-busy="true"></div>
+        </section>
+
+        <!-- Como funciona -->
+        <section class="container planes-pasos" id="como-funciona-planes" aria-labelledby="pasosTitulo">
+            <h2 id="pasosTitulo" class="planes-titulo">Todo el proceso, desde un solo lugar</h2>
+            <p class="planes-subtitulo">Sin hojas de cálculo, sin cadenas de mensajes y sin llamar a 50 personas.</p>
+            <ol class="planes-pasos-lista">
+                <li><span class="planes-paso-icono"><i data-ico="target"></i></span><h3>Elige a tus candidatos</h3>
+                    <p>En «Postulaciones recibidas» marcas a quienes quieres conocer. Puedes elegir de una vez a quienes tienen 70 % o más de match.</p></li>
+                <li><span class="planes-paso-icono"><i data-ico="calendar"></i></span><h3>Propón tus horarios</h3>
+                    <p>Entrevista o evaluación, presencial o virtual. Pones los horarios y cuántas personas caben en cada uno.</p></li>
+                <li><span class="planes-paso-icono"><i data-ico="send"></i></span><h3>Ellos confirman</h3>
+                    <p>Cada persona recibe un aviso y un correo, elige su horario o te dice que no puede. Ven el lugar y las indicaciones al confirmar.</p></li>
+                <li><span class="planes-paso-icono"><i data-ico="check"></i></span><h3>Tú ves las respuestas</h3>
+                    <p>Un panel te muestra quién confirmó en cada horario, quién no puede y quién falta. Con un clic les recuerdas.</p></li>
+            </ol>
+        </section>
+
+        <!-- Los planes -->
+        <section class="container planes-oferta" id="planes" aria-labelledby="planesTitulo">
+            <h2 id="planesTitulo" class="planes-titulo">Elige tu plan</h2>
+            <p class="planes-subtitulo">Empieza gratis y pasa al Profesional cuando tu equipo de selección lo necesite.</p>
+            <div class="planes-tarjetas" id="planesTarjetas" aria-busy="true">
+                <div class="skeleton-bloque alto"></div><div class="skeleton-bloque alto"></div>
+            </div>
+        </section>
+
+        <!-- Comparacion -->
+        <section class="container planes-comparar" aria-labelledby="compararTitulo">
+            <h2 id="compararTitulo" class="planes-titulo">¿Por qué pasar al Profesional?</h2>
+            <div class="planes-razones">
+                <div class="planes-razon"><span class="planes-razon-icono"><i data-ico="users"></i></span><h3>Más personas en cada ronda</h3>
+                    <p>Invita hasta 50 candidatos en un envío, ideal para temporadas, cargos con varias vacantes o ferias de empleo.</p></div>
+                <div class="planes-razon"><span class="planes-razon-icono"><i data-ico="bell"></i></span><h3>Menos personas sin responder</h3>
+                    <p>Envía un recordatorio con un clic a quienes aún no contestan, sin escribirles uno por uno.</p></div>
+                <div class="planes-razon"><span class="planes-razon-icono"><i data-ico="download"></i></span><h3>Tu equipo, al tanto</h3>
+                    <p>Descarga las respuestas en Excel para compartir la agenda de entrevistas con quienes las van a hacer.</p></div>
+            </div>
+            <div class="planes-tabla-caja">
+                <table class="planes-tabla" id="planesTabla">
+                    <caption class="sr-only">Comparación de los planes</caption>
+                </table>
+            </div>
+        </section>
+
+        <!-- Preguntas -->
+        <section class="container planes-preguntas" aria-labelledby="preguntasTitulo">
+            <h2 id="preguntasTitulo" class="planes-titulo">Preguntas frecuentes</h2>
+            <div class="planes-faq">
+                <details><summary>¿Cómo se paga el plan Profesional?</summary>
+                    <p>Eliges el plan y solicitas la activación desde esta página. Te indicamos cómo pagar y, cuando verificamos el pago, activamos tu plan y te avisamos en SkillMatch.</p></details>
+                <details><summary>¿Qué pasa cuando se acaba el tiempo del plan?</summary>
+                    <p>Tu cuenta vuelve sola al plan Básico. No pierdes tus procesos ni las respuestas: solo aplican de nuevo los límites del Básico para las invitaciones nuevas.</p></details>
+                <details><summary>¿Las invitaciones del mes se acumulan?</summary>
+                    <p>No. El contador vuelve a cero el primer día de cada mes.</p></details>
+                <details><summary>¿Los candidatos pagan algo?</summary>
+                    <p>No. Para las personas que buscan trabajo, SkillMatch es gratis siempre.</p></details>
+                <details><summary>¿Puedo pedir más meses de una vez?</summary>
+                    <p>Sí: al elegir el plan puedes pedir 1, 3 o 6 meses. Si ya tienes el Profesional activo, el tiempo nuevo se suma al que te queda.</p></details>
+            </div>
+        </section>
+
+        <section class="container planes-final">
+            <div class="planes-final-caja">
+                <div>
+                    <h2>Tu próxima contratación empieza con una invitación</h2>
+                    <p>Publica tu vacante, recibe postulaciones con su match e invita a los mejores a la siguiente etapa.</p>
+                </div>
+                <a class="btn btn-primary" id="planesFinalBoton" href="registro-empresa.html">Crear cuenta de empresa</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Hecho para conectar a las personas y las empresas de la ciudad.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/api-config.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/invitaciones.js"></script>
+    <script src="../assets/js/planes.js"></script>
+    <script src="../assets/js/ui.js"></script>
+</body>
+</html>

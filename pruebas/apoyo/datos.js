@@ -44,7 +44,9 @@ function crearDatos() {
         { id: 'u-hotel', email: 'hotel@prueba.test', firstName: 'Hotel Puerta del Mar', lastName: 'Empresa', phone: '3000000010',
           role: 'EMPRESA', companyId: 'c-hotel', skills: [], experiences: [], educations: [], certifications: [] },
         { id: 'u-digital', email: 'digital@prueba.test', firstName: 'Caribe Digital Estudio', lastName: 'Empresa', phone: '3000000011',
-          role: 'EMPRESA', companyId: 'c-digital', skills: [], experiences: [], educations: [], certifications: [] }
+          role: 'EMPRESA', companyId: 'c-digital', skills: [], experiences: [], educations: [], certifications: [] },
+        { id: 'u-admin', email: 'admin@prueba.test', firstName: 'Equipo', lastName: 'SkillMatch', role: 'ADMIN',
+          skills: [], experiences: [], educations: [], certifications: [] }
     ];
 
     const empresas = [
@@ -104,7 +106,9 @@ function crearDatos() {
         { id: 'n-2', userId: 'u-valentina', type: 'message', content: 'Tienes un mensaje nuevo.', relatedId: 'u-andres', isRead: true, createdAt: haceDias(1, 18) }
     ];
 
-    return { usuarios, empresas, vacantes, postulaciones, guardadas, conexiones, mensajes, avisos, siguiente: 100 };
+    // Invitaciones a la siguiente etapa y planes (InvitacionService, PlanService)
+    return { usuarios, empresas, vacantes, postulaciones, guardadas, conexiones, mensajes, avisos, siguiente: 100,
+        invitaciones: [], invitados: [], solicitudes: [], planes: {}, comercial: {} };
 }
 
 module.exports = { crearDatos, haceDias, enDias, enFormatoJava };

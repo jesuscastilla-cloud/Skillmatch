@@ -318,3 +318,28 @@ Enviarlo por correo (desde el Gmail del proyecto) a las cuentas afectadas. Si so
 | Mes | Probar la restauración de la última copia en local | 3.4 |
 | 6 meses | Rotar secretos y revisar quién tiene acceso | 4, 1 |
 | Año | Revisar con el abogado la política de datos y este documento | 5 |
+
+---
+
+## 7. Planes para empresas: activación y cobro
+
+La activación es **manual**: la empresa solicita el plan y una persona del equipo la aprueba en `admin.html`.
+No hay pasarela de pago ni facturación electrónica.
+
+### Crear la cuenta de administración (una sola vez)
+1. Registra una cuenta de persona normal en el sitio (con un correo del equipo).
+2. En MongoDB Atlas → *Browse Collections* → colección `users`, busca ese correo.
+3. Cambia el campo `roles` a `["USER", "ADMIN"]` (deja `USER`: la campanita de avisos lo necesita).
+4. Cierra sesión y vuelve a entrar: el sitio te lleva a `admin.html`.
+
+### Antes de empezar a cobrar
+En `admin.html` → «Datos para cobrar», completa los datos reales del negocio. Mientras falten banco,
+número de cuenta, titular o correo de pagos, las empresas **no ven datos de pago**: se les dice que el equipo
+las contactará al correo de su cuenta, y la solicitud queda registrada igual.
+
+### Atender una solicitud
+1. Llega un aviso a la campanita de la cuenta ADMIN.
+2. Verifica el pago (transferencia o lo acordado con la empresa).
+3. «Aprobar» (puedes ajustar los meses) o «Rechazar» con el motivo, que la empresa ve.
+4. Si la empresa ya tenía el plan activo, la vigencia se suma desde su fecha de fin.
+5. Al vencer, la empresa vuelve sola al plan Básico; sus procesos abiertos siguen funcionando.

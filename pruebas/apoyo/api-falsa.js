@@ -44,7 +44,7 @@ function crearApi(opciones = {}) {
         require('path').join(__dirname, '../../SkillMatch/src/assets/data/modelo-predictivo.json'), 'utf8'));
     // Que correos recibe cada cuenta (como PreferenciasCorreo: vacantes apagado al empezar)
     const preferenciasDe = {};
-    const preferencias = id => preferenciasDe[id] || (preferenciasDe[id] = { respuesta: true, mensajes: true, vacantes: false, postulaciones: true });
+    const preferencias = id => preferenciasDe[id] || (preferenciasDe[id] = { respuesta: true, mensajes: true, vacantes: false, postulaciones: true, invitaciones: true });
     const nombre = u => (u ? `${u.firstName} ${u.lastName}`.trim() : 'Usuario');
     const nuevoId = prefijo => `${prefijo}-${++d.siguiente}`;
 
@@ -81,7 +81,197 @@ function crearApi(opciones = {}) {
     const abiertas = () => d.vacantes.filter(j => j.active && j.status === 'abierta').sort(porFecha('postedDate'));
 
     // [metodo, patron, respuesta(params, consulta, cuerpo, yo)] -> [estado, cuerpo]
+
+    // ---- Invitaciones y planes: lo mismo que InvitacionService y PlanService
+    const CATALOGO = [
+        { id: 'BASICO', nombre: 'Básico', precioMensual: 0, periodo: 'mes', moneda: 'COP', invitacionesMes: 20, maxPorEnvio: 10, procesosActivos: 2, horariosPorProceso: 3,
+          recordatorios: false, exportarRespuestas: false, beneficios: ['Invita hasta 20 candidatos al mes a una entrevista o evaluación', 'Hasta 10 candidatos en cada envío', 'Propón hasta 3 horarios por proceso', 'Mira quién confirmó y quién no puede, en un solo panel'] },
+        { id: 'PROFESIONAL', nombre: 'Profesional', precioMensual: 49900, periodo: 'mes', moneda: 'COP', invitacionesMes: 300, maxPorEnvio: 50, procesosActivos: 15, horariosPorProceso: 8,
+          recordatorios: true, exportarRespuestas: true, beneficios: ['Invita hasta 300 candidatos al mes', 'Hasta 50 candidatos en cada envío', 'Propón hasta 8 horarios por proceso, con cupos en cada uno', 'Envía un recordatorio a quienes no han respondido', 'Descarga las respuestas en Excel', 'Hasta 15 procesos abiertos a la vez'] }
+    ];
+    const aJava = f => { const x = new Date(f.getTime() - f.getTimezoneOffset() * 60000); return x.toISOString().slice(0, 19); };
+    const ahoraJava = () => aJava(new Date());
+    const empresaDe = yo => d.empresas.find(c => c.userId === yo) || null;
+    const esAdmin = yo => (usuario(yo) || {}).role === 'ADMIN';
+    const planDe = companyId => {
+        const x = d.planes[companyId];
+        return x && x.plan === 'PROFESIONAL' && new Date(x.vigenteHasta) > new Date() ? CATALOGO[1] : CATALOGO[0];
+    };
+    const inicioMes = () => { const f = new Date(); f.setDate(1); f.setHours(0, 0, 0, 0); return f; };
+    const usoMes = companyId => d.invitados.filter(ic => ic.companyId === companyId && new Date(ic.createdAt) >= inicioMes()).length;
+    const vencida = inv => new Date(inv.respondeAntesDe) < new Date();
+    const estadoReal = (ic, inv) => (ic.estado === 'PENDIENTE' && vencida(inv) ? 'VENCIDA' : ic.estado);
+    const resumenPlan = emp => {
+        const plan = planDe(emp.id); const x = d.planes[emp.id];
+        const pendiente = d.solicitudes.some(s => s.companyId === emp.id && s.estado === 'PENDIENTE');
+        const lista = d.comercial.banco && d.comercial.numeroCuenta && d.comercial.titular && d.comercial.correoPagos;
+        const finMes = inicioMes(); finMes.setMonth(finMes.getMonth() + 1);
+        return { plan, vigenteHasta: plan.id === 'PROFESIONAL' ? x.vigenteHasta : null,
+            vencidoEl: plan.id !== 'PROFESIONAL' && x && x.plan === 'PROFESIONAL' ? x.vigenteHasta : null,
+            uso: { invitacionesMes: usoMes(emp.id), limiteMes: plan.invitacionesMes,
+                procesosActivos: d.invitaciones.filter(i => i.companyId === emp.id && i.estado === 'ACTIVA' && !vencida(i)).length,
+                limiteProcesos: plan.procesosActivos, seRenuevaEl: aJava(finMes) },
+            solicitudes: d.solicitudes.filter(s => s.companyId === emp.id).slice(0, 5),
+            pago: pendiente && lista ? { ...d.comercial } : null, pagoPorTransferencia: !!lista };
+    };
+    const resumenInv = inv => {
+        const lista = d.invitados.filter(ic => ic.invitacionId === inv.id);
+        const cuentas = { pendiente: 0, confirmada: 0, rechazada: 0, vencida: 0, cancelada: 0 };
+        lista.forEach(ic => { cuentas[estadoReal(ic, inv).toLowerCase()]++; });
+        const plan = planDe(inv.companyId);
+        return { ...inv, cuentas, total: lista.length, vencida: vencida(inv), recordatorios: plan.recordatorios, exportarRespuestas: plan.exportarRespuestas,
+            horarios: inv.horarios.map(h => ({ ...h, confirmados: lista.filter(ic => ic.estado === 'CONFIRMADA' && ic.horarioId === h.id).length })) };
+    };
+    const detalleInv = inv => ({ ...resumenInv(inv), candidatos: d.invitados.filter(ic => ic.invitacionId === inv.id).map(ic => {
+        const u = usuario(ic.userId);
+        return { id: ic.id, applicationId: ic.applicationId, userId: ic.userId, nombre: nombre(u), titular: u && u.headline, foto: null,
+            estado: estadoReal(ic, inv), horarioId: ic.horarioId, comentario: ic.comentario, respondidaEn: ic.respondidaEn, recordadaEn: ic.recordadaEn };
+    }) });
+    const vistaCandidato = ic => {
+        const inv = d.invitaciones.find(i => i.id === ic.invitacionId);
+        const abierta = inv.estado === 'ACTIVA' && !vencida(inv);
+        return { ...inv, invitacionId: inv.id, id: ic.id, applicationId: ic.applicationId, empresa: (empresa(inv.companyId) || {}).name,
+            miEstado: estadoReal(ic, inv), horarioId: ic.horarioId, comentario: ic.comentario, respondidaEn: ic.respondidaEn,
+            puedeResponder: abierta && ic.estado !== 'CANCELADA',
+            lugar: ic.estado === 'CONFIRMADA' ? inv.lugar : null, enlace: ic.estado === 'CONFIRMADA' ? inv.enlace : null,
+            horarios: inv.horarios.map(h => {
+                const ocupados = d.invitados.filter(x => x.invitacionId === inv.id && x.estado === 'CONFIRMADA' && x.horarioId === h.id).length;
+                const mio = ic.horarioId === h.id && ic.estado === 'CONFIRMADA';
+                return { id: h.id, inicio: h.inicio, disponible: mio || (ocupados < h.cupos && new Date(h.inicio) > new Date()) };
+            }) };
+    };
+
     const rutas = [
+
+        // ---- Planes (PlanController) y su catalogo (CatalogoPlanes.java)
+        ['GET', /^\/public\/planes$/, () => [200, CATALOGO]],
+        ['GET', /^\/planes\/mio$/, (p, q, c, yo) => {
+            const emp = empresaDe(yo); if (!emp) return [403, { message: 'Esta cuenta no tiene una empresa' }];
+            return [200, resumenPlan(emp)];
+        }],
+        ['POST', /^\/planes\/solicitudes$/, (p, q, c, yo) => {
+            const emp = empresaDe(yo); if (!emp) return [403, {}];
+            if (!c || c.plan !== 'PROFESIONAL') return [400, { message: 'Ese plan no se puede solicitar.' }];
+            const meses = c.meses || 1;
+            if (![1, 3, 6].includes(meses)) return [400, { message: 'Elige 1, 3 o 6 meses.' }];
+            if (d.solicitudes.some(s => s.companyId === emp.id && s.estado === 'PENDIENTE')) return [400, { message: 'Ya tienes una solicitud pendiente de verificación.' }];
+            const u = usuario(yo);
+            d.solicitudes.unshift({ id: nuevoId('sol'), companyId: emp.id, companyName: emp.name, userId: yo, plan: 'PROFESIONAL', meses,
+                valor: 49900 * meses, contactoNombre: c.contactoNombre || nombre(u), contactoCorreo: u.email, contactoTelefono: c.contactoTelefono || null,
+                nota: c.nota || null, estado: 'PENDIENTE', createdAt: ahoraJava() });
+            return [201, resumenPlan(emp)];
+        }],
+        ['DELETE', /^\/planes\/solicitudes\/([^/]+)$/, (p, q, c, yo) => {
+            const emp = empresaDe(yo); const s = d.solicitudes.find(x => x.id === p[1] && emp && x.companyId === emp.id);
+            if (!s) return [404, { message: 'Solicitud no encontrada' }];
+            if (s.estado !== 'PENDIENTE') return [400, { message: 'Esta solicitud ya fue atendida.' }];
+            s.estado = 'CANCELADA'; return [200, resumenPlan(emp)];
+        }],
+        ['GET', /^\/admin\/planes\/solicitudes$/, (p, q, c, yo) => {
+            if (!esAdmin(yo)) return [403, { message: 'Acceso denegado' }];
+            const e = q.get('estado');
+            return [200, d.solicitudes.filter(s => !e || s.estado === e).map(s => ({ ...s, planActual: planDe(s.companyId).id }))];
+        }],
+        ['POST', /^\/admin\/planes\/solicitudes\/([^/]+)\/(aprobar|rechazar)$/, (p, q, c, yo) => {
+            if (!esAdmin(yo)) return [403, { message: 'Acceso denegado' }];
+            const s = d.solicitudes.find(x => x.id === p[1]);
+            if (!s) return [404, { message: 'Solicitud no encontrada' }];
+            if (s.estado !== 'PENDIENTE') return [400, { message: 'Esta solicitud ya fue atendida.' }];
+            if (p[2] === 'rechazar') {
+                if (!c || !c.nota) return [400, { message: 'Escribe el motivo para la empresa.' }];
+                s.estado = 'RECHAZADA'; s.notaAdmin = c.nota;
+            } else {
+                const meses = (c && c.meses) || s.meses;
+                const actual = d.planes[s.companyId];
+                const desde = actual && new Date(actual.vigenteHasta) > new Date() ? new Date(actual.vigenteHasta) : new Date();
+                desde.setMonth(desde.getMonth() + meses);
+                d.planes[s.companyId] = { plan: 'PROFESIONAL', vigenteHasta: aJava(desde) };
+                s.estado = 'APROBADA'; s.meses = meses; s.notaAdmin = (c && c.nota) || null;
+            }
+            s.atendidaEn = ahoraJava();
+            return [200, s];
+        }],
+        ['GET', /^\/admin\/planes\/empresas$/, (p, q, c, yo) => esAdmin(yo)
+            ? [200, Object.entries(d.planes).filter(([, x]) => new Date(x.vigenteHasta) > new Date())
+                .map(([id, x]) => ({ companyId: id, companyName: (empresa(id) || {}).name, vigenteHasta: x.vigenteHasta, invitacionesMes: usoMes(id) }))]
+            : [403, {}]],
+        ['GET', /^\/admin\/comercial$/, (p, q, c, yo) => (esAdmin(yo) ? [200, d.comercial] : [403, {}])],
+        ['PUT', /^\/admin\/comercial$/, (p, q, c, yo) => {
+            if (!esAdmin(yo)) return [403, {}];
+            d.comercial = { ...c, actualizado: ahoraJava() };
+            return [200, d.comercial];
+        }],
+
+        // ---- Invitaciones a la siguiente etapa (InvitacionController)
+        ['POST', /^\/invitaciones$/, (p, q, c, yo) => {
+            const emp = empresaDe(yo); if (!emp) return [403, {}];
+            const job = vacante(c.jobId);
+            if (!job || job.companyId !== emp.id) return [403, { message: 'Esa vacante no es de tu empresa' }];
+            const plan = planDe(emp.id);
+            const ids = [...new Set(c.applicationIds || [])];
+            if (ids.length > plan.maxPorEnvio) return [409, { codigo: 'cupo', message: `Tu plan permite invitar hasta ${plan.maxPorEnvio} candidatos en cada envío.` }];
+            const usadas = usoMes(emp.id);
+            if (usadas + ids.length > plan.invitacionesMes) {
+                const quedan = Math.max(0, plan.invitacionesMes - usadas);
+                return [409, { codigo: 'cupo', message: quedan ? `Te quedan ${quedan} invitaciones este mes y elegiste ${ids.length}.` : `Ya usaste las ${plan.invitacionesMes} invitaciones de este mes.` }];
+            }
+            if ((c.horarios || []).length > plan.horariosPorProceso) return [409, { codigo: 'cupo', message: `Tu plan permite proponer hasta ${plan.horariosPorProceso} horarios por proceso.` }];
+            const apps = ids.map(id => d.postulaciones.find(a => a.id === id));
+            if (apps.some(a => !a || a.jobId !== job.id)) return [400, { message: 'Algunos candidatos no se postularon a esta vacante.' }];
+            if (apps.some(a => ['rechazada', 'retirada'].includes(a.status))) return [400, { message: 'No puedes invitar a quien retiró su postulación o ya fue rechazado.' }];
+            const horarios = c.horarios.map((h, i) => ({ id: 'h' + (i + 1) + '-' + d.siguiente, inicio: h.inicio, cupos: h.cupos }))
+                .sort((a, b) => a.inicio.localeCompare(b.inicio));
+            const primero = new Date(horarios[0].inicio);
+            const limite = c.respondeAntesDe || aJava(new Date(primero.getTime() - 2 * 3600 * 1000));
+            const inv = { id: nuevoId('inv'), companyId: emp.id, companyUserId: yo, jobId: job.id, jobTitle: job.title, tipo: c.tipo, modalidad: c.modalidad,
+                lugar: c.lugar || null, enlace: c.enlace || null, indicaciones: c.indicaciones || null, duracionMinutos: c.duracionMinutos || 30,
+                horarios, respondeAntesDe: limite, estado: 'ACTIVA', createdAt: ahoraJava() };
+            d.invitaciones.unshift(inv);
+            apps.forEach(a => d.invitados.push({ id: nuevoId('ic'), invitacionId: inv.id, applicationId: a.id, userId: a.userId, companyId: emp.id,
+                jobId: job.id, estado: 'PENDIENTE', horarioId: null, comentario: null, respondidaEn: null, recordadaEn: null, createdAt: ahoraJava() }));
+            return [201, detalleInv(inv)];
+        }],
+        ['GET', /^\/invitaciones$/, (p, q, c, yo) => {
+            const emp = empresaDe(yo); if (!emp) return [403, {}];
+            return [200, d.invitaciones.filter(i => i.companyId === emp.id).map(resumenInv)];
+        }],
+        ['GET', /^\/invitaciones\/mias$/, (p, q, c, yo) => [200, d.invitados.filter(ic => ic.userId === yo).map(vistaCandidato)]],
+        ['GET', /^\/invitaciones\/([^/]+)$/, (p, q, c, yo) => {
+            const emp = empresaDe(yo); const inv = d.invitaciones.find(i => i.id === p[1] && emp && i.companyId === emp.id);
+            return inv ? [200, detalleInv(inv)] : [404, { message: 'Proceso no encontrado' }];
+        }],
+        ['POST', /^\/invitaciones\/([^/]+)\/(recordar|cancelar)$/, (p, q, c, yo) => {
+            const emp = empresaDe(yo); const inv = d.invitaciones.find(i => i.id === p[1] && emp && i.companyId === emp.id);
+            if (!inv) return [404, { message: 'Proceso no encontrado' }];
+            if (p[2] === 'cancelar') {
+                inv.estado = 'CANCELADA';
+                d.invitados.filter(ic => ic.invitacionId === inv.id && ['PENDIENTE', 'CONFIRMADA'].includes(ic.estado)).forEach(ic => { ic.estado = 'CANCELADA'; });
+                return [200, detalleInv(inv)];
+            }
+            if (!planDe(inv.companyId).recordatorios) return [409, { codigo: 'cupo', message: 'Los recordatorios están en el plan Profesional.' }];
+            let n = 0;
+            d.invitados.filter(ic => ic.invitacionId === inv.id && ic.estado === 'PENDIENTE').forEach(ic => {
+                if (ic.recordadaEn && Date.now() - new Date(ic.recordadaEn) < 864e5) return;
+                ic.recordadaEn = ahoraJava(); n++;
+            });
+            return [200, { ...detalleInv(inv), recordados: n }];
+        }],
+        ['POST', /^\/invitaciones\/respuestas\/([^/]+)$/, (p, q, c, yo) => {
+            const ic = d.invitados.find(x => x.id === p[1] && x.userId === yo);
+            if (!ic) return [404, { message: 'Invitación no encontrada' }];
+            const inv = d.invitaciones.find(i => i.id === ic.invitacionId);
+            if (inv.estado === 'CANCELADA' || ic.estado === 'CANCELADA') return [400, { message: 'La empresa canceló esta invitación.' }];
+            if (new Date(inv.respondeAntesDe) < new Date()) return [400, { message: 'El plazo para responder ya terminó.' }];
+            if (c.asiste) {
+                const h = inv.horarios.find(x => x.id === c.horarioId);
+                if (!h) return [400, { message: 'Elige uno de los horarios propuestos.' }];
+                const ocupados = d.invitados.filter(x => x.invitacionId === inv.id && x.estado === 'CONFIRMADA' && x.horarioId === h.id && x.id !== ic.id).length;
+                if (ocupados >= h.cupos) return [400, { message: 'Ese horario ya se llenó. Elige otro.' }];
+                ic.estado = 'CONFIRMADA'; ic.horarioId = h.id;
+            } else { ic.estado = 'RECHAZADA'; ic.horarioId = null; }
+            ic.comentario = c.comentario || null; ic.respondidaEn = ahoraJava();
+            return [200, vistaCandidato(ic)];
+        }],
         ['GET', /^\/health$/, () => [200, { app: 'SkillMatch API', status: 'UP' }]],
         ['POST', /^\/auth\/login$/, (p, q, c) => {
             const u = d.usuarios.find(x => x.email === (c && c.email));

@@ -35,7 +35,9 @@ function completarEntrada(data) {
 
     // Si llego desde una pagina que pedia sesion (?volver=), vuelve alla; si no, a su perfil.
     // Una empresa no vuelve a "mi perfil" de persona, ni una persona a "Mi empresa".
-    let destino = isEmpresa ? 'perfil-empresa.html' : 'perfil-usuario.html';
+    // Un administrador entra a la administracion de planes
+    const isAdmin = String(role).toUpperCase().indexOf('ADMIN') !== -1;
+    let destino = isEmpresa ? 'perfil-empresa.html' : (isAdmin ? 'admin.html' : 'perfil-usuario.html');
     const volver = typeof destinoPedido === 'function' ? destinoPedido() : '';
     if (volver && !(isEmpresa ? /^(perfil-usuario|hoja-de-vida|conexiones)\.html(\?(?!id=)|$)/ : /^perfil-empresa\.html/).test(volver)) destino = volver;
 
