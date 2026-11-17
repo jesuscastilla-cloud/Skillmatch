@@ -133,6 +133,35 @@ Mientras no haya tantas respuestas reales, se pueden cargar respuestas **de ejem
 Los usuarios creados son `usuario0@skillmatch.com` … y las empresas
 `empresa0@skillmatch.com` …, todos con contraseña `password123`.
 
+### El escenario para probar todo (`EscenarioDePrueba.java`)
+
+Además de los datos al azar, la semilla arma un escenario pequeño con un propósito por cada dato:
+
+| Cuenta | Qué tiene para probar |
+|---|---|
+| `usuario0@skillmatch.com` | Una invitación a entrevista por responder, una postulación a una vacante que ya cerró, una conexión, una solicitud de conexión por aceptar, mensajes sin leer y dos vacantes guardadas |
+| `empresa0@skillmatch.com` | Dos vacantes abiertas (una con 7 postulaciones) y una cerrada; un proceso de invitación abierto (1 confirmó, 1 no puede, 2 sin responder) y otro ya vencido. Sigue en el plan **Básico** para probar los límites y la contratación |
+| `empresa1@skillmatch.com` | Plan **Profesional** activo (recordatorios y descarga en Excel) |
+| `empresa2@skillmatch.com` | Una solicitud del plan Profesional **pendiente de verificación** |
+| `admin@skillmatch.com` | Administración (aprobar solicitudes, datos para cobrar). **Solo se crea si defines `SEED_ADMIN_PASSWORD`** con la clave que quieras: así, sembrar una base de producción nunca deja una cuenta de administración con una clave que todos conocen |
+
+- **Las vacantes** quedan repartidas parejo en las últimas 13 semanas, para que los Indicadores siempre
+  puedan comparar una semana con la anterior.
+- **El modelo** se entrena como se habría entrenado al cierre de cada una de las últimas 8 semanas, solo
+  con las postulaciones que ya estaban respondidas ese día, y después con todo lo de hoy. Así
+  «Reentrenamiento» en «Cómo aprende SkillMatch» muestra su evolución. Las semanas en las que todavía no
+  había 30 respuestas no se guardan (no se inventa ninguna nota).
+
+**Para probarlo en tu computador** (la semilla solo corre sobre una base vacía): en `start.ps1` cambia el
+nombre de la base al final de `MONGODB_URI` por uno nuevo (por ejemplo `skillmatch_pruebas`) y agrega
+
+```powershell
+$env:SEED_ENABLED = "true"
+$env:SEED_ADMIN_PASSWORD = "la-clave-que-quieras"
+```
+
+Arranca el backend, espera `Seed completado exitosamente` y entra con las cuentas de la tabla.
+
 ---
 
 ## Alternativa: frontend separado (Netlify) y backend en Railway
@@ -168,6 +197,7 @@ COOKIE_SAME_SITE=None
 | `COOKIE_SECURE` | No | `false` | `true` si usas HTTPS |
 | `COOKIE_SAME_SITE` | No | `Lax` | `None` si el front está en otro dominio |
 | `SEED_ENABLED` | No | `false` | Poblar datos de prueba |
+| `SEED_ADMIN_PASSWORD` | No | (vacía) | Con la semilla: crea admin@skillmatch.com con esta clave. Vacía, no se crea |
 | `SEED_MODELO_DEMO` | No | `false` | Cargar respuestas de ejemplo para el modelo (una sola vez) |
 | `MODELO_SIN_EJEMPLOS` | No | `false` | El modelo ignora las respuestas de ejemplo |
 | `RATE_LIMIT_MAX` | No | `20` | Intentos de login por IP/minuto |

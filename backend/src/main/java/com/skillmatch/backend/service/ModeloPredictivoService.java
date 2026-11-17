@@ -82,6 +82,29 @@ public class ModeloPredictivoService {
         return actual();
     }
 
+    /**
+     * Entrena con los datos que existian en una fecha y guarda esa version con esa fecha. No inventa notas:
+     * es el mismo entrenamiento que habria corrido esa noche. Lo usa el sembrado para que el historial
+     * («Reentrenamiento» en Como aprende SkillMatch) tenga varias semanas. Si ese dia aun no habia datos
+     * suficientes, no guarda nada (el historial solo muestra entrenamientos listos).
+     */
+    public synchronized boolean aprenderHasta(LocalDateTime corte) {
+        Map<String, Object> m = EntrenadorModelo.entrenar(tablaEjemplosService.filas(corte),
+                tablaEjemplosService.habilidadesDeVacantes(), "plataforma", excluirEjemplos);
+        if (!"listo".equals(m.get("estado"))) return false;
+        ModeloVersion v = new ModeloVersion();
+        v.setFecha(corte);
+        v.setRespondidas((Integer) ((Map<?, ?>) m.get("datos")).get("respondidas"));
+        v.setEstado("listo");
+        Map<?, ?> modelos = (Map<?, ?>) ((Map<?, ?>) m.get("examen")).get("modelos");
+        v.setExactitudArbol((Double) ((Map<?, ?>) modelos.get("arbol")).get("exactitud"));
+        v.setExactitudFlojo((Double) ((Map<?, ?>) modelos.get("flojo")).get("exactitud"));
+        v.setModelo(m);
+        versionRepository.save(v);
+        enMemoria = null;
+        return true;
+    }
+
     /** La ultima version, con el historial de notas (una por dia, de la mas vieja a la mas nueva). */
     public Map<String, Object> actual() {
         Map<String, Object> m = enMemoria;
