@@ -86,7 +86,7 @@ class DatosPersonalesServiceTest {
         service.borrarCuenta("user-id-1", "buena");
 
         // Notificaciones, mensajes, conexiones, postulaciones y vacantes guardadas
-        verify(mongoTemplate, times(5)).remove(any(Query.class), any(Class.class));
+        verify(mongoTemplate, times(6)).remove(any(Query.class), any(Class.class)); // tambien sus invitaciones
         verify(userRepository).delete(user);
         verify(loginAttemptService).reset("ana@test.com");
     }

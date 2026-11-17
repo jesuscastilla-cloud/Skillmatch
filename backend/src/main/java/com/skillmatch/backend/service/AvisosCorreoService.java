@@ -180,6 +180,24 @@ public class AvisosCorreoService {
         }
     }
 
+    // ---------------------------------------------------------------- invitaciones a la siguiente etapa
+
+    /** Lo llama InvitacionService al invitar (o recordar). La campanita ya se creo alla. */
+    public void invitacion(User u, String empresa, com.skillmatch.backend.model.Invitacion i, String enlace, boolean recordatorio) {
+        if (u == null || !quiere(u.getId(), PreferenciasCorreo.INVITACIONES)) return;
+        String tipo = i.getTipo() == com.skillmatch.backend.model.Invitacion.Tipo.EVALUACION ? "una evaluación" : "una entrevista";
+        StringBuilder t = new StringBuilder("Hola").append(nombre(u)).append(",\n\n");
+        if (recordatorio) t.append("Te recordamos que aún no has respondido esta invitación.\n\n");
+        t.append(empresa).append(" quiere conocerte: te invita a ").append(tipo).append(" para la vacante \"")
+         .append(i.getJobTitle()).append("\" (").append(i.getModalidad() == com.skillmatch.backend.model.Invitacion.Modalidad.VIRTUAL ? "virtual" : "presencial")
+         .append(").\n\nHorarios propuestos:\n");
+        i.getHorarios().forEach(h -> t.append("  - ").append(InvitacionService.FECHA.format(h.getInicio())).append("\n"));
+        t.append("\nResponde antes del ").append(InvitacionService.FECHA.format(i.getRespondeAntesDe()))
+         .append(": elige el horario que te sirva o avisa si no puedes.\n\nResponder: ").append(sitio).append(enlace);
+        enviar(u, PreferenciasCorreo.INVITACIONES,
+                (recordatorio ? "Recordatorio: " : "") + empresa + " te invita a " + tipo, t);
+    }
+
     // ---------------------------------------------------------------- 2. mensajes sin leer
 
     @Scheduled(cron = "${skillmatch.correos.cron.mensajes:0 */30 * * * *}", zone = "America/Bogota")
