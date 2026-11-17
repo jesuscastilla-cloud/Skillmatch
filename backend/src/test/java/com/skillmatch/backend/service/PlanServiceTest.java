@@ -43,7 +43,7 @@ class PlanServiceTest {
     private final UserRepository users = mock(UserRepository.class);
     private final NotificationService notificaciones = mock(NotificationService.class);
     private final MongoTemplate mongo = mock(MongoTemplate.class);
-    private final PlanService servicio = new PlanService(planes, solicitudes, configuraciones, invitados, invitaciones, companies, users, notificaciones, mongo);
+    private final PlanService servicio = new PlanService(planes, solicitudes, configuraciones, invitados, invitaciones, companies, users, notificaciones, mongo, new SinCerrojo());
 
     private PlanEmpresa guardado;
 

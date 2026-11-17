@@ -133,6 +133,13 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", ex.getMessage(), "codigo", "cupo"));
     }
 
+    // Otra operacion sobre lo mismo sigue en curso (ver CerrojoService)
+    @ExceptionHandler(OperacionEnCursoException.class)
+    public ResponseEntity<?> handleEnCurso(OperacionEnCursoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", ex.getMessage(), "codigo", "en_curso"));
+    }
+
     @ExceptionHandler(TooManyAttemptsException.class)
     public ResponseEntity<?> handleTooManyAttempts(TooManyAttemptsException ex) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)

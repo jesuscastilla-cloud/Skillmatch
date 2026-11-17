@@ -51,6 +51,7 @@ public class PlanService {
     private final UserRepository users;
     private final NotificationService notificaciones;
     private final MongoTemplate mongoTemplate;
+    private final CerrojoService cerrojos;
 
     // ------------------------------------------------------------------ plan y uso
 
@@ -121,6 +122,13 @@ public class PlanService {
         if (!CatalogoPlanes.PROFESIONAL.equals(plan)) throw new IllegalArgumentException("Ese plan no se puede solicitar.");
         int m = meses == null ? 1 : meses;
         if (!CatalogoPlanes.MESES_PERMITIDOS.contains(m)) throw new IllegalArgumentException("Elige 1, 3 o 6 meses.");
+        SolicitudPlan guardada = cerrojos.con("plan:" + c.getId(), () -> guardarSolicitud(userId, c, plan, m, contactoNombre, contactoTelefono, nota));
+        avisarAdministradores("Nueva solicitud del plan Profesional: " + c.getName(), guardada.getId());
+        return guardada;
+    }
+
+    private SolicitudPlan guardarSolicitud(String userId, Company c, String plan, int m, String contactoNombre,
+                                           String contactoTelefono, String nota) {
         if (solicitudes.findFirstByCompanyIdAndEstado(c.getId(), SolicitudPlan.Estado.PENDIENTE).isPresent()) {
             throw new IllegalArgumentException("Ya tienes una solicitud pendiente de verificación.");
         }
@@ -142,19 +150,20 @@ public class PlanService {
         s.setCreatedAt(LocalDateTime.now());
         SolicitudPlan guardada = solicitudes.save(s);
         log.info("Solicitud de plan {} ({} meses) de la empresa {}", plan, m, c.getId());
-        avisarAdministradores("Nueva solicitud del plan Profesional: " + c.getName(), guardada.getId());
         return guardada;
     }
 
     public SolicitudPlan cancelarSolicitud(String userId, String solicitudId) {
         Company c = empresaDe(userId);
-        SolicitudPlan s = solicitudes.findById(solicitudId)
-                .filter(x -> c.getId().equals(x.getCompanyId()))
-                .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada"));
-        if (s.getEstado() != SolicitudPlan.Estado.PENDIENTE) throw new IllegalArgumentException("Esta solicitud ya fue atendida.");
-        s.setEstado(SolicitudPlan.Estado.CANCELADA);
-        s.setAtendidaEn(LocalDateTime.now());
-        return solicitudes.save(s);
+        return cerrojos.con("plan:" + c.getId(), () -> {
+            SolicitudPlan s = solicitudes.findById(solicitudId)
+                    .filter(x -> c.getId().equals(x.getCompanyId()))
+                    .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada"));
+            if (s.getEstado() != SolicitudPlan.Estado.PENDIENTE) throw new IllegalArgumentException("Esta solicitud ya fue atendida.");
+            s.setEstado(SolicitudPlan.Estado.CANCELADA);
+            s.setAtendidaEn(LocalDateTime.now());
+            return solicitudes.save(s);
+        });
     }
 
     // ------------------------------------------------------------------ administracion
@@ -178,6 +187,13 @@ public class PlanService {
 
     /** Aprueba: el plan Profesional corre desde hoy (o desde el fin del que ya tenia) por los meses pedidos. */
     public SolicitudPlan aprobar(String adminId, String solicitudId, Integer meses, String nota) {
+        String companyId = solicitudes.findById(solicitudId).map(SolicitudPlan::getCompanyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada"));
+        // El mismo cerrojo de la empresa que usan "solicitar" y "cancelar": una solicitud se atiende una sola vez
+        return cerrojos.con("plan:" + companyId, () -> aprobarConCerrojo(adminId, solicitudId, meses, nota));
+    }
+
+    private SolicitudPlan aprobarConCerrojo(String adminId, String solicitudId, Integer meses, String nota) {
         SolicitudPlan s = pendiente(solicitudId);
         int m = meses == null ? s.getMeses() : meses;
         if (m < 1 || m > 12) throw new IllegalArgumentException("Los meses deben estar entre 1 y 12.");
@@ -204,8 +220,14 @@ public class PlanService {
     }
 
     public SolicitudPlan rechazar(String adminId, String solicitudId, String nota) {
-        SolicitudPlan s = pendiente(solicitudId);
         if (nota == null || nota.isBlank()) throw new IllegalArgumentException("Escribe el motivo para la empresa.");
+        String companyId = solicitudes.findById(solicitudId).map(SolicitudPlan::getCompanyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada"));
+        return cerrojos.con("plan:" + companyId, () -> rechazarConCerrojo(adminId, solicitudId, nota));
+    }
+
+    private SolicitudPlan rechazarConCerrojo(String adminId, String solicitudId, String nota) {
+        SolicitudPlan s = pendiente(solicitudId);
         s.setEstado(SolicitudPlan.Estado.RECHAZADA);
         s.setNotaAdmin(nota.trim());
         s.setAtendidaPor(adminId);

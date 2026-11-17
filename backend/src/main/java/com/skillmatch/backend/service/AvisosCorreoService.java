@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Duration;
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
  *  4. Un candidato se postulo (empresas): un resumen al dia, a las 7 p. m., no un correo por persona.
  *
  * Cada correo trae un enlace para dejar de recibir ese tipo (sin iniciar sesion, firmado con HMAC).
- * Tope diario de envios (Gmail gratis permite unos 500 al dia): al llegar, se deja para el dia siguiente.
+ * Tope diario de envios y cola de espera: ver ColaCorreoService.
  * Texto plano, con CorreoService (el mismo de los codigos de verificacion).
  */
 @Slf4j
@@ -73,20 +73,17 @@ public class AvisosCorreoService {
     private final JobRepository jobRepository;
     private final CompanyRepository companyRepository;
     private final MongoTemplate mongoTemplate;
+    private final ColaCorreoService cola;
     private final byte[] llave;
     private final String sitio;
-    private final int maximoAlDia;
-
-    private final AtomicInteger enviadosHoy = new AtomicInteger();
-    private volatile LocalDate dia = LocalDate.now(BOGOTA);
 
     public AvisosCorreoService(CorreoService correoService, NotificationService notificationService,
                                ModeloPredictivoService modeloService, PreferenciasCorreoRepository preferenciasRepository,
                                AvisoEnviadoRepository avisosRepository, UserRepository userRepository,
                                JobRepository jobRepository, CompanyRepository companyRepository,
                                MongoTemplate mongoTemplate, JwtProperties jwtProperties,
-                               @Value("${app.sitio:https://skillmatch-yz37.onrender.com}") String sitio,
-                               @Value("${app.correo.maximo-al-dia:400}") int maximoAlDia) {
+                               ColaCorreoService cola,
+                               @Value("${app.sitio:https://skillmatch-yz37.onrender.com}") String sitio) {
         this.correoService = correoService;
         this.notificationService = notificationService;
         this.modeloService = modeloService;
@@ -99,7 +96,7 @@ public class AvisosCorreoService {
         // La llave de los enlaces de baja sale del secreto del JWT (nunca se escribe en el codigo)
         this.llave = ("baja-correos:" + jwtProperties.getSecret()).getBytes(StandardCharsets.UTF_8);
         this.sitio = sitio.endsWith("/") ? sitio.substring(0, sitio.length() - 1) : sitio;
-        this.maximoAlDia = maximoAlDia;
+        this.cola = cola;
     }
 
     // ---------------------------------------------------------------- preferencias
@@ -168,7 +165,8 @@ public class AvisosCorreoService {
         }
         t.append("\n\nVer la postulación: ").append(sitio).append(enlace);
         enviar(u, PreferenciasCorreo.RESPUESTA,
-                aceptada ? "Te aceptaron en " + titulo : "Respuesta a tu postulación: " + titulo, t);
+                aceptada ? "Te aceptaron en " + titulo : "Respuesta a tu postulación: " + titulo, t,
+                ColaCorreoService.Prioridad.ALTA, Duration.ofDays(3));
     }
 
     private String consejoSeguro(Application a) {
@@ -190,12 +188,30 @@ public class AvisosCorreoService {
         if (recordatorio) t.append("Te recordamos que aún no has respondido esta invitación.\n\n");
         t.append(empresa).append(" quiere conocerte: te invita a ").append(tipo).append(" para la vacante \"")
          .append(i.getJobTitle()).append("\" (").append(i.getModalidad() == com.skillmatch.backend.model.Invitacion.Modalidad.VIRTUAL ? "virtual" : "presencial")
-         .append(").\n\nHorarios propuestos:\n");
+         .append(").\n");
+        // Lo que la persona necesita para decidir si puede ir; el enlace privado se ve en SkillMatch al confirmar
+        if (i.getModalidad() == com.skillmatch.backend.model.Invitacion.Modalidad.PRESENCIAL && i.getLugar() != null) {
+            t.append("\nLugar: ").append(i.getLugar()).append("\n");
+        } else {
+            t.append("\nEl enlace de la reunión lo verás en SkillMatch cuando confirmes.\n");
+        }
+        if (i.getIndicaciones() != null) t.append("Indicaciones: ").append(i.getIndicaciones()).append("\n");
+        t.append("Duración: ").append(i.getDuracionMinutos()).append(" minutos.\n\nHorarios propuestos:\n");
         i.getHorarios().forEach(h -> t.append("  - ").append(InvitacionService.FECHA.format(h.getInicio())).append("\n"));
         t.append("\nResponde antes del ").append(InvitacionService.FECHA.format(i.getRespondeAntesDe()))
          .append(": elige el horario que te sirva o avisa si no puedes.\n\nResponder: ").append(sitio).append(enlace);
+        // La invitacion es lo mas importante; el recordatorio importa menos y solo sirve un dia.
+        // Una invitacion ya no sirve despues de su plazo para responder (maximo 3 dias en la cola).
+        Duration vigencia = recordatorio ? Duration.ofDays(1) : vigenciaHasta(i.getRespondeAntesDe());
         enviar(u, PreferenciasCorreo.INVITACIONES,
-                (recordatorio ? "Recordatorio: " : "") + empresa + " te invita a " + tipo, t);
+                (recordatorio ? "Recordatorio: " : "") + empresa + " te invita a " + tipo, t,
+                recordatorio ? ColaCorreoService.Prioridad.MEDIA : ColaCorreoService.Prioridad.ALTA, vigencia);
+    }
+
+    private static Duration vigenciaHasta(LocalDateTime plazo) {
+        Duration hasta = plazo == null ? Duration.ofDays(3) : Duration.between(LocalDateTime.now(), plazo);
+        if (hasta.compareTo(Duration.ofHours(1)) < 0) return Duration.ofHours(1);
+        return hasta.compareTo(Duration.ofDays(3)) > 0 ? Duration.ofDays(3) : hasta;
     }
 
     // ---------------------------------------------------------------- 2. mensajes sin leer
@@ -220,7 +236,8 @@ public class AvisosCorreoService {
                 StringBuilder t = new StringBuilder("Hola").append(nombre(u)).append(",\n\n")
                         .append(quien).append(" te escribió en SkillMatch y todavía no has leído el mensaje.")
                         .append("\n\nLeerlo: ").append(sitio).append("/pages/mensajes.html?userId=").append(remitente);
-                if (enviar(u, PreferenciasCorreo.MENSAJES, "Tienes un mensaje sin leer", t)) {
+                if (enviar(u, PreferenciasCorreo.MENSAJES, "Tienes un mensaje sin leer", t,
+                        ColaCorreoService.Prioridad.BAJA, Duration.ofDays(1))) {
                     registrar(receptor, PreferenciasCorreo.MENSAJES, remitente);
                 }
             }
@@ -251,7 +268,8 @@ public class AvisosCorreoService {
                 t.append("\n- ").append(v.getTitle()).append(": ").append(sitio)
                  .append("/pages/oportunidades.html?jobId=").append(v.getId());
             }
-            if (enviar(u, PreferenciasCorreo.VACANTES, "Vacantes nuevas para ti", t)) {
+            if (enviar(u, PreferenciasCorreo.VACANTES, "Vacantes nuevas para ti", t,
+                    ColaCorreoService.Prioridad.BAJA, Duration.ofDays(2))) {
                 registrar(u.getId(), PreferenciasCorreo.VACANTES, semana);
             }
         }
@@ -290,7 +308,8 @@ public class AvisosCorreoService {
             t.append("\n\nVerlas: ").append(sitio).append("/pages/perfil-empresa.html?tab=applicants");
             String para = c.getEmail() != null && !c.getEmail().isBlank() ? c.getEmail() : cuenta.getEmail();
             if (enviar(cuenta, para, PreferenciasCorreo.POSTULACIONES,
-                    total == 1 ? "Un candidato se postuló" : total + " candidatos se postularon", t)) {
+                    total == 1 ? "Un candidato se postuló" : total + " candidatos se postularon", t,
+                    ColaCorreoService.Prioridad.MEDIA, Duration.ofDays(1))) {
                 registrar(cuenta.getId(), PreferenciasCorreo.POSTULACIONES, hoy);
             }
         });
@@ -310,25 +329,18 @@ public class AvisosCorreoService {
         avisosRepository.save(new AvisoEnviado(null, userId, tipo, clave, LocalDateTime.now()));
     }
 
-    private boolean enviar(User u, String tipo, String asunto, StringBuilder texto) {
-        return enviar(u, u.getEmail(), tipo, asunto, texto);
+    private boolean enviar(User u, String tipo, String asunto, StringBuilder texto,
+                           ColaCorreoService.Prioridad prioridad, Duration vigencia) {
+        return enviar(u, u.getEmail(), tipo, asunto, texto, prioridad, vigencia);
     }
 
-    private boolean enviar(User u, String para, String tipo, String asunto, StringBuilder texto) {
+    /** Devuelve true si el correo salio o quedo en la cola (no se pierde); false si no hay a donde enviarlo. */
+    private boolean enviar(User u, String para, String tipo, String asunto, StringBuilder texto,
+                           ColaCorreoService.Prioridad prioridad, Duration vigencia) {
         if (para == null || para.isBlank()) return false;      // cuentas creadas solo con telefono
-        if (!cupoDisponible()) {
-            log.warn("Tope diario de correos automaticos alcanzado ({}): '{}' queda para despues", maximoAlDia, asunto);
-            return false;
-        }
         texto.append("\n\n¿No quieres recibir este tipo de correo? ").append(enlaceDeBaja(u.getId(), tipo))
              .append("\nTambién puedes elegir tus correos en tu perfil, en \"Correos que recibo\".");
-        return correoService.enviar(para, asunto, texto.toString());
-    }
-
-    private synchronized boolean cupoDisponible() {
-        LocalDate hoy = LocalDate.now(BOGOTA);
-        if (!hoy.equals(dia)) { dia = hoy; enviadosHoy.set(0); }
-        return enviadosHoy.incrementAndGet() <= maximoAlDia;
+        return cola.enviar(para, asunto, texto.toString(), prioridad, vigencia) != ColaCorreoService.Resultado.NO_ENVIADO;
     }
 
     private String nombre(User u) {

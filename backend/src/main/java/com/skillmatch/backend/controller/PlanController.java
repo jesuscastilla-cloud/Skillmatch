@@ -20,6 +20,7 @@ import com.skillmatch.backend.model.ConfiguracionComercial;
 import com.skillmatch.backend.model.SolicitudPlan;
 import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.CatalogoPlanes;
+import com.skillmatch.backend.service.ColaCorreoService;
 import com.skillmatch.backend.service.PlanService;
 import com.skillmatch.backend.validation.EntradaSegura;
 
@@ -43,6 +44,7 @@ import lombok.RequiredArgsConstructor;
  *            POST /api/admin/planes/solicitudes/{id}/aprobar | /rechazar
  *            GET  /api/admin/planes/empresas              empresas con plan activo
  *            GET|PUT /api/admin/comercial                 datos para cobrar
+ *            GET  /api/admin/correos/estado               correos de hoy: enviados, tope, en cola y descartados
  */
 @RestController
 @RequestMapping("/api")
@@ -50,6 +52,7 @@ import lombok.RequiredArgsConstructor;
 public class PlanController {
 
     private final PlanService planes;
+    private final ColaCorreoService correos;
 
     @GetMapping("/public/planes")
     public List<Map<String, Object>> catalogo() {
@@ -103,6 +106,12 @@ public class PlanController {
     @PreAuthorize("hasRole('ADMIN')")
     public List<Map<String, Object>> empresasConPlan() {
         return planes.empresasConPlan();
+    }
+
+    @GetMapping("/admin/correos/estado")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Map<String, Object> estadoDeCorreos() {
+        return correos.estado();
     }
 
     @GetMapping("/admin/comercial")

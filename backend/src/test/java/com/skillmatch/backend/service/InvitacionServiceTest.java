@@ -50,7 +50,7 @@ class InvitacionServiceTest {
     private final PlanService planes = mock(PlanService.class);
     private final NotificationService notificaciones = mock(NotificationService.class);
     private final AvisosCorreoService correos = mock(AvisosCorreoService.class);
-    private final InvitacionService servicio = new InvitacionService(invitaciones, invitados, applications, jobs, companies, users, planes, notificaciones, correos);
+    private final InvitacionService servicio = new InvitacionService(invitaciones, invitados, applications, jobs, companies, users, planes, notificaciones, correos, new SinCerrojo());
 
     private final Company empresa = new Company();
     private final Job vacante = new Job();
@@ -184,8 +184,23 @@ class InvitacionServiceTest {
         Map<String, Object> r = servicio.responder("persona-1", ic.getId(), true, horario, "Llevo mi hoja de vida");
         assertThat(ic.getEstado()).isEqualTo(InvitacionCandidato.Estado.CONFIRMADA);
         assertThat(ic.getHorarioId()).isEqualTo(horario);
-        assertThat(r.get("lugar")).isEqualTo("Cra. 3 # 10-20, Bocagrande");   // el lugar se ve al confirmar
+        assertThat(r.get("lugar")).isEqualTo("Cra. 3 # 10-20, Bocagrande");
         verify(notificaciones).createNotification(eq("u-empresa"), eq("invitacion_respuesta"), anyString(), eq("inv-1"), anyString());
+    }
+
+    @Test
+    void antesDeConfirmarYaVeLaDireccionYLasIndicaciones_PeroNoElEnlacePrivado() {
+        InvitacionCandidato ic = invitadoDe("persona-1");
+        when(invitados.findByUserIdOrderByCreatedAtDesc("persona-1")).thenReturn(List.of(ic));
+        guardada.setIndicaciones("Trae tu documento.");
+        guardada.setEnlace("https://reunion.example.com/privada");
+        Map<String, Object> antes = servicio.mias("persona-1").get(0);
+        assertThat(antes.get("lugar")).isEqualTo("Cra. 3 # 10-20, Bocagrande");
+        assertThat(antes.get("indicaciones")).isEqualTo("Trae tu documento.");
+        assertThat(antes.get("enlace")).as("el enlace espera a la confirmacion").isNull();
+
+        servicio.responder("persona-1", ic.getId(), true, guardada.getHorarios().get(0).getId(), null);
+        assertThat(servicio.mias("persona-1").get(0).get("enlace")).isEqualTo("https://reunion.example.com/privada");
     }
 
     @Test

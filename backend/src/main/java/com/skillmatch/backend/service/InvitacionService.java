@@ -61,6 +61,7 @@ public class InvitacionService {
     private final PlanService planes;
     private final NotificationService notificaciones;
     private final AvisosCorreoService correos;
+    private final CerrojoService cerrojos;
 
     // ================================================================== empresa
 
@@ -69,6 +70,17 @@ public class InvitacionService {
         Job job = jobs.findById(r.getJobId()).orElseThrow(() -> new ResourceNotFoundException("Vacante no encontrada"));
         if (!c.getId().equals(job.getCompanyId())) throw new AccessDeniedException("Esa vacante no es de tu empresa");
 
+        // Todo lo que cuenta cupos, procesos y repetidos se revisa y se guarda con el cerrojo de la empresa:
+        // dos envios a la vez (dos pestañas, dos personas del equipo) no pueden pasarse del limite del plan.
+        Resultado hecho = cerrojos.con("empresa:" + c.getId(), () -> crearConCerrojo(r, c, job, userId));
+        hecho.enviados().forEach(ic -> avisarInvitado(ic, hecho.invitacion(), c, false));
+        log.info("Invitacion {} de la empresa {} a {} candidatos de la vacante {}", hecho.invitacion().getId(), c.getId(), hecho.enviados().size(), job.getId());
+        return detalle(userId, hecho.invitacion().getId());
+    }
+
+    private record Resultado(Invitacion invitacion, List<InvitacionCandidato> enviados) { }
+
+    private Resultado crearConCerrojo(InvitacionRequest r, Company c, Job job, String userId) {
         CatalogoPlanes.Plan plan = planes.planVigente(c.getId());
         List<String> ids = r.getApplicationIds().stream().filter(x -> x != null && !x.isBlank()).distinct().toList();
         if (ids.isEmpty()) throw new IllegalArgumentException("Elige al menos un candidato.");
@@ -117,10 +129,7 @@ public class InvitacionService {
             ic.setCreatedAt(ahora);
             return ic;
         }).toList();
-        List<InvitacionCandidato> enviados = invitados.saveAll(nuevos);
-        enviados.forEach(ic -> avisarInvitado(ic, guardada, c, false));
-        log.info("Invitacion {} de la empresa {} a {} candidatos de la vacante {}", guardada.getId(), c.getId(), enviados.size(), job.getId());
-        return detalle(userId, guardada.getId());
+        return new Resultado(guardada, invitados.saveAll(nuevos));
     }
 
     private Invitacion armar(InvitacionRequest r, CatalogoPlanes.Plan plan, Company c, Job job, String userId) {
@@ -202,6 +211,12 @@ public class InvitacionService {
     }
 
     public Map<String, Object> cancelar(String userId, String invitacionId) {
+        propia(userId, invitacionId);
+        cerrojos.con("invitacion:" + invitacionId, () -> cancelarConCerrojo(userId, invitacionId));
+        return detalle(userId, invitacionId);
+    }
+
+    private Boolean cancelarConCerrojo(String userId, String invitacionId) {
         Invitacion i = propia(userId, invitacionId);
         if (i.getEstado() == Invitacion.Estado.CANCELADA) throw new IllegalArgumentException("Este proceso ya estaba cancelado.");
         i.setEstado(Invitacion.Estado.CANCELADA);
@@ -216,15 +231,23 @@ public class InvitacionService {
                     (c == null ? "La empresa" : c.getName()) + " canceló la " + nombreTipo(i) + " para " + i.getJobTitle() + ".",
                     ic.getId(), "/pages/perfil-usuario.html?tab=invitaciones&invitacion=" + ic.getId());
         });
-        return detalle(userId, invitacionId);
+        return Boolean.TRUE;
     }
 
     /** Recuerda a quienes no han respondido (plan Profesional, una vez cada 24 horas por persona). */
     public Map<String, Object> recordar(String userId, String invitacionId) {
-        Invitacion i = propia(userId, invitacionId);
-        if (!planes.planVigente(i.getCompanyId()).recordatorios()) {
+        Invitacion i0 = propia(userId, invitacionId);
+        if (!planes.planVigente(i0.getCompanyId()).recordatorios()) {
             throw new CupoAgotadoException("Los recordatorios están en el plan Profesional.");
         }
+        int n = cerrojos.con("invitacion:" + invitacionId, () -> recordarConCerrojo(userId, invitacionId));
+        Map<String, Object> m = detalle(userId, invitacionId);
+        m.put("recordados", n);
+        return m;
+    }
+
+    private Integer recordarConCerrojo(String userId, String invitacionId) {
+        Invitacion i = propia(userId, invitacionId);
         if (i.getEstado() != Invitacion.Estado.ACTIVA || vencida(i)) throw new IllegalArgumentException("Este proceso ya no recibe respuestas.");
         LocalDateTime hace24 = LocalDateTime.now().minusHours(24);
         Company c = companies.findById(i.getCompanyId()).orElse(null);
@@ -237,9 +260,7 @@ public class InvitacionService {
             avisarInvitado(ic, i, c, true);
             n++;
         }
-        Map<String, Object> m = detalle(userId, invitacionId);
-        m.put("recordados", n);
-        return m;
+        return n;
     }
 
     // ================================================================== candidato
@@ -253,6 +274,14 @@ public class InvitacionService {
     }
 
     public Map<String, Object> responder(String userId, String invitadoId, boolean acepta, String horarioId, String comentario) {
+        InvitacionCandidato previo = invitados.findById(invitadoId)
+                .filter(x -> userId.equals(x.getUserId()))
+                .orElseThrow(() -> new ResourceNotFoundException("Invitación no encontrada"));
+        // Un solo cerrojo por proceso: los cupos de cada horario se cuentan y se ocupan sin que nadie se cuele
+        return cerrojos.con("invitacion:" + previo.getInvitacionId(), () -> responderConCerrojo(userId, invitadoId, acepta, horarioId, comentario));
+    }
+
+    private Map<String, Object> responderConCerrojo(String userId, String invitadoId, boolean acepta, String horarioId, String comentario) {
         InvitacionCandidato ic = invitados.findById(invitadoId)
                 .filter(x -> userId.equals(x.getUserId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Invitación no encontrada"));
@@ -304,9 +333,15 @@ public class InvitacionService {
         for (InvitacionCandidato ic : invitados.findByEstadoAndCreatedAtBefore(InvitacionCandidato.Estado.PENDIENTE, ahora)) {
             Invitacion i = invitaciones.findById(ic.getInvitacionId()).orElse(null);
             if (i != null && vencida(i)) {
-                ic.setEstado(InvitacionCandidato.Estado.VENCIDA);
-                invitados.save(ic);
-                n++;
+                boolean marcada = cerrojos.con("invitacion:" + i.getId(), () -> {
+                    // Se vuelve a leer: si la persona alcanzo a responder, no se pisa su respuesta
+                    InvitacionCandidato actual = invitados.findById(ic.getId()).orElse(null);
+                    if (actual == null || actual.getEstado() != InvitacionCandidato.Estado.PENDIENTE) return false;
+                    actual.setEstado(InvitacionCandidato.Estado.VENCIDA);
+                    invitados.save(actual);
+                    return true;
+                });
+                if (marcada) n++;
             }
         }
         if (n > 0) log.info("Invitaciones vencidas sin respuesta: {}", n);
@@ -391,8 +426,9 @@ public class InvitacionService {
             x.put("disponible", mio || ((h.getCupos() == null || ocupados < h.getCupos()) && h.getInicio().isAfter(LocalDateTime.now())));
             return x;
         }).toList());
-        // El lugar exacto o el enlace se muestran cuando la persona confirma
-        if (ic.getEstado() != InvitacionCandidato.Estado.CONFIRMADA) { m.put("lugar", null); m.put("enlace", null); }
+        // La direccion y las indicaciones se ven desde el principio: la persona las necesita para decidir si
+        // puede ir. Solo el enlace privado de una reunion o evaluacion virtual espera a que confirme.
+        if (ic.getEstado() != InvitacionCandidato.Estado.CONFIRMADA) m.put("enlace", null);
         m.put("ciudad", i.getModalidad() == Invitacion.Modalidad.PRESENCIAL ? "Presencial" : "Virtual");
         return m;
     }
