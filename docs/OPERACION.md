@@ -370,3 +370,18 @@ Las pruebas que lo demuestran necesitan un MongoDB local (nunca Atlas):
 SKILLMATCH_MONGO_PRUEBAS=mongodb://localhost:27017 ./mvnw test -Dtest=ConcurrenciaMongoTest
 ```
 Usan la base `skillmatch_concurrencia_prueba` (se borra al empezar y al terminar). Sin esa variable se omiten.
+
+## 8. Privacidad y documentos legales
+
+El sitio publica cinco documentos, enlazados desde el pie de todas las páginas, el registro y una franja al final de la portada:
+`privacidad.html` (Centro de privacidad y aviso de privacidad), `politica-datos.html`, `declaracion-datos.html`, `cookies.html` y `terminos.html`. Versión vigente: **1.0 (16 de noviembre de 2026)**.
+
+- **Datos del responsable:** se escriben en un solo lugar, `SkillMatch/src/assets/js/legal.js` (objeto `DATOS_LEGALES`). Cada dato aparece en las páginas solo si tiene valor. Hoy están el nombre «SkillMatch Cartagena», la ciudad y el correo `skillmatchproject@gmail.com`. **Antes de vender hay que escribir la razón social, el NIT, la dirección y el teléfono reales** (la Ley 1581 pide identificar al responsable con ellos).
+- **Versión de lo que aceptan las personas:** al registrarse se guarda la versión de la política (`app.privacidad.version-politica`, ahora `1.0`). Si en Render existe la variable `PRIVACIDAD_VERSION_POLITICA`, hay que ponerla en `1.0` o borrarla. Cuando se cambie el texto de forma importante, subir la versión aquí y editar la versión y la fecha que aparecen al principio de cada documento (son páginas HTML normales en `SkillMatch/src/pages/`).
+- **Lo que el texto promete y el código cumple:**
+  - Invitaciones: 12 meses (`RetencionDatos.borrarInvitacionesYSolicitudesViejas`, a las 3:30 a. m.).
+  - Solicitudes de plan: rechazadas o canceladas 12 meses; las aprobadas se conservan (soporte contable, hasta 10 años).
+  - Al borrar una empresa se borran sus invitaciones y sus solicitudes de plan quedan sin nombre, correo ni teléfono.
+  - La ubicación y el PDF de la hoja de vida no salen del navegador; no hay analítica ni cookies de seguimiento.
+  - Si se agrega una cookie, un servicio de analítica o un tercero nuevo, hay que actualizar `cookies.html` y `declaracion-datos.html` **antes** de usarlo.
+- **Pendiente de revisión por un abogado** (los textos son una base sólida, no una asesoría legal): la política y los términos antes de abrir al público, el plazo de 10 años de los soportes contables, los términos de cobro (IVA y facturación según cómo se constituya el negocio) y la autorización del Servicio Público de Empleo para operar como agencia de gestión de empleo (ver `docs/REGISTRO-Y-MARCO-LEGAL.md`).

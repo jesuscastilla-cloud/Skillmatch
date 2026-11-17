@@ -2532,6 +2532,16 @@
                         }).join('') +
                     '</nav>' +
                 '</div>' +
+                '<div class="pie-legal">' +
+                    '<span class="pie-legal-titulo">Privacidad y legal</span>' +
+                    '<ul>' +
+                        [['privacidad.html', 'Centro de privacidad'], ['politica-datos.html', 'Política de datos'],
+                         ['declaracion-datos.html', 'Declaración de datos'], ['cookies.html', 'Cookies'],
+                         ['terminos.html', 'Términos de uso']].map(function (e) {
+                            return '<li><a href="' + e[0] + '">' + e[1] + '</a></li>';
+                        }).join('') +
+                    '</ul>' +
+                '</div>' +
                 '<div class="pie-base">' +
                     '<p>&copy; ' + new Date().getFullYear() + ' SkillMatch Cartagena · Hecho en Cartagena de Indias para conectar a las personas y las empresas de la ciudad.</p>' +
                     // Tamano de letra (seccion 22): tres botones, el elegido marcado
